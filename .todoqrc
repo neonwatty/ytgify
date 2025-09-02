@@ -1,0 +1,16 @@
+{
+  "database": {
+    "path": "/Users/jeremywatt/Desktop/ytgiphy/.todoq/todoq.db",
+    "autoMigrate": true,
+    "walMode": true
+  },
+  "display": {
+    "format": "tree",
+    "colors": true,
+    "showCompleted": false
+  },
+  "defaults": {
+    "status": "pending",
+    "priority": 0
+  }
+}
