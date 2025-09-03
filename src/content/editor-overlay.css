@@ -1,0 +1,625 @@
+.ytgif-editor-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999999;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: ytgif-fade-in 0.3s ease-out;
+}
+
+@keyframes ytgif-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.ytgif-editor-container {
+  width: 90%;
+  max-width: 1200px;
+  max-height: 90vh;
+  background: #1a1a1a;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: ytgif-slide-up 0.3s ease-out;
+}
+
+@keyframes ytgif-slide-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.ytgif-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #ff0000, #cc0000);
+  color: white;
+}
+
+.ytgif-editor-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ytgif-editor-title::before {
+  content: '🎬';
+  font-size: 24px;
+}
+
+.ytgif-editor-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.ytgif-editor-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+.ytgif-editor-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.ytgif-editor-preview-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  border-right: 1px solid #333;
+  background: #0f0f0f;
+}
+
+.ytgif-editor-preview {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ytgif-editor-canvas {
+  display: block;
+  background: #000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.ytgif-editor-preview-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0a0a0a;
+  border: 2px dashed #333;
+  border-radius: 8px;
+}
+
+.ytgif-editor-preview-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #666;
+  font-size: 14px;
+}
+
+.ytgif-editor-preview-icon {
+  font-size: 48px;
+  opacity: 0.5;
+}
+
+.ytgif-editor-preview-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+  margin-top: 16px;
+}
+
+.ytgif-editor-play-button {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff0000, #cc0000);
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.ytgif-editor-play-button:hover:not(:disabled) {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
+}
+
+.ytgif-editor-play-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ytgif-editor-frame-slider {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ytgif-editor-slider {
+  flex: 1;
+  height: 6px;
+  background: #333;
+  border-radius: 3px;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.ytgif-editor-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #ff0000;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.ytgif-editor-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #ff0000;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+.ytgif-editor-frame-info {
+  color: #999;
+  font-size: 12px;
+  white-space: nowrap;
+  min-width: 60px;
+}
+
+.ytgif-editor-extract-button {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #ff0000, #cc0000);
+  border: none;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ytgif-editor-extract-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
+}
+
+.ytgif-editor-extract-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ytgif-editor-controls-section {
+  width: 400px;
+  padding: 24px;
+  background: #1a1a1a;
+  overflow-y: auto;
+}
+
+.ytgif-editor-controls-group {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.ytgif-editor-control {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ytgif-editor-control-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ytgif-editor-control-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.ytgif-editor-quality-options {
+  display: flex;
+  gap: 8px;
+}
+
+.ytgif-editor-quality-option {
+  flex: 1;
+  padding: 8px;
+  background: #262626;
+  border: 2px solid #333;
+  color: #ccc;
+  font-size: 13px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ytgif-editor-quality-option:hover:not(:disabled) {
+  border-color: #666;
+}
+
+.ytgif-editor-quality-option.active {
+  background: #ff0000;
+  border-color: #ff0000;
+  color: white;
+}
+
+.ytgif-editor-quality-option:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ytgif-editor-resolution-options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ytgif-editor-resolution-option {
+  padding: 8px;
+  background: #262626;
+  border: 2px solid #333;
+  color: #ccc;
+  font-size: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.ytgif-editor-resolution-option:hover:not(:disabled) {
+  border-color: #666;
+}
+
+.ytgif-editor-resolution-option.active {
+  background: #ff0000;
+  border-color: #ff0000;
+  color: white;
+}
+
+.ytgif-editor-resolution-custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ytgif-editor-input {
+  padding: 8px 12px;
+  background: #262626;
+  border: 1px solid #333;
+  color: #ccc;
+  font-size: 14px;
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.ytgif-editor-input:focus {
+  border-color: #666;
+  background: #2a2a2a;
+}
+
+.ytgif-editor-input-small {
+  width: 60px;
+}
+
+.ytgif-editor-resolution-custom span {
+  color: #666;
+  font-size: 14px;
+}
+
+.ytgif-editor-framerate-slider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.ytgif-editor-framerate-value {
+  color: #ff0000;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 50px;
+}
+
+.ytgif-editor-framerate-presets {
+  display: flex;
+  gap: 8px;
+}
+
+.ytgif-editor-framerate-preset {
+  padding: 6px 12px;
+  background: #262626;
+  border: 1px solid #333;
+  color: #999;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ytgif-editor-framerate-preset:hover:not(:disabled) {
+  border-color: #666;
+}
+
+.ytgif-editor-framerate-preset.active {
+  background: #ff0000;
+  border-color: #ff0000;
+  color: white;
+}
+
+.ytgif-editor-text-control {
+  background: #262626;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.ytgif-editor-text-add {
+  padding: 6px 12px;
+  background: #333;
+  border: none;
+  color: #ccc;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ytgif-editor-text-add:hover:not(:disabled) {
+  background: #404040;
+}
+
+.ytgif-editor-text-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.ytgif-editor-text-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ytgif-editor-text-item:hover {
+  border-color: #666;
+}
+
+.ytgif-editor-text-item.selected {
+  border-color: #ff0000;
+  background: rgba(255, 0, 0, 0.1);
+}
+
+.ytgif-editor-text-preview {
+  color: #ccc;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.ytgif-editor-text-remove {
+  width: 20px;
+  height: 20px;
+  background: #333;
+  border: none;
+  color: #999;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ytgif-editor-text-remove:hover {
+  background: #ff0000;
+  color: white;
+}
+
+.ytgif-editor-text-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ytgif-editor-text-props {
+  display: flex;
+  gap: 8px;
+}
+
+.ytgif-editor-color {
+  width: 40px;
+  height: 36px;
+  border: 1px solid #333;
+  border-radius: 4px;
+  cursor: pointer;
+  background: #262626;
+}
+
+.ytgif-editor-select {
+  flex: 1;
+  padding: 8px;
+  background: #262626;
+  border: 1px solid #333;
+  color: #ccc;
+  font-size: 13px;
+  border-radius: 4px;
+  outline: none;
+}
+
+.ytgif-editor-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ccc;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.ytgif-editor-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.ytgif-editor-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: #0f0f0f;
+  border-radius: 8px;
+  margin-top: 24px;
+}
+
+.ytgif-editor-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #999;
+  font-size: 13px;
+}
+
+.ytgif-editor-info-item strong {
+  color: #ccc;
+  font-weight: 600;
+}
+
+.ytgif-editor-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 24px;
+  background: #0f0f0f;
+  border-top: 1px solid #333;
+}
+
+.ytgif-editor-button {
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ytgif-editor-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.ytgif-editor-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ytgif-editor-button-secondary {
+  background: #333;
+  color: #ccc;
+}
+
+.ytgif-editor-button-secondary:hover:not(:disabled) {
+  background: #404040;
+}
+
+.ytgif-editor-button-primary {
+  background: linear-gradient(135deg, #ff0000, #cc0000);
+  color: white;
+}
+
+.ytgif-editor-button-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
+}
+
+@media (max-width: 768px) {
+  .ytgif-editor-container {
+    width: 100%;
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .ytgif-editor-body {
+    flex-direction: column;
+  }
+
+  .ytgif-editor-preview-section {
+    border-right: none;
+    border-bottom: 1px solid #333;
+  }
+
+  .ytgif-editor-controls-section {
+    width: 100%;
+  }
+}

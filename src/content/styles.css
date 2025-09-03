@@ -1,0 +1,750 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.ytgif-button {
+  @apply relative;
+}
+
+.ytgif-button.active {
+  @apply opacity-100;
+}
+
+.ytgif-button.active svg path {
+  fill: #ff0000;
+}
+
+.ytgif-button:hover {
+  @apply opacity-80;
+}
+
+.ytgif-overlay {
+  @apply absolute top-0 left-0 w-full h-full pointer-events-none z-50;
+}
+
+.ytgif-timeline-overlay {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  max-width: 800px;
+  width: 90%;
+  background: rgba(0, 0, 0, 0.9);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .ytgif-timeline-overlay {
+    width: 95%;
+    bottom: 10px;
+    max-width: none;
+  }
+}
+
+/* Theater mode adjustments */
+body[theater] .ytgif-timeline-overlay,
+.ytgif-timeline-overlay[data-theater="true"] {
+  bottom: 100px;
+}
+
+/* Fullscreen mode adjustments */
+.ytgif-timeline-overlay[data-fullscreen="true"] {
+  bottom: 80px;
+  background: rgba(0, 0, 0, 0.95);
+}
+
+/* Small player adjustments */
+.ytgif-timeline-overlay[data-compact="true"] {
+  bottom: 60px;
+  max-width: 600px;
+  width: 80%;
+}
+
+.ytgif-timeline-container {
+  padding: 16px;
+}
+
+.ytgif-timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.ytgif-timeline-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.ytgif-timeline-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.ytgif-timeline-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.ytgif-timeline-controls {
+  margin-bottom: 12px;
+}
+
+.ytgif-timeline-track {
+  position: relative;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ytgif-timeline-track:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.ytgif-timeline-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  transition: width 0.1s ease;
+}
+
+.ytgif-timeline-selector {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 16px;
+}
+
+.ytgif-timeline-handle {
+  position: absolute;
+  width: 12px;
+  height: 16px;
+  background: #ff0000;
+  border: 2px solid white;
+  border-radius: 2px;
+  cursor: grab;
+  transform: translateX(-50%);
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.ytgif-timeline-handle:hover {
+  background: #ff3333;
+  box-shadow: 0 2px 8px rgba(255, 0, 0, 0.3);
+  transform: translateX(-50%) scale(1.1);
+}
+
+.ytgif-timeline-handle:active,
+.ytgif-timeline-handle[data-dragging="true"] {
+  cursor: grabbing;
+  background: #cc0000;
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.5);
+  transform: translateX(-50%) scale(1.2);
+}
+
+.ytgif-timeline-start {
+  left: 20%;
+}
+
+.ytgif-timeline-end {
+  left: 60%;
+}
+
+.ytgif-timeline-selection {
+  position: absolute;
+  top: 4px;
+  left: 20%;
+  right: 40%;
+  height: 8px;
+  background: rgba(255, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.ytgif-timeline-info {
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.ytgif-timeline-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.ytgif-timeline-create,
+.ytgif-timeline-cancel {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.ytgif-timeline-create {
+  background: #ff0000;
+  color: white;
+}
+
+.ytgif-timeline-create:hover {
+  background: #e60000;
+}
+
+.ytgif-timeline-cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.ytgif-timeline-cancel:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Loading states */
+.ytgif-timeline-create.loading {
+  position: relative;
+  color: transparent;
+  pointer-events: none;
+}
+
+.ytgif-timeline-create.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border: 2px solid transparent;
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Enhanced button interactions */
+.ytgif-button:not(.active):hover svg path {
+  fill: rgba(255, 255, 255, 0.9);
+}
+
+.ytgif-button.active svg path {
+  fill: #ff0000;
+  filter: drop-shadow(0 0 4px rgba(255, 0, 0, 0.5));
+}
+
+/* YouTube native button styling compatibility */
+.ytgif-button.ytp-button {
+  position: relative;
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 1.2rem;
+  height: 48px;
+  line-height: 48px;
+  margin: 0;
+  outline: none;
+  overflow: hidden;
+  padding: 0;
+  text-align: center;
+  text-decoration: none;
+  transition: opacity 0.1s cubic-bezier(0.4, 0.0, 1, 1);
+  user-select: none;
+  width: 48px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ytgif-button.ytp-button:hover {
+  opacity: 1;
+}
+
+.ytgif-button.ytp-button-hover {
+  opacity: 1;
+}
+
+.ytgif-button.ytp-button-pressed {
+  opacity: 0.7;
+}
+
+.ytgif-button.ytp-button-active {
+  opacity: 1;
+}
+
+.ytgif-button.ytp-button-disabled {
+  opacity: 0.3;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Button icon styling */
+.ytgif-button-icon {
+  pointer-events: none;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Responsive design for different player sizes */
+.ytgif-player-button {
+  /* Base button styles inherited from .ytgif-button */
+}
+
+/* Small player adjustments (< 480px width) */
+.ytgif-player-button.ytgif-small-player {
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  font-size: 1rem;
+}
+
+.ytgif-small-player .ytgif-button-icon {
+  transform: scale(0.8);
+}
+
+/* Medium player adjustments (480px - 854px width) */
+.ytgif-player-button.ytgif-medium-player {
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
+  font-size: 1.1rem;
+}
+
+.ytgif-medium-player .ytgif-button-icon {
+  transform: scale(0.9);
+}
+
+/* Large player adjustments (> 854px width) */
+.ytgif-player-button.ytgif-large-player {
+  width: 48px;
+  height: 48px;
+  line-height: 48px;
+  font-size: 1.2rem;
+}
+
+/* Compact mode adjustments */
+.ytgif-player-button.ytgif-compact-mode {
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
+  margin: 0 2px;
+}
+
+.ytgif-compact-mode .ytgif-button-icon {
+  transform: scale(0.75);
+}
+
+/* Theater mode adjustments */
+.ytgif-player-button.ytgif-theater-mode {
+  width: 52px;
+  height: 52px;
+  line-height: 52px;
+  font-size: 1.3rem;
+}
+
+.ytgif-theater-mode .ytgif-button-icon {
+  transform: scale(1.1);
+}
+
+/* Fullscreen mode adjustments */
+.ytgif-player-button.ytgif-fullscreen-mode {
+  width: 56px;
+  height: 56px;
+  line-height: 56px;
+  font-size: 1.4rem;
+}
+
+.ytgif-fullscreen-mode .ytgif-button-icon {
+  transform: scale(1.2);
+}
+
+/* Theme-specific adjustments */
+.ytgif-theme-light {
+  color: #000;
+}
+
+.ytgif-theme-light:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.ytgif-theme-dark {
+  color: #fff;
+}
+
+.ytgif-theme-dark:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .ytgif-button {
+    border: 1px solid currentColor;
+  }
+  
+  .ytgif-button:hover {
+    background-color: currentColor;
+    color: var(--yt-spec-base-background, #0f0f0f);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .ytgif-button,
+  .ytgif-button-icon,
+  .ytgif-icon-indicator {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* Focus styles for accessibility */
+.ytgif-button:focus-visible {
+  outline: 2px solid #4285f4;
+  outline-offset: 2px;
+}
+
+/* Touch device optimizations */
+@media (pointer: coarse) {
+  .ytgif-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  .ytgif-player-button.ytgif-small-player {
+    min-width: 44px;
+    min-height: 44px;
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* Progress indicators */
+.ytgif-timeline-progress.animated {
+  transition: width 0.1s linear;
+}
+
+/* Error states */
+.ytgif-timeline-overlay.error {
+  border: 2px solid #ff4444;
+  background: rgba(68, 0, 0, 0.9);
+}
+
+.ytgif-timeline-create.error {
+  background: #aa0000;
+  color: white;
+}
+
+.ytgif-timeline-create.error:hover {
+  background: #880000;
+}
+
+/* Success states */
+.ytgif-timeline-overlay.success {
+  border: 2px solid #44ff44;
+}
+
+.ytgif-timeline-create.success {
+  background: #00aa00;
+  color: white;
+}
+
+/* Disabled states */
+.ytgif-timeline-create:disabled {
+  background: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: not-allowed;
+}
+
+/* Enhanced selection visualization */
+.ytgif-timeline-selection {
+  background: linear-gradient(90deg, 
+    rgba(255, 0, 0, 0.2) 0%, 
+    rgba(255, 0, 0, 0.4) 50%, 
+    rgba(255, 0, 0, 0.2) 100%
+  );
+  border: 1px solid rgba(255, 0, 0, 0.6);
+  border-radius: 4px;
+}
+
+/* Tooltip styles */
+.ytgif-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 1000;
+}
+
+.ytgif-tooltip.show {
+  opacity: 1;
+}
+
+.ytgif-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid rgba(0, 0, 0, 0.9);
+}
+
+/* Quick Presets Styles */
+.ytgif-quick-presets {
+  background: rgba(0, 0, 0, 0.85);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.ytgif-quick-presets__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.ytgif-quick-presets__title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.ytgif-quick-presets__subtitle {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.ytgif-quick-presets__buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ytgif-quick-presets__recommendation {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.ytgif-quick-presets__rec-icon {
+  font-size: 12px;
+}
+
+.ytgif-quick-presets__message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  color: #fbbf24;
+  font-size: 12px;
+  padding: 8px;
+}
+
+.ytgif-quick-presets--empty {
+  min-height: 60px;
+}
+
+/* Preset Button Styles */
+.ytgif-preset-container {
+  position: relative;
+}
+
+.ytgif-preset-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 60px;
+  position: relative;
+}
+
+.ytgif-preset-btn:hover:not(.ytgif-preset-btn--disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.ytgif-preset-btn--excellent {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.2);
+}
+
+.ytgif-preset-btn--good {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.ytgif-preset-btn--fair {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.2);
+}
+
+.ytgif-preset-btn--poor {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.ytgif-preset-btn--recommended {
+  box-shadow: 0 0 0 2px #4ade80;
+}
+
+.ytgif-preset-btn--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ytgif-preset-btn__icon {
+  font-size: 16px;
+  margin-bottom: 2px;
+}
+
+.ytgif-preset-btn__label {
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 1px;
+}
+
+.ytgif-preset-btn__duration {
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+.ytgif-preset-btn__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #4ade80;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+}
+
+/* Tooltip Styles */
+.ytgif-preset-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 8px;
+  color: #fff;
+  font-size: 11px;
+  width: 200px;
+  z-index: 1000;
+  margin-bottom: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.ytgif-preset-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.95);
+}
+
+.ytgif-preset-tooltip__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ytgif-preset-tooltip__recommended {
+  font-size: 9px;
+  background: #4ade80;
+  color: #000;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.ytgif-preset-tooltip__details > div {
+  margin-bottom: 3px;
+}
+
+.ytgif-preset-tooltip__time {
+  color: #60a5fa;
+}
+
+.ytgif-preset-tooltip__quality {
+  color: #34d399;
+}
+
+.ytgif-preset-tooltip__adjustments-title {
+  color: #fbbf24;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.ytgif-preset-tooltip__adjustment {
+  color: #d1d5db;
+  font-size: 10px;
+  margin-left: 8px;
+}
+
+/* Import editor overlay styles */
+@import './editor-overlay.css';
