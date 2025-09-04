@@ -108,3 +108,23 @@ export {
   type PreferenceChangeEvent,
   type PreferenceChangeListener
 } from './preferences';
+
+export {
+  // Clipboard Service
+  ClipboardService,
+  clipboard,
+  
+  // Types
+  type ClipboardResult
+} from './clipboard';
+
+export {
+  // Sharing Service
+  SharingService,
+  sharing,
+  
+  // Types
+  type ShareOptions,
+  type ShareResult,
+  type ShareTarget
+} from './sharing';

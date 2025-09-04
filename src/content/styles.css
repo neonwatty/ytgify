@@ -2,6 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme System CSS Custom Properties Integration */
+:root {
+  /* Default fallback values - will be overridden by theme system */
+  --ytgif-bg: #ffffff;
+  --ytgif-surface: #f9f9f9;
+  --ytgif-text-primary: #0f0f0f;
+  --ytgif-text-secondary: rgba(15, 15, 15, 0.6);
+  --ytgif-accent: #ff0000;
+  --ytgif-border: #e5e5e5;
+  --ytgif-hover: rgba(0, 0, 0, 0.05);
+  --ytgif-overlay: rgba(0, 0, 0, 0.8);
+  --ytgif-btn-bg: rgba(0, 0, 0, 0.05);
+  --ytgif-btn-hover: rgba(0, 0, 0, 0.1);
+  --ytgif-btn-active: rgba(0, 0, 0, 0.15);
+  --ytgif-success: #16a34a;
+  --ytgif-error: #dc2626;
+  --ytgif-warning: #d97706;
+  --ytgif-transition: all 0.3s ease;
+}
+
+/* Dark theme overrides */
+.ytgif-dark {
+  --ytgif-bg: #0f0f0f;
+  --ytgif-surface: #272727;
+  --ytgif-text-primary: #ffffff;
+  --ytgif-text-secondary: rgba(255, 255, 255, 0.6);
+  --ytgif-border: #3f3f3f;
+  --ytgif-hover: rgba(255, 255, 255, 0.1);
+  --ytgif-overlay: rgba(0, 0, 0, 0.9);
+  --ytgif-btn-bg: rgba(255, 255, 255, 0.1);
+  --ytgif-btn-hover: rgba(255, 255, 255, 0.2);
+  --ytgif-btn-active: rgba(255, 255, 255, 0.3);
+  --ytgif-success: #4ade80;
+  --ytgif-error: #ef4444;
+  --ytgif-warning: #f59e0b;
+}
+
 .ytgif-button {
   @apply relative;
 }
@@ -30,13 +67,14 @@
   z-index: 10000;
   max-width: 800px;
   width: 90%;
-  background: rgba(0, 0, 0, 0.9);
+  background: var(--ytgif-overlay);
+  border: 1px solid var(--ytgif-border);
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  color: white;
+  color: var(--ytgif-text-primary);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
+  transition: var(--ytgif-transition);
 }
 
 /* Responsive adjustments */
@@ -87,7 +125,7 @@ body[theater] .ytgif-timeline-overlay,
 .ytgif-timeline-close {
   background: none;
   border: none;
-  color: white;
+  color: var(--ytgif-text-primary);
   font-size: 20px;
   cursor: pointer;
   width: 24px;
@@ -96,10 +134,11 @@ body[theater] .ytgif-timeline-overlay,
   align-items: center;
   justify-content: center;
   border-radius: 4px;
+  transition: var(--ytgif-transition);
 }
 
 .ytgif-timeline-close:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--ytgif-btn-hover);
 }
 
 .ytgif-timeline-controls {
@@ -207,21 +246,23 @@ body[theater] .ytgif-timeline-overlay,
 }
 
 .ytgif-timeline-create {
-  background: #ff0000;
-  color: white;
+  background: var(--ytgif-accent);
+  color: var(--ytgif-text-primary);
+  transition: var(--ytgif-transition);
 }
 
 .ytgif-timeline-create:hover {
-  background: #e60000;
+  background: color-mix(in srgb, var(--ytgif-accent) 90%, black 10%);
 }
 
 .ytgif-timeline-cancel {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  background: var(--ytgif-btn-bg);
+  color: var(--ytgif-text-primary);
+  transition: var(--ytgif-transition);
 }
 
 .ytgif-timeline-cancel:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--ytgif-btn-hover);
 }
 
 /* Loading states */

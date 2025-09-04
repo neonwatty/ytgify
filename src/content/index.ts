@@ -20,6 +20,7 @@ import { TimelineOverlay } from './timeline-overlay';
 import { overlayStateManager } from './overlay-state';
 import { cleanupManager } from './cleanup-manager';
 import { initializeContentScriptFrameExtraction } from './frame-extractor';
+import { themeDetector, youtubeMatcher } from '@/themes';
 
 class YouTubeGifMaker {
   private gifButton: HTMLButtonElement | null = null;
@@ -40,9 +41,25 @@ class YouTubeGifMaker {
     this.setupNavigationListener();
     this.setupOverlayStateListeners();
     this.setupCleanupManager();
+    this.setupThemeSystem();
     this.setupInjectionSystem();
     this.setupFrameExtraction();
     this.findVideoElement();
+  }
+
+  // Setup theme system for automatic YouTube theme matching
+  private setupThemeSystem() {
+    // Initialize theme detection and YouTube matching
+    themeDetector.getCurrentTheme();
+    youtubeMatcher.getCurrentMapping();
+    
+    // Sync theme transitions with YouTube
+    youtubeMatcher.syncWithYouTubeTransitions();
+    
+    this.log('debug', '[Content] Theme system initialized', {
+      currentTheme: themeDetector.getCurrentTheme(),
+      themeMapping: youtubeMatcher.getCurrentMapping()
+    });
   }
 
   // Setup frame extraction for WebCodecs integration
@@ -765,6 +782,10 @@ class YouTubeGifMaker {
     if (this.navigationUnsubscribe) {
       this.navigationUnsubscribe();
     }
+    
+    // Clean up theme system
+    themeDetector.destroy();
+    youtubeMatcher.destroy();
     
     // Clean up overlay state manager
     overlayStateManager.destroy();
