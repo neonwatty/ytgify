@@ -4,6 +4,8 @@
  */
 
 import { GifSettings, TimelineSelection } from '@/types';
+import { performanceTracker } from '@/monitoring/performance-tracker';
+import { metricsCollector } from '@/monitoring/metrics-collector';
 
 export interface FrameExtractionConfig {
   startTime: number;
@@ -87,10 +89,42 @@ export class FrameExtractor {
     this.startTime = performance.now();
     this.extractedFrames = [];
     this.abortController = new AbortController();
+    
+    // Start overall extraction monitoring
+    const sessionId = `extraction-${Date.now()}`;
+    metricsCollector.startOperation(sessionId);
+    metricsCollector.recordUserAction('frame-extraction-started', {
+      config: {
+        duration: config.endTime - config.startTime,
+        frameRate: config.frameRate,
+        quality: config.quality
+      }
+    });
 
     try {
       const result = await this.performExtraction(videoElement, config);
+      
+      // Record successful completion
+      const totalTime = metricsCollector.endOperation(sessionId, 'frame-extraction', {
+        framesExtracted: result.frames.length,
+        dimensions: `${result.metadata.width}x${result.metadata.height}`
+      });
+      
+      metricsCollector.recordUserAction('frame-extraction-completed', {
+        totalFrames: result.frames.length,
+        totalTime,
+        averageTimePerFrame: totalTime / result.frames.length
+      });
+      
       return result;
+    } catch (error) {
+      // Record extraction failure
+      metricsCollector.recordError({
+        type: 'frame-extraction-error',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        context: { config }
+      });
+      throw error;
     } finally {
       this.cleanup();
     }
@@ -112,6 +146,9 @@ export class FrameExtractor {
     const duration = config.endTime - config.startTime;
     const targetFrameCount = Math.ceil(duration * config.frameRate);
     const frameInterval = 1 / config.frameRate;
+    
+    // Record memory usage before extraction
+    await performanceTracker.recordMemoryUsage();
 
     // Set up canvas dimensions based on quality and constraints
     const dimensions = this.calculateOutputDimensions(
@@ -172,6 +209,10 @@ export class FrameExtractor {
     frameIndex: number
   ): Promise<ExtractedFrame> {
     const frameStartTime = performance.now();
+    const operationId = `frame-extraction-${frameIndex}`;
+    
+    // Start monitoring this frame extraction
+    performanceTracker.startTimer(operationId);
 
     // Seek to the timestamp
     videoElement.currentTime = timestamp;
@@ -219,9 +260,25 @@ export class FrameExtractor {
 
     const extractionTime = performance.now() - frameStartTime;
     
+    // End monitoring and record metrics
+    performanceTracker.endTimer(operationId, 'frame-extraction', {
+      frameIndex,
+      timestamp,
+      dimensions: `${this.canvas.width}x${this.canvas.height}`
+    });
+    
+    // Record frame extraction metrics
+    metricsCollector.trackFrameExtraction(frameIndex, extractionTime, true);
+    
     // Log performance warning if extraction takes too long
     if (extractionTime > 100) {
       console.warn(`Frame extraction took ${extractionTime.toFixed(2)}ms (target: <100ms)`);
+      // Also record this as a performance issue
+      metricsCollector.recordError({
+        type: 'performance-warning',
+        message: `Slow frame extraction: ${extractionTime.toFixed(2)}ms`,
+        context: { frameIndex, timestamp, target: 100 }
+      });
     }
 
     return {

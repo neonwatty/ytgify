@@ -1,0 +1,252 @@
+// Chrome Extension Message Types and Interfaces
+export interface BaseMessage {
+  type: string;
+  id?: string;
+}
+
+export interface ExtractFramesRequest extends BaseMessage {
+  type: 'EXTRACT_FRAMES';
+  data: {
+    videoElement: {
+      currentTime: number;
+      duration: number;
+      videoWidth: number;
+      videoHeight: number;
+    };
+    settings: {
+      startTime: number;
+      endTime: number;
+      frameRate: number;
+      quality: 'low' | 'medium' | 'high';
+    };
+  };
+}
+
+export interface ExtractFramesResponse extends BaseMessage {
+  type: 'EXTRACT_FRAMES_RESPONSE';
+  success: boolean;
+  data?: {
+    frames: ImageData[];
+    frameCount: number;
+  };
+  error?: string;
+}
+
+export interface EncodeGifRequest extends BaseMessage {
+  type: 'ENCODE_GIF';
+  data: {
+    frames: ImageData[];
+    settings: {
+      frameRate: number;
+      width: number;
+      height: number;
+      quality: 'low' | 'medium' | 'high';
+      loop: boolean;
+    };
+    metadata: {
+      title: string;
+      description?: string;
+      youtubeUrl: string;
+      startTime: number;
+      endTime: number;
+    };
+  };
+}
+
+export interface EncodeGifResponse extends BaseMessage {
+  type: 'ENCODE_GIF_RESPONSE';
+  success: boolean;
+  data?: {
+    gifBlob: Blob;
+    thumbnailBlob?: Blob;
+    metadata: {
+      fileSize: number;
+      duration: number;
+      width: number;
+      height: number;
+    };
+  };
+  error?: string;
+}
+
+export interface GetVideoStateRequest extends BaseMessage {
+  type: 'GET_VIDEO_STATE';
+}
+
+export interface GetVideoStateResponse extends BaseMessage {
+  type: 'GET_VIDEO_STATE_RESPONSE';
+  success: boolean;
+  data?: {
+    isPlaying: boolean;
+    currentTime: number;
+    duration: number;
+    videoUrl: string;
+    title: string;
+  };
+  error?: string;
+}
+
+export interface ShowTimelineRequest extends BaseMessage {
+  type: 'SHOW_TIMELINE';
+  data: {
+    videoDuration: number;
+    currentTime: number;
+  };
+}
+
+export interface HideTimelineRequest extends BaseMessage {
+  type: 'HIDE_TIMELINE';
+}
+
+export interface TimelineSelectionUpdate extends BaseMessage {
+  type: 'TIMELINE_SELECTION_UPDATE';
+  data: {
+    startTime: number;
+    endTime: number;
+    duration: number;
+  };
+}
+
+export interface OpenEditorRequest extends BaseMessage {
+  type: 'OPEN_EDITOR';
+  data: {
+    videoUrl: string;
+    selection: {
+      startTime: number;
+      endTime: number;
+      duration: number;
+    };
+  };
+}
+
+export interface LogMessage extends BaseMessage {
+  type: 'LOG';
+  data: {
+    level: 'info' | 'warn' | 'error' | 'debug';
+    message: string;
+    context?: Record<string, unknown>;
+  };
+}
+
+export interface ErrorResponse extends BaseMessage {
+  type: 'ERROR_RESPONSE';
+  success: false;
+  error: string;
+}
+
+export interface GetJobStatusRequest extends BaseMessage {
+  type: 'GET_JOB_STATUS';
+  data: {
+    jobId: string;
+  };
+}
+
+export interface GetJobStatusResponse extends BaseMessage {
+  type: 'JOB_STATUS_RESPONSE';
+  success: boolean;
+  data?: {
+    jobId: string;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    progress: number;
+    error?: string;
+    createdAt: string;
+    completedAt?: string;
+  };
+  error?: string;
+}
+
+export interface CancelJobRequest extends BaseMessage {
+  type: 'CANCEL_JOB';
+  data: {
+    jobId: string;
+  };
+}
+
+export interface CancelJobResponse extends BaseMessage {
+  type: 'JOB_CANCEL_RESPONSE';
+  success: boolean;
+  data?: {
+    jobId: string;
+    cancelled: boolean;
+  };
+  error?: string;
+}
+
+export interface JobProgressUpdate extends BaseMessage {
+  type: 'JOB_PROGRESS_UPDATE';
+  data: {
+    jobId: string;
+    progress: number;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+  };
+}
+
+// Union type for all possible messages
+export type ExtensionMessage = 
+  | ExtractFramesRequest
+  | ExtractFramesResponse
+  | EncodeGifRequest
+  | EncodeGifResponse
+  | GetVideoStateRequest
+  | GetVideoStateResponse
+  | ShowTimelineRequest
+  | HideTimelineRequest
+  | TimelineSelectionUpdate
+  | OpenEditorRequest
+  | LogMessage
+  | ErrorResponse
+  | GetJobStatusRequest
+  | GetJobStatusResponse
+  | CancelJobRequest
+  | CancelJobResponse
+  | JobProgressUpdate;
+
+// Type guards for message validation
+export function isExtractFramesRequest(message: BaseMessage): message is ExtractFramesRequest {
+  return message.type === 'EXTRACT_FRAMES';
+}
+
+export function isEncodeGifRequest(message: BaseMessage): message is EncodeGifRequest {
+  return message.type === 'ENCODE_GIF';
+}
+
+export function isGetVideoStateRequest(message: BaseMessage): message is GetVideoStateRequest {
+  return message.type === 'GET_VIDEO_STATE';
+}
+
+export function isShowTimelineRequest(message: BaseMessage): message is ShowTimelineRequest {
+  return message.type === 'SHOW_TIMELINE';
+}
+
+export function isHideTimelineRequest(message: BaseMessage): message is HideTimelineRequest {
+  return message.type === 'HIDE_TIMELINE';
+}
+
+export function isTimelineSelectionUpdate(message: BaseMessage): message is TimelineSelectionUpdate {
+  return message.type === 'TIMELINE_SELECTION_UPDATE';
+}
+
+export function isOpenEditorRequest(message: BaseMessage): message is OpenEditorRequest {
+  return message.type === 'OPEN_EDITOR';
+}
+
+export function isLogMessage(message: BaseMessage): message is LogMessage {
+  return message.type === 'LOG';
+}
+
+// Response helper function
+export function createResponse<T extends ExtensionMessage>(
+  originalMessage: BaseMessage,
+  responseType: T['type'],
+  success: boolean,
+  data?: T extends { data: infer D } ? D : never,
+  error?: string
+): T {
+  return {
+    type: responseType,
+    id: originalMessage.id,
+    success,
+    data,
+    error,
+  } as T;
+}

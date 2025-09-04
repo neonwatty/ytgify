@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube GIF Maker",
+  "version": "1.0.0",
+  "description": "Create GIFs directly from YouTube videos with an intuitive visual interface",
+  "permissions": [
+    "storage",
+    "tabs",
+    "activeTab",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "https://*.youtube.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.youtube.com/*"
+      ],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["*.js", "*.css", "icons/*"],
+      "matches": ["https://*.youtube.com/*"]
+    }
+  ]
+}
