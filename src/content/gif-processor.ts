@@ -1,0 +1,362 @@
+// Content Script GIF Processor - Handles complete GIF creation in content script
+import { logger } from '@/lib/logger';
+import { createError } from '@/lib/errors';
+import { SimpleEncoderFactory } from '@/lib/encoders/simple-encoder-factory';
+import { FrameData, EncoderOptions } from '@/lib/encoders/base-encoder';
+
+export interface GifProcessingOptions {
+  startTime: number;
+  endTime: number;
+  frameRate?: number;
+  width?: number;
+  height?: number;
+  quality?: 'low' | 'medium' | 'high';
+}
+
+export interface GifProcessingResult {
+  blob: Blob;
+  metadata: {
+    fileSize: number;
+    duration: number;
+    frameCount: number;
+    width: number;
+    height: number;
+    id: string;
+  };
+}
+
+export class ContentScriptGifProcessor {
+  private static instance: ContentScriptGifProcessor;
+  private isProcessing = false;
+
+  private constructor() {}
+
+  public static getInstance(): ContentScriptGifProcessor {
+    if (!ContentScriptGifProcessor.instance) {
+      ContentScriptGifProcessor.instance = new ContentScriptGifProcessor();
+    }
+    return ContentScriptGifProcessor.instance;
+  }
+
+  /**
+   * Process video element to GIF entirely in content script
+   */
+  public async processVideoToGif(
+    videoElement: HTMLVideoElement,
+    options: GifProcessingOptions,
+    onProgress?: (progress: number, message: string) => void
+  ): Promise<GifProcessingResult> {
+    if (this.isProcessing) {
+      throw createError('gif', 'Already processing a GIF');
+    }
+
+    this.isProcessing = true;
+    const startTime = performance.now();
+
+    try {
+      logger.info('[ContentScriptGifProcessor] Starting GIF processing', { options });
+
+      // Step 1: Capture frames (0-40% of progress)
+      onProgress?.(5, 'Initializing frame capture...');
+      const frames = await this.captureFrames(videoElement, options, (frameProgress) => {
+        // Scale frame capture progress from 5% to 40%
+        const scaledProgress = 5 + (frameProgress * 35 / 100);
+        onProgress?.(scaledProgress, `Capturing frames... ${frameProgress}%`);
+      });
+      logger.info('[ContentScriptGifProcessor] Frames captured', { count: frames.length });
+
+      // Step 2: Encode GIF (40-95% of progress)
+      onProgress?.(40, 'Starting GIF encoding...');
+      const gifBlob = await this.encodeGif(frames, options, (encodeProgress, encodeMessage) => {
+        // Scale encoding progress from 40% to 95%
+        const scaledProgress = 40 + (encodeProgress * 55 / 100);
+        onProgress?.(scaledProgress, encodeMessage || 'Encoding GIF...');
+      });
+      logger.info('[ContentScriptGifProcessor] GIF encoded', { size: gifBlob.size });
+
+      // Step 3: Generate metadata
+      const metadata = {
+        fileSize: gifBlob.size,
+        duration: options.endTime - options.startTime,
+        frameCount: frames.length,
+        width: frames[0]?.width || 320,
+        height: frames[0]?.height || 240,
+        id: `gif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      };
+
+      onProgress?.(100, 'Complete!');
+
+      const processingTime = performance.now() - startTime;
+      logger.info('[ContentScriptGifProcessor] Processing complete', { 
+        processingTime,
+        metadata 
+      });
+
+      return { blob: gifBlob, metadata };
+
+    } finally {
+      this.isProcessing = false;
+    }
+  }
+
+  /**
+   * Capture frames from video element
+   */
+  private async captureFrames(
+    videoElement: HTMLVideoElement,
+    options: GifProcessingOptions,
+    onProgress?: (progress: number) => void
+  ): Promise<HTMLCanvasElement[]> {
+    const { startTime, endTime, frameRate = 5, width = 240, height = 180 } = options;
+    const duration = endTime - startTime;
+    // Calculate proper frame count based on duration and frame rate
+    const rawFrameCount = Math.ceil(duration * frameRate);
+    const frameCount = rawFrameCount; // No artificial limit
+    const frameInterval = duration / frameCount;
+
+    console.log('[ContentScriptGifProcessor] Capturing frames', {
+      frameCount,
+      frameInterval,
+      dimensions: { width, height }
+    });
+    logger.info('[ContentScriptGifProcessor] Capturing frames', {
+      frameCount,
+      frameInterval,
+      dimensions: { width, height }
+    });
+
+    // Calculate actual dimensions maintaining aspect ratio
+    const aspectRatio = videoElement.videoWidth / videoElement.videoHeight;
+    let actualWidth = width;
+    let actualHeight = height;
+    
+    if (actualWidth / actualHeight > aspectRatio) {
+      actualWidth = actualHeight * aspectRatio;
+    } else {
+      actualHeight = actualWidth / aspectRatio;
+    }
+    
+    actualWidth = Math.floor(actualWidth / 2) * 2;
+    actualHeight = Math.floor(actualHeight / 2) * 2;
+
+    const frames: HTMLCanvasElement[] = [];
+    
+    // Store original state
+    const originalTime = videoElement.currentTime;
+    const wasPlaying = !videoElement.paused;
+    
+    // Pause for stable capture
+    videoElement.pause();
+
+    for (let i = 0; i < frameCount; i++) {
+      const captureTime = startTime + (i * frameInterval);
+      
+      // Seek to capture time
+      videoElement.currentTime = captureTime;
+      
+      // Wait for seek to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Create canvas for this frame
+      const canvas = document.createElement('canvas');
+      canvas.width = actualWidth;
+      canvas.height = actualHeight;
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        throw createError('gif', 'Failed to create canvas context');
+      }
+      
+      // Draw video frame to canvas
+      ctx.drawImage(videoElement, 0, 0, actualWidth, actualHeight);
+      frames.push(canvas);
+      
+      // Export frame data for verification (in dev mode)
+      if (typeof window !== 'undefined') {
+        const win = window as any;
+        if (!win.__DEBUG_CAPTURED_FRAMES) {
+          win.__DEBUG_CAPTURED_FRAMES = [];
+        }
+        // Convert canvas to data URL for debugging
+        const frameDataUrl = canvas.toDataURL('image/png');
+        win.__DEBUG_CAPTURED_FRAMES.push({
+          frameNumber: i + 1,
+          videoTime: captureTime,
+          width: actualWidth,
+          height: actualHeight,
+          dataUrl: frameDataUrl
+        });
+      }
+      
+      // Report progress
+      const captureProgress = Math.round(((i + 1) / frameCount) * 100);
+      onProgress?.(captureProgress);
+      
+      console.log(`[ContentScriptGifProcessor] Captured frame ${i + 1}/${frameCount} at time ${captureTime.toFixed(2)}s`);
+      logger.debug(`[ContentScriptGifProcessor] Captured frame ${i + 1}/${frameCount}`);
+    }
+    
+    // Restore video state
+    videoElement.currentTime = originalTime;
+    if (wasPlaying) {
+      videoElement.play().catch(() => {});
+    }
+
+    return frames;
+  }
+
+  /**
+   * Encode frames to GIF using encoder abstraction
+   */
+  private async encodeGif(
+    frames: HTMLCanvasElement[],
+    options: GifProcessingOptions,
+    onProgress?: (progress: number, message: string) => void
+  ): Promise<Blob> {
+    const { frameRate = 10, quality = 'medium' } = options;
+    
+    try {
+      console.log('[ContentScriptGifProcessor] Creating encoder with new abstraction');
+      
+      // Create encoder options
+      const encoderOptions: EncoderOptions = {
+        width: frames[0].width,
+        height: frames[0].height,
+        quality: quality,
+        frameRate: frameRate,
+        loop: 0, // Loop forever
+        debug: true // Enable debug logging
+      };
+      
+      // Create encoder using factory
+      const encoder = SimpleEncoderFactory.createEncoder('gifenc', encoderOptions);
+      console.log('[ContentScriptGifProcessor] Encoder created successfully');
+      
+      // Convert canvas frames to encoder format
+      const frameData: FrameData[] = frames.map((canvas, index) => {
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          throw new Error(`Failed to get context for frame ${index + 1}`);
+        }
+        
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        return {
+          data: imageData,
+          width: canvas.width,
+          height: canvas.height
+        };
+      });
+      
+      console.log(`[ContentScriptGifProcessor] Prepared ${frameData.length} frames for encoding`);
+      
+      // Encode frames with progress callback
+      const result = await encoder.encode(frameData, (progress) => {
+        console.log(`[ContentScriptGifProcessor] Encoding progress: ${progress.percent}%`);
+        onProgress?.(progress.percent, progress.message);
+      });
+      
+      console.log('[ContentScriptGifProcessor] Encoding complete!', {
+        size: result.size,
+        frameCount: result.frameCount,
+        duration: result.duration
+      });
+      
+      logger.info('[ContentScriptGifProcessor] GIF encoding finished with gifenc', { 
+        size: result.size,
+        frameCount: result.frameCount,
+        duration: result.duration
+      });
+      
+      return result.blob;
+      
+    } catch (error) {
+      console.error('[ContentScriptGifProcessor] Failed to encode GIF:', error);
+      logger.error('[ContentScriptGifProcessor] Failed to encode GIF', { error });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw createError('gif', `Failed to encode GIF: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Save GIF to IndexedDB
+   */
+  public async saveGifToStorage(blob: Blob, metadata: any): Promise<string> {
+    console.log('[GifProcessor] saveGifToStorage called', { blobSize: blob.size, metadata });
+    return new Promise((resolve, reject) => {
+      const dbName = 'YouTubeGifStore';
+      console.log('[GifProcessor] Opening database:', dbName);
+      const request = indexedDB.open(dbName, 3);
+
+      request.onerror = () => {
+        reject(createError('storage', 'Failed to open IndexedDB'));
+      };
+
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        
+        if (!db.objectStoreNames.contains('gifs')) {
+          const gifsStore = db.createObjectStore('gifs', { keyPath: 'id' });
+          gifsStore.createIndex('createdAt', 'metadata.createdAt', { unique: false });
+        }
+      };
+
+      request.onsuccess = () => {
+        const db = request.result;
+        const transaction = db.transaction(['gifs'], 'readwrite');
+        const store = transaction.objectStore('gifs');
+
+        const gifData = {
+          id: metadata.id,
+          blob,
+          metadata: {
+            ...metadata,
+            createdAt: new Date().toISOString(),
+            url: window.location.href,
+            title: document.title
+          }
+        };
+
+        const addRequest = store.add(gifData);
+
+        addRequest.onsuccess = () => {
+          console.log('[GifProcessor] GIF successfully saved to IndexedDB', { id: metadata.id });
+          logger.info('[ContentScriptGifProcessor] GIF saved to IndexedDB', { id: metadata.id });
+          resolve(metadata.id);
+        };
+
+        addRequest.onerror = () => {
+          reject(createError('storage', 'Failed to save GIF to IndexedDB'));
+        };
+      };
+    });
+  }
+
+  /**
+   * Trigger download of GIF
+   */
+  public async downloadGif(blob: Blob, filename?: string): Promise<void> {
+    const url = URL.createObjectURL(blob);
+    const name = filename || `youtube-gif-${Date.now()}.gif`;
+
+    // Send download request to background script
+    chrome.runtime.sendMessage({
+      type: 'DOWNLOAD_GIF',
+      data: {
+        url,
+        filename: name
+      }
+    }, (response) => {
+      // Clean up blob URL after download starts
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      
+      if (response?.success) {
+        logger.info('[ContentScriptGifProcessor] Download initiated', { filename: name });
+      } else {
+        logger.error('[ContentScriptGifProcessor] Download failed', { error: response?.error });
+      }
+    });
+  }
+}
+
+// Export singleton instance
+export const gifProcessor = ContentScriptGifProcessor.getInstance();

@@ -1,7 +1,8 @@
 // Content script frame extractor for WebCodecs integration
 import { logger } from '@/lib/logger';
 import { createError } from '@/lib/errors';
-import { extractVideoFrames } from '@/lib/video-processor';
+import { extractFramesSimple } from '@/lib/simple-frame-extractor';
+import { captureInstantFrames } from '@/lib/instant-frame-capture';
 
 export interface ContentFrameExtractionRequest {
   type: 'CONTENT_SCRIPT_EXTRACT_FRAMES';
@@ -32,7 +33,9 @@ export class ContentScriptFrameExtractor {
   private isProcessing = false;
 
   private constructor() {
-    this.initializeMessageHandling();
+    // Message handling is now done in the main content script
+    // to avoid duplicate listeners
+    logger.info('[ContentScriptFrameExtractor] Initialized (message handling via main content script)');
   }
 
   public static getInstance(): ContentScriptFrameExtractor {
@@ -44,23 +47,34 @@ export class ContentScriptFrameExtractor {
 
   // Initialize message handling from background script
   private initializeMessageHandling(): void {
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      if (message.type === 'CONTENT_SCRIPT_EXTRACT_FRAMES') {
-        this.handleFrameExtractionRequest(message as ContentFrameExtractionRequest, sendResponse);
-        return true; // Indicate async response
-      }
-      return false;
-    });
+    // Check if chrome.runtime is available
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+      chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.type === 'CONTENT_SCRIPT_EXTRACT_FRAMES') {
+          this.handleFrameExtractionRequest(message as ContentFrameExtractionRequest, sendResponse);
+          return true; // Indicate async response
+        }
+        return false;
+      });
 
-    logger.info('[ContentScriptFrameExtractor] Message handling initialized');
+      logger.info('[ContentScriptFrameExtractor] Message handling initialized');
+    } else {
+      logger.warn('[ContentScriptFrameExtractor] Chrome runtime not available for message handling');
+    }
   }
 
   // Handle frame extraction requests from background script
-  private async handleFrameExtractionRequest(
+  public async handleFrameExtractionRequest(
     request: ContentFrameExtractionRequest,
     sendResponse: (response: ContentFrameExtractionResponse) => void
   ): Promise<void> {
+    logger.info('[ContentScriptFrameExtractor] handleFrameExtractionRequest called', {
+      isProcessing: this.isProcessing,
+      requestData: request.data
+    });
+    
     if (this.isProcessing) {
+      logger.warn('[ContentScriptFrameExtractor] Already processing, rejecting request');
       sendResponse({
         frames: []
       });
@@ -81,10 +95,20 @@ export class ContentScriptFrameExtractor {
       });
 
       // Find the active video element
+      logger.info('[ContentScriptFrameExtractor] Finding video element');
       const videoElement = this.findActiveVideoElement();
       if (!videoElement) {
+        logger.error('[ContentScriptFrameExtractor] No video element found!');
         throw createError('video', 'No active video element found on page');
       }
+      logger.info('[ContentScriptFrameExtractor] Video element found', {
+        width: videoElement.videoWidth,
+        height: videoElement.videoHeight,
+        duration: videoElement.duration,
+        currentTime: videoElement.currentTime,
+        paused: videoElement.paused,
+        readyState: videoElement.readyState
+      });
 
       // Prepare video processing options
       const processingOptions = {
@@ -93,8 +117,7 @@ export class ContentScriptFrameExtractor {
         frameRate: request.data.frameRate,
         quality: request.data.quality,
         maxWidth: request.data.targetWidth,
-        maxHeight: request.data.targetHeight,
-        enableWebCodecs: true
+        maxHeight: request.data.targetHeight
       };
 
       // Set up progress tracking
@@ -106,16 +129,85 @@ export class ContentScriptFrameExtractor {
         });
       };
 
-      // Extract frames using the video processor
-      const result = await extractVideoFrames(videoElement, processingOptions, onProgress);
+      // Try simplified extractor with timeout
+      let result;
+      const extractionTimeout = new Promise<never>((_, reject) => 
+        setTimeout(() => {
+          logger.error('[ContentScriptFrameExtractor] Extraction timeout after 15s');
+          reject(new Error('Extraction timeout'));
+        }, 15000)
+      );
+      
+      logger.info('[ContentScriptFrameExtractor] Starting extractFramesSimple with timeout');
+      try {
+        result = await Promise.race([
+          extractFramesSimple(videoElement, processingOptions, onProgress),
+          extractionTimeout
+        ]);
+        logger.info('[ContentScriptFrameExtractor] extractFramesSimple completed', {
+          frameCount: result.frames.length,
+          method: result.metadata.extractionMethod
+        });
+      } catch (timeoutError) {
+        logger.warn('[ContentScriptFrameExtractor] Simple extraction timed out, using instant capture', {
+          error: timeoutError instanceof Error ? timeoutError.message : 'Unknown error'
+        });
+        
+        // Fallback to instant capture
+        const instantFrames = await captureInstantFrames(
+          videoElement,
+          request.data.startTime,
+          request.data.endTime,
+          {
+            frameCount: Math.ceil((request.data.endTime - request.data.startTime) * request.data.frameRate),
+            width: request.data.targetWidth,
+            height: request.data.targetHeight
+          }
+        );
+        
+        result = {
+          frames: instantFrames,
+          metadata: {
+            totalFrames: instantFrames.length,
+            actualFrameRate: instantFrames.length / (request.data.endTime - request.data.startTime),
+            dimensions: { width: request.data.targetWidth, height: request.data.targetHeight },
+            duration: request.data.endTime - request.data.startTime,
+            extractionMethod: 'instant-fallback',
+            processingTime: 0
+          }
+        };
+      }
 
-      // Send response back to background script
-      const response: ContentFrameExtractionResponse = {
-        frames: result.frames,
-        metadata: result.metadata
-      };
+      // Chrome message size limit workaround: Send frames in chunks
+      logger.info('[ContentScriptFrameExtractor] Preparing response with frame chunks');
+      
+      // Convert frames to transferable format (smaller)
+      const compressedFrames = result.frames.map(frame => ({
+        width: frame.width,
+        height: frame.height,
+        data: Array.from(frame.data) // Convert Uint8ClampedArray to regular array
+      }));
+      
+      // Send response with frames
+      // Send all frames - Chrome can handle larger messages in Manifest V3
+      try {
+        const response: ContentFrameExtractionResponse = {
+          frames: result.frames, // Send all frames
+          metadata: result.metadata
+        };
+        
+        logger.info('[ContentScriptFrameExtractor] Sending complete frame response', {
+          frameCount: result.frames.length
+        });
 
-      sendResponse(response);
+        sendResponse(response);
+      } catch (error) {
+        logger.error('[ContentScriptFrameExtractor] Failed to send frames, sending empty response', { error });
+        sendResponse({
+          frames: [],
+          metadata: result.metadata
+        });
+      }
 
       logger.info('[ContentScriptFrameExtractor] Frame extraction completed successfully', {
         frameCount: result.frames.length,
@@ -253,11 +345,10 @@ export class ContentScriptFrameExtractor {
         frameRate: 1,
         quality: 'low' as const,
         maxWidth: 320,
-        maxHeight: 240,
-        enableWebCodecs: true
+        maxHeight: 240
       };
 
-      const result = await extractVideoFrames(video, testOptions);
+      const result = await extractFramesSimple(video, testOptions);
       
       logger.info('[ContentScriptFrameExtractor] Test frame extraction successful', {
         frameCount: result.frames.length,

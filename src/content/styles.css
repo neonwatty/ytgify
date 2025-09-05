@@ -39,12 +39,281 @@
   --ytgif-warning: #f59e0b;
 }
 
+/* Progress Indicator Styles */
+.ytgif-progress-container {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: var(--ytgif-surface);
+  border-radius: 8px;
+  border: 1px solid var(--ytgif-border);
+}
+
+.ytgif-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.ytgif-progress-stage {
+  font-weight: 600;
+  color: var(--ytgif-text-primary);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ytgif-progress-percentage {
+  font-weight: 700;
+  color: var(--ytgif-accent);
+  font-size: 0.875rem;
+}
+
+.ytgif-progress-bar-wrapper {
+  width: 100%;
+  height: 6px;
+  background: var(--ytgif-btn-bg);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.ytgif-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--ytgif-accent) 0%, #ff4500 100%);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.ytgif-progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: progress-shimmer 1.5s infinite;
+}
+
+@keyframes progress-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.ytgif-progress-message {
+  font-size: 0.8125rem;
+  color: var(--ytgif-text-secondary);
+  line-height: 1.4;
+}
+
 .ytgif-button {
   @apply relative;
 }
 
 .ytgif-button.active {
   @apply opacity-100;
+}
+
+/* GIF Preview Modal Styles */
+.ytgif-preview-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.ytgif-preview-modal--visible {
+  opacity: 1;
+}
+
+.ytgif-preview-modal__content {
+  background: #1a1a1a;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.ytgif-preview-modal__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.ytgif-preview-modal__close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.ytgif-preview-modal__header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.ytgif-preview-modal__header h3 {
+  color: #fff;
+  font-size: 20px;
+  margin: 0;
+}
+
+.ytgif-preview-modal__image-container {
+  position: relative;
+  margin-bottom: 16px;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ytgif-preview-modal__image,
+.ytgif-preview-modal__canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.ytgif-preview-modal__controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ytgif-preview-modal__play-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.ytgif-preview-modal__play-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.ytgif-preview-modal__frame-indicator {
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.ytgif-preview-modal__scrubber {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  outline: none;
+}
+
+.ytgif-preview-modal__scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #ff0000;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.ytgif-preview-modal__scrubber::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #ff0000;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+.ytgif-preview-modal__metadata {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  color: #888;
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+
+.ytgif-preview-modal__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.ytgif-preview-modal__button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ytgif-preview-modal__button--primary {
+  background: #ff0000;
+  color: #fff;
+}
+
+.ytgif-preview-modal__button--primary:hover {
+  background: #cc0000;
+}
+
+.ytgif-preview-modal__button--secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.ytgif-preview-modal__button--secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.ytgif-preview-modal__button-icon {
+  font-size: 16px;
 }
 
 .ytgif-button.active svg path {

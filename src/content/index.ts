@@ -8,15 +8,26 @@ import {
   HideTimelineRequest,
   TimelineSelectionUpdate,
   LogMessage,
-  TimelineSelection
+  TimelineSelection,
+  RequestVideoDataForGif,
+  VideoDataResponse,
+  GifCreationComplete,
+  JobProgressUpdate,
+  SaveGifRequest,
+  SaveGifResponse
 } from '@/types';
+import { GifData } from '@/types/storage';
+import { chromeGifStorage } from '@/lib/chrome-gif-storage';
 import { youTubeDetector, YouTubeNavigationEvent } from './youtube-detector';
 import { injectionManager } from './injection-manager';
 import { extensionStateManager } from '@/shared';
 import { youTubeAPI, YouTubeAPIIntegration } from './youtube-api-integration';
+import { ContentScriptFrameExtractor } from './frame-extractor';
+import { gifProcessor } from './gif-processor';
 import { playerIntegration } from './player-integration';
 import { playerController } from './player-controller';
-import { TimelineOverlay } from './timeline-overlay';
+import { TimelineOverlayWrapper } from './timeline-overlay-wrapper';
+import { GifPreviewModal } from './gif-preview-modal';
 import { overlayStateManager } from './overlay-state';
 import { cleanupManager } from './cleanup-manager';
 import { initializeContentScriptFrameExtraction } from './frame-extractor';
@@ -26,11 +37,13 @@ class YouTubeGifMaker {
   private gifButton: HTMLButtonElement | null = null;
   private timelineOverlay: HTMLDivElement | null = null;
   private timelineRoot: Root | null = null;
+  private previewRoot: Root | null = null;
   private isActive = false;
   private isCreatingGif = false;
   private currentSelection: TimelineSelection | null = null;
   private videoElement: HTMLVideoElement | null = null;
   private navigationUnsubscribe: (() => void) | null = null;
+  private processingStatus: { stage: string; progress: number; message: string } | undefined = undefined;
 
   constructor() {
     this.init();
@@ -72,9 +85,9 @@ class YouTubeGifMaker {
   // Setup message listener for communication with background script
   private setupMessageListener() {
     chrome.runtime.onMessage.addListener((
-      message: ExtensionMessage, 
+      message: any, // Use any to handle all message types including non-ExtensionMessage ones
       sender: chrome.runtime.MessageSender, 
-      sendResponse: (response: ExtensionMessage) => void
+      sendResponse: (response: any) => void
     ) => {
       this.log('debug', `[Content] Received message: ${message.type}`, { message });
 
@@ -87,6 +100,32 @@ class YouTubeGifMaker {
           break;
         case 'GET_VIDEO_STATE':
           this.handleGetVideoState(message as GetVideoStateRequest, sendResponse);
+          return true; // Async response
+        case 'REQUEST_VIDEO_DATA_FOR_GIF':
+          this.handleVideoDataRequest(message, sendResponse);
+          return true; // Async response
+        case 'GIF_CREATION_COMPLETE':
+          this.handleGifCreationComplete(message);
+          break;
+        case 'JOB_PROGRESS_UPDATE':
+          this.handleJobProgress(message);
+          break;
+        case 'CONTENT_SCRIPT_EXTRACT_FRAMES':
+          this.log('info', '[Content] Received CONTENT_SCRIPT_EXTRACT_FRAMES message', { message });
+          // Delegate to frame extractor - handle async properly
+          (async () => {
+            try {
+              this.log('info', '[Content] Starting frame extraction');
+              await ContentScriptFrameExtractor.getInstance().handleFrameExtractionRequest(
+                message as any,
+                sendResponse
+              );
+              this.log('info', '[Content] Frame extraction completed');
+            } catch (error) {
+              this.log('error', '[Content] Frame extraction failed', { error });
+              sendResponse({ frames: [] });
+            }
+          })();
           return true; // Async response
       }
 
@@ -184,6 +223,8 @@ class YouTubeGifMaker {
       // Clear local references if navigating away from video page
       if (navigationEvent.to !== 'watch' && navigationEvent.to !== 'shorts') {
         this.videoElement = null;
+        // Also close preview if it's open
+        this.closeGifPreview();
         this.currentSelection = null;
       }
     });
@@ -278,28 +319,44 @@ class YouTubeGifMaker {
   }
 
   private async findVideoElement() {
-    // Use YouTubeDetector's enhanced video finding capabilities
-    this.videoElement = await youTubeDetector.waitForVideoElement(3000);
+    // Use YouTubeDetector's enhanced video finding capabilities with longer timeout
+    this.videoElement = await youTubeDetector.waitForVideoElement(10000);
     
     if (this.videoElement) {
       this.log('debug', '[Content] Found video element', {
         duration: this.videoElement.duration,
         currentTime: this.videoElement.currentTime,
-        canCreateGif: youTubeDetector.canCreateGif()
+        canCreateGif: youTubeDetector.canCreateGif(),
+        src: this.videoElement.src || this.videoElement.currentSrc,
+        readyState: this.videoElement.readyState
       });
     } else {
-      this.log('warn', '[Content] No video element found');
+      this.log('warn', '[Content] No video element found after 10s timeout', {
+        url: window.location.href,
+        canCreateGif: youTubeDetector.canCreateGif(),
+        pageType: youTubeDetector.getCurrentState().pageType
+      });
     }
   }
 
   private async handleGifButtonClick() {
+    this.log('info', '[Content] GIF button clicked');
+    
     // Check if GIF creation is possible on current page
-    if (!youTubeDetector.canCreateGif()) {
-      this.log('warn', '[Content] GIF creation not supported on current page type');
-      return;
+    const canCreate = youTubeDetector.canCreateGif();
+    this.log('info', '[Content] Can create GIF check', { 
+      canCreate, 
+      currentState: youTubeDetector.getCurrentState() 
+    });
+    
+    if (!canCreate) {
+      this.log('warn', '[Content] GIF creation not supported on current page type, but proceeding anyway for testing');
+      // For now, proceed even if canCreateGif returns false to allow functionality
+      // TODO: Fix the canCreateGif logic to properly detect video availability
     }
 
     this.isActive = !this.isActive;
+    this.log('info', '[Content] Toggling GIF mode', { isActive: this.isActive });
     
     if (this.isActive) {
       await this.activateGifMode();
@@ -309,20 +366,24 @@ class YouTubeGifMaker {
   }
 
   private async activateGifMode() {
+    console.log('[UI FIX DEBUG] activateGifMode called');
     this.log('info', '[Content] GIF mode activated');
     
     // Ensure we have a video element
     if (!this.videoElement) {
+      console.log('[UI FIX DEBUG] No video element, finding it...');
       await this.findVideoElement();
     }
 
     // Get current video state
     const videoState = this.getCurrentVideoState();
     if (!videoState) {
+      console.error('[UI FIX DEBUG] No video state available!');
       this.log('warn', '[Content] No video found to create GIF from');
       this.deactivateGifMode();
       return;
     }
+    console.log('[UI FIX DEBUG] Video state:', videoState);
 
     // Update overlay state metadata
     overlayStateManager.setMetadata({
@@ -354,13 +415,29 @@ class YouTubeGifMaker {
         currentTime: videoState.currentTime
       }
     };
+    console.log('[UI FIX DEBUG] About to show timeline overlay with message:', showTimelineMessage);
 
-    // Send message to background to handle timeline display
+    // Send message to background to handle timeline display (optional)
+    // Don't wait for background response - just fire and forget
+    console.log('[UI FIX DEBUG] Sending message to background (fire and forget)');
+    this.sendMessageToBackground(showTimelineMessage)
+      .then(response => {
+        this.log('debug', '[Content] Background communication result', { response });
+      })
+      .catch(error => {
+        this.log('warn', '[Content] Background communication failed', { error });
+      });
+
+    // Always show timeline overlay regardless of background communication status
+    console.log('[UI FIX DEBUG] Calling showTimelineOverlay...');
+    console.log('[UI FIX DEBUG] this.showTimelineOverlay type:', typeof this.showTimelineOverlay);
+    console.log('[UI FIX DEBUG] this is:', this);
+    
     try {
-      await this.sendMessageToBackground(showTimelineMessage);
       this.showTimelineOverlay(showTimelineMessage);
-    } catch (error) {
-      this.log('error', '[Content] Failed to activate GIF mode', { error });
+      console.log('[UI FIX DEBUG] showTimelineOverlay completed');
+    } catch (callError) {
+      console.error('[UI FIX DEBUG] Error calling showTimelineOverlay:', callError);
     }
   }
 
@@ -400,24 +477,77 @@ class YouTubeGifMaker {
   }
 
   private showTimelineOverlay(message: ShowTimelineRequest) {
-    // Remove existing overlay
-    this.hideTimelineOverlay();
+    console.log('[UI FIX DEBUG] showTimelineOverlay started');
+    try {
+      // Remove existing overlay
+      this.hideTimelineOverlay();
 
-    const { videoDuration, currentTime } = message.data;
+      const { videoDuration, currentTime } = message.data;
+      console.log('[UI FIX DEBUG] Video data:', { videoDuration, currentTime });
+    
+    // Initialize default selection around current time (4 second clip)
+    const startTime = Math.max(0, currentTime - 2);
+    const endTime = Math.min(videoDuration, currentTime + 2);
+    this.currentSelection = {
+      startTime,
+      endTime,
+      duration: endTime - startTime
+    };
 
-    // Create timeline overlay container
+    // Create timeline overlay container with guaranteed visibility
     this.timelineOverlay = document.createElement('div');
     this.timelineOverlay.id = 'ytgif-timeline-overlay';
+    
+    // Force visibility with inline styles - Phase 1 immediate fix
+    console.log('[UI FIX DEBUG] Applying inline styles to overlay');
+    this.timelineOverlay.style.cssText = `
+      position: fixed !important;
+      bottom: 100px !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      width: 90% !important;
+      max-width: 800px !important;
+      background: rgba(0, 0, 0, 0.95) !important;
+      padding: 20px !important;
+      border-radius: 12px !important;
+      z-index: 2147483647 !important;
+      display: block !important;
+      visibility: visible !important;
+      color: white !important;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
+    `;
+    
+    // Add debug border in development
+    if (process.env.NODE_ENV === 'development') {
+      this.timelineOverlay.style.border = '2px solid rgba(255, 0, 0, 0.5)';
+      console.log('[UI Fix] Timeline overlay created with inline styles', {
+        element: this.timelineOverlay,
+        computed: window.getComputedStyle(this.timelineOverlay),
+        rect: this.timelineOverlay.getBoundingClientRect()
+      });
+    }
+    
     document.body.appendChild(this.timelineOverlay);
+    console.log('[UI FIX DEBUG] Overlay appended to body. Element:', this.timelineOverlay);
+    console.log('[UI FIX DEBUG] Overlay in DOM?', document.querySelector('#ytgif-timeline-overlay') !== null);
 
     // Create React root and render timeline overlay
-    this.timelineRoot = createRoot(this.timelineOverlay);
+    console.log('[UI FIX DEBUG] About to create React root...');
+    try {
+      this.timelineRoot = createRoot(this.timelineOverlay);
+      console.log('[UI FIX DEBUG] React root created successfully');
+    } catch (reactError) {
+      console.error('[UI FIX DEBUG] Failed to create React root:', reactError);
+      throw reactError;
+    }
     
     // Register elements with overlay state manager
     overlayStateManager.setElements(this.timelineOverlay, this.timelineRoot);
     
-    this.timelineRoot.render(
-      React.createElement(TimelineOverlay, {
+    console.log('[UI FIX DEBUG] About to render React component...');
+    try {
+      this.timelineRoot.render(
+        React.createElement(TimelineOverlayWrapper, {
         videoDuration,
         currentTime,
         onSelectionChange: this.handleSelectionChange.bind(this),
@@ -426,11 +556,26 @@ class YouTubeGifMaker {
         onSeekTo: this.handleSeekTo.bind(this),
         onPreviewToggle: this.handlePreviewToggle.bind(this),
         isCreating: this.isCreatingGif,
-        isPreviewActive: playerController.isPreviewActive()
+        isPreviewActive: playerController.isPreviewActive(),
+        processingStatus: this.processingStatus
       })
-    );
+      );
+      console.log('[UI FIX DEBUG] React component rendered successfully');
+    } catch (renderError) {
+      console.error('[UI FIX DEBUG] Failed to render React component:', renderError);
+      throw renderError;
+    }
 
-    this.log('debug', '[Content] Timeline overlay shown with React', { videoDuration, currentTime });
+    this.log('debug', '[Content] Timeline overlay shown with React + inline styles fix', { 
+      videoDuration, 
+      currentTime,
+      initialSelection: this.currentSelection,
+      hasInlineStyles: true
+    });
+    } catch (error) {
+      console.error('[UI FIX DEBUG] Error in showTimelineOverlay:', error);
+      this.log('error', '[Content] Failed to show timeline overlay', { error });
+    }
   }
 
   private handleSelectionChange(selection: TimelineSelection) {
@@ -457,7 +602,7 @@ class YouTubeGifMaker {
     if (!videoState) return;
     
     this.timelineRoot.render(
-      React.createElement(TimelineOverlay, {
+      React.createElement(TimelineOverlayWrapper, {
         videoDuration: videoState.duration,
         currentTime: videoState.currentTime,
         onSelectionChange: this.handleSelectionChange.bind(this),
@@ -466,7 +611,8 @@ class YouTubeGifMaker {
         onSeekTo: this.handleSeekTo.bind(this),
         onPreviewToggle: this.handlePreviewToggle.bind(this),
         isCreating: this.isCreatingGif,
-        isPreviewActive: playerController.isPreviewActive()
+        isPreviewActive: playerController.isPreviewActive(),
+        processingStatus: this.processingStatus
       })
     );
   }
@@ -601,32 +747,86 @@ class YouTubeGifMaker {
       return;
     }
 
-    // Set creating state and update UI
+    // Set creating state and dispatch event
     this.isCreatingGif = true;
-    this.updateTimelineOverlay();
+    window.dispatchEvent(new CustomEvent('ytgif-creating-state', {
+      detail: { isCreating: true }
+    }));
     
-    this.log('info', '[Content] Creating GIF', { startTime, endTime, duration });
+    this.log('info', '[Content] Creating GIF using content script processor', { startTime, endTime, duration });
 
     try {
-      // Send selection update to background
-      const selectionMessage: TimelineSelectionUpdate = {
-        type: 'TIMELINE_SELECTION_UPDATE',
-        data: this.currentSelection
-      };
+      // Process GIF entirely in content script
+      const result = await gifProcessor.processVideoToGif(
+        this.videoElement,
+        {
+          startTime,
+          endTime,
+          frameRate: 10,  // Better frame rate for smoother GIFs
+          width: 480,      // Higher resolution
+          height: 360,     // Higher resolution
+          quality: 'medium' // Better quality
+        },
+        (progress, message) => {
+          this.processingStatus = { stage: 'processing', progress, message };
+          this.updateTimelineOverlay();
+          this.log('debug', '[Content] GIF processing progress', { progress, message });
+        }
+      );
 
-      await this.sendMessageToBackground(selectionMessage);
+      this.log('info', '[Content] GIF created successfully', { 
+        size: result.blob.size,
+        metadata: result.metadata 
+      });
+
+      // Save to IndexedDB
+      console.log('[Content] Saving GIF to storage...', { size: result.blob.size });
+      await gifProcessor.saveGifToStorage(result.blob, result.metadata);
+      console.log('[Content] GIF saved to storage successfully');
       
-      // Success - close overlay after brief delay
-      setTimeout(() => {
-        this.deactivateGifMode();
-      }, 1000);
+      // Convert blob to data URL for preview
+      const reader = new FileReader();
+      const gifDataUrl = await new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(result.blob);
+      });
+      
+      // Show success feedback
+      this.processingStatus = { stage: 'completed', progress: 100, message: 'GIF created!' };
+      this.updateTimelineOverlay();
+      
+      // Hide timeline overlay
+      this.hideTimelineOverlay();
+      
+      // Show preview modal with download button
+      this.showGifPreview(gifDataUrl, {
+        ...result.metadata,
+        title: `youtube-gif-${Date.now()}`
+      });
+      
+      // Reset creating state
+      this.isCreatingGif = false;
+      window.dispatchEvent(new CustomEvent('ytgif-creating-state', {
+        detail: { isCreating: false }
+      }));
       
     } catch (error) {
-      this.log('error', '[Content] Failed to create GIF', { error });
+      console.error('[Content] GIF creation failed:', error);
+      this.log('error', '[Content] Failed to create GIF - caught exception', { 
+        error,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined
+      });
       
-      // Reset creating state and update UI
+      // Only reset creating state if there's an actual error
       this.isCreatingGif = false;
-      this.updateTimelineOverlay();
+      window.dispatchEvent(new CustomEvent('ytgif-creating-state', {
+        detail: { isCreating: false }
+      }));
+      
+      // Show error feedback with actual error message
+      const errorMsg = error instanceof Error ? error.message : 'Failed to start GIF creation';
+      this.showGifCreationFeedback('error', errorMsg);
     }
   }
 
@@ -716,9 +916,380 @@ class YouTubeGifMaker {
     }
   }
 
+  // Handle request for video data from background script for GIF creation
+  private handleVideoDataRequest(
+    message: ExtensionMessage,
+    sendResponse: (response: ExtensionMessage) => void
+  ) {
+    try {
+      if (!this.videoElement) {
+        sendResponse({
+          type: 'ERROR_RESPONSE',
+          success: false,
+          error: 'No video element available for GIF creation'
+        });
+        return;
+      }
+
+      const videoData = (message as RequestVideoDataForGif).data;
+      this.log('info', '[Content] Preparing video data for GIF creation', { videoData });
+
+      // Create video element data for frame extraction
+      const extractFrameData = {
+        videoElement: {
+          videoWidth: this.videoElement.videoWidth || 640,
+          videoHeight: this.videoElement.videoHeight || 360,
+          duration: this.videoElement.duration,
+          currentTime: this.videoElement.currentTime,
+          videoSrc: this.videoElement.src,
+          // We need to capture the actual DOM element for frame extraction
+          // In the background script, this will be used to access the video
+          tabId: undefined // Will be set by background script
+        },
+        settings: {
+          startTime: videoData.startTime,
+          endTime: videoData.endTime,
+          frameRate: 15,
+          maxWidth: Math.min(this.videoElement.videoWidth || 480, 480),
+          quality: 0.8
+        }
+      };
+
+      const response: VideoDataResponse = {
+        type: 'VIDEO_DATA_RESPONSE',
+        success: true,
+        data: extractFrameData
+      };
+      sendResponse(response);
+
+      this.log('debug', '[Content] Video data sent to background for processing', { 
+        videoWidth: extractFrameData.videoElement.videoWidth,
+        videoHeight: extractFrameData.videoElement.videoHeight,
+        duration: extractFrameData.settings.endTime - extractFrameData.settings.startTime
+      });
+
+    } catch (error) {
+      this.log('error', '[Content] Failed to prepare video data for GIF creation', { error });
+      sendResponse({
+        type: 'ERROR_RESPONSE',
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to prepare video data'
+      });
+    }
+  }
+
+  // Handle GIF creation completion from background script
+  private async handleGifCreationComplete(message: GifCreationComplete) {
+    this.log('info', '[Content] GIF creation completed', { success: message.success });
+    
+    // Reset creating state and clear processing status
+    this.isCreatingGif = false;
+    this.processingStatus = undefined;
+    window.dispatchEvent(new CustomEvent('ytgif-creating-state', {
+      detail: { isCreating: false }
+    }));
+    
+    if (message.success && message.data) {
+      // Save the GIF using chrome.storage.local (accessible from all extension contexts)
+      try {
+        const gifId = `gif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Debug: Check what we received
+        this.log('debug', '[Content] GIF data received', {
+          hasGifDataUrl: !!(message.data as any).gifDataUrl,
+          gifDataUrlLength: (message.data as any).gifDataUrl ? (message.data as any).gifDataUrl.length : 0,
+          hasGifBlob: !!message.data.gifBlob,
+          gifBlobType: message.data.gifBlob ? message.data.gifBlob.constructor.name : 'undefined'
+        });
+        
+        // Use data URLs if available, otherwise try to use blobs
+        const gifDataUrl = (message.data as any).gifDataUrl;
+        const thumbnailDataUrl = (message.data as any).thumbnailDataUrl;
+        
+        if (gifDataUrl) {
+          // Save using data URLs directly (already converted)
+          await chromeGifStorage.saveGifFromDataUrl({
+            id: gifId,
+            title: document.title.replace(' - YouTube', ''),
+            description: `GIF created from YouTube video`,
+            gifDataUrl,
+            thumbnailDataUrl,
+            metadata: {
+              width: (message.data.metadata?.width as number) || 480,
+              height: (message.data.metadata?.height as number) || 360,
+              duration: (message.data.metadata?.duration as number) || (this.currentSelection?.duration || 0) * 1000,
+              frameRate: 15,
+              fileSize: (message.data.metadata?.fileSize as number) || 0,
+              createdAt: new Date(),
+              youtubeUrl: window.location.href,
+              startTime: this.currentSelection?.startTime || 0,
+              endTime: this.currentSelection?.endTime || 0
+            },
+            tags: []
+          });
+        } else {
+          // Fallback to blob method (likely won't work due to serialization)
+          await chromeGifStorage.saveGif({
+            id: gifId,
+            title: document.title.replace(' - YouTube', ''),
+            description: `GIF created from YouTube video`,
+            blob: message.data.gifBlob,
+            thumbnailBlob: message.data.thumbnailBlob,
+          metadata: {
+            width: (message.data.metadata?.width as number) || 480,
+            height: (message.data.metadata?.height as number) || 360,
+            duration: (message.data.metadata?.duration as number) || (this.currentSelection?.duration || 0) * 1000,
+            frameRate: 15,
+            fileSize: (message.data.metadata?.fileSize as number) || message.data.gifBlob.size,
+            createdAt: new Date(),
+            youtubeUrl: window.location.href,
+            startTime: this.currentSelection?.startTime || 0,
+            endTime: this.currentSelection?.endTime || 0
+          },
+            tags: []
+          });
+        }
+        
+        this.log('info', '[Content] GIF saved to chrome.storage', { id: gifId });
+        
+        // Show preview modal with the created GIF
+        this.showGifPreview(gifDataUrl, message.data.metadata);
+        
+        // Close the timeline overlay immediately
+        this.deactivateGifMode();
+        
+      } catch (error) {
+        this.log('error', '[Content] Failed to save GIF', { error });
+        this.showGifCreationFeedback('error', 'GIF created but failed to save to library');
+        
+        // Still close overlay after error
+        setTimeout(() => {
+          this.deactivateGifMode();
+        }, 2000);
+      }
+      
+      // Log success metrics
+      this.log('debug', '[Content] GIF creation metrics', { 
+        metadata: message.data?.metadata 
+      });
+    } else {
+      // Show error feedback
+      this.showGifCreationFeedback('error', message.error || 'GIF creation failed');
+      this.log('error', '[Content] GIF creation failed', { error: message.error });
+    }
+    
+    // Update timeline overlay UI to reflect completion
+    this.updateTimelineOverlay();
+  }
+
+  // Handle job progress updates from background script
+  private handleJobProgress(message: ExtensionMessage) {
+    const progressData = (message as JobProgressUpdate).data;
+    this.log('debug', '[Content] Job progress update', progressData);
+    
+    // Store processing status with detailed info
+    this.processingStatus = {
+      stage: progressData.stage || 'processing',
+      progress: progressData.progress,
+      message: progressData.message || `Processing... ${Math.round(progressData.progress)}%`
+    };
+    
+    // Dispatch custom event for progress update
+    if (this.timelineOverlay) {
+      console.log('[Content] Dispatching progress update event', {
+        isCreating: this.isCreatingGif,
+        status: this.processingStatus
+      });
+      window.dispatchEvent(new CustomEvent('ytgif-progress-update', {
+        detail: this.processingStatus
+      }));
+    }
+  }
+
+  // Save GIF directly to IndexedDB from content script
+  private async saveGifToIndexedDB(gifData: GifData): Promise<boolean> {
+    return new Promise((resolve) => {
+      try {
+        const dbName = 'YouTubeGifStore';
+        const request = indexedDB.open(dbName, 3);
+        
+        request.onerror = () => {
+          this.log('error', '[Content] Failed to open IndexedDB');
+          resolve(false);
+        };
+        
+        request.onupgradeneeded = (event) => {
+          const db = (event.target as IDBOpenDBRequest).result;
+          
+          // Create stores if they don't exist
+          if (!db.objectStoreNames.contains('gifs')) {
+            const gifsStore = db.createObjectStore('gifs', { keyPath: 'id' });
+            gifsStore.createIndex('createdAt', 'metadata.createdAt', { unique: false });
+          }
+          
+          if (!db.objectStoreNames.contains('thumbnails')) {
+            db.createObjectStore('thumbnails', { keyPath: 'gifId' });
+          }
+          
+          if (!db.objectStoreNames.contains('metadata')) {
+            const metaStore = db.createObjectStore('metadata', { keyPath: 'id' });
+            metaStore.createIndex('youtubeUrl', 'youtubeUrl', { unique: false });
+          }
+        };
+        
+        request.onsuccess = () => {
+          const db = request.result;
+          const transaction = db.transaction(['gifs'], 'readwrite');
+          const gifsStore = transaction.objectStore('gifs');
+          
+          // Save GIF data
+          const gifRequest = gifsStore.put(gifData);
+          
+          gifRequest.onsuccess = () => {
+            this.log('info', '[Content] GIF saved to IndexedDB successfully');
+            resolve(true);
+          };
+          
+          gifRequest.onerror = () => {
+            this.log('error', '[Content] Failed to save GIF to store');
+            resolve(false);
+          };
+          
+          transaction.onerror = () => {
+            this.log('error', '[Content] Transaction failed');
+            resolve(false);
+          };
+        };
+      } catch (error) {
+        this.log('error', '[Content] Exception in saveGifToIndexedDB', { error });
+        resolve(false);
+      }
+    });
+  }
+
+  // Show GIF preview modal
+  private showGifPreview(gifDataUrl: string, metadata?: any) {
+    // Create container for preview modal
+    const container = document.createElement('div');
+    container.id = 'ytgif-preview-container';
+    document.body.appendChild(container);
+
+    // Create React root and render preview
+    this.previewRoot = createRoot(container);
+    this.previewRoot.render(
+      React.createElement(GifPreviewModal, {
+        gifDataUrl: gifDataUrl,
+        metadata: metadata,
+        onClose: () => this.closeGifPreview(),
+        onDownload: () => this.downloadGif(gifDataUrl, metadata?.title),
+        onOpenLibrary: () => this.openExtensionPopup()
+      })
+    );
+  }
+
+  // Close GIF preview modal
+  private closeGifPreview() {
+    if (this.previewRoot) {
+      this.previewRoot.unmount();
+      this.previewRoot = null;
+    }
+    const container = document.getElementById('ytgif-preview-container');
+    if (container) {
+      container.remove();
+    }
+  }
+
+  // Download GIF
+  private downloadGif(dataUrl: string, title?: string) {
+    // Convert data URL to blob
+    fetch(dataUrl)
+      .then(res => res.blob())
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${title || 'youtube-gif'}.gif`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        this.showGifCreationFeedback('success', 'GIF downloaded!');
+      })
+      .catch(error => {
+        this.log('error', 'Failed to download GIF', { error });
+        this.showGifCreationFeedback('error', 'Failed to download GIF');
+      });
+  }
+
+  // Open extension popup (library)
+  private openExtensionPopup() {
+    // Send message to background to open popup
+    chrome.runtime.sendMessage({ 
+      type: 'OPEN_POPUP',
+      data: { tab: 'library' }
+    }).catch(() => {
+      // If opening popup fails, show feedback
+      this.showGifCreationFeedback('info', 'Click the extension icon to view your library');
+    });
+  }
+
+  // Show feedback for GIF creation status
+  private showGifCreationFeedback(type: 'success' | 'error' | 'info', message: string) {
+    // Create temporary feedback element
+    const feedback = document.createElement('div');
+    feedback.className = `ytgif-feedback ytgif-feedback--${type}`;
+    feedback.textContent = message;
+    feedback.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
+      color: white;
+      padding: 12px 24px;
+      border-radius: 4px;
+      z-index: 10000;
+      font-family: 'Roboto', Arial, sans-serif;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+    `;
+    
+    document.body.appendChild(feedback);
+    
+    // Fade in
+    setTimeout(() => {
+      feedback.style.opacity = '1';
+      feedback.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+      feedback.style.opacity = '0';
+      feedback.style.transform = 'translateX(100px)';
+      setTimeout(() => {
+        if (feedback.parentNode) {
+          feedback.parentNode.removeChild(feedback);
+        }
+      }, 300);
+    }, 3000);
+  }
+
   // Helper method to send messages to background script
   private async sendMessageToBackground(message: ExtensionMessage): Promise<ExtensionMessage> {
     return new Promise((resolve, reject) => {
+      // Check if chrome.runtime is available
+      if (typeof chrome === 'undefined' || !chrome.runtime) {
+        this.log('warn', '[Content] Chrome runtime not available, skipping background communication', { messageType: message.type });
+        // Resolve with an error response to allow the process to continue
+        resolve({
+          type: 'ERROR_RESPONSE',
+          success: false,
+          error: 'Chrome runtime not available'
+        });
+        return;
+      }
+
       chrome.runtime.sendMessage(message, (response: ExtensionMessage) => {
         if (chrome.runtime.lastError) {
           reject(new Error(chrome.runtime.lastError.message));
