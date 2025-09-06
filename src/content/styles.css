@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import wizard styles */
+@import './wizard-styles.css';
+
 /* Theme System CSS Custom Properties Integration */
 :root {
   /* Default fallback values - will be overridden by theme system */

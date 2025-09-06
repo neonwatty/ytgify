@@ -1,3 +1,6 @@
+// Debug log to check if content script loads
+console.log('[YTGif Content Script] Loading...', window.location.href);
+
 import './styles.css';
 import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
@@ -27,6 +30,7 @@ import { gifProcessor } from './gif-processor';
 import { playerIntegration } from './player-integration';
 import { playerController } from './player-controller';
 import { TimelineOverlayWrapper } from './timeline-overlay-wrapper';
+import { TimelineOverlayWizard } from './timeline-overlay-wizard';
 import { GifPreviewModal } from './gif-preview-modal';
 import { EditorOverlayEnhanced } from './editor-overlay-enhanced';
 import { TimelineEditorUnified } from './timeline-editor-unified';
@@ -49,12 +53,15 @@ class YouTubeGifMaker {
   private navigationUnsubscribe: (() => void) | null = null;
   private processingStatus: { stage: string; progress: number; message: string } | undefined = undefined;
   private extractedFrames: ImageData[] | null = null;
+  private isWizardMode = false;
 
   constructor() {
+    console.log('[YTGif Content Script] Constructor called!');
     this.init();
   }
 
   private init() {
+    console.log('[YTGif Content Script] Init method called');
     this.setupMessageListener();
     this.setupNavigationListener();
     this.setupOverlayStateListeners();
@@ -481,11 +488,76 @@ class YouTubeGifMaker {
     });
   }
 
+  private showWizardOverlay(message: ShowTimelineRequest) {
+    try {
+      // Remove existing overlay
+      this.hideTimelineOverlay();
+
+      const { videoDuration, currentTime } = message.data;
+      const videoTitle = document.title.replace(' - YouTube', '');
+      
+      console.log('[Wizard] Creating overlay wizard', { videoDuration, currentTime, videoTitle });
+
+      // Create overlay container
+      const overlay = document.createElement('div');
+      overlay.id = 'ytgif-wizard-overlay';
+      this.timelineOverlay = overlay;
+      
+      // Apply styles for the wizard overlay
+      overlay.style.cssText = `
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: rgba(0, 0, 0, 0.85) !important;
+        z-index: 2147483647 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      `;
+      
+      document.body.appendChild(overlay);
+
+      // Create React root and render wizard
+      this.timelineRoot = createRoot(overlay);
+      
+      // Register elements with overlay state manager
+      overlayStateManager.setElements(overlay, this.timelineRoot);
+      
+      // Mark that we're in wizard mode
+      this.isWizardMode = true;
+      
+      this.timelineRoot.render(
+        React.createElement(TimelineOverlayWizard, {
+          videoDuration,
+          currentTime,
+          videoTitle,
+          onSelectionChange: this.handleSelectionChange.bind(this),
+          onClose: this.deactivateGifMode.bind(this),
+          onCreateGif: this.handleCreateGif.bind(this),
+          onSeekTo: this.handleSeekTo.bind(this),
+          isCreating: this.isCreatingGif,
+          processingStatus: this.processingStatus
+        })
+      );
+
+      this.log('info', '[Wizard] Overlay wizard shown', { 
+        videoDuration, 
+        currentTime,
+        videoTitle
+      });
+    } catch (error) {
+      console.error('[Wizard] Error showing overlay wizard:', error);
+      this.log('error', '[Wizard] Failed to show overlay wizard', { error });
+    }
+  }
+
   private showTimelineOverlay(message: ShowTimelineRequest) {
-    console.log('[UI FIX DEBUG] showTimelineOverlay started');
+    console.log('[Wizard] Showing overlay wizard');
     
-    // Use the unified interface instead
-    this.showUnifiedEditor();
+    // Use the new wizard overlay
+    this.showWizardOverlay(message);
     return;
     
     // Old timeline overlay code (kept for reference)
@@ -616,20 +688,45 @@ class YouTubeGifMaker {
     const videoState = this.getCurrentVideoState();
     if (!videoState) return;
     
-    this.timelineRoot.render(
-      React.createElement(TimelineOverlayWrapper, {
-        videoDuration: videoState.duration,
-        currentTime: videoState.currentTime,
-        onSelectionChange: this.handleSelectionChange.bind(this),
-        onClose: this.deactivateGifMode.bind(this),
-        onCreateGif: this.handleCreateGif.bind(this),
-        onSeekTo: this.handleSeekTo.bind(this),
-        onPreviewToggle: this.handlePreviewToggle.bind(this),
-        isCreating: this.isCreatingGif,
-        isPreviewActive: playerController.isPreviewActive(),
-        processingStatus: this.processingStatus
-      })
-    );
+    // Check if we're in wizard mode
+    if (this.isWizardMode) {
+      // Get video title
+      const videoTitleElement = document.querySelector('#above-the-fold h1.ytd-watch-metadata yt-formatted-string') ||
+                                document.querySelector('h1.title yt-formatted-string') ||
+                                document.querySelector('.ytp-title-link');
+      const videoTitle = videoTitleElement?.textContent || 'YouTube Video';
+      
+      // Re-render wizard with updated props
+      this.timelineRoot.render(
+        React.createElement(TimelineOverlayWizard, {
+          videoDuration: videoState.duration,
+          currentTime: videoState.currentTime,
+          videoTitle,
+          onSelectionChange: this.handleSelectionChange.bind(this),
+          onClose: this.deactivateGifMode.bind(this),
+          onCreateGif: this.handleCreateGif.bind(this),
+          onSeekTo: this.handleSeekTo.bind(this),
+          isCreating: this.isCreatingGif,
+          processingStatus: this.processingStatus
+        })
+      );
+    } else {
+      // Render old timeline overlay
+      this.timelineRoot.render(
+        React.createElement(TimelineOverlayWrapper, {
+          videoDuration: videoState.duration,
+          currentTime: videoState.currentTime,
+          onSelectionChange: this.handleSelectionChange.bind(this),
+          onClose: this.deactivateGifMode.bind(this),
+          onCreateGif: this.handleCreateGif.bind(this),
+          onSeekTo: this.handleSeekTo.bind(this),
+          onPreviewToggle: this.handlePreviewToggle.bind(this),
+          isCreating: this.isCreatingGif,
+          isPreviewActive: playerController.isPreviewActive(),
+          processingStatus: this.processingStatus
+        })
+      );
+    }
   }
 
   private handleSeekTo(time: number) {
@@ -762,9 +859,24 @@ class YouTubeGifMaker {
       return;
     }
 
-    // Show the enhanced editor instead of directly creating GIF
-    this.showEnhancedEditor();
-    this.log('info', '[Content] Opening enhanced editor', { startTime, endTime, duration });
+    // Process GIF directly with default settings
+    this.log('info', '[Content] Starting GIF creation from wizard', { startTime, endTime, duration });
+    
+    // Set initial processing status to trigger wizard screen change
+    this.processingStatus = { stage: 'processing', progress: 0, message: 'Initializing...' };
+    this.isCreatingGif = true;
+    this.updateTimelineOverlay();
+    
+    // Use default settings for wizard-initiated GIF creation
+    const defaultSettings = {
+      frameRate: 15,
+      width: 640,
+      height: 360,
+      quality: 'medium'
+    };
+    
+    // Process the GIF without text overlays
+    await this.processGifWithSettings(defaultSettings, []);
   }
 
   private showUnifiedEditor() {
@@ -968,9 +1080,19 @@ class YouTubeGifMaker {
           quality: settings.quality || 'medium'
         },
         (progress, message) => {
-          this.processingStatus = { stage: 'processing', progress, message };
+          // Determine stage based on message
+          let stage = 'processing';
+          if (message.includes('Capturing') || message.includes('frames')) {
+            stage = 'capturing';
+          } else if (message.includes('Encoding') || message.includes('encode')) {
+            stage = 'encoding';
+          } else if (message.includes('Complete') || progress === 100) {
+            stage = 'completed';
+          }
+          
+          this.processingStatus = { stage, progress, message };
           this.updateTimelineOverlay();
-          this.log('debug', '[Content] GIF processing progress', { progress, message });
+          this.log('debug', '[Content] GIF processing progress', { progress, message, stage });
           
           // Post progress to window for unified interface
           window.postMessage({
@@ -1001,6 +1123,9 @@ class YouTubeGifMaker {
       // Show success feedback
       this.processingStatus = { stage: 'completed', progress: 100, message: 'GIF created!' };
       this.updateTimelineOverlay();
+      
+      // Wait a moment for the success screen to show
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Hide timeline overlay
       this.hideTimelineOverlay();
@@ -1047,6 +1172,9 @@ class YouTubeGifMaker {
 
 
   private hideTimelineOverlay() {
+    // Reset wizard mode flag
+    this.isWizardMode = false;
+    
     if (this.timelineRoot) {
       this.timelineRoot.unmount();
       this.timelineRoot = null;
@@ -1596,6 +1724,8 @@ class YouTubeGifMaker {
     this.log('info', '[Content] YouTubeGifMaker destroyed');
   }
 }
+
+console.log('[YTGif Content Script] Class defined, checking DOM state:', document.readyState);
 
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {

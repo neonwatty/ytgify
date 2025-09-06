@@ -1,31 +1,17 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { 
-  ExtensionMessage,
-  GetVideoStateRequest,
-  OpenEditorRequest 
-} from '@/types';
+import { ShowTimelineRequest } from '@/types';
 import LibraryView from './components/library-view';
 import SettingsView from './components/settings-view';
 
-type PopupView = 'create' | 'library' | 'settings';
-
-interface VideoState {
-  isPlaying: boolean;
-  currentTime: number;
-  duration: number;
-  videoUrl: string;
-  title: string;
-}
-
 const PopupApp: React.FC = () => {
-  const [activeView, setActiveView] = React.useState<PopupView>('create');
-  const [videoState, setVideoState] = React.useState<VideoState | null>(null);
-  const [isLoading, setIsLoading] = React.useState(false);
   const [isYouTubePage, setIsYouTubePage] = React.useState(false);
+  const [videoTitle, setVideoTitle] = React.useState<string>('');
+  const [showLibrary, setShowLibrary] = React.useState(false);
+  const [showSettings, setShowSettings] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
 
-  // Check if current tab is YouTube and get video state
+  // Check if current tab is YouTube
   React.useEffect(() => {
     const checkCurrentTab = async () => {
       try {
@@ -34,24 +20,13 @@ const PopupApp: React.FC = () => {
         
         if (!currentTab || !currentTab.url) return;
         
-        const isYoutube = currentTab.url.includes('youtube.com');
+        const isYoutube = currentTab.url.includes('youtube.com/watch');
         setIsYouTubePage(isYoutube);
         
-        if (isYoutube && currentTab.id) {
-          // Request video state from content script
-          const message: GetVideoStateRequest = {
-            type: 'GET_VIDEO_STATE'
-          };
-          
-          try {
-            const response = await chrome.tabs.sendMessage(currentTab.id, message);
-            if (response && response.success && response.data) {
-              setVideoState(response.data);
-            }
-          } catch (error) {
-            // Content script might not be loaded yet
-            console.log('Could not get video state:', error);
-          }
+        if (isYoutube && currentTab.title) {
+          // Extract video title from tab title (removes " - YouTube" suffix)
+          const title = currentTab.title.replace(' - YouTube', '');
+          setVideoTitle(title);
         }
       } catch (error) {
         console.error('Error checking current tab:', error);
@@ -61,9 +36,14 @@ const PopupApp: React.FC = () => {
     checkCurrentTab();
   }, []);
 
-  const handleActivateGifMode = async () => {
-    if (!isYouTubePage) return;
-    
+  const handleCreateGif = async () => {
+    if (!isYouTubePage) {
+      // Open YouTube in new tab
+      chrome.tabs.create({ url: 'https://www.youtube.com' });
+      window.close();
+      return;
+    }
+
     setIsLoading(true);
     
     try {
@@ -71,169 +51,183 @@ const PopupApp: React.FC = () => {
       const currentTab = tabs[0];
       
       if (currentTab?.id) {
-        // Send message to content script to activate GIF mode
-        const message: ExtensionMessage = {
+        // Send message to content script to show the overlay wizard
+        const message: ShowTimelineRequest = {
           type: 'SHOW_TIMELINE',
           data: {
-            videoDuration: videoState?.duration || 0,
-            currentTime: videoState?.currentTime || 0
+            videoDuration: 0, // Will be filled by content script
+            currentTime: 0    // Will be filled by content script
           }
         };
         
         await chrome.tabs.sendMessage(currentTab.id, message);
+        // Close popup after triggering overlay
         window.close();
       }
     } catch (error) {
-      console.error('Failed to activate GIF mode:', error);
-    } finally {
+      console.error('Failed to show overlay:', error);
       setIsLoading(false);
     }
   };
 
-  const handleOpenEditor = async () => {
-    if (!isYouTubePage || !videoState) return;
-    
-    try {
-      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-      const currentTab = tabs[0];
-      
-      if (currentTab?.id) {
-        const message: OpenEditorRequest = {
-          type: 'OPEN_EDITOR',
-          data: {
-            videoUrl: videoState.videoUrl,
-            selection: {
-              startTime: Math.max(0, videoState.currentTime - 5),
-              endTime: Math.min(videoState.duration, videoState.currentTime + 5),
-              duration: 10
-            }
-          }
-        };
-        
-        await chrome.tabs.sendMessage(currentTab.id, message);
-        window.close();
-      }
-    } catch (error) {
-      console.error('Failed to open editor:', error);
-    }
-  };
-
-  const NavigationTabs = () => (
-    <div className="flex border-b border-gray-200">
-      {([
-        { id: 'create', label: 'Create', icon: '🎬' },
-        { id: 'library', label: 'Library', icon: '📚' },
-        { id: 'settings', label: 'Settings', icon: '⚙️' }
-      ] as const).map(({ id, label, icon }) => (
-        <button
-          key={id}
-          onClick={() => setActiveView(id)}
-          className={cn(
-            "flex-1 flex items-center justify-center gap-2 py-3 px-4 text-sm font-medium transition-colors",
-            activeView === id
-              ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50"
-              : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-          )}
-        >
-          <span className="text-lg">{icon}</span>
-          {label}
-        </button>
-      ))}
-    </div>
-  );
-
-  const CreateView = () => (
-    <div className="p-4 space-y-4">
-      <div className="text-center space-y-2">
-        <h2 className="text-lg font-semibold text-gray-900">Create GIF</h2>
-        <p className="text-sm text-gray-600">
-          {isYouTubePage
-            ? videoState
-              ? `Ready to create GIF from: ${videoState.title}`
-              : "Detecting video..."
-            : "Navigate to a YouTube video to start creating GIFs"
-          }
-        </p>
+  // Show library view
+  if (showLibrary) {
+    return (
+      <div className="w-full h-full bg-white flex flex-col" style={{ width: '360px', height: '400px' }}>
+        <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-3 flex items-center justify-between">
+          <button
+            onClick={() => setShowLibrary(false)}
+            className="p-1 rounded hover:bg-white/20 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h1 className="font-semibold">GIF Library</h1>
+          <div className="w-6"></div>
+        </div>
+        <div className="flex-1 overflow-hidden">
+          <LibraryView />
+        </div>
       </div>
+    );
+  }
 
-      {isYouTubePage ? (
-        <div className="space-y-3">
-          {videoState && (
-            <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-              <div className="flex items-center justify-between text-xs text-gray-600">
-                <span>Current Time</span>
-                <span>{Math.floor(videoState.currentTime)}s / {Math.floor(videoState.duration)}s</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-blue-500 h-2 rounded-full transition-all"
-                  style={{ width: `${(videoState.currentTime / videoState.duration) * 100}%` }}
-                />
-              </div>
-            </div>
-          )}
-          
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant="youtube"
-              onClick={handleActivateGifMode}
-              disabled={isLoading || !videoState}
-              className="w-full"
-            >
-              {isLoading ? "Loading..." : "Quick GIF"}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleOpenEditor}
-              disabled={!videoState}
-              className="w-full"
-            >
-              Advanced
-            </Button>
-          </div>
-          
-          <p className="text-xs text-gray-500 text-center">
-            Quick GIF creates a 4-second clip around current time.
-            Advanced opens the timeline editor.
-          </p>
+  // Show settings view
+  if (showSettings) {
+    return (
+      <div className="w-full h-full bg-white flex flex-col" style={{ width: '360px', height: '400px' }}>
+        <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-3 flex items-center justify-between">
+          <button
+            onClick={() => setShowSettings(false)}
+            className="p-1 rounded hover:bg-white/20 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h1 className="font-semibold">Settings</h1>
+          <div className="w-6"></div>
         </div>
-      ) : (
-        <div className="text-center py-8">
-          <div className="text-4xl mb-4">📺</div>
-          <p className="text-sm text-gray-500">
-            Please navigate to a YouTube video page to use this extension.
-          </p>
+        <div className="flex-1 overflow-hidden">
+          <SettingsView />
         </div>
-      )}
-    </div>
-  );
+      </div>
+    );
+  }
 
+  // Main minimal launcher view
   return (
-    <div className="w-80 bg-white shadow-lg rounded-lg overflow-hidden">
-      <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-4">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-            <span className="text-red-500 font-bold text-lg">G</span>
-          </div>
-          <div>
-            <h1 className="font-semibold text-lg">YouTube GIF Maker</h1>
-            <p className="text-red-100 text-xs">Create GIFs from any YouTube video</p>
+    <div className="w-full h-full bg-gradient-to-br from-gray-50 to-white flex flex-col" style={{ width: '360px', height: '400px' }}>
+      {/* Header */}
+      <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-4 shadow-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
+              <span className="text-white font-bold text-xl">G</span>
+            </div>
+            <div>
+              <h1 className="font-bold text-lg">YouTube GIF Maker</h1>
+              <p className="text-xs text-white/80">Create GIFs instantly</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <NavigationTabs />
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-8">
+        {isYouTubePage ? (
+          <>
+            {/* Video Detected */}
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <p className="text-sm text-gray-600 font-medium">Video Ready</p>
+              {videoTitle && (
+                <p className="text-xs text-gray-500 mt-2 line-clamp-2 max-w-[280px] mx-auto">
+                  {videoTitle}
+                </p>
+              )}
+            </div>
 
-      <div className="min-h-[300px]">
-        {activeView === 'create' && <CreateView />}
-        {activeView === 'library' && <LibraryView />}
-        {activeView === 'settings' && <SettingsView />}
+            {/* Create GIF Button */}
+            <Button
+              onClick={handleCreateGif}
+              disabled={isLoading}
+              className="w-full max-w-[200px] h-12 text-base font-semibold bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg transform transition-all hover:scale-105"
+            >
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                  Loading...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  Create GIF
+                </span>
+              )}
+            </Button>
+          </>
+        ) : (
+          <>
+            {/* No Video */}
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <p className="text-sm text-gray-600 font-medium mb-2">No Video Detected</p>
+              <p className="text-xs text-gray-500">Navigate to a YouTube video to get started</p>
+            </div>
+
+            {/* Open YouTube Button */}
+            <Button
+              onClick={handleCreateGif}
+              variant="outline"
+              className="w-full max-w-[200px] h-12 text-base font-semibold border-2"
+            >
+              <span className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+                </svg>
+                Open YouTube
+              </span>
+            </Button>
+          </>
+        )}
       </div>
 
-      <div className="border-t border-gray-200 p-2 bg-gray-50">
-        <p className="text-xs text-gray-500 text-center">
-          v1.0.0 • Made with ❤️ for YouTube creators
-        </p>
+      {/* Footer with Quick Actions */}
+      <div className="border-t border-gray-200 px-6 py-3">
+        <div className="flex justify-center gap-6">
+          <button
+            onClick={() => setShowLibrary(true)}
+            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            Library
+          </button>
+          <button
+            onClick={() => setShowSettings(true)}
+            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Settings
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -1,0 +1,673 @@
+/* Overlay Wizard Styles */
+.ytgif-overlay-wizard {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Wizard Container */
+.ytgif-wizard-container {
+  position: relative;
+  width: 90%;
+  max-width: 600px;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Close Button */
+.ytgif-wizard-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ytgif-wizard-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+/* Progress Indicator */
+.ytgif-wizard-progress {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.ytgif-progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.ytgif-progress-dot.active {
+  background: #ff0000;
+  transform: scale(1.3);
+}
+
+/* Wizard Screens */
+.ytgif-wizard-screens {
+  position: relative;
+  min-height: 400px;
+}
+
+.ytgif-wizard-screen {
+  padding: 60px 40px 40px;
+  animation: screenFadeIn 0.3s ease;
+}
+
+@keyframes screenFadeIn {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Wizard Header */
+.ytgif-wizard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  padding: 0 40px;
+  padding-top: 60px;
+}
+
+.ytgif-back-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.ytgif-back-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.ytgif-wizard-title {
+  color: white;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+  text-align: center;
+}
+
+/* Wizard Content */
+.ytgif-wizard-content {
+  color: white;
+  text-align: center;
+}
+
+/* Welcome Screen */
+.ytgif-welcome-screen .ytgif-wizard-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.ytgif-logo-container {
+  margin-bottom: 16px;
+}
+
+.ytgif-logo {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  font-weight: bold;
+  color: white;
+  box-shadow: 0 4px 20px rgba(255, 0, 0, 0.3);
+}
+
+.ytgif-video-info {
+  max-width: 400px;
+}
+
+.ytgif-video-title {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.ytgif-video-duration {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.ytgif-loading-dots {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.ytgif-dot {
+  width: 8px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  animation: pulse 1.4s infinite ease-in-out both;
+}
+
+.ytgif-dot:nth-child(1) { animation-delay: -0.32s; }
+.ytgif-dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes pulse {
+  0%, 80%, 100% { 
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.ytgif-auto-advance {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Action Select Screen */
+.ytgif-action-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.ytgif-action-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.ytgif-action-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #ff0000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(255, 0, 0, 0.2);
+}
+
+.ytgif-card-icon {
+  margin-bottom: 16px;
+  color: #ff0000;
+}
+
+.ytgif-card-title {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.ytgif-card-description {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.ytgif-card-detail {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.ytgif-tip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(255, 193, 7, 0.1);
+  border-radius: 8px;
+  color: #ffc107;
+  font-size: 13px;
+}
+
+/* Processing Screen */
+.ytgif-processing-screen {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.ytgif-progress-circle-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 32px auto;
+}
+
+.ytgif-progress-circle {
+  transform: rotate(-90deg);
+}
+
+.ytgif-progress-circle-bg {
+  stroke: rgba(255, 255, 255, 0.1);
+}
+
+.ytgif-progress-circle-fill {
+  stroke: #ff0033;
+  transition: stroke-dasharray 0.3s ease;
+}
+
+.ytgif-progress-circle-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.ytgif-status-text {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+  margin-bottom: 24px;
+  min-height: 24px;
+}
+
+.ytgif-progress-bar-container {
+  margin: 24px 0;
+}
+
+.ytgif-progress-bar {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ytgif-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff0033, #ff4444);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.ytgif-stage-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin-top: 24px;
+}
+
+.ytgif-processing-tips {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  margin-top: 32px;
+}
+
+/* Success Screen */
+.ytgif-success-screen {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.ytgif-success-icon {
+  display: flex;
+  justify-content: center;
+  margin: 32px 0;
+  animation: scaleIn 0.5s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.ytgif-success-message {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.ytgif-success-message h3 {
+  color: #fff;
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.ytgif-gif-size {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}
+
+.ytgif-success-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.ytgif-success-actions button {
+  flex: 1;
+}
+
+.ytgif-success-info {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ytgif-success-info p {
+  margin: 4px 0;
+}
+
+/* Timeline Components */
+.ytgif-timeline-preview {
+  margin-bottom: 32px;
+}
+
+.ytgif-timeline-track {
+  position: relative;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.ytgif-timeline-interactive {
+  cursor: pointer;
+}
+
+.ytgif-timeline-selection {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(255, 0, 0, 0.3);
+  border: 2px solid #ff0000;
+  border-radius: 4px;
+  cursor: move;
+}
+
+.ytgif-selection-handle {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 30px;
+  background: #ff0000;
+  border-radius: 3px;
+  cursor: ew-resize;
+}
+
+.ytgif-handle-start {
+  left: -6px;
+}
+
+.ytgif-handle-end {
+  right: -6px;
+}
+
+.ytgif-timeline-cursor {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: white;
+  pointer-events: none;
+}
+
+.ytgif-timeline-times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.ytgif-timeline-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Capture Info */
+.ytgif-capture-info {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.ytgif-info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.ytgif-info-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.ytgif-info-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
+/* Preview Controls */
+.ytgif-preview-controls {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.ytgif-preview-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ytgif-preview-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Time Inputs */
+.ytgif-time-inputs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+  padding: 0 40px;
+}
+
+.ytgif-time-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ytgif-time-input-group label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.ytgif-time-input {
+  width: 100px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: white;
+  font-size: 14px;
+  font-family: monospace;
+  text-align: center;
+}
+
+.ytgif-time-input:focus {
+  outline: none;
+  border-color: #ff0000;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.ytgif-duration-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.ytgif-duration-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ff0000;
+}
+
+.ytgif-duration-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Presets */
+.ytgif-presets {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.ytgif-preset-button {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ytgif-preset-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* Action Buttons */
+.ytgif-wizard-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.ytgif-button-primary,
+.ytgif-button-secondary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.ytgif-button-primary {
+  background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+  color: white;
+}
+
+.ytgif-button-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(255, 0, 0, 0.3);
+}
+
+.ytgif-button-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ytgif-button-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ytgif-button-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Processing Screen */
+.ytgif-processing-screen .ytgif-wizard-content {
+  padding: 40px;
+}

@@ -2,5 +2,12 @@
 
 body {
   @apply m-0 p-0;
-  min-width: 320px;
+  width: 360px;
+  height: 400px;
+  overflow: hidden;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
 }

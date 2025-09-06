@@ -1,0 +1,59 @@
+import React, { useState, useCallback } from 'react';
+import { TimelineSelection } from '@/types';
+import OverlayWizard from './overlay-wizard/OverlayWizard';
+
+export interface TimelineOverlayWizardProps {
+  videoDuration: number;
+  currentTime: number;
+  videoTitle?: string;
+  onSelectionChange: (selection: TimelineSelection) => void;
+  onClose: () => void;
+  onCreateGif: () => void;
+  onSeekTo?: (time: number) => void;
+  isCreating?: boolean;
+  processingStatus?: {
+    stage: string;
+    progress: number;
+    message: string;
+  };
+}
+
+export const TimelineOverlayWizard: React.FC<TimelineOverlayWizardProps> = ({
+  videoDuration,
+  currentTime,
+  videoTitle,
+  onSelectionChange,
+  onClose,
+  onCreateGif,
+  onSeekTo,
+  isCreating = false,
+  processingStatus
+}) => {
+  const [selection, setSelection] = useState<TimelineSelection | null>(null);
+
+  const handleSelectionChange = useCallback((newSelection: TimelineSelection) => {
+    setSelection(newSelection);
+    onSelectionChange(newSelection);
+  }, [onSelectionChange]);
+
+  const handleCreateGif = useCallback((finalSelection: TimelineSelection) => {
+    handleSelectionChange(finalSelection);
+    onCreateGif();
+  }, [handleSelectionChange, onCreateGif]);
+
+  return (
+    <OverlayWizard
+      videoDuration={videoDuration}
+      currentTime={currentTime}
+      videoTitle={videoTitle}
+      onSelectionChange={handleSelectionChange}
+      onClose={onClose}
+      onCreateGif={handleCreateGif}
+      onSeekTo={onSeekTo}
+      isCreating={isCreating}
+      processingStatus={processingStatus}
+    />
+  );
+};
+
+export default TimelineOverlayWizard;

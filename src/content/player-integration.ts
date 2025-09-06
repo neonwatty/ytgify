@@ -32,6 +32,8 @@ export class YouTubePlayerIntegration {
   private sizeChangeCallbacks: Set<PlayerSizeChangeCallback> = new Set();
   private resizeObserver: ResizeObserver | null = null;
   private clickHandler: ((event: Event) => void) | null = null;
+  private injectionRetryCount = 0;
+  private maxRetries = 10;
 
   // Button position configurations in priority order
   private positionConfigs: ButtonPositionConfig[] = [
@@ -73,7 +75,33 @@ export class YouTubePlayerIntegration {
   // Public API methods
   public injectButton(clickHandler: (event: Event) => void): boolean {
     this.clickHandler = clickHandler;
-    return this.attemptButtonInjection();
+    this.injectionRetryCount = 0;
+    return this.attemptButtonInjectionWithRetry();
+  }
+
+  private attemptButtonInjectionWithRetry(): boolean {
+    const result = this.attemptButtonInjection();
+    
+    if (!result && this.injectionRetryCount < this.maxRetries) {
+      this.injectionRetryCount++;
+      logger.info(`[PlayerIntegration] Retry injection attempt ${this.injectionRetryCount}/${this.maxRetries}`);
+      
+      // Retry after a delay
+      setTimeout(() => {
+        this.attemptButtonInjectionWithRetry();
+      }, 1000);
+      
+      return false;
+    }
+    
+    if (result) {
+      logger.info('[PlayerIntegration] Button injection successful');
+      this.injectionRetryCount = 0;
+    } else {
+      logger.error('[PlayerIntegration] Failed to inject button after all retries');
+    }
+    
+    return result;
   }
 
   public removeButton(): void {
@@ -104,14 +132,6 @@ export class YouTubePlayerIntegration {
     }
   }
 
-  public getButtonState(): boolean {
-    return this.isActive;
-  }
-
-  public getCurrentPlayerInfo(): PlayerSizeInfo | null {
-    return this.currentPlayerInfo ? { ...this.currentPlayerInfo } : null;
-  }
-
   public onStateChange(callback: ButtonStateChangeCallback): () => void {
     this.stateChangeCallbacks.add(callback);
     return () => {
@@ -130,6 +150,13 @@ export class YouTubePlayerIntegration {
   private attemptButtonInjection(): boolean {
     if (this.button) {
       this.removeButton();
+    }
+
+    // Wait for player to be available
+    const player = this.waitForPlayer();
+    if (!player) {
+      logger.warn('[PlayerIntegration] Player not found yet');
+      return false;
     }
 
     const playerInfo = this.detectPlayerInfo();
@@ -156,6 +183,26 @@ export class YouTubePlayerIntegration {
     return false;
   }
 
+  private waitForPlayer(): HTMLElement | null {
+    // Try multiple selectors to find player
+    const selectors = [
+      '#movie_player',
+      '.html5-video-player',
+      '.video-stream',
+      '#player-container #movie_player'
+    ];
+
+    for (const selector of selectors) {
+      const element = document.querySelector(selector) as HTMLElement;
+      if (element) {
+        logger.info(`[PlayerIntegration] Player found with selector: ${selector}`);
+        return element;
+      }
+    }
+
+    return null;
+  }
+
   private tryInjectAtPosition(config: ButtonPositionConfig, playerInfo: PlayerSizeInfo): boolean {
     // Check size requirements
     if (config.requiredMinWidth && playerInfo.width < config.requiredMinWidth) {
@@ -168,6 +215,7 @@ export class YouTubePlayerIntegration {
     // Find target container
     const container = document.querySelector(config.selector) as HTMLElement;
     if (!container) {
+      logger.debug(`[PlayerIntegration] Container not found: ${config.selector}`);
       return false;
     }
 
@@ -186,6 +234,7 @@ export class YouTubePlayerIntegration {
       // Apply theme-specific styling
       this.applyThemeStyles(this.button, config.theme || 'auto');
 
+      logger.info(`[PlayerIntegration] Button inserted at: ${config.selector}`);
       return true;
     } catch (error) {
       logger.error('[PlayerIntegration] Error injecting button', { error, config });
@@ -216,7 +265,7 @@ export class YouTubePlayerIntegration {
   }
 
   private getButtonClassName(config: ButtonPositionConfig, playerInfo: PlayerSizeInfo): string {
-    const classes = ['ytgif-player-button'];
+    const classes = ['ytgif-player-button', 'ytp-button', 'ytgif-button'];
     
     if (playerInfo.isCompact) classes.push('ytgif-compact-mode');
     if (playerInfo.isTheater) classes.push('ytgif-theater-mode');
@@ -253,76 +302,61 @@ export class YouTubePlayerIntegration {
     return isDark ? 'dark' : 'light';
   }
 
-  // Player detection and sizing
+  // Player detection and sizing  
   private detectPlayerInfo(): PlayerSizeInfo | null {
-    const player = youTubeDetector.getPlayerContainer();
+    const player = this.waitForPlayer();
     if (!player) {
       return null;
     }
 
     const rect = player.getBoundingClientRect();
-    const aspectRatio = rect.width / rect.height;
+    
+    // Use viewport dimensions if player dimensions are 0
+    const width = rect.width || window.innerWidth;
+    const height = rect.height || window.innerHeight * 0.6; // Assume 60% height for video
+    const aspectRatio = width / height;
 
     return {
-      width: rect.width,
-      height: rect.height,
+      width,
+      height,
       aspectRatio,
-      isCompact: this.isCompactMode(rect),
+      isCompact: this.isCompactMode({ width, height }),
       isTheater: this.isTheaterMode(),
       isFullscreen: this.isFullscreenMode()
     };
   }
 
-  private isCompactMode(rect: DOMRect): boolean {
-    return rect.width < 480 || rect.height < 270;
+  private isCompactMode(size: { width: number; height: number }): boolean {
+    return size.width < 480 || size.height < 270;
   }
 
   private isTheaterMode(): boolean {
-    const theaterSelectors = [
-      'body[theater]',
-      '.ytp-big-mode',
-      '[data-theater="true"]',
-      '.theater-mode'
-    ];
-    return theaterSelectors.some(selector => document.querySelector(selector) !== null);
+    return document.body.classList.contains('ytp-big-mode') ||
+           document.querySelector('.ytp-size-button[title*="Theater"]') !== null ||
+           document.querySelector('[theater-mode]') !== null;
   }
 
   private isFullscreenMode(): boolean {
-    const doc = document as Document & {
-      webkitFullscreenElement?: Element;
-      mozFullScreenElement?: Element;  
-      msFullscreenElement?: Element;
-    };
-    
     return document.fullscreenElement !== null ||
-           doc.webkitFullscreenElement !== undefined ||
-           doc.mozFullScreenElement !== undefined ||
-           doc.msFullscreenElement !== undefined;
+           document.body.classList.contains('ytp-fullscreen');
   }
 
-  // Event handling setup
+  // Setup methods
   private setupResizeObserver(): void {
-    if (!('ResizeObserver' in window)) {
-      logger.warn('[PlayerIntegration] ResizeObserver not supported');
-      return;
-    }
-
     this.resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        if (entry.target === youTubeDetector.getPlayerContainer()) {
-          this.handlePlayerSizeChange();
-          break;
-        }
+        this.handlePlayerSizeChange();
+        break;
       }
     });
 
     // Start observing when player is found
     setTimeout(() => {
-      const player = youTubeDetector.getPlayerContainer();
+      const player = this.waitForPlayer();
       if (player && this.resizeObserver) {
         this.resizeObserver.observe(player);
       }
-    }, 1000);
+    }, 2000);
   }
 
   private setupNavigationListener(): void {
@@ -330,8 +364,9 @@ export class YouTubePlayerIntegration {
       // Re-inject button on navigation
       if (this.clickHandler) {
         setTimeout(() => {
-          this.attemptButtonInjection();
-        }, 500);
+          this.injectionRetryCount = 0;
+          this.attemptButtonInjectionWithRetry();
+        }, 1000);
       }
     });
   }
@@ -363,41 +398,18 @@ export class YouTubePlayerIntegration {
           logger.error('[PlayerIntegration] Error in size change callback', { error });
         }
       });
-
-      logger.debug('[PlayerIntegration] Player size changed', { playerInfo: newPlayerInfo });
     }
   }
 
   private shouldReinjectButton(newPlayerInfo: PlayerSizeInfo): boolean {
-    if (!this.button || !this.button.parentNode) {
-      return true;
-    }
-
-    // Check if current position is still optimal
-    for (const config of this.positionConfigs) {
-      if (config.requiredMinWidth && newPlayerInfo.width < config.requiredMinWidth) {
-        continue;
-      }
-      if (config.requiredMinHeight && newPlayerInfo.height < config.requiredMinHeight) {
-        continue;
-      }
-
-      const container = document.querySelector(config.selector) as HTMLElement;
-      if (container && container.contains(this.button)) {
-        // Current position is still good
-        return false;
-      }
-      
-      // Found a better position
-      if (container) {
-        return true;
-      }
-    }
-
-    return false;
+    // Re-inject if player mode changed significantly
+    if (!this.currentPlayerInfo) return true;
+    
+    return this.currentPlayerInfo.isCompact !== newPlayerInfo.isCompact ||
+           this.currentPlayerInfo.isTheater !== newPlayerInfo.isTheater ||
+           this.currentPlayerInfo.isFullscreen !== newPlayerInfo.isFullscreen;
   }
 
-  // Cleanup
   public destroy(): void {
     this.removeButton();
     
@@ -410,8 +422,6 @@ export class YouTubePlayerIntegration {
     this.sizeChangeCallbacks.clear();
     this.clickHandler = null;
     this.currentPlayerInfo = null;
-
-    logger.info('[PlayerIntegration] Destroyed');
   }
 }
 
