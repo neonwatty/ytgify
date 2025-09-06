@@ -65,6 +65,10 @@ module.exports = (env, argv) => {
             to: 'icons',
             noErrorOnMissing: true,
           },
+          {
+            from: 'node_modules/gif.js/dist/gif.worker.js',
+            to: 'gif.worker.js',
+          },
         ],
       }),
     ],

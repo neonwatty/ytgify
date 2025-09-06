@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { gifStorage, type GifData } from '@/lib/storage';
+import { chromeGifStorage } from '@/lib/chrome-gif-storage';
 
 interface GifCardProps {
   gif: GifData;
@@ -156,12 +157,41 @@ const LibraryView: React.FC = () => {
   // Load GIFs from storage
   React.useEffect(() => {
     const loadGifs = async () => {
+      console.log('[LibraryView] Starting to load GIFs...');
       try {
         setIsLoading(true);
-        const allGifs = await gifStorage.getAllGifs();
-        setGifs(allGifs);
+        // Check chrome.storage availability
+        console.log('[LibraryView] Chrome storage check:', {
+          hasChrome: typeof chrome !== 'undefined',
+          hasStorage: typeof chrome !== 'undefined' && !!chrome.storage,
+          hasLocal: typeof chrome !== 'undefined' && !!chrome.storage?.local
+        });
+        
+        // Use chrome storage helper
+        const storedGifs = await chromeGifStorage.getAllGifs();
+        console.log('[LibraryView] Retrieved stored GIFs:', {
+          count: storedGifs.length,
+          firstGif: storedGifs[0]
+        });
+        
+        // Convert to display format
+        const displayGifs = await Promise.all(
+          storedGifs.map(gif => chromeGifStorage.convertToDisplayFormat(gif))
+        );
+        console.log('[LibraryView] Converted to display format:', {
+          count: displayGifs.length
+        });
+        
+        setGifs(displayGifs);
       } catch (error) {
-        console.error('Failed to load GIFs:', error);
+        console.error('[LibraryView] Failed to load GIFs:', error);
+        // Fallback to IndexedDB if chrome.storage fails
+        try {
+          const allGifs = await gifStorage.getAllGifs();
+          setGifs(allGifs);
+        } catch (dbError) {
+          console.error('Failed to load from IndexedDB too:', dbError);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -192,7 +222,11 @@ const LibraryView: React.FC = () => {
           return b.metadata.fileSize - a.metadata.fileSize;
         case 'date':
         default:
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 
+                       a.metadata?.createdAt ? new Date(a.metadata.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() :
+                       b.metadata?.createdAt ? new Date(b.metadata.createdAt).getTime() : 0;
+          return dateB - dateA;
       }
     });
 
@@ -203,7 +237,7 @@ const LibraryView: React.FC = () => {
     if (!confirm('Are you sure you want to delete this GIF?')) return;
     
     try {
-      await gifStorage.deleteGif(id);
+      await chromeGifStorage.deleteGif(id);
       setGifs(prev => prev.filter(gif => gif.id !== id));
     } catch (error) {
       console.error('Failed to delete GIF:', error);
@@ -266,7 +300,8 @@ const LibraryView: React.FC = () => {
     if (!confirm('Are you sure you want to delete ALL GIFs? This action cannot be undone.')) return;
     
     try {
-      await gifStorage.clearAllGifs();
+      const { chromeGifStorage } = await import('@/lib/chrome-gif-storage');
+      await chromeGifStorage.clearAllGifs();
       setGifs([]);
     } catch (error) {
       console.error('Failed to clear all GIFs:', error);

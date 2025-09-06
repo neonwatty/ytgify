@@ -297,21 +297,66 @@ export class YouTubeDetector {
   public getVideoElement(): HTMLVideoElement | null {
     // Try multiple selectors for different YouTube layouts
     const selectors = [
+      // Standard YouTube video selectors
       'video.video-stream.html5-main-video',
       'video.html5-main-video', 
       '#movie_player video',
       '.html5-video-container video',
+      'ytd-player video',
+      'div#player video',
+      
+      // YouTube Shorts specific selectors
+      'ytd-shorts video',
+      'ytd-shorts-player video',
+      '.ytd-shorts video',
+      '.shorts-video-container video',
+      '#shorts-player video',
+      '.ytd-reel-video-renderer video',
+      
+      // Mobile and adaptive layouts
+      '.ytd-watch-flexy video',
+      'ytd-video-primary-info-renderer video',
+      
+      // Fallback generic selector
       'video'
     ];
 
     for (const selector of selectors) {
       const video = document.querySelector(selector) as HTMLVideoElement;
-      if (video && video.src) {
+      if (video && this.isValidVideoElement(video)) {
         return video;
       }
     }
 
     return null;
+  }
+
+  // Enhanced video element validation
+  private isValidVideoElement(video: HTMLVideoElement): boolean {
+    // Check if video has a source
+    if (!video.src && !video.currentSrc) {
+      return false;
+    }
+
+    // Check if video dimensions are reasonable
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      return false;
+    }
+
+    // Check if video is not a thumbnail or advertisement
+    const src = video.src || video.currentSrc;
+    if (src.includes('maxresdefault') || src.includes('hqdefault') || 
+        src.includes('thumbnail') || src.includes('vi.jpg')) {
+      return false;
+    }
+
+    // Check if video is visible and has reasonable size
+    const rect = video.getBoundingClientRect();
+    if (rect.width < 100 || rect.height < 100) {
+      return false;
+    }
+
+    return true;
   }
 
   // Wait for video element to be available

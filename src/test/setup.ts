@@ -86,6 +86,31 @@ global.File = class MockFile extends global.Blob {
   webkitRelativePath = '';
 } as unknown as typeof File;
 
+// Mock ImageData constructor
+global.ImageData = class MockImageData {
+  public data: Uint8ClampedArray;
+  public width: number;
+  public height: number;
+  
+  constructor(dataOrWidth: Uint8ClampedArray | number, widthOrHeight?: number, height?: number) {
+    if (dataOrWidth instanceof Uint8ClampedArray) {
+      // Constructor with data array
+      this.data = dataOrWidth;
+      this.width = widthOrHeight || 0;
+      if (height !== undefined) {
+        this.height = height;
+      } else {
+        this.height = Math.floor(dataOrWidth.length / 4 / this.width);
+      }
+    } else {
+      // Constructor with width and height
+      this.width = dataOrWidth;
+      this.height = widthOrHeight || 0;
+      this.data = new Uint8ClampedArray(this.width * this.height * 4);
+    }
+  }
+} as unknown as typeof ImageData;
+
 // Mock Canvas and CanvasRenderingContext2D for GIF processing tests
 interface MockCanvas {
   getContext: jest.MockedFunction<any>;
@@ -95,27 +120,44 @@ interface MockCanvas {
   toDataURL: jest.MockedFunction<() => string>;
 }
 
-const mockCanvas: MockCanvas = {
-  getContext: jest.fn((): any => ({
-    drawImage: jest.fn(),
-    getImageData: jest.fn(() => ({
-      data: new Uint8ClampedArray(4),
-      width: 1,
-      height: 1,
-    })),
-    putImageData: jest.fn(),
-    createImageData: jest.fn(),
-    canvas: mockCanvas,
+const createMockContext = (canvas: any) => ({
+  drawImage: jest.fn(),
+  getImageData: jest.fn(() => ({
+    data: new Uint8ClampedArray(4),
+    width: 1,
+    height: 1,
   })),
-  width: 100,
-  height: 100,
-  toBlob: jest.fn((callback: BlobCallback): void => {
-    callback(new global.Blob(['mock canvas data'], { type: 'image/png' }));
+  putImageData: jest.fn(),
+  createImageData: jest.fn((width?: number | ImageData, height?: number) => {
+    if (typeof width === 'number' && typeof height === 'number') {
+      return new global.ImageData(width, height);
+    } else if (width instanceof ImageData) {
+      return new global.ImageData(width.data, width.width, width.height);
+    }
+    return new global.ImageData(100, 100);
   }),
-  toDataURL: jest.fn((): string => 'data:image/png;base64,mock-data'),
-};
+  clearRect: jest.fn(),
+  fillRect: jest.fn(),
+  fillText: jest.fn(),
+  measureText: jest.fn(() => ({ width: 100 })),
+  canvas: canvas,
+  fillStyle: '',
+  font: '',
+  textAlign: '' as CanvasTextAlign,
+  textBaseline: '' as CanvasTextBaseline,
+});
 
-global.HTMLCanvasElement = jest.fn(() => mockCanvas) as unknown as typeof HTMLCanvasElement;
+// Override HTMLCanvasElement.prototype.getContext
+HTMLCanvasElement.prototype.getContext = jest.fn(function(this: HTMLCanvasElement) {
+  return createMockContext(this);
+}) as any;
+
+// Mock additional canvas methods
+HTMLCanvasElement.prototype.toBlob = jest.fn((callback: BlobCallback): void => {
+  callback(new global.Blob(['mock canvas data'], { type: 'image/png' }));
+}) as any;
+
+HTMLCanvasElement.prototype.toDataURL = jest.fn((): string => 'data:image/png;base64,mock-data') as any;
 
 // Mock Image constructor for video frame processing
 global.Image = class MockImage {

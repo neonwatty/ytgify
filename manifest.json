@@ -7,11 +7,15 @@
     "storage",
     "tabs",
     "activeTab",
-    "clipboardWrite"
+    "clipboardWrite",
+    "downloads"
   ],
   "host_permissions": [
     "https://*.youtube.com/*"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
   "background": {
     "service_worker": "background.js",
     "type": "module"
@@ -43,7 +47,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["*.js", "*.css", "icons/*"],
+      "resources": ["*.js", "*.css", "icons/*", "gif.worker.js"],
       "matches": ["https://*.youtube.com/*"]
     }
   ]

@@ -56,21 +56,23 @@ export class ContentScriptGifProcessor {
     try {
       logger.info('[ContentScriptGifProcessor] Starting GIF processing', { options });
 
-      // Step 1: Capture frames (0-40% of progress)
+      // Step 1: Capture frames (0-50% of total progress)
       onProgress?.(5, 'Initializing frame capture...');
       const frames = await this.captureFrames(videoElement, options, (frameProgress) => {
-        // Scale frame capture progress from 5% to 40%
-        const scaledProgress = 5 + (frameProgress * 35 / 100);
-        onProgress?.(scaledProgress, `Capturing frames... ${frameProgress}%`);
+        // Scale frame capture progress from 5% to 50% of total
+        const scaledProgress = 5 + (frameProgress * 45 / 100);
+        onProgress?.(scaledProgress, `Capturing frames...`);
       });
       logger.info('[ContentScriptGifProcessor] Frames captured', { count: frames.length });
 
-      // Step 2: Encode GIF (40-95% of progress)
-      onProgress?.(40, 'Starting GIF encoding...');
+      // Step 2: Encode GIF (50-95% of total progress)
+      onProgress?.(50, 'Starting GIF encoding...');
       const gifBlob = await this.encodeGif(frames, options, (encodeProgress, encodeMessage) => {
-        // Scale encoding progress from 40% to 95%
-        const scaledProgress = 40 + (encodeProgress * 55 / 100);
-        onProgress?.(scaledProgress, encodeMessage || 'Encoding GIF...');
+        // Scale encoding progress from 50% to 95% of total
+        const scaledProgress = 50 + (encodeProgress * 45 / 100);
+        // If the message contains a frame count, keep it; otherwise just show "Encoding..."
+        const message = encodeMessage && encodeMessage.includes('frame') ? encodeMessage : 'Encoding GIF...';
+        onProgress?.(scaledProgress, message);
       });
       logger.info('[ContentScriptGifProcessor] GIF encoded', { size: gifBlob.size });
 
@@ -216,7 +218,7 @@ export class ContentScriptGifProcessor {
     const { frameRate = 10, quality = 'medium' } = options;
     
     try {
-      console.log('[ContentScriptGifProcessor] Creating encoder with new abstraction');
+      console.log(`[ContentScriptGifProcessor] Creating GIF encoder with new abstraction (${frames.length} frames)`);
       
       // Create encoder options
       const encoderOptions: EncoderOptions = {
@@ -228,7 +230,7 @@ export class ContentScriptGifProcessor {
         debug: true // Enable debug logging
       };
       
-      // Create encoder using factory
+      // Create GIF encoder using factory
       const encoder = SimpleEncoderFactory.createEncoder('gifenc', encoderOptions);
       console.log('[ContentScriptGifProcessor] Encoder created successfully');
       

@@ -1,0 +1,126 @@
+// Simplified Gifenc encoder implementation for content script use
+const { GIFEncoder, quantize, applyPalette } = require('gifenc');
+import { 
+  BaseEncoder, 
+  FrameData, 
+  EncoderOptions, 
+  EncoderResult, 
+  ProgressCallback 
+} from './base-encoder';
+import { logger } from '@/lib/logger';
+
+export class GifencEncoderSimple extends BaseEncoder {
+  constructor(options: EncoderOptions) {
+    super(options);
+    if (this.options.debug) {
+      console.log('[GifencEncoder] Initialized with options:', options);
+    }
+  }
+  
+  async encode(
+    frames: FrameData[],
+    onProgress?: ProgressCallback
+  ): Promise<EncoderResult> {
+    if (this.options.debug) {
+      console.log(`[GifencEncoder] Starting encoding of ${frames.length} frames`);
+    }
+    
+    try {
+      // Report start
+      onProgress?.({
+        percent: 0,
+        message: 'Initializing gifenc encoder...',
+        currentFrame: 0,
+        totalFrames: frames.length
+      });
+      
+      // Create encoder instance
+      const gif = GIFEncoder();
+      const frameDelay = this.getFrameDelay();
+      
+      // Process each frame
+      for (let i = 0; i < frames.length; i++) {
+        const frame = frames[i];
+        const progress = Math.round((i / frames.length) * 90); // 0-90% for encoding
+        
+        onProgress?.({
+          percent: progress,
+          message: `Encoding frame ${i + 1}/${frames.length}`,
+          currentFrame: i + 1,
+          totalFrames: frames.length
+        });
+        
+        // Get image data
+        let imageData: Uint8ClampedArray;
+        if (frame.data instanceof ImageData) {
+          imageData = frame.data.data;
+        } else {
+          imageData = frame.data;
+        }
+        
+        // Ensure we have RGBA data
+        if (imageData.length !== frame.width * frame.height * 4) {
+          throw new Error(`Invalid frame data size for frame ${i + 1}`);
+        }
+        
+        // Convert Uint8ClampedArray to regular Uint8Array for gifenc
+        const uint8Data = new Uint8Array(imageData.buffer, imageData.byteOffset, imageData.byteLength);
+        
+        // Quantize the image to 256 colors using simpler method
+        const palette = quantize(uint8Data, 256);
+        
+        // Apply palette to get indexed color data
+        const indexed = applyPalette(uint8Data, palette);
+        
+        // Write frame to GIF
+        gif.writeFrame(indexed, frame.width, frame.height, {
+          palette,
+          delay: frame.delay || frameDelay,
+          disposal: 2 // Clear to background
+        });
+        
+        if (this.options.debug) {
+          console.log(`[GifencEncoder] Encoded frame ${i + 1}/${frames.length}`);
+        }
+      }
+      
+      // Finalize GIF
+      onProgress?.({
+        percent: 95,
+        message: 'Finalizing GIF...',
+        currentFrame: frames.length,
+        totalFrames: frames.length
+      });
+      
+      gif.finish();
+      
+      // Get the encoded bytes
+      const bytes = gif.bytes();
+      const blob = new Blob([bytes], { type: 'image/gif' });
+      
+      if (this.options.debug) {
+        console.log(`[GifencEncoder] Encoding complete. Size: ${blob.size} bytes`);
+      }
+      
+      logger.info('[GifencEncoder] GIF encoding completed', {
+        frameCount: frames.length,
+        size: blob.size
+      });
+      
+      // Report completion
+      onProgress?.({
+        percent: 100,
+        message: 'Complete!',
+        currentFrame: frames.length,
+        totalFrames: frames.length
+      });
+      
+      return this.createResult(blob, frames.length);
+      
+    } catch (error) {
+      logger.error('[GifencEncoder] Encoding failed', { error });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`GIF encoding failed: ${errorMessage}`);
+    }
+  }
+}

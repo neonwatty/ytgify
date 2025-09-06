@@ -15,6 +15,11 @@ export interface TimelineOverlayProps {
   isCreating?: boolean;
   isPreviewActive?: boolean;
   className?: string;
+  processingStatus?: {
+    stage: string;
+    progress: number;
+    message: string;
+  };
 }
 
 export interface TimelineOverlayState {
@@ -33,8 +38,18 @@ export const TimelineOverlay: React.FC<TimelineOverlayProps> = ({
   onPreviewToggle: _onPreviewToggle,
   isCreating = false,
   isPreviewActive: _isPreviewActive,
-  className = ''
+  className = '',
+  processingStatus
 }) => {
+  // Debug logging
+  React.useEffect(() => {
+    console.log('[TimelineOverlay] Props updated:', { 
+      isCreating, 
+      processingStatus,
+      progressValue: processingStatus?.progress,
+      willRenderBar: isCreating && processingStatus
+    });
+  }, [isCreating, processingStatus]);
   // Initialize selection around current time
   const [selection, setSelection] = useState<TimelineSelection>(() => {
     const startTime = Math.max(0, currentTime - 2);
@@ -229,6 +244,27 @@ export const TimelineOverlay: React.FC<TimelineOverlayProps> = ({
           </div>
         </div>
 
+        {/* Progress Indicator */}
+        {isCreating && processingStatus && (
+          <div className="ytgif-progress-container">
+            <div className="ytgif-progress-header">
+              <span className="ytgif-progress-stage">{processingStatus.stage}</span>
+              <span className="ytgif-progress-percentage">{Math.round(processingStatus.progress)}%</span>
+            </div>
+            <div className="ytgif-progress-bar-wrapper">
+              <div 
+                className="ytgif-progress-bar" 
+                style={{ 
+                  width: `${Math.min(100, Math.max(0, processingStatus.progress))}%`,
+                  '--progress': `${Math.min(100, Math.max(0, processingStatus.progress))}%`
+                } as React.CSSProperties}
+                data-progress={processingStatus.progress}
+              />
+            </div>
+            <div className="ytgif-progress-message">{processingStatus.message}</div>
+          </div>
+        )}
+
         <footer className="ytgif-timeline-actions">
           <button
             className={`ytgif-timeline-create ${isCreating ? 'loading' : ''}`}
@@ -236,7 +272,10 @@ export const TimelineOverlay: React.FC<TimelineOverlayProps> = ({
             disabled={isCreating || selection.duration < 0.5}
             type="button"
           >
-            {isCreating ? 'Creating...' : 'Create GIF'}
+            {isCreating && processingStatus 
+              ? `${processingStatus.stage} (${Math.round(processingStatus.progress)}%)`
+              : isCreating ? 'Creating...' : 'Create GIF'
+            }
           </button>
           <button
             className="ytgif-timeline-cancel"

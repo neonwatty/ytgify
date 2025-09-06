@@ -1,4 +1,12 @@
-import { logger as libLogger, LogLevel, LogEntry } from '../lib/logger';
+import { logger as libLogger, LogLevel as LibLogLevel, LogEntry } from '../lib/logger';
+
+export enum LogLevel {
+  DEBUG = 0,
+  INFO = 1,
+  WARN = 2,
+  ERROR = 3,
+  NONE = 4
+}
 
 export interface PerformanceMetric {
   name: string;
@@ -14,6 +22,208 @@ export interface AnalyticsEvent {
   userId?: string;
 }
 
+export class Logger {
+  private static globalLevel: LogLevel = LogLevel.INFO;
+  private static useGlobalLevel: boolean = false;
+  private name: string;
+  private level: LogLevel | null = null;
+  private timestampEnabled: boolean = false;
+  private prefix: string = '';
+  private filter: RegExp | null = null;
+  private timers: Map<string, number> = new Map();
+
+  constructor(name: string, level?: LogLevel) {
+    this.name = name;
+    if (level !== undefined) {
+      this.level = level;
+    } else if (!Logger.useGlobalLevel) {
+      // Set default level based on environment only if not using global level
+      const env = typeof process !== 'undefined' ? process.env?.NODE_ENV : undefined;
+      if (env === 'production') {
+        this.level = LogLevel.WARN;
+      } else if (env === 'development') {
+        this.level = LogLevel.DEBUG;
+      }
+      // If env is undefined or 'test', don't set a level, use global default
+    }
+  }
+
+  static setGlobalLevel(level: LogLevel): void {
+    Logger.globalLevel = level;
+    Logger.useGlobalLevel = true;
+  }
+
+  static resetGlobalSettings(): void {
+    Logger.globalLevel = LogLevel.INFO;
+    Logger.useGlobalLevel = false;
+  }
+
+  getName(): string {
+    return this.name;
+  }
+
+  getLevel(): LogLevel {
+    if (Logger.useGlobalLevel && this.level === null) {
+      return Logger.globalLevel;
+    }
+    return this.level ?? Logger.globalLevel;
+  }
+
+  setLevel(level: LogLevel): void {
+    this.level = level;
+  }
+
+  enableTimestamp(enabled: boolean): void {
+    this.timestampEnabled = enabled;
+  }
+
+  setPrefix(prefix: string): void {
+    this.prefix = prefix;
+  }
+
+  setFilter(filter: RegExp): void {
+    this.filter = filter;
+  }
+
+  clearFilter(): void {
+    this.filter = null;
+  }
+
+  isProduction(): boolean {
+    return typeof process !== 'undefined' && process.env?.NODE_ENV === 'production';
+  }
+
+  child(name: string): Logger {
+    const childLogger = new Logger(`${this.name}:${name}`);
+    childLogger.level = this.level;
+    childLogger.timestampEnabled = this.timestampEnabled;
+    childLogger.prefix = this.prefix;
+    childLogger.filter = this.filter;
+    return childLogger;
+  }
+
+  private shouldLog(level: LogLevel): boolean {
+    const currentLevel = this.getLevel();
+    return level >= currentLevel;
+  }
+
+  private formatPrefix(): string {
+    let fullPrefix = '';
+    
+    if (this.timestampEnabled) {
+      const now = new Date();
+      const hours = now.getHours().toString().padStart(2, '0');
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      const seconds = now.getSeconds().toString().padStart(2, '0');
+      const ms = now.getMilliseconds().toString().padStart(3, '0');
+      fullPrefix += `[${hours}:${minutes}:${seconds}.${ms}] `;
+    }
+    
+    if (this.prefix) {
+      fullPrefix += `${this.prefix} `;
+    }
+    
+    fullPrefix += `[${this.name}]`;
+    
+    return fullPrefix;
+  }
+
+  private getLogLevelString(level: LogLevel): string {
+    switch (level) {
+      case LogLevel.DEBUG:
+        return 'DEBUG';
+      case LogLevel.INFO:
+        return 'INFO';
+      case LogLevel.WARN:
+        return 'WARN';
+      case LogLevel.ERROR:
+        return 'ERROR';
+      default:
+        return 'UNKNOWN';
+    }
+  }
+
+  private doLog(level: LogLevel, message: string, ...args: any[]): void {
+    if (!this.shouldLog(level)) {
+      return;
+    }
+
+    if (this.filter && !this.filter.test(message)) {
+      return;
+    }
+
+    const prefix = `${this.formatPrefix()} [${this.getLogLevelString(level)}]`;
+    
+    try {
+      switch (level) {
+        case LogLevel.DEBUG:
+          console.debug(prefix, message, ...args);
+          break;
+        case LogLevel.INFO:
+          console.info(prefix, message, ...args);
+          break;
+        case LogLevel.WARN:
+          console.warn(prefix, message, ...args);
+          break;
+        case LogLevel.ERROR:
+          console.error(prefix, message, ...args);
+          break;
+      }
+    } catch (error) {
+      // Silently ignore logging errors
+    }
+  }
+
+  debug(message: string, ...args: any[]): void {
+    this.doLog(LogLevel.DEBUG, message, ...args);
+  }
+
+  info(message: string, ...args: any[]): void {
+    this.doLog(LogLevel.INFO, message, ...args);
+  }
+
+  warn(message: string, ...args: any[]): void {
+    this.doLog(LogLevel.WARN, message, ...args);
+  }
+
+  error(message: string, ...args: any[]): void {
+    this.doLog(LogLevel.ERROR, message, ...args);
+  }
+
+  time(label: string): void {
+    this.timers.set(label, performance.now());
+  }
+
+  timeEnd(label: string): void {
+    const startTime = this.timers.get(label);
+    if (startTime === undefined) {
+      this.warn(`Timer "${label}" does not exist`);
+      return;
+    }
+
+    const duration = performance.now() - startTime;
+    this.timers.delete(label);
+    this.info(`${label}:`, `${Math.round(duration)}ms`);
+  }
+
+  group(label: string): void {
+    console.group(`[${this.name}] ${label}`);
+  }
+
+  groupCollapsed(label: string): void {
+    console.groupCollapsed(`[${this.name}] ${label}`);
+  }
+
+  groupEnd(): void {
+    console.groupEnd();
+  }
+
+  destroy(): void {
+    this.timers.clear();
+  }
+}
+
+// SharedLogger class for backwards compatibility
 class SharedLogger {
   private static instance: SharedLogger;
   private performanceBuffer: PerformanceMetric[] = [];
@@ -42,7 +252,7 @@ class SharedLogger {
   }
 
   public log(
-    level: LogLevel,
+    level: LibLogLevel,
     message: string,
     context?: Record<string, unknown>,
     source: LogEntry['source'] = 'background'

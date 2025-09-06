@@ -7,9 +7,16 @@ import {
   EncodeGifResponse,
   GetVideoStateRequest,
   GetVideoStateResponse,
+  TimelineSelectionUpdate,
+  RequestVideoDataForGif,
+  VideoDataResponse,
+  GifCreationComplete,
+  SaveGifRequest,
+  SaveGifResponse,
   isExtractFramesRequest,
   isEncodeGifRequest,
   isGetVideoStateRequest,
+  isTimelineSelectionUpdate,
   isLogMessage
 } from '@/types';
 import { backgroundWorker, VideoProcessingJob } from './worker';
@@ -78,6 +85,34 @@ export class BackgroundMessageHandler {
       if (isLogMessage(message)) {
         this.handleLogging(message);
         return false; // No response needed
+      }
+
+      if (isTimelineSelectionUpdate(message)) {
+        // Send immediate response before async processing
+        sendResponse({
+          type: 'SUCCESS_RESPONSE',
+          success: true,
+          data: { message: 'GIF creation started' }
+        } as any);
+        
+        // Handle the timeline selection asynchronously  
+        this.handleTimelineSelectionUpdate(message, sender);
+        return false; // Response already sent
+      }
+
+      // Handle GIF storage request
+      if (message.type === 'SAVE_GIF_REQUEST') {
+        // Use Promise to ensure the port stays open
+        (async () => {
+          await this.handleSaveGifRequest(message, sender, sendResponse);
+        })();
+        return true; // Keep port open for async response
+      }
+
+      // Handle GIF download request
+      if ((message as any).type === 'DOWNLOAD_GIF') {
+        this.handleGifDownload(message, sendResponse);
+        return true;
       }
 
       // Handle job status queries (temporarily cast until types are fully integrated)
@@ -161,6 +196,20 @@ export class BackgroundMessageHandler {
         requestId: message.id,
         sender
       });
+      
+      // Send initial progress update immediately
+      if (sender.tab?.id) {
+        chrome.tabs.sendMessage(sender.tab.id, {
+          type: 'JOB_PROGRESS_UPDATE',
+          data: {
+            jobId,
+            progress: 0,
+            status: 'processing',
+            stage: 'initializing',
+            message: 'Starting frame extraction...'
+          }
+        }).catch(() => {});
+      }
 
       // Set up job completion monitoring
       this.monitorJobCompletion(jobId, (job) => {
@@ -237,6 +286,20 @@ export class BackgroundMessageHandler {
         requestId: message.id,
         sender
       });
+      
+      // Send initial progress update immediately
+      if (sender.tab?.id) {
+        chrome.tabs.sendMessage(sender.tab.id, {
+          type: 'JOB_PROGRESS_UPDATE',
+          data: {
+            jobId,
+            progress: 0,
+            status: 'processing',
+            stage: 'preparing',
+            message: 'Starting GIF encoding...'
+          }
+        }).catch(() => {});
+      }
 
       this.monitorJobCompletion(jobId, (job) => {
         try {
@@ -346,6 +409,419 @@ export class BackgroundMessageHandler {
     logger.log(level, logMessage, context, 'background');
   }
 
+  // Handle GIF storage request
+  private async handleSaveGifRequest(
+    message: ExtensionMessage,
+    sender: chrome.runtime.MessageSender,
+    sendResponse: (response: ExtensionMessage) => void
+  ): Promise<void> {
+    try {
+      logger.info('[MessageHandler] Saving GIF to storage', { 
+        from: sender.tab?.url || 'popup'
+      });
+
+      // Extract GIF data from message
+      const saveRequest = message as SaveGifRequest;
+      const { gifData } = saveRequest.data;
+      
+      // Save directly to IndexedDB without using the storage manager
+      // to avoid document reference issues
+      const saved = await this.saveGifDirectly(gifData);
+      
+      if (saved) {
+        logger.info('[MessageHandler] GIF saved successfully', { id: gifData.id });
+        
+        const response: SaveGifResponse = {
+          type: 'SAVE_GIF_RESPONSE',
+          success: true,
+          data: { gifId: gifData.id }
+        };
+        sendResponse(response);
+      } else {
+        throw new Error('Failed to save GIF to IndexedDB');
+      }
+      
+    } catch (error) {
+      logger.error('[MessageHandler] Failed to save GIF', { error });
+      const response: SaveGifResponse = {
+        type: 'SAVE_GIF_RESPONSE',
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to save GIF'
+      };
+      sendResponse(response);
+    }
+  }
+
+  // Helper to convert blob to data URL
+  private async blobToDataUrl(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  // Direct IndexedDB save without storage manager
+  private async saveGifDirectly(gifData: any): Promise<boolean> {
+    return new Promise((resolve) => {
+      try {
+        logger.info('[MessageHandler] Starting direct IndexedDB save', { id: gifData.id });
+        
+        if (typeof indexedDB === 'undefined') {
+          logger.error('[MessageHandler] IndexedDB is not available');
+          resolve(false);
+          return;
+        }
+        
+        const dbName = 'YouTubeGifStore';
+        const request = indexedDB.open(dbName, 3);
+        
+        request.onerror = () => {
+          logger.error('[MessageHandler] Failed to open IndexedDB', { error: request.error });
+          resolve(false);
+        };
+      
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        
+        // Create stores if they don't exist
+        if (!db.objectStoreNames.contains('gifs')) {
+          const gifsStore = db.createObjectStore('gifs', { keyPath: 'id' });
+          gifsStore.createIndex('createdAt', 'metadata.createdAt', { unique: false });
+        }
+        
+        if (!db.objectStoreNames.contains('thumbnails')) {
+          db.createObjectStore('thumbnails', { keyPath: 'gifId' });
+        }
+        
+        if (!db.objectStoreNames.contains('metadata')) {
+          const metaStore = db.createObjectStore('metadata', { keyPath: 'id' });
+          metaStore.createIndex('youtubeUrl', 'youtubeUrl', { unique: false });
+        }
+      };
+      
+      request.onsuccess = () => {
+        const db = request.result;
+        const transaction = db.transaction(['gifs', 'thumbnails', 'metadata'], 'readwrite');
+        const gifsStore = transaction.objectStore('gifs');
+        const thumbnailsStore = transaction.objectStore('thumbnails');
+        const metadataStore = transaction.objectStore('metadata');
+        
+        // Save main GIF data
+        const gifRequest = gifsStore.put(gifData);
+        
+        // Save thumbnail if present
+        if (gifData.thumbnailBlob) {
+          thumbnailsStore.put({
+            gifId: gifData.id,
+            blob: gifData.thumbnailBlob
+          });
+        }
+        
+        // Save metadata for quick queries
+        metadataStore.put({
+          id: gifData.id,
+          title: gifData.title,
+          youtubeUrl: gifData.metadata?.youtubeUrl,
+          createdAt: gifData.metadata?.createdAt || new Date(),
+          lastModified: new Date()
+        });
+        
+        transaction.oncomplete = () => {
+          logger.info('[MessageHandler] IndexedDB transaction completed');
+          resolve(true);
+        };
+        
+        transaction.onerror = () => {
+          logger.error('[MessageHandler] IndexedDB transaction failed');
+          resolve(false);
+        };
+        
+        gifRequest.onerror = () => {
+          logger.error('[MessageHandler] Failed to save GIF to IndexedDB');
+          resolve(false);
+        };
+      };
+      } catch (error) {
+        logger.error('[MessageHandler] Exception in saveGifDirectly', { error });
+        resolve(false);
+      }
+    });
+  }
+
+  // Handle timeline selection updates - initiate complete GIF creation process
+  private handleTimelineSelectionUpdate(
+    message: TimelineSelectionUpdate,
+    sender: chrome.runtime.MessageSender
+  ): void {
+    // Wrap in async IIFE to handle async operations
+    (async () => {
+      try {
+      logger.info('[MessageHandler] Starting GIF creation from timeline selection', { 
+        selection: message.data,
+        from: sender.tab?.url 
+      });
+
+      if (!sender.tab?.id) {
+        throw createError('youtube', 'No active tab found for GIF creation');
+      }
+
+      const { startTime, endTime, duration } = message.data;
+
+      // Validate selection
+      if (duration < 0.5) {
+        throw createError('gif', 'Selection too short - minimum duration is 0.5 seconds');
+      }
+
+      if (duration > 30) {
+        throw createError('gif', 'Selection too long - maximum duration is 30 seconds');
+      }
+
+      // Send request to content script to extract video data and start frame extraction
+      try {
+        const videoDataResponse = await new Promise<VideoDataResponse['data']>((resolve, reject) => {
+          const request: RequestVideoDataForGif = {
+            type: 'REQUEST_VIDEO_DATA_FOR_GIF',
+            data: { startTime, endTime, duration }
+          };
+          
+          chrome.tabs.sendMessage(sender.tab!.id!, request, (response: VideoDataResponse) => {
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message));
+            } else if (response?.error) {
+              reject(new Error(response.error));
+            } else {
+              resolve(response.data);
+            }
+          });
+        });
+
+        // Create frame extraction job
+        if (!videoDataResponse) {
+          throw createError('youtube', 'No video data received from content script');
+        }
+        
+        const frameExtractionRequest: ExtractFramesRequest = {
+          type: 'EXTRACT_FRAMES',
+          id: message.id,
+          data: {
+            videoElement: videoDataResponse.videoElement,
+            settings: {
+              startTime,
+              endTime,
+              frameRate: 10, // Default frame rate
+              quality: 'medium' as const // Default quality
+            }
+          }
+        };
+
+        // Start frame extraction and chain to GIF encoding (async, no await)
+        // Completion will be notified via GIF_CREATION_COMPLETE message
+        this.handleFrameExtractionForGif(frameExtractionRequest, sender, (completionResponse) => {
+          // Send completion via tab message instead of response callback
+          if (sender.tab?.id) {
+            chrome.tabs.sendMessage(sender.tab.id, completionResponse).catch(() => {});
+          }
+        }).catch(error => {
+          logger.error('[MessageHandler] Frame extraction failed after acknowledgment', { error });
+          // Send error notification to content script
+          if (sender.tab?.id) {
+            chrome.tabs.sendMessage(sender.tab.id, {
+              type: 'GIF_CREATION_COMPLETE',
+              success: false,
+              error: error instanceof Error ? error.message : 'GIF creation failed'
+            }).catch(() => {});
+          }
+        });
+
+      } catch (error) {
+        logger.error('[MessageHandler] Failed to get video data from content script', { error });
+        throw createError('youtube', 'Could not access video data for GIF creation');
+      }
+
+    } catch (error) {
+      logger.error('[MessageHandler] Timeline selection update failed', { error });
+      
+      // Send error notification to content script
+      if (sender.tab?.id) {
+        chrome.tabs.sendMessage(sender.tab.id, {
+          type: 'GIF_CREATION_COMPLETE',
+          success: false,
+          error: error instanceof Error ? error.message : 'GIF creation failed'
+        }).catch(() => {});
+      }
+    }
+    })(); // End of async IIFE
+  }
+
+  // Handle frame extraction specifically for GIF creation (chains to encoding)
+  private async handleFrameExtractionForGif(
+    message: ExtractFramesRequest,
+    sender: chrome.runtime.MessageSender,
+    originalSendResponse: (response: ExtensionMessage) => void
+  ): Promise<void> {
+    try {
+      if (this.activeJobs.size >= (this.options.maxConcurrentJobs || 5)) {
+        throw createError('video', 'Too many concurrent jobs. Please wait for current jobs to complete.');
+      }
+
+      // Add tab ID to the message for service worker to content script communication
+      const enrichedMessage = {
+        ...message,
+        data: {
+          ...message.data,
+          tabId: sender.tab?.id
+        }
+      };
+      
+      logger.info('[MessageHandler] Adding frame extraction job with tabId', { 
+        tabId: sender.tab?.id,
+        hasTabId: !!sender.tab?.id 
+      });
+      
+      const jobId = backgroundWorker.addFrameExtractionJob(enrichedMessage as ExtractFramesRequest);
+      
+      this.activeJobs.set(jobId, {
+        jobId,
+        requestId: message.id,
+        sender
+      });
+
+      // Monitor frame extraction completion and chain to GIF encoding
+      this.monitorJobCompletion(jobId, async (job) => {
+        try {
+          if (job.status === 'completed') {
+            const jobData = job.data as { extractedFrames?: ImageData[] };
+            const frames = jobData.extractedFrames || [];
+            
+            logger.info('[MessageHandler] Frame extraction completed, starting GIF encoding', { 
+              jobId, 
+              frameCount: frames.length 
+            });
+
+            // Create GIF encoding job with extracted frames
+            const gifEncodingRequest: EncodeGifRequest = {
+              type: 'ENCODE_GIF',
+              id: message.id,
+              data: {
+                frames,
+                settings: {
+                  frameRate: message.data.settings.frameRate,
+                  width: Math.min(480, frames[0]?.width || 480),
+                  height: Math.min(360, frames[0]?.height || 360),
+                  quality: message.data.settings.quality,
+                  loop: true
+                },
+                metadata: {
+                  title: sender.tab?.title || 'YouTube GIF',
+                  description: `GIF created from YouTube video`,
+                  youtubeUrl: sender.tab?.url || '',
+                  startTime: message.data.settings.startTime,
+                  endTime: message.data.settings.endTime
+                }
+              }
+            };
+
+            // Start GIF encoding
+            await this.handleGifEncodingForTimeline(gifEncodingRequest, sender, originalSendResponse);
+
+          } else if (job.status === 'failed') {
+            originalSendResponse({
+              type: 'ERROR_RESPONSE',
+              success: false,
+              error: job.error || 'Frame extraction failed'
+            } as ExtensionMessage);
+          }
+        } finally {
+          this.activeJobs.delete(jobId);
+        }
+      });
+
+    } catch (error) {
+      logger.error('[MessageHandler] Frame extraction for GIF failed', { error });
+      originalSendResponse({
+        type: 'ERROR_RESPONSE',
+        success: false,
+        error: error instanceof Error ? error.message : 'Frame extraction failed'
+      } as ExtensionMessage);
+    }
+  }
+
+  // Handle GIF encoding specifically for timeline-initiated GIF creation
+  private async handleGifEncodingForTimeline(
+    message: EncodeGifRequest,
+    sender: chrome.runtime.MessageSender,
+    originalSendResponse: (response: ExtensionMessage) => void
+  ): Promise<void> {
+    try {
+      if (this.activeJobs.size >= (this.options.maxConcurrentJobs || 5)) {
+        throw createError('gif', 'Too many concurrent jobs. Please wait for current jobs to complete.');
+      }
+
+      const jobId = backgroundWorker.addGifEncodingJob(message);
+      
+      this.activeJobs.set(jobId, {
+        jobId,
+        requestId: message.id,
+        sender
+      });
+
+      // Monitor GIF encoding completion
+      this.monitorJobCompletion(jobId, async (job) => {
+        try {
+          if (job.status === 'completed') {
+            const jobData = job.data as { encodedGif: { gifBlob: Blob; thumbnailBlob: Blob; metadata: Record<string, unknown> } };
+            const encodedData = jobData.encodedGif;
+            
+            // Convert blobs to data URLs for message passing
+            // (Blobs can't be sent directly through Chrome messages)
+            const gifDataUrl = await this.blobToDataUrl(encodedData.gifBlob);
+            const thumbnailDataUrl = encodedData.thumbnailBlob ? 
+              await this.blobToDataUrl(encodedData.thumbnailBlob) : undefined;
+            
+            // Send success response with GIF data as data URLs
+            const successResponse: GifCreationComplete = {
+              type: 'GIF_CREATION_COMPLETE',
+              success: true,
+              data: {
+                gifBlob: encodedData.gifBlob, // Keep for backward compatibility
+                thumbnailBlob: encodedData.thumbnailBlob,
+                gifDataUrl, // Add data URL
+                thumbnailDataUrl,
+                metadata: encodedData.metadata
+              }
+            } as any;
+            originalSendResponse(successResponse);
+
+            logger.info('[MessageHandler] GIF creation completed successfully', { 
+              jobId, 
+              fileSize: encodedData.metadata.fileSize 
+            });
+
+          } else if (job.status === 'failed') {
+            originalSendResponse({
+              type: 'ERROR_RESPONSE',
+              success: false,
+              error: job.error || 'GIF encoding failed'
+            } as ExtensionMessage);
+            logger.error('[MessageHandler] GIF encoding failed', { jobId, error: job.error });
+          }
+        } finally {
+          this.activeJobs.delete(jobId);
+        }
+      });
+
+    } catch (error) {
+      logger.error('[MessageHandler] GIF encoding for timeline failed', { error });
+      originalSendResponse({
+        type: 'ERROR_RESPONSE',
+        success: false,
+        error: error instanceof Error ? error.message : 'GIF encoding failed'
+      } as ExtensionMessage);
+    }
+  }
+
   // Handle job status queries
   private handleJobStatusQuery(
     message: ExtensionMessage,
@@ -419,6 +895,38 @@ export class BackgroundMessageHandler {
     }
   }
 
+  // Handle GIF download request from content script
+  private handleGifDownload(
+    message: any,
+    sendResponse: (response: any) => void
+  ): void {
+    const { url, filename } = message.data;
+    
+    logger.info('[MessageHandler] Processing GIF download request', { filename });
+    
+    chrome.downloads.download({
+      url,
+      filename,
+      saveAs: false
+    }, (downloadId) => {
+      if (chrome.runtime.lastError) {
+        logger.error('[MessageHandler] Download failed', { 
+          error: chrome.runtime.lastError.message 
+        });
+        sendResponse({ 
+          success: false, 
+          error: chrome.runtime.lastError.message 
+        });
+      } else {
+        logger.info('[MessageHandler] Download started', { downloadId, filename });
+        sendResponse({ 
+          success: true, 
+          downloadId 
+        });
+      }
+    });
+  }
+
   // Monitor job completion with polling
   private monitorJobCompletion(
     jobId: string, 
@@ -464,7 +972,7 @@ export class BackgroundMessageHandler {
 
     this.progressUpdateInterval = setInterval(() => {
       this.broadcastProgressUpdates();
-    }, 2000); // Update every 2 seconds
+    }, 500); // Update every 500ms for more frequent updates
   }
 
   // Broadcast progress updates to relevant senders
@@ -474,12 +982,61 @@ export class BackgroundMessageHandler {
       
       if (job && job.status === 'processing' && jobInfo.sender.tab?.id) {
         try {
+          // Determine stage and message based on job type and progress
+          let stage = '';
+          let message = '';
+          let details: any = {};
+
+          if (job.type === 'extract_frames') {
+            if (job.progress < 10) {
+              stage = 'initializing';
+              message = 'Initializing video decoder...';
+            } else if (job.progress < 90) {
+              stage = 'extracting';
+              message = `Extracting frames from video... ${Math.round(job.progress)}%`;
+              // Extract frame details if available in job data
+              const jobData = job.data as any;
+              if (jobData.extractedFrames) {
+                details.currentFrame = jobData.extractedFrames.length;
+                details.totalFrames = Math.ceil((jobData.settings?.endTime - jobData.settings?.startTime) * jobData.settings?.frameRate);
+              }
+            } else {
+              stage = 'finalizing';
+              message = 'Finalizing frame extraction...';
+            }
+          } else if (job.type === 'encode_gif') {
+            if (job.progress < 10) {
+              stage = 'preparing';
+              message = 'Preparing GIF encoder...';
+            } else if (job.progress < 40) {
+              stage = 'encoding';
+              message = `Encoding frames to GIF... ${Math.round(job.progress)}%`;
+              const jobData = job.data as any;
+              if (jobData.frames) {
+                details.totalFrames = jobData.frames.length;
+                details.currentFrame = Math.floor((job.progress / 100) * jobData.frames.length);
+              }
+            } else if (job.progress < 70) {
+              stage = 'optimizing';
+              message = `Optimizing GIF colors and size... ${Math.round(job.progress)}%`;
+            } else if (job.progress < 90) {
+              stage = 'compressing';
+              message = `Compressing GIF... ${Math.round(job.progress)}%`;
+            } else {
+              stage = 'finalizing';
+              message = 'Creating thumbnail and finalizing...';
+            }
+          }
+
           chrome.tabs.sendMessage(jobInfo.sender.tab.id, {
             type: 'JOB_PROGRESS_UPDATE',
             data: {
               jobId,
               progress: job.progress,
-              status: job.status
+              status: job.status,
+              stage,
+              message,
+              details
             }
           });
         } catch (error) {

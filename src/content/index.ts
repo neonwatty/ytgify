@@ -28,6 +28,8 @@ import { playerIntegration } from './player-integration';
 import { playerController } from './player-controller';
 import { TimelineOverlayWrapper } from './timeline-overlay-wrapper';
 import { GifPreviewModal } from './gif-preview-modal';
+import { EditorOverlayEnhanced } from './editor-overlay-enhanced';
+import { TimelineEditorUnified } from './timeline-editor-unified';
 import { overlayStateManager } from './overlay-state';
 import { cleanupManager } from './cleanup-manager';
 import { initializeContentScriptFrameExtraction } from './frame-extractor';
@@ -38,12 +40,15 @@ class YouTubeGifMaker {
   private timelineOverlay: HTMLDivElement | null = null;
   private timelineRoot: Root | null = null;
   private previewRoot: Root | null = null;
+  private editorRoot: Root | null = null;
+  private editorOverlay: HTMLDivElement | null = null;
   private isActive = false;
   private isCreatingGif = false;
   private currentSelection: TimelineSelection | null = null;
   private videoElement: HTMLVideoElement | null = null;
   private navigationUnsubscribe: (() => void) | null = null;
   private processingStatus: { stage: string; progress: number; message: string } | undefined = undefined;
+  private extractedFrames: ImageData[] | null = null;
 
   constructor() {
     this.init();
@@ -478,6 +483,12 @@ class YouTubeGifMaker {
 
   private showTimelineOverlay(message: ShowTimelineRequest) {
     console.log('[UI FIX DEBUG] showTimelineOverlay started');
+    
+    // Use the unified interface instead
+    this.showUnifiedEditor();
+    return;
+    
+    // Old timeline overlay code (kept for reference)
     try {
       // Remove existing overlay
       this.hideTimelineOverlay();
@@ -495,12 +506,13 @@ class YouTubeGifMaker {
     };
 
     // Create timeline overlay container with guaranteed visibility
-    this.timelineOverlay = document.createElement('div');
-    this.timelineOverlay.id = 'ytgif-timeline-overlay';
+    const overlay = document.createElement('div');
+    overlay.id = 'ytgif-timeline-overlay';
+    this.timelineOverlay = overlay;
     
     // Force visibility with inline styles - Phase 1 immediate fix
     console.log('[UI FIX DEBUG] Applying inline styles to overlay');
-    this.timelineOverlay.style.cssText = `
+    overlay.style.cssText = `
       position: fixed !important;
       bottom: 100px !important;
       left: 50% !important;
@@ -519,22 +531,22 @@ class YouTubeGifMaker {
     
     // Add debug border in development
     if (process.env.NODE_ENV === 'development') {
-      this.timelineOverlay.style.border = '2px solid rgba(255, 0, 0, 0.5)';
+      overlay.style.border = '2px solid rgba(255, 0, 0, 0.5)';
       console.log('[UI Fix] Timeline overlay created with inline styles', {
-        element: this.timelineOverlay,
-        computed: window.getComputedStyle(this.timelineOverlay),
-        rect: this.timelineOverlay.getBoundingClientRect()
+        element: overlay,
+        computed: window.getComputedStyle(overlay),
+        rect: overlay.getBoundingClientRect()
       });
     }
     
-    document.body.appendChild(this.timelineOverlay);
-    console.log('[UI FIX DEBUG] Overlay appended to body. Element:', this.timelineOverlay);
+    document.body.appendChild(overlay);
+    console.log('[UI FIX DEBUG] Overlay appended to body. Element:', overlay);
     console.log('[UI FIX DEBUG] Overlay in DOM?', document.querySelector('#ytgif-timeline-overlay') !== null);
 
     // Create React root and render timeline overlay
     console.log('[UI FIX DEBUG] About to create React root...');
     try {
-      this.timelineRoot = createRoot(this.timelineOverlay);
+      this.timelineRoot = createRoot(overlay);
       console.log('[UI FIX DEBUG] React root created successfully');
     } catch (reactError) {
       console.error('[UI FIX DEBUG] Failed to create React root:', reactError);
@@ -542,11 +554,14 @@ class YouTubeGifMaker {
     }
     
     // Register elements with overlay state manager
-    overlayStateManager.setElements(this.timelineOverlay, this.timelineRoot);
+    overlayStateManager.setElements(overlay, this.timelineRoot);
     
     console.log('[UI FIX DEBUG] About to render React component...');
     try {
-      this.timelineRoot.render(
+      if (!this.timelineRoot) {
+        throw new Error('Timeline root not created');
+      }
+      this.timelineRoot!.render(
         React.createElement(TimelineOverlayWrapper, {
         videoDuration,
         currentTime,
@@ -747,13 +762,198 @@ class YouTubeGifMaker {
       return;
     }
 
-    // Set creating state and dispatch event
+    // Show the enhanced editor instead of directly creating GIF
+    this.showEnhancedEditor();
+    this.log('info', '[Content] Opening enhanced editor', { startTime, endTime, duration });
+  }
+
+  private showUnifiedEditor() {
+    if (!this.videoElement) {
+      this.log('warn', '[Content] Cannot show unified editor - no video element');
+      return;
+    }
+
+    // Hide any existing overlays
+    this.hideTimelineOverlay();
+    this.hideEnhancedEditor();
+
+    // Create unified editor overlay container
+    if (!this.editorOverlay) {
+      this.editorOverlay = document.createElement('div');
+      this.editorOverlay.className = 'ytgif-unified-overlay-container';
+      document.body.appendChild(this.editorOverlay);
+      this.editorRoot = createRoot(this.editorOverlay);
+    }
+
+    const videoDuration = this.videoElement.duration;
+    const currentTime = this.videoElement.currentTime;
+
+    // Render the unified editor
+    this.editorRoot?.render(
+      React.createElement(TimelineEditorUnified, {
+        videoDuration,
+        currentTime,
+        videoElement: this.videoElement,
+        onClose: () => {
+          this.hideEnhancedEditor();
+          this.deactivateGifMode();
+        },
+        onSave: async (selection, settings, textOverlays) => {
+          this.currentSelection = selection;
+          await this.processGifWithSettings(settings, textOverlays);
+        },
+        onExport: async (selection, settings, textOverlays) => {
+          this.currentSelection = selection;
+          await this.processGifWithSettings(settings, textOverlays, true);
+        },
+        onSeekTo: (time) => {
+          if (this.videoElement) {
+            this.videoElement.currentTime = time;
+          }
+        }
+      })
+    );
+  }
+
+  private showEnhancedEditor() {
+    if (!this.videoElement || !this.currentSelection) return;
+
+    // Create editor overlay container
+    if (!this.editorOverlay) {
+      this.editorOverlay = document.createElement('div');
+      this.editorOverlay.className = 'ytgif-editor-overlay-container';
+      document.body.appendChild(this.editorOverlay);
+      this.editorRoot = createRoot(this.editorOverlay);
+    }
+
+    const videoUrl = window.location.href;
+    const videoDuration = this.videoElement.duration;
+    const currentTime = this.videoElement.currentTime;
+
+    // Render the enhanced editor
+    this.editorRoot?.render(
+      React.createElement(EditorOverlayEnhanced, {
+        videoUrl,
+        selection: this.currentSelection,
+        videoDuration,
+        currentTime,
+        frames: this.extractedFrames || undefined,
+        onClose: () => this.hideEnhancedEditor(),
+        onSave: async (settings, frames) => {
+          this.hideEnhancedEditor();
+          await this.processGifWithSettings(settings, frames);
+        },
+        onExport: async (settings, frames) => {
+          this.hideEnhancedEditor();
+          await this.processGifWithSettings(settings, frames, true);
+        },
+        onFramesRequest: async () => {
+          console.log('[Enhanced Editor] Frame extraction requested');
+          // Extract frames for preview
+          if (this.videoElement && this.currentSelection) {
+            console.log('[Enhanced Editor] Starting frame extraction...');
+            try {
+              this.extractedFrames = await this.extractFramesForPreview();
+              console.log('[Enhanced Editor] Extracted frames:', this.extractedFrames?.length);
+              // Re-render with frames
+              this.showEnhancedEditor();
+            } catch (error) {
+              console.error('[Enhanced Editor] Frame extraction failed:', error);
+            }
+          } else {
+            console.warn('[Enhanced Editor] Missing video or selection');
+          }
+        }
+      })
+    );
+  }
+
+  private hideEnhancedEditor() {
+    if (this.editorRoot) {
+      this.editorRoot.unmount();
+      this.editorRoot = null;
+    }
+    
+    if (this.editorOverlay) {
+      this.editorOverlay.remove();
+      this.editorOverlay = null;
+    }
+
+    this.extractedFrames = null;
+  }
+
+  private async extractFramesForPreview(): Promise<ImageData[]> {
+    if (!this.videoElement || !this.currentSelection) return [];
+    
+    const { startTime, endTime } = this.currentSelection;
+    const originalTime = this.videoElement.currentTime;
+    const wasPlaying = !this.videoElement.paused;
+    
+    // Pause video during extraction
+    if (wasPlaying) {
+      this.videoElement.pause();
+    }
+    
+    const frameRate = 5; // Lower frame rate for faster extraction
+    const duration = endTime - startTime;
+    const frameCount = Math.min(15, Math.ceil(duration * frameRate)); // Max 15 frames for preview
+    const frames: ImageData[] = [];
+
+    console.log(`[Frame Extraction] Extracting ${frameCount} frames from ${startTime}s to ${endTime}s`);
+
+    for (let i = 0; i < frameCount; i++) {
+      const time = startTime + (i / frameCount) * duration;
+      this.videoElement.currentTime = time;
+      
+      // Wait for seek to complete with timeout
+      await new Promise<void>((resolve) => {
+        let timeoutId: number;
+        const onSeeked = () => {
+          clearTimeout(timeoutId);
+          this.videoElement?.removeEventListener('seeked', onSeeked);
+          resolve();
+        };
+        
+        timeoutId = window.setTimeout(() => {
+          this.videoElement?.removeEventListener('seeked', onSeeked);
+          console.warn(`[Frame Extraction] Seek timeout at frame ${i}`);
+          resolve();
+        }, 1000);
+        
+        this.videoElement?.addEventListener('seeked', onSeeked);
+      });
+
+      // Capture frame
+      const canvas = document.createElement('canvas');
+      canvas.width = 640;
+      canvas.height = 360;
+      const ctx = canvas.getContext('2d');
+      if (ctx && this.videoElement) {
+        ctx.drawImage(this.videoElement, 0, 0, canvas.width, canvas.height);
+        frames.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+      }
+    }
+
+    // Restore original video state
+    this.videoElement.currentTime = originalTime;
+    if (wasPlaying) {
+      this.videoElement.play();
+    }
+
+    console.log(`[Frame Extraction] Completed: ${frames.length} frames extracted`);
+    return frames;
+  }
+
+  private async processGifWithSettings(settings: any, frames: any[], download = false) {
+    if (!this.videoElement || !this.currentSelection) return;
+
+    // Set creating state
     this.isCreatingGif = true;
     window.dispatchEvent(new CustomEvent('ytgif-creating-state', {
       detail: { isCreating: true }
     }));
-    
-    this.log('info', '[Content] Creating GIF using content script processor', { startTime, endTime, duration });
+
+    const { startTime, endTime } = this.currentSelection;
 
     try {
       // Process GIF entirely in content script
@@ -762,15 +962,22 @@ class YouTubeGifMaker {
         {
           startTime,
           endTime,
-          frameRate: 10,  // Better frame rate for smoother GIFs
-          width: 480,      // Higher resolution
-          height: 360,     // Higher resolution
-          quality: 'medium' // Better quality
+          frameRate: settings.frameRate || 15,
+          width: settings.width || 640,
+          height: settings.height || 360,
+          quality: settings.quality || 'medium'
         },
         (progress, message) => {
           this.processingStatus = { stage: 'processing', progress, message };
           this.updateTimelineOverlay();
           this.log('debug', '[Content] GIF processing progress', { progress, message });
+          
+          // Post progress to window for unified interface
+          window.postMessage({
+            type: 'GIF_PROGRESS',
+            progress,
+            message
+          }, '*');
         }
       );
 
@@ -798,11 +1005,19 @@ class YouTubeGifMaker {
       // Hide timeline overlay
       this.hideTimelineOverlay();
       
-      // Show preview modal with download button
-      this.showGifPreview(gifDataUrl, {
-        ...result.metadata,
-        title: `youtube-gif-${Date.now()}`
-      });
+      if (download) {
+        // Direct download
+        const link = document.createElement('a');
+        link.href = gifDataUrl;
+        link.download = `youtube-gif-${Date.now()}.gif`;
+        link.click();
+      } else {
+        // Show preview modal with download button
+        this.showGifPreview(gifDataUrl, {
+          ...result.metadata,
+          title: `youtube-gif-${Date.now()}`
+        });
+      }
       
       // Reset creating state
       this.isCreatingGif = false;

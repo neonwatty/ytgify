@@ -178,7 +178,96 @@ export interface JobProgressUpdate extends BaseMessage {
     jobId: string;
     progress: number;
     status: 'pending' | 'processing' | 'completed' | 'failed';
+    stage?: string;    // Current processing stage (e.g., 'extracting', 'encoding', 'optimizing')
+    message?: string;  // Human-readable status message
+    details?: {        // Optional detailed progress info
+      currentFrame?: number;
+      totalFrames?: number;
+      currentStep?: number;
+      totalSteps?: number;
+    };
   };
+}
+
+// New message types for GIF creation flow
+export interface RequestVideoDataForGif extends BaseMessage {
+  type: 'REQUEST_VIDEO_DATA_FOR_GIF';
+  data: {
+    startTime: number;
+    endTime: number;
+    duration: number;
+  };
+}
+
+export interface VideoDataResponse extends BaseMessage {
+  type: 'VIDEO_DATA_RESPONSE';
+  success: boolean;
+  data?: {
+    videoElement: {
+      videoWidth: number;
+      videoHeight: number;
+      duration: number;
+      currentTime: number;
+      videoSrc: string;
+      tabId?: number;
+    };
+    settings: {
+      startTime: number;
+      endTime: number;
+      frameRate: number;
+      maxWidth: number;
+      quality: number;
+    };
+  };
+  error?: string;
+}
+
+export interface GifCreationComplete extends BaseMessage {
+  type: 'GIF_CREATION_COMPLETE';
+  success: boolean;
+  data?: {
+    gifBlob: Blob;
+    thumbnailBlob: Blob;
+    metadata: Record<string, unknown>;
+  };
+  error?: string;
+}
+
+export interface SaveGifRequest extends BaseMessage {
+  type: 'SAVE_GIF_REQUEST';
+  data: {
+    gifData: {
+      id: string;
+      title: string;
+      description?: string;
+      blob: Blob;
+      thumbnailBlob?: Blob;
+      metadata: {
+        width: number;
+        height: number;
+        duration: number;
+        frameRate: number;
+        fileSize: number;
+        createdAt: Date;
+        lastModified?: Date;
+        youtubeUrl?: string;
+        startTime?: number;
+        endTime?: number;
+        editorVersion?: number;
+        originalGifId?: string;
+      };
+      tags: string[];
+    };
+  };
+}
+
+export interface SaveGifResponse extends BaseMessage {
+  type: 'SAVE_GIF_RESPONSE';
+  success: boolean;
+  data?: {
+    gifId: string;
+  };
+  error?: string;
 }
 
 // Union type for all possible messages
@@ -199,7 +288,12 @@ export type ExtensionMessage =
   | GetJobStatusResponse
   | CancelJobRequest
   | CancelJobResponse
-  | JobProgressUpdate;
+  | JobProgressUpdate
+  | RequestVideoDataForGif
+  | VideoDataResponse
+  | GifCreationComplete
+  | SaveGifRequest
+  | SaveGifResponse;
 
 // Type guards for message validation
 export function isExtractFramesRequest(message: BaseMessage): message is ExtractFramesRequest {

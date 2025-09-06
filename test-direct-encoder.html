@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Direct Encoder Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        canvas {
+            border: 1px solid #333;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        #output {
+            margin-top: 20px;
+        }
+        img {
+            max-width: 300px;
+            border: 1px solid #333;
+            margin: 10px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>YouTube GIF Maker - Direct Encoder Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Generate Test Frames</h2>
+        <canvas id="canvas" width="320" height="240"></canvas>
+        <br>
+        <button onclick="generateTestFrames()">Generate Animated Frames</button>
+        <div id="frameStatus"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test GIF Encoder</h2>
+        <button onclick="testGifEncoder('gifenc')">Test gifenc (Fast)</button>
+        <button onclick="testGifEncoder('gif.js')">Test gif.js (Legacy)</button>
+        <button onclick="testGifEncoder('auto')">Test Auto-Select</button>
+        <div id="encoderStatus"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test WebP Encoder</h2>
+        <button onclick="testWebPEncoder()">Test WebP (Single Frame)</button>
+        <div id="webpStatus"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Output</h2>
+        <div id="output"></div>
+    </div>
+
+    <script type="module">
+        import { encodeFrames, getEncoderRecommendations, isWebPSupported } from './dist/content.js';
+        
+        window.testFrames = [];
+        
+        window.generateTestFrames = function() {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const frames = [];
+            const frameCount = 10;
+            
+            for (let i = 0; i < frameCount; i++) {
+                // Clear canvas
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw animated circle
+                const x = 160 + Math.sin(i * 0.5) * 100;
+                const y = 120 + Math.cos(i * 0.5) * 50;
+                
+                ctx.fillStyle = `hsl(${i * 36}, 100%, 50%)`;
+                ctx.beginPath();
+                ctx.arc(x, y, 30, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw frame number
+                ctx.fillStyle = '#fff';
+                ctx.font = '20px Arial';
+                ctx.fillText(`Frame ${i + 1}`, 10, 30);
+                
+                // Get image data
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                frames.push({
+                    imageData: imageData,
+                    timestamp: i * 100,
+                    delay: 100
+                });
+            }
+            
+            window.testFrames = frames;
+            document.getElementById('frameStatus').innerHTML = 
+                `<div class="status success">✅ Generated ${frameCount} test frames</div>`;
+        };
+        
+        window.testGifEncoder = async function(encoderType) {
+            if (window.testFrames.length === 0) {
+                document.getElementById('encoderStatus').innerHTML = 
+                    `<div class="status error">❌ Please generate test frames first</div>`;
+                return;
+            }
+            
+            const statusDiv = document.getElementById('encoderStatus');
+            const outputDiv = document.getElementById('output');
+            
+            statusDiv.innerHTML = `<div class="status info">⏳ Testing ${encoderType} encoder...</div>`;
+            
+            try {
+                const startTime = performance.now();
+                
+                const result = await encodeFrames(window.testFrames, {
+                    width: 320,
+                    height: 240,
+                    frameRate: 10,
+                    quality: 'medium',
+                    loop: true
+                }, {
+                    encoder: encoderType,
+                    format: 'gif',
+                    onProgress: (progress) => {
+                        statusDiv.innerHTML = 
+                            `<div class="status info">⏳ ${progress.stage}: ${progress.percentage}%</div>`;
+                    }
+                });
+                
+                const encodingTime = performance.now() - startTime;
+                
+                // Create download link
+                const url = URL.createObjectURL(result.blob);
+                const img = document.createElement('img');
+                img.src = url;
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `test-${result.metadata.encoder}.gif`;
+                link.textContent = `Download ${result.metadata.encoder} GIF`;
+                
+                statusDiv.innerHTML = 
+                    `<div class="status success">
+                        ✅ ${result.metadata.encoder} encoder succeeded<br>
+                        Time: ${encodingTime.toFixed(0)}ms<br>
+                        Size: ${(result.blob.size / 1024).toFixed(1)}KB<br>
+                        Efficiency: ${result.performance.efficiency.toFixed(2)}
+                    </div>`;
+                
+                outputDiv.innerHTML = '';
+                outputDiv.appendChild(img);
+                outputDiv.appendChild(document.createElement('br'));
+                outputDiv.appendChild(link);
+                
+            } catch (error) {
+                statusDiv.innerHTML = 
+                    `<div class="status error">❌ ${encoderType} encoder failed: ${error.message}</div>`;
+            }
+        };
+        
+        window.testWebPEncoder = async function() {
+            if (window.testFrames.length === 0) {
+                document.getElementById('webpStatus').innerHTML = 
+                    `<div class="status error">❌ Please generate test frames first</div>`;
+                return;
+            }
+            
+            const statusDiv = document.getElementById('webpStatus');
+            const outputDiv = document.getElementById('output');
+            
+            // Check WebP support
+            if (!isWebPSupported()) {
+                statusDiv.innerHTML = 
+                    `<div class="status error">❌ WebP not supported in this browser</div>`;
+                return;
+            }
+            
+            statusDiv.innerHTML = `<div class="status info">⏳ Testing WebP encoder...</div>`;
+            
+            try {
+                const startTime = performance.now();
+                
+                // WebP currently only supports single frame
+                const result = await encodeFrames([window.testFrames[0]], {
+                    width: 320,
+                    height: 240,
+                    frameRate: 10,
+                    quality: 'high',
+                    loop: false
+                }, {
+                    format: 'webp',
+                    onProgress: (progress) => {
+                        statusDiv.innerHTML = 
+                            `<div class="status info">⏳ ${progress.stage}: ${progress.percentage}%</div>`;
+                    }
+                });
+                
+                const encodingTime = performance.now() - startTime;
+                
+                // Create download link
+                const url = URL.createObjectURL(result.blob);
+                const img = document.createElement('img');
+                img.src = url;
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `test.webp`;
+                link.textContent = 'Download WebP Image';
+                
+                statusDiv.innerHTML = 
+                    `<div class="status success">
+                        ✅ WebP encoder succeeded<br>
+                        Time: ${encodingTime.toFixed(0)}ms<br>
+                        Size: ${(result.blob.size / 1024).toFixed(1)}KB<br>
+                        Note: Single frame only (animated WebP coming soon)
+                    </div>`;
+                
+                outputDiv.innerHTML = '';
+                outputDiv.appendChild(img);
+                outputDiv.appendChild(document.createElement('br'));
+                outputDiv.appendChild(link);
+                
+            } catch (error) {
+                statusDiv.innerHTML = 
+                    `<div class="status error">❌ WebP encoder failed: ${error.message}</div>`;
+            }
+        };
+        
+        // Get encoder recommendations on load
+        window.addEventListener('load', async () => {
+            try {
+                const recommendations = await getEncoderRecommendations();
+                console.log('Encoder recommendations:', recommendations);
+            } catch (error) {
+                console.error('Could not get encoder recommendations:', error);
+            }
+        });
+    </script>
+</body>
+</html>

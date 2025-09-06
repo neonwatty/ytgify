@@ -6,7 +6,7 @@ import {
   extractVideoFramesInServiceWorker, 
   createServiceWorkerProcessorOptions 
 } from '@/lib/service-worker-video-processor';
-import { encodeGif } from '@/lib/gif-encoder';
+import { encodeGif, detectEncoderFeatures } from '@/lib/gif-encoder-v2';
 
 export interface VideoProcessingJob {
   id: string;
@@ -38,20 +38,25 @@ export class BackgroundVideoWorker {
 
   private async initializeWebCodecs(): Promise<void> {
     try {
-      // Check for WebCodecs API availability
-      if (!('VideoDecoder' in globalThis)) {
-        throw createError('video', 'WebCodecs API not available in this environment');
+      const hasWebCodecs = 'VideoDecoder' in globalThis;
+      
+      if (hasWebCodecs) {
+        logger.info('[BackgroundWorker] WebCodecs API initialized successfully', {
+          hasVideoDecoder: 'VideoDecoder' in globalThis,
+          hasVideoEncoder: 'VideoEncoder' in globalThis,
+          hasVideoFrame: 'VideoFrame' in globalThis,
+          hasImageDecoder: 'ImageDecoder' in globalThis
+        });
+      } else {
+        logger.warn('[BackgroundWorker] WebCodecs API not available, using fallback processing', {
+          environment: 'service-worker',
+          fallbackMode: true
+        });
       }
-
-      logger.info('[BackgroundWorker] WebCodecs API initialized successfully', {
-        hasVideoDecoder: 'VideoDecoder' in globalThis,
-        hasVideoEncoder: 'VideoEncoder' in globalThis,
-        hasVideoFrame: 'VideoFrame' in globalThis,
-        hasImageDecoder: 'ImageDecoder' in globalThis
-      });
     } catch (error) {
       logger.error('[BackgroundWorker] Failed to initialize WebCodecs', { error });
-      throw error;
+      // Don't throw - allow fallback processing
+      logger.warn('[BackgroundWorker] Continuing with fallback video processing');
     }
   }
 
@@ -235,13 +240,24 @@ export class BackgroundVideoWorker {
     });
 
     try {
-      // Convert settings to GIF encoding options
+      // Detect encoder capabilities for optimal performance
+      const encoderFeatures = await detectEncoderFeatures();
+      logger.info('[BackgroundWorker] Encoder detection completed', {
+        hasGifenc: encoderFeatures.hasGifenc,
+        hasGifJs: encoderFeatures.hasGifJs,
+        recommended: encoderFeatures.recommendedEncoder,
+        performance: encoderFeatures.performanceProfile
+      });
+
+      // Convert settings to GIF encoding options with encoder preferences
       const gifOptions = {
         width: Number(settings.width) || frames[0]?.width || 640,
         height: Number(settings.height) || frames[0]?.height || 480,
         frameRate: Number(settings.frameRate) || 10,
         quality: (settings.quality as 'low' | 'medium' | 'high') || 'medium',
         loop: Boolean(settings.loop ?? true),
+        preferredEncoder: encoderFeatures.recommendedEncoder,
+        enableFeatureDetection: true,
         dithering: Boolean(settings.dithering ?? false),
         optimizeColors: Boolean(settings.optimizeColors ?? true),
         backgroundColor: settings.backgroundColor as string || undefined
@@ -261,7 +277,7 @@ export class BackgroundVideoWorker {
       // Encode GIF using the advanced encoder
       const result = await encodeGif(frames, gifOptions, onProgress);
 
-      // Store the encoded GIF and metadata
+      // Store the encoded GIF and enhanced metadata
       job.data.encodedGif = {
         gifBlob: result.gifBlob,
         thumbnailBlob: result.thumbnailBlob,
@@ -272,7 +288,16 @@ export class BackgroundVideoWorker {
           height: result.metadata.height,
           frameCount: result.metadata.frameCount,
           colorCount: result.metadata.colorCount,
-          compressionRatio: result.metadata.compressionRatio
+          compressionRatio: result.metadata.compressionRatio,
+          // Enhanced metadata from new encoder system
+          encodingTime: result.metadata.encodingTime,
+          averageFrameTime: result.metadata.averageFrameTime,
+          encoder: result.metadata.encoder,
+          performance: {
+            efficiency: result.metadata.performance.efficiency,
+            recommendations: result.metadata.performance.recommendations,
+            peakMemoryUsage: result.metadata.performance.peakMemoryUsage
+          }
         }
       };
 

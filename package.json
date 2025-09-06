@@ -16,6 +16,11 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:benchmarks": "jest src/lib/encoders/encoder-benchmarks.test.ts --timeout=120000 --verbose",
+    "benchmark:encoders": "npm run test:benchmarks",
+    "test:extension": "playwright test tests/extension.spec.js --headed",
+    "test:playwright": "playwright test",
+    "test:playwright:debug": "playwright test --debug",
     "pack": "node scripts/pack-extension.js",
     "version:patch": "node scripts/bump-version.js patch",
     "version:minor": "node scripts/bump-version.js minor",
@@ -25,6 +30,7 @@
     "setup": "node scripts/setup-dev.js"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
     "@types/chrome": "^0.0.254",
@@ -59,6 +65,7 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
+    "@jsquash/webp": "^1.5.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-dropdown-menu": "^2.0.6",
@@ -76,6 +83,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "gif.js": "^0.2.0",
+    "gifenc": "^1.0.3",
     "lucide-react": "^0.294.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

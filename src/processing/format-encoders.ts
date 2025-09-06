@@ -9,7 +9,7 @@ import { GifEncoder } from './gif-encoder';
 import { performanceTracker } from '@/monitoring/performance-tracker';
 import { metricsCollector } from '@/monitoring/metrics-collector';
 
-export type ExportFormat = 'gif' | 'webp' | 'mp4';
+export type ExportFormat = 'gif';
 
 export interface ExportOptions {
   format: ExportFormat;
@@ -84,16 +84,6 @@ export const FORMAT_QUALITY_PRESETS = {
     medium: { quality: 20, colors: 128, dither: true },
     high: { quality: 30, colors: 256, dither: true }
   },
-  webp: {
-    low: { quality: 60, compression: 'lossy' as const, method: 4 },
-    medium: { quality: 80, compression: 'lossy' as const, method: 5 },
-    high: { quality: 95, compression: 'lossy' as const, method: 6 }
-  },
-  mp4: {
-    low: { quality: 23, bitrate: '500k', preset: 'veryfast' },
-    medium: { quality: 20, bitrate: '1M', preset: 'medium' },
-    high: { quality: 18, bitrate: '2M', preset: 'slow' }
-  }
 };
 
 /**
@@ -280,8 +270,6 @@ export function estimateExportSizes(
   if (frameCount === 0) {
     return {
       gif: { estimated: '0 MB', supported: false },
-      webp: { estimated: '0 MB', supported: false },
-      mp4: { estimated: '0 MB', supported: false }
     };
   }
   
@@ -289,7 +277,7 @@ export function estimateExportSizes(
   const width = firstFrame.imageData.width;
   const height = firstFrame.imageData.height;
   
-  const formats: ExportFormat[] = ['gif', 'webp', 'mp4'];
+  const formats: ExportFormat[] = ['gif'];
   const result: Record<string, { estimated: string; supported: boolean }> = {};
   
   for (const format of formats) {
@@ -335,25 +323,7 @@ export function recommendFormat(
     return 'gif';
   }
   
-  // For quality preference, use WebP or MP4
-  if (requirements.preferQuality) {
-    if (formatRegistry.hasEncoder('mp4')) {
-      return 'mp4';
-    }
-    if (formatRegistry.hasEncoder('webp')) {
-      return 'webp';
-    }
-  }
   
-  // For file size constraints
-  if (requirements.maxFileSize) {
-    if (formatRegistry.hasEncoder('webp')) {
-      return 'webp'; // Best compression
-    }
-    if (formatRegistry.hasEncoder('mp4')) {
-      return 'mp4'; // Good compression for video
-    }
-  }
   
   // Default to GIF
   return 'gif';

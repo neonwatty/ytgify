@@ -145,15 +145,26 @@ export class ServiceWorkerVideoProcessor {
       };
 
       this.reportProgress('requesting', 20, 'Sending extraction request to content script');
+      
+      logger.info('[ServiceWorkerVideoProcessor] Sending CONTENT_SCRIPT_EXTRACT_FRAMES to tab', {
+        tabId: this.tabId,
+        request: extractionRequest
+      });
 
       // Use Chrome tabs messaging API
       const response = await new Promise<{ frames: ImageData[] }>((resolve, reject) => {
         const timeout = setTimeout(() => {
+          logger.error('[ServiceWorkerVideoProcessor] Frame extraction timeout after 60s');
           reject(createError('video', 'Content script frame extraction timeout'));
         }, 60000); // 60 second timeout
 
         chrome.tabs.sendMessage(this.tabId!, extractionRequest, (response) => {
           clearTimeout(timeout);
+          logger.info('[ServiceWorkerVideoProcessor] Received response from content script', {
+            hasResponse: !!response,
+            hasFrames: !!(response?.frames),
+            frameCount: response?.frames?.length || 0
+          });
           
           if (chrome.runtime.lastError) {
             reject(createError('video', `Chrome messaging error: ${chrome.runtime.lastError.message}`));

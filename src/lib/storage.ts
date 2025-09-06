@@ -2,14 +2,29 @@
 import { GifData, UserPreferences } from '@/types';
 
 // Enhanced GIF data type with proper blob handling
-export interface GifDataWithBlob extends Omit<GifData, 'metadata'> {
-  gifBlob: Blob;
+// This matches what the library component expects
+export interface GifDataWithBlob {
+  id: string;
+  title?: string;
+  description?: string;
+  gifBlob: Blob; // Keep as gifBlob for component compatibility
   thumbnailBlob?: Blob;
-  metadata: GifData['metadata'] & {
-    title?: string;
+  blob?: Blob; // Also support blob field from storage
+  metadata: {
+    width: number;
+    height: number;
+    duration: number;
+    frameRate: number;
+    fileSize: number;
+    createdAt: Date;
+    youtubeUrl?: string;
+    startTime?: number;
+    endTime?: number;
+    title?: string; // Support title in metadata too
     description?: string;
   };
-  createdAt: string; // ISO string for storage
+  tags?: string[];
+  createdAt?: string; // For compatibility
 }
 
 // Enhanced GIF settings for popup
@@ -32,8 +47,8 @@ export interface EnhancedUserPreferences extends Omit<UserPreferences, 'defaultF
 }
 
 class GifStorage {
-  private dbName = 'youtube-gif-maker';
-  private dbVersion = 1;
+  private dbName = 'YouTubeGifStore'; // Use the same database name as content script
+  private dbVersion = 3; // Match the version used in content script
   private db: IDBDatabase | null = null;
 
   async init(): Promise<void> {
@@ -49,11 +64,19 @@ class GifStorage {
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
         
-        // Create GIFs store
+        // Create stores to match what content script creates
         if (!db.objectStoreNames.contains('gifs')) {
           const gifStore = db.createObjectStore('gifs', { keyPath: 'id' });
-          gifStore.createIndex('createdAt', 'createdAt', { unique: false });
-          gifStore.createIndex('title', 'metadata.title', { unique: false });
+          gifStore.createIndex('createdAt', 'metadata.createdAt', { unique: false });
+        }
+        
+        if (!db.objectStoreNames.contains('thumbnails')) {
+          db.createObjectStore('thumbnails', { keyPath: 'gifId' });
+        }
+        
+        if (!db.objectStoreNames.contains('metadata')) {
+          const metaStore = db.createObjectStore('metadata', { keyPath: 'id' });
+          metaStore.createIndex('youtubeUrl', 'youtubeUrl', { unique: false });
         }
       };
     });
@@ -81,7 +104,24 @@ class GifStorage {
       
       const request = store.get(id);
       request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result || null);
+      request.onsuccess = () => {
+        const result = request.result;
+        if (!result) {
+          resolve(null);
+          return;
+        }
+        // Ensure compatibility
+        if (result.blob && !result.gifBlob) {
+          result.gifBlob = result.blob;
+        }
+        if (result.metadata?.createdAt && typeof result.metadata.createdAt !== 'string') {
+          result.createdAt = new Date(result.metadata.createdAt).toISOString();
+        }
+        if (result.title && !result.metadata?.title) {
+          result.metadata = { ...result.metadata, title: result.title };
+        }
+        resolve(result);
+      };
     });
   }
 
@@ -94,7 +134,26 @@ class GifStorage {
       
       const request = store.getAll();
       request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result || []);
+      request.onsuccess = () => {
+        const results = request.result || [];
+        // Map the data to ensure compatibility
+        const mappedResults = results.map((item: any) => {
+          // Ensure gifBlob field exists for component compatibility
+          if (item.blob && !item.gifBlob) {
+            item.gifBlob = item.blob;
+          }
+          // Ensure createdAt is a string if it's a Date
+          if (item.metadata?.createdAt && typeof item.metadata.createdAt !== 'string') {
+            item.createdAt = new Date(item.metadata.createdAt).toISOString();
+          }
+          // Move title from root to metadata if needed
+          if (item.title && !item.metadata?.title) {
+            item.metadata = { ...item.metadata, title: item.title };
+          }
+          return item;
+        });
+        resolve(mappedResults);
+      };
     });
   }
 

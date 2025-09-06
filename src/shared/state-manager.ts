@@ -60,26 +60,56 @@ export class ExtensionStateManager {
 
   private async initializeFromStorage(): Promise<void> {
     try {
-      if (typeof chrome !== 'undefined' && chrome.storage) {
+      // Only access storage in background/popup context, not content scripts
+      if (this.isStorageContext() && chrome.storage?.session) {
         const result = await chrome.storage.session.get(this.STATE_KEY);
         if (result[this.STATE_KEY]) {
           this.runtimeState = { ...this.runtimeState, ...result[this.STATE_KEY] };
         }
       }
     } catch (error) {
-      console.warn('Failed to initialize from storage:', error);
+      // Only log storage errors in extension context, not content scripts
+      if (this.isStorageContext()) {
+        console.warn('Failed to initialize from storage:', error);
+      }
+      // Content scripts will silently skip storage operations
     }
   }
 
   private async persistState(): Promise<void> {
     try {
-      if (typeof chrome !== 'undefined' && chrome.storage) {
+      // Only access storage in background/popup context, not content scripts
+      if (this.isStorageContext() && chrome.storage?.session) {
         await chrome.storage.session.set({
           [this.STATE_KEY]: this.runtimeState
         });
       }
     } catch (error) {
-      console.warn('Failed to persist state:', error);
+      // Only log storage errors in extension context, not content scripts
+      if (this.isStorageContext()) {
+        console.warn('Failed to persist state:', error);
+      }
+      // Content scripts will silently skip storage operations
+    }
+  }
+
+  private isStorageContext(): boolean {
+    // Only allow storage access in background/popup context, never in content scripts
+    try {
+      // Content scripts run in the page context, not extension context
+      if (typeof window !== 'undefined' && window.location && 
+          window.location.protocol !== 'chrome-extension:') {
+        return false;
+      }
+      
+      // Check if we have proper chrome extension context
+      return typeof chrome !== 'undefined' && 
+             chrome.runtime && 
+             !!chrome.runtime.id && 
+             (chrome.runtime.getURL('').includes('chrome-extension://') || 
+              (typeof window !== 'undefined' && window.location.protocol === 'chrome-extension:'));
+    } catch (error) {
+      return false;
     }
   }
 

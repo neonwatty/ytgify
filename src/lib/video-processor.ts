@@ -220,6 +220,13 @@ export class VideoProcessor {
     const expectedFrames = Math.ceil(duration * this.options.frameRate);
     
     this.reportProgress('extracting', 10, 'Setting up canvas extraction');
+    logger.info('[VideoProcessor] Starting canvas extraction', {
+      startTime: this.options.startTime,
+      endTime: this.options.endTime,
+      duration,
+      expectedFrames,
+      frameRate: this.options.frameRate
+    });
 
     const { width, height } = this.calculateTargetDimensions(
       videoElement.videoWidth,
@@ -240,13 +247,29 @@ export class VideoProcessor {
     const frameInterval = 1 / this.options.frameRate;
     let frameCount = 0;
 
+    logger.info('[VideoProcessor] Beginning frame extraction loop', { frameInterval });
+
     for (let time = this.options.startTime; time < this.options.endTime && frameCount < expectedFrames; time += frameInterval) {
       if (this.abortController?.signal.aborted) {
         throw createError('video', 'Frame extraction aborted');
       }
 
-      // Seek to specific time
-      await this.seekToTime(videoElement, time);
+      logger.debug(`[VideoProcessor] Processing time ${time.toFixed(2)}s (frame ${frameCount + 1}/${expectedFrames})`);
+      
+      // Try simplified capture without seeking for first attempt
+      if (frameCount === 0) {
+        logger.info('[VideoProcessor] Testing simplified capture without seeking');
+        // Just capture current frame without seeking
+      } else {
+        // Seek to specific time
+        try {
+          await this.seekToTime(videoElement, time);
+        } catch (error) {
+          logger.error('[VideoProcessor] Seek failed', { time, error });
+          // Try to continue without seeking
+          logger.warn('[VideoProcessor] Continuing without seek - capturing current frame');
+        }
+      }
 
       // Draw current frame to canvas
       if (this.ctx) {
@@ -257,6 +280,8 @@ export class VideoProcessor {
         const imageData = this.ctx.getImageData(0, 0, width, height);
         frames.push(imageData);
         frameCount++;
+        
+        logger.debug(`[VideoProcessor] Frame ${frameCount} extracted successfully`);
       }
 
       // Update progress
@@ -322,50 +347,62 @@ export class VideoProcessor {
         return;
       }
 
-      const timeoutId = setTimeout(() => {
-        videoElement.removeEventListener('seeked', onSeeked);
-        reject(createError('video', `Seek timeout for time ${time}`));
-      }, 2000);
+      // YouTube videos may need time to load when seeking
+      const timeoutDuration = 5000; // Increased from 2000ms to 5000ms
+      let seekAttempts = 0;
+      const maxAttempts = 3;
 
-      const onSeeked = () => {
-        clearTimeout(timeoutId);
-        videoElement.removeEventListener('seeked', onSeeked);
-        resolve();
+      const attemptSeek = () => {
+        seekAttempts++;
+        
+        const timeoutId = setTimeout(() => {
+          videoElement.removeEventListener('seeked', onSeeked);
+          videoElement.removeEventListener('error', onError);
+          
+          if (seekAttempts < maxAttempts) {
+            logger.warn(`[VideoProcessor] Seek timeout, retrying (attempt ${seekAttempts}/${maxAttempts})`, { time });
+            attemptSeek();
+          } else {
+            reject(createError('video', `Seek timeout after ${maxAttempts} attempts for time ${time}`));
+          }
+        }, timeoutDuration);
+
+        const onSeeked = () => {
+          clearTimeout(timeoutId);
+          videoElement.removeEventListener('seeked', onSeeked);
+          videoElement.removeEventListener('error', onError);
+          resolve();
+        };
+
+        const onError = (e: Event) => {
+          clearTimeout(timeoutId);
+          videoElement.removeEventListener('seeked', onSeeked);
+          videoElement.removeEventListener('error', onError);
+          logger.error('[VideoProcessor] Video seek error', { error: e });
+          reject(createError('video', `Video seek error at time ${time}`));
+        };
+
+        videoElement.addEventListener('seeked', onSeeked, { once: true });
+        videoElement.addEventListener('error', onError, { once: true });
+        
+        // Force video to pause before seeking for better reliability
+        if (!videoElement.paused) {
+          videoElement.pause();
+        }
+        
+        videoElement.currentTime = time;
       };
 
-      videoElement.addEventListener('seeked', onSeeked);
-      videoElement.currentTime = time;
+      attemptSeek();
     });
   }
 
   // Determine the best extraction method based on environment and video
   private async determineExtractionMethod(_videoElement: HTMLVideoElement): Promise<'webcodecs' | 'canvas' | 'hybrid'> {
-    // Check WebCodecs availability and user preference
-    const hasWebCodecs = 'VideoDecoder' in globalThis && 'VideoFrame' in globalThis;
-    
-    if (!hasWebCodecs) {
-      logger.info('[VideoProcessor] WebCodecs not available, using canvas method');
-      return 'canvas';
-    }
-
-    if (!this.options.enableWebCodecs) {
-      logger.info('[VideoProcessor] WebCodecs disabled by options, using canvas method');
-      return 'canvas';
-    }
-
-    // Check video characteristics
-    const videoDuration = this.options.endTime - this.options.startTime;
-    const expectedFrames = Math.ceil(videoDuration * this.options.frameRate);
-    
-    // For shorter videos or lower frame counts, canvas is often sufficient
-    if (videoDuration < 10 || expectedFrames < 100) {
-      logger.info('[VideoProcessor] Short video detected, using canvas method');
-      return 'canvas';
-    }
-
-    // Use hybrid for maximum reliability
-    logger.info('[VideoProcessor] Using hybrid extraction method');
-    return 'hybrid';
+    // For now, always use canvas method for reliability
+    // WebCodecs has compatibility issues with YouTube videos
+    logger.info('[VideoProcessor] Using canvas method for frame extraction');
+    return 'canvas';
   }
 
   // Calculate target dimensions respecting aspect ratio and limits

@@ -92,28 +92,38 @@ export class YouTubeAPIIntegration {
         return;
       }
 
-      // Set up API ready callback
-      window.onYouTubeIframeAPIReady = () => {
-        this.isAPILoaded = true;
-        this.connectToExistingPlayer();
-        logger.info('[YouTubeAPI] API ready');
-      };
-
-      // Load API if not already present
-      if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
-        const script = document.createElement('script');
-        script.src = 'https://www.youtube.com/iframe_api';
-        script.async = true;
-        document.head.appendChild(script);
-        
-        logger.debug('[YouTubeAPI] Loading IFrame API script');
+      // Don't try to load external scripts in content script due to CSP
+      // Instead, wait for YouTube's own API to be available or use fallback
+      if (typeof window !== 'undefined' && window.location.hostname.includes('youtube.com')) {
+        logger.debug('[YouTubeAPI] Waiting for YouTube\'s native API to load');
+        this.waitForNativeAPI();
       } else {
-        // Script already loaded, try to connect
-        this.schedulePlayerConnection();
+        logger.warn('[YouTubeAPI] Not on YouTube domain, skipping API initialization');
       }
     } catch (error) {
       logger.error('[YouTubeAPI] Failed to initialize API', { error });
     }
+  }
+
+  private waitForNativeAPI(): void {
+    // Check periodically if YouTube's API becomes available
+    const checkForAPI = () => {
+      if (window.YT && window.YT.Player) {
+        this.isAPILoaded = true;
+        this.connectToExistingPlayer();
+        logger.info('[YouTubeAPI] Found YouTube\'s native API');
+        return;
+      }
+
+      if (this.retryCount < this.maxRetries) {
+        this.retryCount++;
+        setTimeout(checkForAPI, 1000);
+      } else {
+        logger.warn('[YouTubeAPI] YouTube API not available, will use direct video element access');
+      }
+    };
+
+    checkForAPI();
   }
 
   // Schedule connection attempt with retry logic

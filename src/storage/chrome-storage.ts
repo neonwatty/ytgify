@@ -27,25 +27,42 @@ export class ChromeStorageManager {
   }
 
   private setupStorageListener(): void {
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-      chrome.storage.onChanged.addListener((changes, areaName) => {
-        if (areaName === 'sync' && changes[this.storageKey]) {
-          const newValue = changes[this.storageKey].newValue;
-          if (newValue) {
-            this.notifyListeners({
-              type: 'preferences-updated',
-              data: newValue
-            });
+    try {
+      if (this.isExtensionContext() && chrome.storage) {
+        chrome.storage.onChanged.addListener((changes, areaName) => {
+          if (areaName === 'sync' && changes[this.storageKey]) {
+            const newValue = changes[this.storageKey].newValue;
+            if (newValue) {
+              this.notifyListeners({
+                type: 'preferences-updated',
+                data: newValue
+              });
+            }
           }
-        }
-      });
+        });
+      }
+    } catch (error) {
+      console.warn('Failed to setup storage listener:', error);
+    }
+  }
+
+  private isExtensionContext(): boolean {
+    try {
+      // Only allow storage access in proper extension context
+      return typeof chrome !== 'undefined' && 
+             chrome.runtime && 
+             !!chrome.runtime.id && 
+             (typeof window === 'undefined' || 
+              window.location.protocol === 'chrome-extension:');
+    } catch (error) {
+      return false;
     }
   }
 
   async getPreferences(): Promise<UserPreferences> {
     try {
-      if (typeof chrome === 'undefined' || !chrome.storage) {
-        // Fallback to localStorage for development/testing
+      if (!this.isExtensionContext() || !chrome.storage) {
+        // Fallback to localStorage for development/testing or content script context
         const stored = localStorage.getItem(this.storageKey);
         return stored ? { ...this.defaultPreferences, ...JSON.parse(stored) } : this.defaultPreferences;
       }
@@ -72,8 +89,8 @@ export class ChromeStorageManager {
       const currentPreferences = await this.getPreferences();
       const updatedPreferences = { ...currentPreferences, ...preferences };
 
-      if (typeof chrome === 'undefined' || !chrome.storage) {
-        // Fallback to localStorage
+      if (!this.isExtensionContext() || !chrome.storage) {
+        // Fallback to localStorage for content script context
         localStorage.setItem(this.storageKey, JSON.stringify(updatedPreferences));
         this.notifyListeners({
           type: 'preferences-updated',

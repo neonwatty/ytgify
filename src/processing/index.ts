@@ -155,26 +155,3 @@ export type {
   FormatEncoder
 } from './format-encoders';
 
-// WebP encoder (new)
-export {
-  WebPEncoder,
-  encodeToWebP
-} from './webp-encoder';
-export type {
-  WebPEncodingOptions,
-  WebPFrame,
-  WebPEncodingProgress,
-  WebPEncodingResult
-} from './webp-encoder';
-
-// MP4 encoder (placeholder - future enhancement)
-export {
-  MP4Encoder,
-  encodeToMP4,
-  checkMP4Support
-} from './mp4-encoder';
-export type {
-  MP4EncodingOptions,
-  MP4EncodingProgress,
-  MP4EncodingResult
-} from './mp4-encoder';
