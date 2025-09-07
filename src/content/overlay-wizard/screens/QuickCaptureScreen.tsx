@@ -8,7 +8,7 @@ interface QuickCaptureScreenProps {
   currentTime: number;
   duration: number;
   videoElement?: HTMLVideoElement;
-  onConfirm: () => void;
+  onConfirm: (startTime: number, endTime: number) => void;
   onBack: () => void;
   onSeekTo?: (time: number) => void;
 }
@@ -134,8 +134,8 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
             Back
           </button>
           <button className="ytgif-button-primary" onClick={() => {
-            // Pass the updated time range when confirming
-            onConfirm();
+            // Pass the current selection from the scrubber
+            onConfirm(startTime, endTime);
           }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 

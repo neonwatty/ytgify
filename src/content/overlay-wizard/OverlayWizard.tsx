@@ -64,12 +64,14 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   }, [goToScreen, currentTime, videoDuration, setScreenData]);
 
 
-  const handleConfirmQuickCapture = () => {
+  const handleConfirmQuickCapture = (startTime: number, endTime: number) => {
     const selection: TimelineSelection = {
-      startTime: data.startTime || 0,
-      endTime: data.endTime || 4,
-      duration: (data.endTime || 4) - (data.startTime || 0)
+      startTime,
+      endTime,
+      duration: endTime - startTime
     };
+    // Update the data state with the final selection
+    setScreenData({ startTime, endTime });
     onSelectionChange(selection);
     onCreateGif(selection);
     goToScreen('processing');
