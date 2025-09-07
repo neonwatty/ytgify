@@ -216,8 +216,13 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
         
         {/* Current video time indicator */}
         <div 
-          className="ytgif-timeline-current"
+          className={`ytgif-timeline-current ${
+            currentTime >= startTime && currentTime <= endTime 
+              ? 'ytgif-timeline-current-in-range' 
+              : 'ytgif-timeline-current-out-range'
+          }`}
           style={{ left: `${currentPercent}%` }}
+          title={`Current video time: ${formatTime(currentTime)}`}
         />
         
         {/* Preview playhead (when playing preview) */}

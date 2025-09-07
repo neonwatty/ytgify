@@ -68,6 +68,7 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
             videoElement={videoElement}
             startTime={startTime}
             endTime={endTime}
+            currentVideoTime={currentTime}
             isPlaying={isPreviewPlaying}
             onPlayStateChange={setIsPreviewPlaying}
           />

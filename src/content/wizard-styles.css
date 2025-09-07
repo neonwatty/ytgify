@@ -581,6 +581,19 @@
   width: 2px;
   background: rgba(255, 255, 255, 0.8);
   pointer-events: none;
+  transition: all 0.3s ease;
+}
+
+.ytgif-timeline-current-in-range {
+  background: #00ff00 !important;
+  box-shadow: 0 0 6px rgba(0, 255, 0, 0.5);
+  width: 3px;
+}
+
+.ytgif-timeline-current-out-range {
+  background: #ffaa00 !important;
+  box-shadow: 0 0 6px rgba(255, 170, 0, 0.5);
+  width: 3px;
 }
 
 .ytgif-timeline-preview-head {

@@ -54,6 +54,7 @@ class YouTubeGifMaker {
   private processingStatus: { stage: string; progress: number; message: string } | undefined = undefined;
   private extractedFrames: ImageData[] | null = null;
   private isWizardMode = false;
+  private wizardUpdateInterval: NodeJS.Timeout | null = null;
 
   constructor() {
     console.log('[YTGif Content Script] Constructor called!');
@@ -527,6 +528,9 @@ class YouTubeGifMaker {
       
       // Mark that we're in wizard mode
       this.isWizardMode = true;
+      
+      // Start regular updates for wizard
+      this.startWizardUpdates();
       
       this.timelineRoot.render(
         React.createElement(TimelineOverlayWizard, {
@@ -1176,6 +1180,7 @@ class YouTubeGifMaker {
   private hideTimelineOverlay() {
     // Reset wizard mode flag
     this.isWizardMode = false;
+    this.stopWizardUpdates();
     
     if (this.timelineRoot) {
       this.timelineRoot.unmount();
@@ -1724,6 +1729,25 @@ class YouTubeGifMaker {
     this.hideTimelineOverlay();
     
     this.log('info', '[Content] YouTubeGifMaker destroyed');
+  }
+
+  private startWizardUpdates() {
+    // Stop any existing interval
+    this.stopWizardUpdates();
+    
+    // Update wizard every 100ms when active
+    this.wizardUpdateInterval = setInterval(() => {
+      if (this.isWizardMode && this.timelineRoot && this.videoElement) {
+        this.updateTimelineOverlay();
+      }
+    }, 100);
+  }
+
+  private stopWizardUpdates() {
+    if (this.wizardUpdateInterval) {
+      clearInterval(this.wizardUpdateInterval);
+      this.wizardUpdateInterval = null;
+    }
   }
 }
 

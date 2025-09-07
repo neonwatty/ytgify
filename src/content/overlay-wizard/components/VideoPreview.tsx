@@ -4,6 +4,7 @@ interface VideoPreviewProps {
   videoElement: HTMLVideoElement;
   startTime: number;
   endTime: number;
+  currentVideoTime?: number; // Add current video time prop
   isPlaying?: boolean;
   onPlayStateChange?: (playing: boolean) => void;
   width?: number;
@@ -14,6 +15,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
   videoElement,
   startTime,
   endTime,
+  currentVideoTime,
   isPlaying = false,
   onPlayStateChange,
   width = 480,
@@ -137,11 +139,62 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
     };
   }, [isPlaying, playRange, stopPlayback]);
 
-  // Initial frame draw
+  // Initial frame draw and sync with video
   useEffect(() => {
-    seekAndDraw(startTime);
-  }, [startTime, seekAndDraw]);
+    if (!isPlaying) {
+      // When not playing preview, show current video time if it's within selection
+      const timeToShow = currentVideoTime !== undefined && 
+                        currentVideoTime >= startTime && 
+                        currentVideoTime <= endTime 
+                        ? currentVideoTime 
+                        : startTime;
+      seekAndDraw(timeToShow);
+      setCurrentPreviewTime(timeToShow);
+    }
+  }, [startTime, currentVideoTime, isPlaying, seekAndDraw]);
+  
+  // Update preview when selection changes
+  useEffect(() => {
+    if (!isPlaying) {
+      seekAndDraw(startTime);
+      setCurrentPreviewTime(startTime);
+    }
+  }, [endTime, isPlaying, startTime, seekAndDraw]);
 
+  // Monitor external video time changes
+  useEffect(() => {
+    if (!videoElement) return;
+    
+    const handleTimeUpdate = () => {
+      // Only update if we're not currently playing preview
+      if (!isPlaying) {
+        const currentTime = videoElement.currentTime;
+        // Update preview if current time is within our selection range
+        if (currentTime >= startTime && currentTime <= endTime) {
+          setCurrentPreviewTime(currentTime);
+          drawFrame();
+        }
+      }
+    };
+    
+    const handleSeeked = () => {
+      // Update immediately when video seeks
+      if (!isPlaying) {
+        const currentTime = videoElement.currentTime;
+        setCurrentPreviewTime(currentTime);
+        drawFrame();
+      }
+    };
+    
+    videoElement.addEventListener('timeupdate', handleTimeUpdate);
+    videoElement.addEventListener('seeked', handleSeeked);
+    
+    return () => {
+      videoElement.removeEventListener('timeupdate', handleTimeUpdate);
+      videoElement.removeEventListener('seeked', handleSeeked);
+    };
+  }, [videoElement, isPlaying, startTime, endTime, drawFrame]);
+  
   // Cleanup on unmount
   useEffect(() => {
     return () => {
