@@ -58,73 +58,33 @@ test('Wizard Video Preview and Timeline Scrubber', async () => {
   expect(wizardOverlay).toBeTruthy();
   console.log('✓ Wizard overlay appeared');
   
-  // Navigate to Quick Capture screen
-  // Check what screen we're on
-  let currentScreen = await page.evaluate(() => {
-    const screens = [
-      '.ytgif-welcome-screen',
-      '.ytgif-action-screen',
-      '.ytgif-quick-capture-screen'
-    ];
-    
-    for (const selector of screens) {
-      const el = document.querySelector(selector);
-      if (el && window.getComputedStyle(el).display !== 'none') {
-        return selector.replace('.ytgif-', '').replace('-screen', '');
-      }
-    }
-    return 'unknown';
-  });
+  // Wait for wizard to auto-advance from welcome to quick capture
+  console.log('Waiting for wizard to auto-advance to Quick Capture screen...');
+  await page.waitForTimeout(2000);
   
-  console.log('Current screen:', currentScreen);
-  
-  // Navigate through screens as needed
-  if (currentScreen === 'welcome') {
-    console.log('Waiting for welcome screen to auto-advance...');
-    // Welcome screen auto-advances after 1.5 seconds
-    await page.waitForTimeout(2500);
-    
-    // Debug all screens
-    const allScreens = await page.evaluate(() => {
-      const screens = {
-        welcome: document.querySelector('.ytgif-welcome-screen'),
-        action: document.querySelector('.ytgif-action-screen'),
-        quickCapture: document.querySelector('.ytgif-quick-capture-screen')
-      };
+  // Verify we're on the Quick Capture screen
+  const quickCaptureScreen = await page.$('.ytgif-quick-capture-screen');
+  if (!quickCaptureScreen) {
+    console.log('Quick Capture screen not found, checking current state...');
+    const currentScreen = await page.evaluate(() => {
+      const screens = [
+        '.ytgif-welcome-screen',
+        '.ytgif-quick-capture-screen',
+        '.ytgif-processing-screen',
+        '.ytgif-success-screen'
+      ];
       
-      const result = {};
-      for (const [name, el] of Object.entries(screens)) {
-        if (el) {
-          const style = window.getComputedStyle(el);
-          result[name] = {
-            exists: true,
-            display: style.display,
-            visibility: style.visibility,
-            opacity: style.opacity
-          };
-        } else {
-          result[name] = { exists: false };
+      for (const selector of screens) {
+        const el = document.querySelector(selector);
+        if (el && window.getComputedStyle(el).display !== 'none') {
+          return selector.replace('.ytgif-', '').replace('-screen', '');
         }
       }
-      return result;
+      return 'unknown';
     });
-    console.log('All screens status:', JSON.stringify(allScreens, null, 2));
-    
-    currentScreen = allScreens.action?.display !== 'none' ? 'action' : 'unknown';
-    console.log('After auto-advance, current screen:', currentScreen);
-  }
-  
-  // Now we should be on action screen - click Quick Capture
-  const quickCaptureBtn = await page.waitForSelector('button:has-text("Quick Capture")', { 
-    timeout: 5000 
-  }).catch(() => null);
-  
-  if (quickCaptureBtn) {
-    console.log('\n=== Selecting Quick Capture ===');
-    await quickCaptureBtn.click();
-    await page.waitForTimeout(1500);
+    console.log('Current screen:', currentScreen);
   } else {
-    console.log('Quick Capture button not found, may already be on Quick Capture screen');
+    console.log('✓ On Quick Capture screen');
   }
   
   // Check for video preview components

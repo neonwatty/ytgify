@@ -25,7 +25,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       console.log('[WelcomeScreen] Clearing auto-advance timer');
       clearTimeout(timer);
     };
-  }, [onContinue]);
+  }, []); // Empty dependency array - only run once on mount
 
   const formatDuration = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);

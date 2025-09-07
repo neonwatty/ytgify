@@ -44,43 +44,14 @@ test('Wizard GIF Creation Complete Flow', async () => {
   expect(wizardOverlay).toBeTruthy();
   console.log('✓ Wizard overlay appeared');
   
-  // Check initial screen
-  let currentScreen = await page.evaluate(() => {
-    const screens = [
-      '.ytgif-welcome-screen',
-      '.ytgif-action-screen',
-      '.ytgif-quick-capture-screen',
-      '.ytgif-custom-range-screen',
-      '.ytgif-processing-screen',
-      '.ytgif-success-screen'
-    ];
-    
-    for (const selector of screens) {
-      const el = document.querySelector(selector);
-      if (el && window.getComputedStyle(el).display !== 'none') {
-        return selector.replace('.ytgif-', '').replace('-screen', '');
-      }
-    }
-    return 'unknown';
-  });
+  // Wait for wizard to auto-advance from welcome to quick capture
+  console.log('Waiting for wizard to auto-advance to Quick Capture screen...');
+  await page.waitForTimeout(2000);
   
-  console.log('Initial screen:', currentScreen);
-  
-  // If on welcome screen, click Get Started
-  if (currentScreen === 'welcome') {
-    const getStarted = await page.$('button:has-text("Get Started")');
-    if (getStarted) {
-      await getStarted.click();
-      await page.waitForTimeout(1000);
-    }
-  }
-  
-  // Should be on action screen - click Quick Capture
-  const quickCaptureBtn = await page.$('button:has-text("Quick Capture")');
-  expect(quickCaptureBtn).toBeTruthy();
-  console.log('\n=== Selecting Quick Capture ===');
-  await quickCaptureBtn.click();
-  await page.waitForTimeout(1500);
+  // Verify we're on the Quick Capture screen
+  const quickCaptureScreen = await page.waitForSelector('.ytgif-quick-capture-screen', { timeout: 5000 });
+  expect(quickCaptureScreen).toBeTruthy();
+  console.log('\n=== On Quick Capture Screen ===');
   
   // Should be on quick capture screen - click Create GIF
   const createGifBtn = await page.$('button:has-text("Create GIF")');

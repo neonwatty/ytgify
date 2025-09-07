@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { TimelineSelection } from '@/types';
 import { useOverlayNavigation } from './hooks/useOverlayNavigation';
 import WelcomeScreen from './screens/WelcomeScreen';
-import ActionSelectScreen from './screens/ActionSelectScreen';
 import QuickCaptureScreen from './screens/QuickCaptureScreen';
 import CustomRangeScreen from './screens/CustomRangeScreen';
 import ProcessingScreen from './screens/ProcessingScreen';
@@ -56,20 +55,14 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   }, [videoDuration, currentTime, videoTitle, setScreenData]);
 
   const handleWelcomeContinue = React.useCallback(() => {
-    console.log('[OverlayWizard] handleWelcomeContinue called, going to action-select');
-    goToScreen('action-select');
-  }, [goToScreen]);
-
-  const handleQuickCapture = React.useCallback(() => {
+    console.log('[OverlayWizard] handleWelcomeContinue called, going directly to quick-capture');
+    // Set up default time range (4 seconds from current position)
     const startTime = Math.max(0, currentTime - 2);
     const endTime = Math.min(videoDuration, currentTime + 2);
     setScreenData({ startTime, endTime });
     goToScreen('quick-capture');
-  }, [currentTime, videoDuration, setScreenData, goToScreen]);
+  }, [goToScreen, currentTime, videoDuration, setScreenData]);
 
-  const handleCustomRange = React.useCallback(() => {
-    goToScreen('custom-range');
-  }, [goToScreen]);
 
   const handleConfirmQuickCapture = () => {
     const selection: TimelineSelection = {
@@ -94,9 +87,9 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   };
 
   // Progress dots for navigation indicator
-  const screens = ['welcome', 'action-select', 'capture', 'processing'];
+  const screens = ['welcome', 'capture', 'processing'];
   const currentIndex = currentScreen === 'quick-capture' || currentScreen === 'custom-range' 
-    ? 2 
+    ? 1 
     : screens.indexOf(currentScreen);
   
   // Debug logging
@@ -134,16 +127,6 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
               videoDuration={videoDuration}
               onContinue={handleWelcomeContinue}
               onClose={onClose}
-            />
-          )}
-
-          {currentScreen === 'action-select' && (
-            <ActionSelectScreen
-              currentTime={currentTime}
-              duration={videoDuration}
-              onQuickCapture={handleQuickCapture}
-              onCustomRange={handleCustomRange}
-              onBack={goBack}
             />
           )}
 
