@@ -6,6 +6,7 @@ export interface TimelineOverlayWizardProps {
   videoDuration: number;
   currentTime: number;
   videoTitle?: string;
+  videoElement?: HTMLVideoElement;
   onSelectionChange: (selection: TimelineSelection) => void;
   onClose: () => void;
   onCreateGif: () => void;
@@ -22,6 +23,7 @@ export const TimelineOverlayWizard: React.FC<TimelineOverlayWizardProps> = ({
   videoDuration,
   currentTime,
   videoTitle,
+  videoElement,
   onSelectionChange,
   onClose,
   onCreateGif,
@@ -46,6 +48,7 @@ export const TimelineOverlayWizard: React.FC<TimelineOverlayWizardProps> = ({
       videoDuration={videoDuration}
       currentTime={currentTime}
       videoTitle={videoTitle}
+      videoElement={videoElement}
       onSelectionChange={handleSelectionChange}
       onClose={onClose}
       onCreateGif={handleCreateGif}

@@ -12,6 +12,7 @@ interface OverlayWizardProps {
   videoDuration: number;
   currentTime: number;
   videoTitle?: string;
+  videoElement?: HTMLVideoElement;
   onSelectionChange: (selection: TimelineSelection) => void;
   onClose: () => void;
   onCreateGif: (selection: TimelineSelection) => void;
@@ -28,6 +29,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   videoDuration,
   currentTime,
   videoTitle,
+  videoElement,
   onSelectionChange,
   onClose,
   onCreateGif,
@@ -145,6 +147,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
               endTime={data.endTime || 4}
               currentTime={currentTime}
               duration={videoDuration}
+              videoElement={videoElement}
               onConfirm={handleConfirmQuickCapture}
               onBack={goBack}
               onSeekTo={onSeekTo}
