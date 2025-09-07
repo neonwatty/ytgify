@@ -89,9 +89,11 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   };
 
   // Progress dots for navigation indicator
-  const screens = ['welcome', 'capture', 'processing'];
+  const screens = ['welcome', 'capture', 'processing', 'success'];
   const currentIndex = currentScreen === 'quick-capture' || currentScreen === 'custom-range' 
     ? 1 
+    : currentScreen === 'success' 
+    ? 3
     : screens.indexOf(currentScreen);
   
   // Debug logging
@@ -171,9 +173,11 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
               onDownload={() => {
                 // Handle download - this would trigger download from saved GIF
                 console.log('Download GIF');
+                // TODO: Implement actual download functionality
               }}
-              onCreateAnother={() => {
-                goToScreen('action-select');
+              onBack={() => {
+                // Go back to quick capture screen to create another GIF
+                goToScreen('quick-capture');
               }}
               onClose={onClose}
               gifSize={data.gifSize}

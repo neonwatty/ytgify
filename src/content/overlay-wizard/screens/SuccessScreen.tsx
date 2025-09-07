@@ -2,14 +2,14 @@ import React from 'react';
 
 interface SuccessScreenProps {
   onDownload?: () => void;
-  onCreateAnother?: () => void;
+  onBack?: () => void;
   onClose?: () => void;
   gifSize?: number;
 }
 
 const SuccessScreen: React.FC<SuccessScreenProps> = ({ 
   onDownload,
-  onCreateAnother,
+  onBack,
   onClose,
   gifSize
 }) => {
@@ -20,10 +20,10 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
   };
 
   return (
-    <div className="ytgif-success-screen">
+    <div className="ytgif-wizard-screen ytgif-success-screen">
       <div className="ytgif-wizard-header">
         <div style={{ width: '20px' }}></div>
-        <h2 className="ytgif-wizard-title">GIF Created!</h2>
+        <h2 className="ytgif-wizard-title">✨ GIF Created Successfully!</h2>
         <button className="ytgif-close-btn" onClick={onClose}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <line x1="18" y1="6" x2="6" y2="18" strokeWidth={2} />
@@ -51,6 +51,13 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
 
         {/* Success Actions */}
         <div className="ytgif-success-actions">
+          <button className="ytgif-button-secondary" onClick={onBack}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back
+          </button>
+
           <button className="ytgif-button-primary" onClick={onDownload}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
@@ -58,14 +65,6 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
             Download GIF
-          </button>
-          
-          <button className="ytgif-button-secondary" onClick={onCreateAnother}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <polyline points="23 4 23 10 17 10" />
-              <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
-            </svg>
-            Create Another
           </button>
         </div>
 
