@@ -55,20 +55,21 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     });
   }, [videoDuration, currentTime, videoTitle, setScreenData]);
 
-  const handleWelcomeContinue = () => {
+  const handleWelcomeContinue = React.useCallback(() => {
+    console.log('[OverlayWizard] handleWelcomeContinue called, going to action-select');
     goToScreen('action-select');
-  };
+  }, [goToScreen]);
 
-  const handleQuickCapture = () => {
+  const handleQuickCapture = React.useCallback(() => {
     const startTime = Math.max(0, currentTime - 2);
     const endTime = Math.min(videoDuration, currentTime + 2);
     setScreenData({ startTime, endTime });
     goToScreen('quick-capture');
-  };
+  }, [currentTime, videoDuration, setScreenData, goToScreen]);
 
-  const handleCustomRange = () => {
+  const handleCustomRange = React.useCallback(() => {
     goToScreen('custom-range');
-  };
+  }, [goToScreen]);
 
   const handleConfirmQuickCapture = () => {
     const selection: TimelineSelection = {
@@ -97,6 +98,11 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   const currentIndex = currentScreen === 'quick-capture' || currentScreen === 'custom-range' 
     ? 2 
     : screens.indexOf(currentScreen);
+  
+  // Debug logging
+  React.useEffect(() => {
+    console.log('[OverlayWizard] Current screen:', currentScreen);
+  }, [currentScreen]);
 
   return (
     <div className="ytgif-overlay-wizard" role="dialog" aria-modal="true">

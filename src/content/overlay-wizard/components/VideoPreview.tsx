@@ -4,7 +4,7 @@ interface VideoPreviewProps {
   videoElement: HTMLVideoElement;
   startTime: number;
   endTime: number;
-  currentVideoTime?: number; // Add current video time prop
+  currentVideoTime?: number;
   isPlaying?: boolean;
   onPlayStateChange?: (playing: boolean) => void;
   width?: number;
@@ -25,16 +25,8 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
   const animationFrameRef = useRef<number>();
   const [currentPreviewTime, setCurrentPreviewTime] = useState(startTime);
   const [isLooping, setIsLooping] = useState(false);
+  const savedVideoStateRef = useRef<{ currentTime: number; paused: boolean } | null>(null);
   
-  // Store original video state
-  const originalStateRef = useRef<{
-    currentTime: number;
-    paused: boolean;
-  }>({
-    currentTime: videoElement.currentTime,
-    paused: videoElement.paused
-  });
-
   // Draw current frame to canvas
   const drawFrame = useCallback(() => {
     if (!canvasRef.current || !videoElement) return;
@@ -42,13 +34,22 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
     
-    // Draw the current video frame to canvas
-    ctx.drawImage(videoElement, 0, 0, width, height);
+    try {
+      // Draw directly from the main video element
+      ctx.drawImage(videoElement, 0, 0, width, height);
+    } catch (error) {
+      console.error('[VideoPreview] Error drawing frame:', error);
+    }
   }, [videoElement, width, height]);
 
-  // Seek to specific time and draw frame
+  // Seek video to specific time and draw frame
   const seekAndDraw = useCallback(async (time: number) => {
     return new Promise<void>((resolve) => {
+      if (!videoElement) {
+        resolve();
+        return;
+      }
+      
       const onSeeked = () => {
         videoElement.removeEventListener('seeked', onSeeked);
         drawFrame();
@@ -56,6 +57,20 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
       };
       
       videoElement.addEventListener('seeked', onSeeked);
+      
+      // Save current state before seeking
+      if (!savedVideoStateRef.current) {
+        savedVideoStateRef.current = {
+          currentTime: videoElement.currentTime,
+          paused: videoElement.paused
+        };
+      }
+      
+      // Pause video if playing to prevent conflicts
+      if (!videoElement.paused) {
+        videoElement.pause();
+      }
+      
       videoElement.currentTime = time;
       
       // Timeout fallback
@@ -71,13 +86,13 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
   const playRange = useCallback(async () => {
     if (!videoElement || !canvasRef.current) return;
     
-    // Store original state before we start
-    originalStateRef.current = {
+    // Save video state before starting preview
+    savedVideoStateRef.current = {
       currentTime: videoElement.currentTime,
       paused: videoElement.paused
     };
     
-    // Pause the main video to avoid conflicts
+    // Pause main video during preview
     videoElement.pause();
     
     // Start playback from startTime
@@ -107,9 +122,9 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
     };
     
     animate();
-  }, [videoElement, startTime, endTime, isPlaying, isLooping, seekAndDraw]);
+  }, [startTime, endTime, isPlaying, isLooping, videoElement, seekAndDraw]);
 
-  // Stop playback
+  // Stop playback and restore video state
   const stopPlayback = useCallback(() => {
     setIsLooping(false);
     
@@ -118,11 +133,12 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
     }
     
     // Restore original video state
-    if (videoElement && originalStateRef.current) {
-      videoElement.currentTime = originalStateRef.current.currentTime;
-      if (!originalStateRef.current.paused) {
-        videoElement.play().catch(() => {});
+    if (videoElement && savedVideoStateRef.current) {
+      videoElement.currentTime = savedVideoStateRef.current.currentTime;
+      if (!savedVideoStateRef.current.paused) {
+        videoElement.play();
       }
+      savedVideoStateRef.current = null;
     }
   }, [videoElement]);
 
@@ -139,9 +155,9 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
     };
   }, [isPlaying, playRange, stopPlayback]);
 
-  // Initial frame draw and sync with video
+  // Initial frame draw and sync with main video
   useEffect(() => {
-    if (!isPlaying) {
+    if (!isPlaying && videoElement) {
       // When not playing preview, show current video time if it's within selection
       const timeToShow = currentVideoTime !== undefined && 
                         currentVideoTime >= startTime && 
@@ -151,49 +167,22 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
       seekAndDraw(timeToShow);
       setCurrentPreviewTime(timeToShow);
     }
-  }, [startTime, currentVideoTime, isPlaying, seekAndDraw]);
+  }, [startTime, currentVideoTime, isPlaying, seekAndDraw, videoElement, endTime]);
   
   // Update preview when selection changes
   useEffect(() => {
-    if (!isPlaying) {
+    if (!isPlaying && videoElement) {
       seekAndDraw(startTime);
       setCurrentPreviewTime(startTime);
     }
-  }, [endTime, isPlaying, startTime, seekAndDraw]);
+  }, [endTime, isPlaying, startTime, seekAndDraw, videoElement]);
 
-  // Monitor external video time changes
+  // Draw initial frame
   useEffect(() => {
-    if (!videoElement) return;
-    
-    const handleTimeUpdate = () => {
-      // Only update if we're not currently playing preview
-      if (!isPlaying) {
-        const currentTime = videoElement.currentTime;
-        // Update preview if current time is within our selection range
-        if (currentTime >= startTime && currentTime <= endTime) {
-          setCurrentPreviewTime(currentTime);
-          drawFrame();
-        }
-      }
-    };
-    
-    const handleSeeked = () => {
-      // Update immediately when video seeks
-      if (!isPlaying) {
-        const currentTime = videoElement.currentTime;
-        setCurrentPreviewTime(currentTime);
-        drawFrame();
-      }
-    };
-    
-    videoElement.addEventListener('timeupdate', handleTimeUpdate);
-    videoElement.addEventListener('seeked', handleSeeked);
-    
-    return () => {
-      videoElement.removeEventListener('timeupdate', handleTimeUpdate);
-      videoElement.removeEventListener('seeked', handleSeeked);
-    };
-  }, [videoElement, isPlaying, startTime, endTime, drawFrame]);
+    if (videoElement) {
+      drawFrame();
+    }
+  }, [videoElement, drawFrame]);
   
   // Cleanup on unmount
   useEffect(() => {
