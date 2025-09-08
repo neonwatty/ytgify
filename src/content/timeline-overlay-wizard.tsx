@@ -17,6 +17,11 @@ export interface TimelineOverlayWizardProps {
     progress: number;
     message: string;
   };
+  gifData?: {
+    dataUrl: string;
+    size: number;
+    metadata: any;
+  };
 }
 
 export const TimelineOverlayWizard: React.FC<TimelineOverlayWizardProps> = ({
@@ -29,7 +34,8 @@ export const TimelineOverlayWizard: React.FC<TimelineOverlayWizardProps> = ({
   onCreateGif,
   onSeekTo,
   isCreating = false,
-  processingStatus
+  processingStatus,
+  gifData
 }) => {
   const [selection, setSelection] = useState<TimelineSelection | null>(null);
 
@@ -55,6 +61,7 @@ export const TimelineOverlayWizard: React.FC<TimelineOverlayWizardProps> = ({
       onSeekTo={onSeekTo}
       isCreating={isCreating}
       processingStatus={processingStatus}
+      gifData={gifData}
     />
   );
 };

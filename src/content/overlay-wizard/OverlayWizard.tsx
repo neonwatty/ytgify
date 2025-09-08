@@ -22,6 +22,11 @@ interface OverlayWizardProps {
     progress: number;
     message: string;
   };
+  gifData?: {
+    dataUrl: string;
+    size: number;
+    metadata: any;
+  };
 }
 
 const OverlayWizard: React.FC<OverlayWizardProps> = ({
@@ -34,7 +39,8 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   onCreateGif,
   onSeekTo,
   isCreating = false,
-  processingStatus
+  processingStatus,
+  gifData
 }) => {
   const navigation = useOverlayNavigation('welcome');
   const {
@@ -87,6 +93,37 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     onCreateGif(selection);
     goToScreen('processing');
   };
+
+  // Store GIF data when it's created and transition to success
+  React.useEffect(() => {
+    if (gifData && gifData.dataUrl) {
+      console.log('[OverlayWizard] GIF data received:', {
+        hasDataUrl: !!gifData.dataUrl,
+        size: gifData.size,
+        hasMetadata: !!gifData.metadata,
+        currentScreen
+      });
+      
+      // Store the data 
+      const newData = {
+        gifDataUrl: gifData.dataUrl,
+        gifSize: gifData.size,
+        gifMetadata: gifData.metadata
+      };
+      
+      setScreenData(newData);
+      console.log('[OverlayWizard] Set screen data with GIF');
+      
+      // Only transition if we're still on processing screen
+      if (currentScreen === 'processing') {
+        // Small delay to ensure state is updated
+        setTimeout(() => {
+          console.log('[OverlayWizard] Transitioning to success screen with GIF data');
+          goToScreen('success');
+        }, 100);
+      }
+    }
+  }, [gifData, currentScreen, setScreenData, goToScreen]); // Add back required dependencies
 
   // Progress dots for navigation indicator
   const screens = ['welcome', 'capture', 'processing', 'success'];
@@ -160,7 +197,10 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
           {currentScreen === 'processing' && (
             <ProcessingScreen
               processingStatus={processingStatus}
-              onComplete={() => goToScreen('success')}
+              onComplete={() => {
+                // Don't transition here - wait for gifData to be available
+                console.log('[OverlayWizard] Processing complete, waiting for GIF data...');
+              }}
               onError={(error) => {
                 console.error('GIF creation error:', error);
                 // Could show error screen or message
@@ -169,19 +209,33 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
           )}
 
           {currentScreen === 'success' && (
-            <SuccessScreen
-              onDownload={() => {
-                // Handle download - this would trigger download from saved GIF
-                console.log('Download GIF');
-                // TODO: Implement actual download functionality
-              }}
-              onBack={() => {
-                // Go back to quick capture screen to create another GIF
-                goToScreen('quick-capture');
-              }}
-              onClose={onClose}
-              gifSize={data.gifSize}
-            />
+            <>
+              {console.log('[OverlayWizard] Rendering SuccessScreen with data:', {
+                hasGifDataUrl: !!data.gifDataUrl,
+                gifSize: data.gifSize,
+                hasGifMetadata: !!data.gifMetadata,
+                dataKeys: Object.keys(data)
+              })}
+              <SuccessScreen
+                onDownload={() => {
+                  // Handle download - this would trigger download from saved GIF
+                  if (data.gifDataUrl) {
+                    const link = document.createElement('a');
+                    link.download = `youtube-gif-${Date.now()}.gif`;
+                    link.href = data.gifDataUrl;
+                    link.click();
+                  }
+                }}
+                onBack={() => {
+                  // Go back to quick capture screen to create another GIF
+                  goToScreen('quick-capture');
+                }}
+                onClose={onClose}
+                gifSize={data.gifSize}
+                gifDataUrl={data.gifDataUrl}
+                gifMetadata={data.gifMetadata}
+              />
+            </>
           )}
         </div>
       </div>

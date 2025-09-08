@@ -120,6 +120,28 @@ test('Wizard GIF Creation Complete Flow', async () => {
     }
   }
   
+  // Verify success screen stays visible
+  if (successShown) {
+    console.log('\n=== Verifying Success Screen Persistence ===');
+    await page.waitForTimeout(2000); // Wait to ensure it doesn't disappear
+    
+    const successStillVisible = await page.evaluate(() => {
+      const successScreen = document.querySelector('.ytgif-success-screen');
+      return successScreen && window.getComputedStyle(successScreen).display !== 'none';
+    });
+    
+    console.log(`Success screen still visible after 2 seconds: ${successStillVisible}`);
+    expect(successStillVisible).toBeTruthy();
+    
+    // Check for Back button
+    const backButton = await page.$('button:has-text("Back")');
+    console.log(`Back button found: ${!!backButton}`);
+    
+    // Check for Download button
+    const downloadButton = await page.$('button:has-text("Download GIF")');
+    console.log(`Download button found: ${!!downloadButton}`);
+  }
+  
   // Final assertions
   console.log('\n=== Results ===');
   console.log(`Processing screen shown: ${processingStarted}`);

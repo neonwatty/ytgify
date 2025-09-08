@@ -1,18 +1,35 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface SuccessScreenProps {
   onDownload?: () => void;
   onBack?: () => void;
   onClose?: () => void;
   gifSize?: number;
+  gifDataUrl?: string;
+  gifMetadata?: {
+    width: number;
+    height: number;
+    duration: number;
+    frameCount?: number;
+  };
 }
 
 const SuccessScreen: React.FC<SuccessScreenProps> = ({ 
   onDownload,
   onBack,
   onClose,
-  gifSize
+  gifSize,
+  gifDataUrl,
+  gifMetadata
 }) => {
+  React.useEffect(() => {
+    console.log('[SuccessScreen] Rendered with:', {
+      hasGifDataUrl: !!gifDataUrl,
+      gifSize,
+      hasMetadata: !!gifMetadata
+    });
+  }, [gifDataUrl, gifSize, gifMetadata]);
+  
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -33,18 +50,36 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
       </div>
 
       <div className="ytgif-wizard-content">
-        {/* Success Icon */}
-        <div className="ytgif-success-icon">
-          <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="2">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M9 12l2 2 4-4" />
-          </svg>
-        </div>
+        {/* GIF Preview */}
+        {gifDataUrl && (
+          <div className="ytgif-success-preview">
+            <img 
+              src={gifDataUrl} 
+              alt="Created GIF"
+              className="ytgif-success-preview-image"
+            />
+            {gifMetadata && (
+              <div className="ytgif-success-metadata">
+                <span>{gifMetadata.width}×{gifMetadata.height}</span>
+                <span>•</span>
+                <span>{formatSize(gifSize || 0)}</span>
+                <span>•</span>
+                <span>{gifMetadata.duration.toFixed(1)}s</span>
+                {gifMetadata.frameCount && (
+                  <>
+                    <span>•</span>
+                    <span>{gifMetadata.frameCount} frames</span>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Success Message */}
         <div className="ytgif-success-message">
           <h3>Your GIF is ready!</h3>
-          {gifSize && (
+          {!gifDataUrl && gifSize && (
             <p className="ytgif-gif-size">Size: {formatSize(gifSize)}</p>
           )}
         </div>

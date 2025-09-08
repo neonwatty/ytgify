@@ -55,6 +55,7 @@ class YouTubeGifMaker {
   private extractedFrames: ImageData[] | null = null;
   private isWizardMode = false;
   private wizardUpdateInterval: NodeJS.Timeout | null = null;
+  private createdGifData: { dataUrl: string; size: number; metadata: any } | undefined = undefined;
 
   constructor() {
     console.log('[YTGif Content Script] Constructor called!');
@@ -543,7 +544,8 @@ class YouTubeGifMaker {
           onCreateGif: this.handleCreateGif.bind(this),
           onSeekTo: this.handleSeekTo.bind(this),
           isCreating: this.isCreatingGif,
-          processingStatus: this.processingStatus
+          processingStatus: this.processingStatus,
+          gifData: this.createdGifData
         })
       );
 
@@ -713,7 +715,8 @@ class YouTubeGifMaker {
           onCreateGif: this.handleCreateGif.bind(this),
           onSeekTo: this.handleSeekTo.bind(this),
           isCreating: this.isCreatingGif,
-          processingStatus: this.processingStatus
+          processingStatus: this.processingStatus,
+          gifData: this.createdGifData
         })
       );
     } else {
@@ -871,6 +874,7 @@ class YouTubeGifMaker {
     // Set initial processing status to trigger wizard screen change
     this.processingStatus = { stage: 'processing', progress: 0, message: 'Initializing...' };
     this.isCreatingGif = true;
+    this.createdGifData = undefined; // Clear previous GIF data
     this.updateTimelineOverlay();
     
     // Use default settings for wizard-initiated GIF creation
@@ -1126,15 +1130,32 @@ class YouTubeGifMaker {
         reader.readAsDataURL(result.blob);
       });
       
+      // Store GIF data for preview
+      this.createdGifData = {
+        dataUrl: gifDataUrl,
+        size: result.blob.size,
+        metadata: result.metadata
+      };
+      console.log('[Content] Stored GIF data for wizard:', {
+        hasDataUrl: !!gifDataUrl,
+        size: result.blob.size,
+        hasMetadata: !!result.metadata
+      });
+      
       // Show success feedback
       this.processingStatus = { stage: 'completed', progress: 100, message: 'GIF created!' };
+      
+      // Force immediate update to pass GIF data to wizard
       this.updateTimelineOverlay();
       
-      // Wait a moment for the success screen to show
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Hide timeline overlay
-      this.hideTimelineOverlay();
+      // If we're in wizard mode, don't hide the overlay - let the success screen handle it
+      if (!this.isWizardMode) {
+        // Wait a moment for the success screen to show
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Hide timeline overlay for non-wizard mode
+        this.hideTimelineOverlay();
+      }
       
       if (download) {
         // Direct download
@@ -1402,20 +1423,24 @@ class YouTubeGifMaker {
         
         this.log('info', '[Content] GIF saved to chrome.storage', { id: gifId });
         
-        // Show preview modal with the created GIF
-        this.showGifPreview(gifDataUrl, message.data.metadata);
-        
-        // Close the timeline overlay immediately
-        this.deactivateGifMode();
+        // If not in wizard mode, show preview modal
+        if (!this.isWizardMode) {
+          this.showGifPreview(gifDataUrl, message.data.metadata);
+          // Close the timeline overlay immediately
+          this.deactivateGifMode();
+        }
+        // In wizard mode, the success screen handles navigation
         
       } catch (error) {
         this.log('error', '[Content] Failed to save GIF', { error });
         this.showGifCreationFeedback('error', 'GIF created but failed to save to library');
         
-        // Still close overlay after error
-        setTimeout(() => {
-          this.deactivateGifMode();
-        }, 2000);
+        // Still close overlay after error (unless in wizard mode)
+        if (!this.isWizardMode) {
+          setTimeout(() => {
+            this.deactivateGifMode();
+          }, 2000);
+        }
       }
       
       // Log success metrics
