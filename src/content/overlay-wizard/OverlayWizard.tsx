@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
-import { TimelineSelection } from '@/types';
+import { TimelineSelection, TextOverlay } from '@/types';
 import { useOverlayNavigation } from './hooks/useOverlayNavigation';
 import WelcomeScreen from './screens/WelcomeScreen';
 import QuickCaptureScreen from './screens/QuickCaptureScreen';
 import CustomRangeScreen from './screens/CustomRangeScreen';
+import TextOverlayScreenV2 from './screens/TextOverlayScreenV2';
 import ProcessingScreen from './screens/ProcessingScreen';
 import SuccessScreen from './screens/SuccessScreen';
 
@@ -14,7 +15,7 @@ interface OverlayWizardProps {
   videoElement?: HTMLVideoElement;
   onSelectionChange: (selection: TimelineSelection) => void;
   onClose: () => void;
-  onCreateGif: (selection: TimelineSelection) => void;
+  onCreateGif: (selection: TimelineSelection, textOverlays?: TextOverlay[]) => void;
   onSeekTo?: (time: number) => void;
   isCreating?: boolean;
   processingStatus?: {
@@ -71,6 +72,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
 
 
   const handleConfirmQuickCapture = (startTime: number, endTime: number) => {
+    console.log('[OverlayWizard] handleConfirmQuickCapture called', { startTime, endTime });
     const selection: TimelineSelection = {
       startTime,
       endTime,
@@ -79,8 +81,9 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     // Update the data state with the final selection
     setScreenData({ startTime, endTime });
     onSelectionChange(selection);
-    onCreateGif(selection);
-    goToScreen('processing');
+    // Go to text overlay screen instead of processing
+    console.log('[OverlayWizard] Navigating to text-overlay screen');
+    goToScreen('text-overlay');
   };
 
   const handleConfirmCustomRange = (startTime: number, endTime: number) => {
@@ -89,9 +92,10 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
       endTime,
       duration: endTime - startTime
     };
+    setScreenData({ startTime, endTime });
     onSelectionChange(selection);
-    onCreateGif(selection);
-    goToScreen('processing');
+    // Go to text overlay screen instead of processing
+    goToScreen('text-overlay');
   };
 
   // Store GIF data when it's created and transition to success
@@ -125,12 +129,40 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     }
   }, [gifData, currentScreen, setScreenData, goToScreen]); // Add back required dependencies
 
+  // Add handlers for text overlay screen
+  const handleConfirmTextOverlay = (overlays: TextOverlay[]) => {
+    console.log('[OverlayWizard] handleConfirmTextOverlay called with overlays:', overlays);
+    setScreenData({ textOverlays: overlays });
+    const selection: TimelineSelection = {
+      startTime: data.startTime || 0,
+      endTime: data.endTime || 4,
+      duration: (data.endTime || 4) - (data.startTime || 0)
+    };
+    console.log('[OverlayWizard] Calling onCreateGif with selection and overlays:', { selection, overlays });
+    onCreateGif(selection, overlays);
+    goToScreen('processing');
+  };
+
+  const handleSkipTextOverlay = () => {
+    const selection: TimelineSelection = {
+      startTime: data.startTime || 0,
+      endTime: data.endTime || 4,
+      duration: (data.endTime || 4) - (data.startTime || 0)
+    };
+    onCreateGif(selection, []);
+    goToScreen('processing');
+  };
+
   // Progress dots for navigation indicator
-  const screens = ['welcome', 'capture', 'processing', 'success'];
+  const screens = ['welcome', 'capture', 'text', 'processing', 'success'];
   const currentIndex = currentScreen === 'quick-capture' || currentScreen === 'custom-range' 
     ? 1 
-    : currentScreen === 'success' 
+    : currentScreen === 'text-overlay'
+    ? 2
+    : currentScreen === 'processing'
     ? 3
+    : currentScreen === 'success' 
+    ? 4
     : screens.indexOf(currentScreen);
   
   // Debug logging
@@ -189,6 +221,20 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
               videoDuration={videoDuration}
               currentTime={currentTime}
               onConfirm={handleConfirmCustomRange}
+              onBack={goBack}
+              onSeekTo={onSeekTo}
+            />
+          )}
+
+          {currentScreen === 'text-overlay' && (
+            <TextOverlayScreenV2
+              startTime={data.startTime || 0}
+              endTime={data.endTime || 4}
+              videoDuration={videoDuration}
+              videoElement={videoElement}
+              textOverlays={data.textOverlays}
+              onConfirm={handleConfirmTextOverlay}
+              onSkip={handleSkipTextOverlay}
               onBack={goBack}
               onSeekTo={onSeekTo}
             />

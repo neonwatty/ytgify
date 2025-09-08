@@ -12,6 +12,7 @@ import {
   TimelineSelectionUpdate,
   LogMessage,
   TimelineSelection,
+  TextOverlay,
   RequestVideoDataForGif,
   VideoDataResponse,
   GifCreationComplete,
@@ -712,7 +713,10 @@ class YouTubeGifMaker {
           videoElement: this.videoElement || undefined,
           onSelectionChange: this.handleSelectionChange.bind(this),
           onClose: this.deactivateGifMode.bind(this),
-          onCreateGif: this.handleCreateGif.bind(this),
+          onCreateGif: (selection: TimelineSelection, textOverlays?: TextOverlay[]) => {
+            console.log('[Content] onCreateGif wrapper called with:', { selection, textOverlays });
+            this.handleCreateGif(selection, textOverlays);
+          },
           onSeekTo: this.handleSeekTo.bind(this),
           isCreating: this.isCreatingGif,
           processingStatus: this.processingStatus,
@@ -855,21 +859,35 @@ class YouTubeGifMaker {
 
 
 
-  private async handleCreateGif() {
-    if (!this.videoElement || !this.currentSelection) {
+  private async handleCreateGif(selection?: TimelineSelection, textOverlays?: TextOverlay[]) {
+    console.log('[Content] handleCreateGif called with:', { selection, textOverlays });
+    // Use provided selection or fall back to current selection
+    const gifSelection = selection || this.currentSelection;
+    
+    if (!this.videoElement || !gifSelection) {
       this.log('warn', '[Content] Cannot create GIF - missing video or selection');
       return;
     }
 
-    const { startTime, endTime, duration } = this.currentSelection;
+    const { startTime, endTime, duration } = gifSelection;
 
     if (duration < 0.5) {
-      this.log('warn', '[Content] Invalid time selection for GIF creation', { selection: this.currentSelection });
+      this.log('warn', '[Content] Invalid time selection for GIF creation', { selection: gifSelection });
       return;
     }
 
+    // Update current selection if a new one was provided
+    if (selection) {
+      this.currentSelection = selection;
+    }
+
     // Process GIF directly with default settings
-    this.log('info', '[Content] Starting GIF creation from wizard', { startTime, endTime, duration });
+    this.log('info', '[Content] Starting GIF creation from wizard', { 
+      startTime, 
+      endTime, 
+      duration,
+      hasTextOverlays: !!textOverlays && textOverlays.length > 0
+    });
     
     // Set initial processing status to trigger wizard screen change
     this.processingStatus = { stage: 'processing', progress: 0, message: 'Initializing...' };
@@ -885,8 +903,8 @@ class YouTubeGifMaker {
       quality: 'medium'
     };
     
-    // Process the GIF without text overlays
-    await this.processGifWithSettings(defaultSettings, []);
+    // Process the GIF with text overlays if provided
+    await this.processGifWithSettings(defaultSettings, textOverlays || []);
   }
 
   private showUnifiedEditor() {
@@ -961,13 +979,13 @@ class YouTubeGifMaker {
         currentTime,
         frames: this.extractedFrames || undefined,
         onClose: () => this.hideEnhancedEditor(),
-        onSave: async (settings, frames) => {
+        onSave: async (settings, textOverlays) => {
           this.hideEnhancedEditor();
-          await this.processGifWithSettings(settings, frames);
+          await this.processGifWithSettings(settings, textOverlays);
         },
-        onExport: async (settings, frames) => {
+        onExport: async (settings, textOverlays) => {
           this.hideEnhancedEditor();
-          await this.processGifWithSettings(settings, frames, true);
+          await this.processGifWithSettings(settings, textOverlays, true);
         },
         onFramesRequest: async () => {
           console.log('[Enhanced Editor] Frame extraction requested');
@@ -1066,7 +1084,8 @@ class YouTubeGifMaker {
     return frames;
   }
 
-  private async processGifWithSettings(settings: any, frames: any[], download = false) {
+  private async processGifWithSettings(settings: any, textOverlays: TextOverlay[] = [], download = false) {
+    console.log('[Content] processGifWithSettings called with:', { settings, textOverlays, download });
     if (!this.videoElement || !this.currentSelection) return;
 
     // Set creating state
@@ -1087,7 +1106,8 @@ class YouTubeGifMaker {
           frameRate: settings.frameRate || 15,
           width: settings.width || 640,
           height: settings.height || 360,
-          quality: settings.quality || 'medium'
+          quality: settings.quality || 'medium',
+          textOverlays
         },
         (progress, message) => {
           // Determine stage based on message

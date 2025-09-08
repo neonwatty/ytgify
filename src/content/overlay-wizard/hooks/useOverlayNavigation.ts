@@ -1,10 +1,12 @@
 import { useState, useCallback } from 'react';
+import { TextOverlay } from '@/types';
 
 export type OverlayScreenType = 
   | 'welcome'
   | 'action-select' 
   | 'quick-capture'
   | 'custom-range'
+  | 'text-overlay'
   | 'processing'
   | 'success';
 
@@ -13,6 +15,7 @@ interface ScreenData {
   endTime?: number;
   videoDuration?: number;
   currentTime?: number;
+  textOverlays?: TextOverlay[];
   [key: string]: any;
 }
 

@@ -1355,3 +1355,430 @@ body[theater] .ytgif-timeline-overlay,
 @import './editor-overlay.css';
 @import './editor-overlay-enhanced.css';
 @import './timeline-editor-unified.css';
+
+/* Text Overlay Screen Styles */
+.ytgif-text-overlay-screen {
+  padding: 1.5rem;
+}
+
+.ytgif-text-overlay-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.ytgif-text-preview-section {
+  background: var(--ytgif-surface);
+  border: 1px solid var(--ytgif-border);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.ytgif-text-editor-section {
+  background: var(--ytgif-surface);
+  border: 1px solid var(--ytgif-border);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.ytgif-text-preview-placeholder {
+  text-align: center;
+  color: var(--ytgif-text-secondary);
+  padding: 1rem;
+  font-size: 0.875rem;
+}
+
+/* Responsive layout for larger screens */
+@media (min-width: 768px) {
+  .ytgif-text-overlay-container {
+    flex-direction: row;
+  }
+  
+  .ytgif-text-preview-section {
+    flex: 1.5;
+  }
+  
+  .ytgif-text-editor-section {
+    flex: 1;
+  }
+}
+
+/* ==========================================
+   Improved Text Overlay Screen V2 Styles
+   ========================================== */
+
+/* Text overlay screen now uses standard wizard theming */
+.ytgif-text-overlay-screen-v2 {
+  /* Removed custom blue gradient - now inherits wizard theme */
+}
+
+/* Header styles now use standard wizard header */
+
+/* Video Preview Section for Text Overlay */
+.ytgif-video-preview-section {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.ytgif-video-preview-frame {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.ytgif-frame-preview {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Video Preview Container */
+.ytgif-video-preview-container {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.ytgif-video-frame {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ytgif-preview-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.ytgif-text-preview-overlay {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: bold;
+  text-align: center;
+  white-space: nowrap;
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  animation: fadeIn 0.3s ease;
+}
+
+.ytgif-preview-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 250px;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+}
+
+.ytgif-preview-placeholder svg {
+  opacity: 0.5;
+  margin-bottom: 1rem;
+}
+
+/* Text Controls - Updated for dark theme */
+.ytgif-text-controls {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.ytgif-control-group {
+  margin-bottom: 1.5rem;
+}
+
+.ytgif-control-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ytgif-text-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 1.125rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.ytgif-text-input:focus {
+  outline: none;
+  border-color: #ff0000;
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.ytgif-text-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.ytgif-char-count {
+  display: block;
+  text-align: right;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 0.25rem;
+}
+
+/* Position Buttons */
+.ytgif-position-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.ytgif-position-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.ytgif-position-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.ytgif-position-btn.active {
+  background: #ff0000;
+  border-color: #ff0000;
+  color: white;
+}
+
+.ytgif-position-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Advanced Options Toggle */
+.ytgif-advanced-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 1rem;
+}
+
+.ytgif-advanced-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.ytgif-advanced-toggle:hover {
+  background: #edf2f7;
+}
+
+.ytgif-advanced-toggle span:first-child {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: #667eea;
+  color: white;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+/* Advanced Options */
+.ytgif-advanced-options {
+  animation: slideDown 0.3s ease;
+}
+
+.ytgif-control-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.ytgif-control-half {
+  margin-bottom: 0;
+}
+
+.ytgif-range-input {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.ytgif-range-value {
+  display: inline-block;
+  margin-left: 0.5rem;
+  font-size: 0.875rem;
+  color: #718096;
+}
+
+.ytgif-color-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ytgif-color-input {
+  width: 50px;
+  height: 40px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.ytgif-color-value {
+  font-family: monospace;
+  font-size: 0.875rem;
+  color: #718096;
+}
+
+/* Action Bar V2 */
+.ytgif-wizard-actions-v2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-top: 1px solid #e2e8f0;
+  backdrop-filter: blur(10px);
+}
+
+.ytgif-btn-ghost {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: none;
+  color: #718096;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 8px;
+}
+
+.ytgif-btn-ghost:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #4a5568;
+}
+
+.ytgif-actions-primary {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.ytgif-btn-secondary {
+  padding: 0.75rem 1.5rem;
+  background: white;
+  border: 2px solid #e2e8f0;
+  color: #4a5568;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 8px;
+}
+
+.ytgif-btn-secondary:hover {
+  background: #f7fafc;
+  border-color: #cbd5e0;
+}
+
+.ytgif-btn-primary {
+  padding: 0.75rem 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.ytgif-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.ytgif-btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 200px;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .ytgif-text-overlay-main {
+    padding: 1rem;
+  }
+  
+  .ytgif-position-buttons {
+    grid-template-columns: 1fr;
+  }
+  
+  .ytgif-control-row {
+    grid-template-columns: 1fr;
+  }
+}

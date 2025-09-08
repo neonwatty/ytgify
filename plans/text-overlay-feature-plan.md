@@ -1,131 +1,160 @@
-# Plan: Add Text Overlay Screen to GIF Creation Wizard
+# Revised Text Overlay Feature Plan
 
 ## Overview
-Add a new screen between "Processing" and "Success" where users can add text overlays to their GIF before downloading. This will provide an interactive canvas-based editor for positioning and styling text.
+**Integration task**: Add existing text overlay editor as a new screen in the GIF creation wizard between "Processing" and "Success".
 
-## Screen Flow Update
-1. Welcome → 2. Quick Capture/Custom Range → 3. Processing → **4. Text Overlay (NEW)** → 5. Success
-
-## Library Selection
-After analyzing options, I recommend:
-- **Primary Choice**: Pure Canvas API with custom implementation
-  - Lightweight (no additional dependencies)
-  - Full control over rendering
-  - Direct integration with existing GIF encoding pipeline
-- **Alternative**: Konva.js (if advanced features needed later)
-  - Excellent drag-and-drop support
-  - Rich text editing capabilities
-  - ~80KB gzipped
+## Current State Analysis
+- ✅ **Text overlay system fully implemented**
+  - `src/content/text-overlay-editor.tsx` - Complete drag-and-drop editor
+  - `src/content/text-overlay-canvas.tsx` - Canvas-based visual editing
+  - `src/content/text-controls.tsx` - Property control panel
+  - Full animation support (fade-in, fade-out)
+- ✅ **GIF encoder supports text overlays**
+  - `src/lib/gif-encoder.ts` lines 442-458 already render text on frames
+  - Canvas processing pipeline fully integrated
+- ✅ **Types and interfaces defined**
+  - `TextOverlay` interface in `src/types/index.ts`
+  - Complete with animation, styling, and positioning properties
+- ❌ **Missing: Text overlay screen in wizard flow**
+  - Current flow: Welcome → QuickCapture/CustomRange → Processing → Success
+  - Needed: Text editing step after capture, before final processing
 
 ## Implementation Steps
 
-### 1. Update Navigation Hook
-- Add 'text-overlay' to OverlayScreenType enum
-- Update screen flow logic to transition from processing → text-overlay → success
-
-### 2. Create TextOverlayScreen Component
-- Canvas-based preview of the GIF with text overlay
-- Text input controls (content, font, size, color, position)
-- Drag-to-position functionality using mouse events
-- Live preview updates
-- Skip button (if user doesn't want text)
-
-### 3. Text Overlay Features
-- Text properties: content, font family, font size, color, stroke
-- Positioning: drag-and-drop or manual x/y coordinates
-- Multiple text layers support
-- Text animation options (static, fade-in, typewriter)
-- Preset styles (meme-style, subtitle, watermark)
-
-### 4. Processing Integration
-- Modify GIF encoder to accept text overlay parameters
-- Apply text to each frame during encoding
-- Use Canvas 2D API to draw text on frames
-- Maintain performance with efficient rendering
-
-### 5. Data Structure Updates
-- Add TextOverlay interface to types
-- Store overlay configuration in wizard data
-- Pass overlay data to encoder
-
-### 6. UI/UX Considerations
-- Show GIF preview as background
-- Floating text editor panel
-- Real-time preview of text on GIF
-- Mobile-responsive controls
-- Undo/redo functionality
-
-## Technical Architecture
-
+### 1. Create TextOverlayScreen Component
+**New File**: `src/content/overlay-wizard/screens/TextOverlayScreen.tsx`
 ```typescript
-interface TextOverlay {
-  id: string;
-  text: string;
-  x: number;
-  y: number;
-  fontSize: number;
-  fontFamily: string;
-  color: string;
-  strokeColor?: string;
-  strokeWidth?: number;
-  animation?: 'none' | 'fade' | 'typewriter';
-  startTime?: number;
-  endTime?: number;
-}
+// Import and integrate existing TextOverlayEditor
+// Add video frame preview showing captured GIF frames
+// Include "Skip" and "Apply Text" navigation buttons
+// Connect to wizard state management
 ```
 
+### 2. Update Navigation Hook
+**File**: `src/content/overlay-wizard/hooks/useOverlayNavigation.ts`
+- Add 'text-overlay' to OverlayScreenType enum
+- Update screen flow logic:
+  - After quick capture: processing → text-overlay → success
+  - After custom range: processing → text-overlay → success
+- Add conditional skip if user doesn't want text
+
+### 3. Update Wizard Component
+**File**: `src/content/overlay-wizard/OverlayWizard.tsx`
+- Import TextOverlayScreen component
+- Add to screen routing switch statement
+- Pass GIF frames/preview data to text overlay screen
+- Store text overlays in wizard state for encoding
+
+### 4. Enhance Video Preview Integration
+**File**: `src/content/video-preview.tsx`
+- Add optional text overlay rendering on preview
+- Show live preview with text overlays during editing
+- Sync with TextOverlayCanvas for consistent rendering
+
+### 5. Connect to Encoding Pipeline
+- Pass text overlays from wizard state to encoder
+- Leverage existing text rendering in `src/lib/gif-encoder.ts`
+- No changes needed to encoder (already supports text overlays)
+
+## Existing Components to Leverage
+
+### TextOverlayEditor (`src/content/text-overlay-editor.tsx`)
+- Complete editing interface with canvas and controls
+- Drag-and-drop positioning
+- Keyboard shortcuts (Delete key support)
+- State management for multiple text layers
+
+### TextOverlayCanvas (`src/content/text-overlay-canvas.tsx`)
+- Visual canvas for text positioning
+- Selection handles and visual feedback
+- Mouse interaction handling
+- Coordinate transformation
+
+### TextControls (`src/content/text-controls.tsx`)
+- Font family, size, and color controls
+- Stroke settings
+- Animation options
+- Layer management
+
+## Data Flow
+
+```
+Wizard State
+    ↓
+TextOverlayScreen (new)
+    ↓
+TextOverlayEditor (existing)
+    ├── TextOverlayCanvas (existing)
+    └── TextControls (existing)
+    ↓
+Wizard State (updated with overlays)
+    ↓
+GIF Encoder (existing, already supports text)
+```
+
+## Benefits of This Approach
+- **Reuses battle-tested components** - No reinventing the wheel
+- **Minimal new code required** - Just integration glue
+- **Consistent UI/UX** - Uses existing editor patterns
+- **Lower risk** - Proven components reduce bugs
+- **Faster implementation** - 1-2 days vs 1 week
+
+## Technical Considerations
+
+### Performance
+- Text rendering already optimized in encoder
+- Canvas operations efficient for real-time preview
+- No additional dependencies needed
+
+### Mobile Responsiveness
+- Existing components already handle touch events
+- May need minor adjustments for wizard layout
+
+### State Management
+- Wizard already has state management pattern
+- Add `textOverlays: TextOverlay[]` to wizard state
+- Pass through to encoding step
+
 ## Files to Modify
-1. `src/content/overlay-wizard/hooks/useOverlayNavigation.ts` - Add new screen type
-2. `src/content/overlay-wizard/OverlayWizard.tsx` - Add screen routing
-3. `src/content/overlay-wizard/screens/TextOverlayScreen.tsx` - NEW file
-4. `src/types/index.ts` - Add TextOverlay interface
-5. `src/processing/gif-encoder.ts` - Add text rendering logic
-6. `src/content/wizard-styles.css` - Add text overlay screen styles
 
-## Benefits
-- Enhanced user experience with customizable GIFs
-- No heavy dependencies (using native Canvas API)
-- Seamless integration with existing workflow
-- Professional-looking GIF output with text overlays
+1. **Create New**:
+   - `src/content/overlay-wizard/screens/TextOverlayScreen.tsx`
 
-## Library Research Summary
+2. **Update Existing**:
+   - `src/content/overlay-wizard/hooks/useOverlayNavigation.ts` - Add screen type
+   - `src/content/overlay-wizard/OverlayWizard.tsx` - Add routing
+   - `src/content/overlay-wizard/types.ts` - Add text overlay to wizard data
+   - `src/content/styles.css` - Any needed styling adjustments
 
-### Canvas Libraries Evaluated
+## Testing Plan
 
-#### Konva.js
-- **Pros**: Excellent drag-and-drop, declarative API, React integration
-- **Cons**: Requires GIF parsing library (gifler) for GIF support
-- **Size**: ~80KB gzipped
-- **Best for**: Complex interactive canvas applications
+1. **Integration Tests**:
+   - Verify navigation flow includes text overlay screen
+   - Test skip functionality
+   - Ensure text overlays pass to encoder
 
-#### Fabric.js
-- **Pros**: Rich text editing, on-canvas controls, mature ecosystem
-- **Cons**: Larger size, no native GIF animation support
-- **Size**: ~100KB gzipped
-- **Best for**: Full-featured image editors
+2. **E2E Tests**:
+   - Complete wizard flow with text overlay
+   - Verify GIF output includes text
+   - Test on different video sources
 
-#### Interact.js
-- **Pros**: Lightweight, focused on drag interactions
-- **Cons**: Not canvas-specific, requires additional rendering logic
-- **Size**: ~20KB gzipped
-- **Best for**: Adding drag to existing canvas implementations
+3. **Manual Testing**:
+   - Text positioning and editing
+   - Preview accuracy
+   - Mobile/touch interactions
 
-#### Native Canvas API
-- **Pros**: No dependencies, full control, smallest size
-- **Cons**: More code to write for interactions
-- **Size**: 0KB (native)
-- **Best for**: Lightweight, performance-critical applications
+## Estimated Timeline
 
-### GIF Processing Libraries
+- **Day 1**: 
+  - Create TextOverlayScreen component
+  - Update navigation and routing
+  - Basic integration
 
-#### Current Stack
-- **gif.js**: Already in use for encoding
-- **gifenc**: Already in use as alternative encoder
-- Both support frame manipulation before encoding
+- **Day 2**:
+  - Polish preview integration
+  - Testing and bug fixes
+  - Documentation updates
 
-### Recommendation
-Start with native Canvas API for the text overlay feature since:
-1. No additional dependencies needed
-2. Full control over rendering pipeline
-3. Direct integration with existing GIF encoders
-4. Can add Konva.js later if more features needed
+## Conclusion
+
+This revised plan leverages the **extensive existing text overlay implementation** rather than building from scratch. The task is primarily **integration work** - connecting the existing, fully-functional text overlay editor into the wizard flow. This approach significantly reduces development time, risk, and complexity while maintaining feature completeness.

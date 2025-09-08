@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 import { createError } from '@/lib/errors';
 import { SimpleEncoderFactory } from '@/lib/encoders/simple-encoder-factory';
 import { FrameData, EncoderOptions } from '@/lib/encoders/base-encoder';
+import { TextOverlay } from '@/types';
 
 export interface GifProcessingOptions {
   startTime: number;
@@ -11,6 +12,7 @@ export interface GifProcessingOptions {
   width?: number;
   height?: number;
   quality?: 'low' | 'medium' | 'high';
+  textOverlays?: TextOverlay[];
 }
 
 export interface GifProcessingResult {
@@ -239,6 +241,40 @@ export class ContentScriptGifProcessor {
         const ctx = canvas.getContext('2d');
         if (!ctx) {
           throw new Error(`Failed to get context for frame ${index + 1}`);
+        }
+        
+        // Apply text overlays if specified
+        if (options.textOverlays && options.textOverlays.length > 0) {
+          options.textOverlays.forEach(overlay => {
+            ctx.save();
+            
+            // Set font properties
+            ctx.font = `${overlay.fontSize}px ${overlay.fontFamily}`;
+            ctx.fillStyle = overlay.color;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Calculate actual position (overlay.position is in percentage)
+            const x = (overlay.position.x / 100) * canvas.width;
+            const y = (overlay.position.y / 100) * canvas.height;
+            
+            // Add text stroke for better visibility
+            if (overlay.strokeColor) {
+              ctx.strokeStyle = overlay.strokeColor;
+              ctx.lineWidth = overlay.strokeWidth || 2;
+              ctx.strokeText(overlay.text, x, y);
+            } else {
+              // Default black stroke for better visibility
+              ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+              ctx.lineWidth = 2;
+              ctx.strokeText(overlay.text, x, y);
+            }
+            
+            // Draw the text
+            ctx.fillText(overlay.text, x, y);
+            
+            ctx.restore();
+          });
         }
         
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);

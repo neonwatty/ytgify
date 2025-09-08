@@ -101,6 +101,8 @@ export interface TextOverlay {
   fontSize: number;
   fontFamily: string;
   color: string;
+  strokeColor?: string;
+  strokeWidth?: number;
   animation?: 'none' | 'fade-in' | 'fade-out';
 }
 
