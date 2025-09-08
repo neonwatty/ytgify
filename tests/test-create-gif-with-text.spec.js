@@ -86,45 +86,46 @@ test.describe('Create GIF with Text Overlay E2E', () => {
     await page.waitForSelector('.ytgif-text-overlay-screen', { timeout: 5000 });
     console.log('✓ Text overlay screen appeared');
     
-    // Add text overlay
-    const addTextBtn = await page.$('button:has-text("Add Text")');
-    if (addTextBtn) {
-      await addTextBtn.click();
-      console.log('✓ Clicked Add Text button');
+    // Find and fill text inputs (dual text overlay)
+    // Fill top text
+    const topTextInput = await page.$('input[placeholder*="top text"]');
+    if (topTextInput) {
+      await topTextInput.fill('TOP TEXT');
+      console.log('✓ Added top text: "TOP TEXT"');
+    }
+    
+    // Fill bottom text
+    const bottomTextInput = await page.$('input[placeholder*="bottom text"]');
+    if (bottomTextInput) {
+      await bottomTextInput.fill('BOTTOM TEXT');
+      console.log('✓ Added bottom text: "BOTTOM TEXT"');
+    }
+    
+    // Open style options for top text (optional)
+    const topStyleBtn = await page.$('button:has-text("Top Text Style")');
+    if (topStyleBtn) {
+      await topStyleBtn.click();
       await page.waitForTimeout(500);
-    }
-    
-    // Find and fill text input
-    const textInput = await page.$('.text-overlay-input input[type="text"], .text-overlay-editor input[type="text"], textarea');
-    if (textInput) {
-      await textInput.fill('Hello from Playwright!');
-      console.log('✓ Added text: "Hello from Playwright!"');
-    }
-    
-    // Adjust text properties if available
-    const fontSizeInput = await page.$('input[type="number"][name*="size"], input[type="range"][name*="size"]');
-    if (fontSizeInput) {
-      await fontSizeInput.fill('36');
-      console.log('✓ Set font size to 36');
-    }
-    
-    // Set text color if available
-    const colorInput = await page.$('input[type="color"], input[name*="color"]');
-    if (colorInput) {
-      await colorInput.fill('#FF0000');
-      console.log('✓ Set text color to red');
+      
+      // Adjust top text size if available
+      const topSizeInput = await page.$('.ytgif-text-section:first-child input[type="range"]');
+      if (topSizeInput) {
+        await topSizeInput.evaluate(el => el.value = '40');
+        await topSizeInput.dispatchEvent('input');
+        console.log('✓ Set top text size to 40');
+      }
     }
     
     // Take screenshot of text overlay screen
     await page.screenshot({ path: 'tests/screenshots/text-overlay-configured.png' });
     
-    // Click Apply Text button
-    const applyBtn = await page.$('button:has-text("Apply Text")');
-    if (applyBtn) {
-      await applyBtn.click();
-      console.log('✓ Clicked Apply Text button');
+    // Click the primary button to add text and create GIF
+    const createBtn = await page.$('button:has-text("Add Text & Create")');
+    if (createBtn) {
+      await createBtn.click();
+      console.log('✓ Clicked Add Text & Create button');
     } else {
-      // Fallback: look for any button that might apply the text
+      // Fallback: look for any primary button
       const primaryBtn = await page.$('.ytgif-button-primary');
       if (primaryBtn) {
         await primaryBtn.click();

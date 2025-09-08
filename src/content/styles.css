@@ -1551,6 +1551,17 @@ body[theater] .ytgif-timeline-overlay,
   margin-top: 0.25rem;
 }
 
+/* Text Section for dual text layout */
+.ytgif-text-section {
+  padding: 1rem 0;
+}
+
+.ytgif-text-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 1.5rem 0;
+}
+
 /* Position Buttons */
 .ytgif-position-buttons {
   display: grid;

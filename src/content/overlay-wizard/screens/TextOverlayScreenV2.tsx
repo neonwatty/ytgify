@@ -24,36 +24,62 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
   onBack,
   onSeekTo
 }) => {
-  const [text, setText] = useState('');
-  const [fontSize, setFontSize] = useState(32);
-  const [textColor, setTextColor] = useState('#FFFFFF');
-  const [position, setPosition] = useState<'top' | 'center' | 'bottom'>('center');
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  // Top text state
+  const [topText, setTopText] = useState('');
+  const [topFontSize, setTopFontSize] = useState(32);
+  const [topTextColor, setTopTextColor] = useState('#FFFFFF');
+  
+  // Bottom text state
+  const [bottomText, setBottomText] = useState('');
+  const [bottomFontSize, setBottomFontSize] = useState(32);
+  const [bottomTextColor, setBottomTextColor] = useState('#FFFFFF');
+  
+  const [showTopAdvanced, setShowTopAdvanced] = useState(false);
+  const [showBottomAdvanced, setShowBottomAdvanced] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [videoFrameUrl, setVideoFrameUrl] = useState<string | null>(null);
 
   const handleAddText = useCallback(() => {
-    if (!text.trim()) return;
+    const overlays: TextOverlay[] = [];
+    
+    // Add top text if present
+    if (topText.trim()) {
+      overlays.push({
+        id: 'top-overlay',
+        text: topText.trim(),
+        position: {
+          x: 50, // Center horizontally
+          y: 20  // Top position
+        },
+        fontSize: topFontSize,
+        fontFamily: 'Arial',
+        color: topTextColor,
+        animation: 'none'
+      });
+    }
+    
+    // Add bottom text if present
+    if (bottomText.trim()) {
+      overlays.push({
+        id: 'bottom-overlay',
+        text: bottomText.trim(),
+        position: {
+          x: 50, // Center horizontally
+          y: 80  // Bottom position
+        },
+        fontSize: bottomFontSize,
+        fontFamily: 'Arial',
+        color: bottomTextColor,
+        animation: 'none'
+      });
+    }
 
-    const overlay: TextOverlay = {
-      id: `overlay-${Date.now()}`,
-      text: text.trim(),
-      position: {
-        x: 50, // Center horizontally
-        y: position === 'top' ? 20 : position === 'center' ? 50 : 80
-      },
-      fontSize,
-      fontFamily: 'Arial',
-      color: textColor,
-      animation: 'none'
-    };
+    console.log('[TextOverlayScreenV2] Creating text overlays:', overlays);
+    onConfirm(overlays);
+    console.log('[TextOverlayScreenV2] Called onConfirm with overlay array length:', overlays.length);
+  }, [topText, topFontSize, topTextColor, bottomText, bottomFontSize, bottomTextColor, onConfirm]);
 
-    console.log('[TextOverlayScreenV2] Creating text overlay:', overlay);
-    onConfirm([overlay]);
-    console.log('[TextOverlayScreenV2] Called onConfirm with overlay array length:', [overlay].length);
-  }, [text, fontSize, textColor, position, startTime, endTime, onConfirm]);
-
-  const hasText = text.trim().length > 0;
+  const hasText = topText.trim().length > 0 || bottomText.trim().length > 0;
 
   // Capture video frame for preview background
   useEffect(() => {
@@ -153,16 +179,16 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
                   backgroundColor: '#000'
                 }}
               >
-                {hasText && (
+                {topText.trim() && (
                   <div 
                     className="ytgif-text-preview-overlay"
                     style={{
                       position: 'absolute',
                       left: '50%',
-                      top: position === 'top' ? '15%' : position === 'center' ? '50%' : '85%',
-                      transform: `translate(-50%, ${position === 'center' ? '-50%' : '0'})`,
-                      fontSize: `${Math.max(16, fontSize * 0.6)}px`,
-                      color: textColor,
+                      top: '20%',
+                      transform: 'translate(-50%, -50%)',
+                      fontSize: `${Math.max(16, topFontSize * 0.6)}px`,
+                      color: topTextColor,
                       fontWeight: 'bold',
                       textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
                       whiteSpace: 'nowrap',
@@ -171,7 +197,28 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
                       textOverflow: 'ellipsis'
                     }}
                   >
-                    {text}
+                    {topText}
+                  </div>
+                )}
+                {bottomText.trim() && (
+                  <div 
+                    className="ytgif-text-preview-overlay"
+                    style={{
+                      position: 'absolute',
+                      left: '50%',
+                      bottom: '20%',
+                      transform: 'translate(-50%, 50%)',
+                      fontSize: `${Math.max(16, bottomFontSize * 0.6)}px`,
+                      color: bottomTextColor,
+                      fontWeight: 'bold',
+                      textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '90%',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    {bottomText}
                   </div>
                 )}
               </div>
@@ -190,102 +237,123 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
 
         {/* Text Controls */}
         <div className="ytgif-text-controls">
-          {/* Text Input */}
-          <div className="ytgif-control-group">
-            <label className="ytgif-control-label">Your Text</label>
-            <input
-              type="text"
-              className="ytgif-text-input"
-              placeholder="Enter your text here..."
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              maxLength={50}
-              autoFocus
-            />
-            <span className="ytgif-char-count">{text.length}/50</span>
-          </div>
-
-          {/* Quick Position Selection */}
-          <div className="ytgif-control-group">
-            <label className="ytgif-control-label">Position</label>
-            <div className="ytgif-position-buttons">
-              <button
-                className={`ytgif-position-btn ${position === 'top' ? 'active' : ''}`}
-                onClick={() => setPosition('top')}
-                type="button"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <rect x="4" y="4" width="16" height="4" fill={position === 'top' ? 'currentColor' : 'none'}/>
-                  <rect x="4" y="4" width="16" height="16" strokeWidth="2"/>
-                </svg>
-                Top
-              </button>
-              <button
-                className={`ytgif-position-btn ${position === 'center' ? 'active' : ''}`}
-                onClick={() => setPosition('center')}
-                type="button"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <rect x="4" y="10" width="16" height="4" fill={position === 'center' ? 'currentColor' : 'none'}/>
-                  <rect x="4" y="4" width="16" height="16" strokeWidth="2"/>
-                </svg>
-                Center
-              </button>
-              <button
-                className={`ytgif-position-btn ${position === 'bottom' ? 'active' : ''}`}
-                onClick={() => setPosition('bottom')}
-                type="button"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <rect x="4" y="16" width="16" height="4" fill={position === 'bottom' ? 'currentColor' : 'none'}/>
-                  <rect x="4" y="4" width="16" height="16" strokeWidth="2"/>
-                </svg>
-                Bottom
-              </button>
+          {/* Top Text Section */}
+          <div className="ytgif-text-section">
+            <div className="ytgif-control-group">
+              <label className="ytgif-control-label">Top Text</label>
+              <input
+                type="text"
+                className="ytgif-text-input"
+                placeholder="Enter top text (optional)..."
+                value={topText}
+                onChange={(e) => setTopText(e.target.value)}
+                maxLength={50}
+                autoFocus
+              />
+              <span className="ytgif-char-count">{topText.length}/50</span>
             </div>
-          </div>
 
-          {/* Advanced Options Toggle */}
-          <button
-            className="ytgif-advanced-toggle"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            type="button"
-          >
-            <span>{showAdvanced ? '−' : '+'}</span>
-            Style Options
-          </button>
+            {/* Top Text Style Options */}
+            <button
+              className="ytgif-advanced-toggle"
+              onClick={() => setShowTopAdvanced(!showTopAdvanced)}
+              type="button"
+            >
+              <span>{showTopAdvanced ? '−' : '+'}</span>
+              Top Text Style
+            </button>
 
-          {/* Advanced Options */}
-          {showAdvanced && (
-            <div className="ytgif-advanced-options">
-              <div className="ytgif-control-row">
-                <div className="ytgif-control-group ytgif-control-half">
-                  <label className="ytgif-control-label">Size</label>
-                  <input
-                    type="range"
-                    min="16"
-                    max="64"
-                    value={fontSize}
-                    onChange={(e) => setFontSize(Number(e.target.value))}
-                    className="ytgif-range-input"
-                  />
-                  <span className="ytgif-range-value">{fontSize}px</span>
-                </div>
-                <div className="ytgif-control-group ytgif-control-half">
-                  <label className="ytgif-control-label">Color</label>
-                  <div className="ytgif-color-picker">
+            {showTopAdvanced && (
+              <div className="ytgif-advanced-options">
+                <div className="ytgif-control-row">
+                  <div className="ytgif-control-group ytgif-control-half">
+                    <label className="ytgif-control-label">Size</label>
                     <input
-                      type="color"
-                      value={textColor}
-                      onChange={(e) => setTextColor(e.target.value)}
-                      className="ytgif-color-input"
+                      type="range"
+                      min="16"
+                      max="64"
+                      value={topFontSize}
+                      onChange={(e) => setTopFontSize(Number(e.target.value))}
+                      className="ytgif-range-input"
                     />
-                    <span className="ytgif-color-value">{textColor}</span>
+                    <span className="ytgif-range-value">{topFontSize}px</span>
+                  </div>
+                  <div className="ytgif-control-group ytgif-control-half">
+                    <label className="ytgif-control-label">Color</label>
+                    <div className="ytgif-color-picker">
+                      <input
+                        type="color"
+                        value={topTextColor}
+                        onChange={(e) => setTopTextColor(e.target.value)}
+                        className="ytgif-color-input"
+                      />
+                      <span className="ytgif-color-value">{topTextColor}</span>
+                    </div>
                   </div>
                 </div>
               </div>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div className="ytgif-text-divider"></div>
+
+          {/* Bottom Text Section */}
+          <div className="ytgif-text-section">
+            <div className="ytgif-control-group">
+              <label className="ytgif-control-label">Bottom Text</label>
+              <input
+                type="text"
+                className="ytgif-text-input"
+                placeholder="Enter bottom text (optional)..."
+                value={bottomText}
+                onChange={(e) => setBottomText(e.target.value)}
+                maxLength={50}
+              />
+              <span className="ytgif-char-count">{bottomText.length}/50</span>
             </div>
-          )}
+
+            {/* Bottom Text Style Options */}
+            <button
+              className="ytgif-advanced-toggle"
+              onClick={() => setShowBottomAdvanced(!showBottomAdvanced)}
+              type="button"
+            >
+              <span>{showBottomAdvanced ? '−' : '+'}</span>
+              Bottom Text Style
+            </button>
+
+            {showBottomAdvanced && (
+              <div className="ytgif-advanced-options">
+                <div className="ytgif-control-row">
+                  <div className="ytgif-control-group ytgif-control-half">
+                    <label className="ytgif-control-label">Size</label>
+                    <input
+                      type="range"
+                      min="16"
+                      max="64"
+                      value={bottomFontSize}
+                      onChange={(e) => setBottomFontSize(Number(e.target.value))}
+                      className="ytgif-range-input"
+                    />
+                    <span className="ytgif-range-value">{bottomFontSize}px</span>
+                  </div>
+                  <div className="ytgif-control-group ytgif-control-half">
+                    <label className="ytgif-control-label">Color</label>
+                    <div className="ytgif-color-picker">
+                      <input
+                        type="color"
+                        value={bottomTextColor}
+                        onChange={(e) => setBottomTextColor(e.target.value)}
+                        className="ytgif-color-input"
+                      />
+                      <span className="ytgif-color-value">{bottomTextColor}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
