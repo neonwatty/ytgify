@@ -20,6 +20,7 @@ export {
   GetVideoStateResponse,
   ShowTimelineRequest,
   HideTimelineRequest,
+  ShowWizardDirectRequest,
   TimelineSelectionUpdate,
   OpenEditorRequest,
   LogMessage,

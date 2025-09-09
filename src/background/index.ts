@@ -1,9 +1,13 @@
+console.log('[BACKGROUND] Service worker loading...');
+
 import { ExtensionMessage } from '@/types';
 import { messageHandler } from './message-handler';
 import { backgroundWorker } from './worker';
 import { logger } from '@/lib/logger';
 import { initializeMessageBus } from '@/shared/message-bus';
 import { sharedLogger, sharedErrorHandler, extensionStateManager } from '@/shared';
+
+console.log('[BACKGROUND] Imports complete, registering listeners...');
 
 // Service Worker lifecycle events with enhanced logging and error handling
 chrome.runtime.onInstalled.addListener(sharedErrorHandler.wrapWithErrorBoundary(async (details) => {
@@ -181,6 +185,123 @@ chrome.runtime.onMessage.addListener((
     } as ExtensionMessage);
 
     return false;
+  }
+});
+
+// Note: chrome.action.onClicked is not used when default_popup is defined in manifest.json
+// The popup will handle the extension icon click instead
+// Keeping this commented out for reference
+/*
+console.log('[BACKGROUND] Setting up chrome.action.onClicked listener...');
+chrome.action.onClicked.addListener(async (tab) => {
+  console.log('[EXTENSION ICON] Button clicked!', tab);
+  try {
+    sharedLogger.info('[Background] Extension icon clicked', { 
+      tabId: tab.id,
+      url: tab.url 
+    }, 'background');
+    
+    // Check if we're on a YouTube video page
+    if (!tab.id || !tab.url) {
+      sharedLogger.warn('[Background] No tab information available', {}, 'background');
+      return;
+    }
+    
+    const isYouTubePage = tab.url.includes('youtube.com/watch') || tab.url.includes('youtube.com/shorts');
+    
+    if (!isYouTubePage) {
+      // If not on YouTube, open YouTube in the current tab
+      sharedLogger.info('[Background] Not on YouTube, navigating to YouTube', {}, 'background');
+      await chrome.tabs.update(tab.id, { url: 'https://www.youtube.com' });
+      return;
+    }
+    
+    // Send message to content script to show wizard directly
+    const message: ExtensionMessage = {
+      type: 'SHOW_WIZARD_DIRECT',
+      data: {
+        triggeredBy: 'extension_icon'
+      }
+    };
+    
+    try {
+      await chrome.tabs.sendMessage(tab.id, message);
+      sharedLogger.info('[Background] Sent SHOW_WIZARD_DIRECT message to content script', {
+        tabId: tab.id
+      }, 'background');
+      
+      sharedLogger.trackUserAction('wizard_opened_via_icon');
+    } catch (error) {
+      sharedLogger.error('[Background] Failed to send message to content script', { 
+        error: error instanceof Error ? error.message : String(error),
+        tabId: tab.id
+      }, 'background');
+      
+      // Try to inject content script if it's not loaded
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ['content.js']
+        });
+        
+        // Retry sending message after injection
+        setTimeout(async () => {
+          try {
+            await chrome.tabs.sendMessage(tab.id!, message);
+            sharedLogger.info('[Background] Successfully sent message after content script injection', {}, 'background');
+          } catch (retryError) {
+            sharedLogger.error('[Background] Failed to send message even after injection', {
+              error: retryError instanceof Error ? retryError.message : String(retryError)
+            }, 'background');
+          }
+        }, 500);
+      } catch (injectError) {
+        sharedLogger.error('[Background] Failed to inject content script', {
+          error: injectError instanceof Error ? injectError.message : String(injectError)
+        }, 'background');
+      }
+    }
+  } catch (error) {
+    sharedLogger.error('[Background] Error handling extension icon click', {
+      error: error instanceof Error ? error.message : String(error)
+    }, 'background');
+    
+    sharedErrorHandler.handleError(error, { context: 'extension_icon_click' });
+  }
+});
+*/
+
+// Handle keyboard command
+chrome.commands.onCommand.addListener(async (command) => {
+  console.log('[BACKGROUND] Command received:', command);
+  
+  if (command === '_execute_action') {
+    // Get the active tab
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    if (!tab || !tab.id || !tab.url) {
+      console.log('[BACKGROUND] No active tab found');
+      return;
+    }
+    
+    const isYouTubePage = tab.url.includes('youtube.com/watch') || tab.url.includes('youtube.com/shorts');
+    
+    if (!isYouTubePage) {
+      console.log('[BACKGROUND] Not on YouTube, navigating...');
+      await chrome.tabs.update(tab.id, { url: 'https://www.youtube.com' });
+      return;
+    }
+    
+    // Send message to content script to show wizard
+    try {
+      await chrome.tabs.sendMessage(tab.id, {
+        type: 'SHOW_WIZARD_DIRECT',
+        data: { triggeredBy: 'command' }
+      });
+      console.log('[BACKGROUND] Sent SHOW_WIZARD_DIRECT via command');
+    } catch (error) {
+      console.error('[BACKGROUND] Failed to send message:', error);
+    }
   }
 });
 

@@ -270,6 +270,14 @@ export interface SaveGifResponse extends BaseMessage {
   error?: string;
 }
 
+// Direct wizard activation from extension icon
+export interface ShowWizardDirectRequest extends BaseMessage {
+  type: 'SHOW_WIZARD_DIRECT';
+  data: {
+    triggeredBy: string;
+  };
+}
+
 // Union type for all possible messages
 export type ExtensionMessage = 
   | ExtractFramesRequest
@@ -280,6 +288,7 @@ export type ExtensionMessage =
   | GetVideoStateResponse
   | ShowTimelineRequest
   | HideTimelineRequest
+  | ShowWizardDirectRequest
   | TimelineSelectionUpdate
   | OpenEditorRequest
   | LogMessage

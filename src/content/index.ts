@@ -61,6 +61,41 @@ class YouTubeGifMaker {
   constructor() {
     console.log('[YTGif Content Script] Constructor called!');
     this.init();
+    
+    // Add keyboard shortcut as backup trigger
+    this.setupKeyboardShortcut();
+  }
+  
+  private setupKeyboardShortcut() {
+    // Listen for Ctrl+Shift+G (or Cmd+Shift+G on Mac) to trigger wizard
+    document.addEventListener('keydown', (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'G') {
+        event.preventDefault();
+        console.log('[WIZARD] Keyboard shortcut triggered!');
+        this.handleDirectWizardActivation();
+      }
+    });
+    console.log('[Content] Keyboard shortcut registered: Ctrl/Cmd+Shift+G to open wizard');
+    
+    // Inject a script to expose the function in the page context
+    const script = document.createElement('script');
+    script.textContent = `
+      window.openGifWizard = function() {
+        console.log('[WIZARD] Manual trigger via console!');
+        window.postMessage({ type: 'TRIGGER_GIF_WIZARD' }, '*');
+      };
+      console.log('[Content] You can run: openGifWizard() in the console');
+    `;
+    document.head.appendChild(script);
+    script.remove();
+    
+    // Listen for the message from the injected script
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'TRIGGER_GIF_WIZARD') {
+        console.log('[WIZARD] Triggered via console command!');
+        this.handleDirectWizardActivation();
+      }
+    });
   }
 
   private init() {
@@ -109,6 +144,12 @@ class YouTubeGifMaker {
       switch (message.type) {
         case 'SHOW_TIMELINE':
           this.showTimelineOverlay(message as ShowTimelineRequest);
+          break;
+        case 'SHOW_WIZARD_DIRECT':
+          // Handle direct wizard activation from extension icon
+          console.log('[WIZARD ACTIVATION] Received SHOW_WIZARD_DIRECT message');
+          this.handleDirectWizardActivation();
+          sendResponse({ success: true });
           break;
         case 'HIDE_TIMELINE':
           this.hideTimelineOverlay();
@@ -352,6 +393,58 @@ class YouTubeGifMaker {
         pageType: youTubeDetector.getCurrentState().pageType
       });
     }
+  }
+
+  private async handleDirectWizardActivation() {
+    console.log('[WIZARD ACTIVATION] Direct wizard activation from extension icon');
+    this.log('info', '[Content] Direct wizard activation from extension icon');
+    
+    // Ensure we have a video element
+    if (!this.videoElement) {
+      console.log('[WIZARD ACTIVATION] No video element, finding it...');
+      await this.findVideoElement();
+    }
+    
+    // Check if we can create a GIF
+    const videoState = this.getCurrentVideoState();
+    console.log('[WIZARD ACTIVATION] Video state:', videoState);
+    
+    if (!videoState) {
+      console.error('[WIZARD ACTIVATION] No video found for GIF creation');
+      this.log('warn', '[Content] No video found for GIF creation');
+      // Show feedback to user
+      this.showGifCreationFeedback('error', 'No video found on this page');
+      return;
+    }
+    
+    // Directly show the wizard overlay
+    const showTimelineMessage: ShowTimelineRequest = {
+      type: 'SHOW_TIMELINE',
+      data: {
+        videoDuration: videoState.duration,
+        currentTime: videoState.currentTime
+      }
+    };
+    
+    // Set state to active for wizard
+    this.isActive = true;
+    
+    // Update overlay state metadata
+    overlayStateManager.setMetadata({
+      videoDuration: videoState.duration,
+      videoTitle: videoState.title || '',
+      videoId: this.extractVideoIdFromUrl() || ''
+    });
+    
+    // Activate overlay state manager
+    await overlayStateManager.activate('timeline');
+    
+    // Show the wizard overlay directly
+    console.log('[WIZARD ACTIVATION] About to show timeline overlay with message:', showTimelineMessage);
+    this.showTimelineOverlay(showTimelineMessage);
+    
+    console.log('[WIZARD ACTIVATION] Wizard should be visible now');
+    this.log('info', '[Content] Wizard opened directly from extension icon');
   }
 
   private async handleGifButtonClick() {
