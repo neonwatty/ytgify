@@ -383,9 +383,9 @@ export class OverlayStateManager {
   // Debug helper
   debug(): void {
     console.group('Overlay State Debug');
-
-    ).map(([key, listeners]) => [key, listeners.length])
-    ));
+    console.log('Current State:', this.currentState);
+    console.log('Listeners:', Object.entries(this.listeners)
+      .map(([key, listeners]) => [key, listeners.length]));
     console.groupEnd();
   }
 }

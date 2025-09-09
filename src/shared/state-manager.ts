@@ -313,9 +313,9 @@ export class ExtensionStateManager {
   // Debug helper
   debug(): void {
     console.group('Extension State Debug');
-    
-    ).map(([key, listeners]) => [key, listeners.length])
-    ));
+    console.log('Runtime State:', this.getRuntimeState());
+    console.log('Listeners:', Object.entries(this.listeners)
+      .map(([key, listeners]) => [key, listeners.length]));
     console.groupEnd();
   }
 }

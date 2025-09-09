@@ -197,7 +197,6 @@ export class ContentScriptGifProcessor {
       const captureProgress = Math.round(((i + 1) / frameCount) * 100);
       onProgress?.(captureProgress);
       
-      }s`);
       logger.debug(`[ContentScriptGifProcessor] Captured frame ${i + 1}/${frameCount}`);
     }
     
@@ -221,8 +220,6 @@ export class ContentScriptGifProcessor {
     const { frameRate = 10, quality = 'medium' } = options;
     
     try {
-      `);
-      
       // Create encoder options
       const encoderOptions: EncoderOptions = {
         width: frames[0].width,
@@ -349,7 +346,6 @@ export class ContentScriptGifProcessor {
         const addRequest = store.add(gifData);
 
         addRequest.onsuccess = () => {
-          .id });
           logger.info('[ContentScriptGifProcessor] GIF saved to IndexedDB', { id: (metadata as { id: string }).id });
           resolve((metadata as { id: string }).id);
         };

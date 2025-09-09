@@ -456,10 +456,9 @@ export class CleanupManager {
   // Debug helper
   debug(): void {
     console.group('Cleanup Manager Debug');
-    
-    ).map(t => ({ id: t.id, name: t.name, priority: t.priority })));
-
-    );
+    console.log('Tasks:', Array.from(this.cleanupTasks.values())
+      .map(t => ({ id: t.id, name: t.name, priority: t.priority })));
+    console.log('Listeners:', this.navigationListeners.length);
     console.groupEnd();
   }
 }

@@ -152,11 +152,12 @@ export class ChromeGifStorage {
   }
 
   async getAllGifs(): Promise<StoredGif[]> {
-    
     try {
       const result = await chrome.storage.local.get(this.STORAGE_KEY);
       const gifs = result[this.STORAGE_KEY] || [];
-       => g.id)
+      console.debug('[ChromeGifStorage] Retrieved GIFs:', {
+        count: gifs.length,
+        ids: gifs.map(g => g.id)
       });
       return gifs;
     } catch (error) {
