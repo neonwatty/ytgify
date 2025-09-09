@@ -731,7 +731,7 @@ class YouTubeGifMaker {
     // Add debug border in development
     if (process.env.NODE_ENV === 'development') {
       overlay.style.border = '2px solid rgba(255, 0, 0, 0.5)';
-      ,
+      console.debug('[Debug] Timeline overlay created', {
         rect: overlay.getBoundingClientRect()
       });
     }
