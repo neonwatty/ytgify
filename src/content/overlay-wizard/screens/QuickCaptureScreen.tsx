@@ -8,7 +8,7 @@ interface QuickCaptureScreenProps {
   currentTime: number;
   duration: number;
   videoElement?: HTMLVideoElement;
-  onConfirm: (startTime: number, endTime: number) => void;
+  onConfirm: (startTime: number, endTime: number, frameRate?: number) => void;
   onBack: () => void;
   onSeekTo?: (time: number) => void;
 }
@@ -27,6 +27,7 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
   const [endTime, setEndTime] = useState(initialEndTime);
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
   const [previewTime, setPreviewTime] = useState(startTime);
+  const [selectedFrameRate, setSelectedFrameRate] = useState(10); // Default to 10 fps
   
   const handleRangeChange = useCallback((newStart: number, newEnd: number) => {
     setStartTime(newStart);
@@ -85,6 +86,40 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
           onSeek={handleSeek}
         />
 
+        {/* Frame Rate Options */}
+        <div className="ytgif-frame-rate-section">
+          <div className="ytgif-frame-rate-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <span>Frame Rate</span>
+          </div>
+          <div className="ytgif-frame-rate-options">
+            <button 
+              className={`ytgif-frame-rate-btn ${selectedFrameRate === 5 ? 'ytgif-frame-rate-btn--active' : ''}`}
+              onClick={() => setSelectedFrameRate(5)}
+            >
+              5 fps
+              <span className="ytgif-frame-rate-desc">Smaller file</span>
+            </button>
+            <button 
+              className={`ytgif-frame-rate-btn ${selectedFrameRate === 10 ? 'ytgif-frame-rate-btn--active' : ''}`}
+              onClick={() => setSelectedFrameRate(10)}
+            >
+              10 fps
+              <span className="ytgif-frame-rate-desc">Balanced</span>
+            </button>
+            <button 
+              className={`ytgif-frame-rate-btn ${selectedFrameRate === 15 ? 'ytgif-frame-rate-btn--active' : ''}`}
+              onClick={() => setSelectedFrameRate(15)}
+            >
+              15 fps
+              <span className="ytgif-frame-rate-desc">Smoother</span>
+            </button>
+          </div>
+        </div>
+
         {/* GIF Info */}
         <div className="ytgif-capture-info">
           <div className="ytgif-info-item">
@@ -102,7 +137,7 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
                 d="M7 4v16M17 4v16M3 8h4m10 0h4M3 16h4m10 0h4" />
             </svg>
             <span className="ytgif-info-label">Frames:</span>
-            <span className="ytgif-info-value">~{Math.round(gifDuration * 10)}</span>
+            <span className="ytgif-info-value">~{Math.round(gifDuration * selectedFrameRate)}</span>
           </div>
 
           <div className="ytgif-info-item">
@@ -111,7 +146,7 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             <span className="ytgif-info-label">Est. Size:</span>
-            <span className="ytgif-info-value">~{(gifDuration * 0.5).toFixed(1)}MB</span>
+            <span className="ytgif-info-value">~{(gifDuration * selectedFrameRate * 0.05).toFixed(1)}MB</span>
           </div>
         </div>
 
@@ -134,8 +169,8 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
             Back
           </button>
           <button className="ytgif-button-primary" onClick={() => {
-            // Pass the current selection from the scrubber
-            onConfirm(startTime, endTime);
+            // Pass the current selection and frame rate
+            onConfirm(startTime, endTime, selectedFrameRate);
           }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 

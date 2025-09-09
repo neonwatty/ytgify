@@ -654,17 +654,16 @@
   border-color: rgba(255, 255, 255, 0.3);
 }
 
-.ytgif-preset-btn--active {
-  background: #ff0000;
+.ytgif-preset-btn.ytgif-preset-btn--active {
+  background: rgba(255, 0, 0, 0.2) !important;
   color: #fff;
   border-color: #ff0000;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(255, 0, 0, 0.3);
 }
 
-.ytgif-preset-btn--active:hover {
-  background: #ff3333;
-  border-color: #ff3333;
+.ytgif-preset-btn.ytgif-preset-btn--active:hover {
+  background: rgba(255, 0, 0, 0.25) !important;
+  border-color: #ff0000;
 }
 
 /* Preview Fallback */
@@ -1028,4 +1027,76 @@
 /* Processing Screen */
 .ytgif-processing-screen .ytgif-wizard-content {
   padding: 40px;
+}
+
+/* Frame Rate Section */
+.ytgif-frame-rate-section {
+  margin: 20px 0;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ytgif-frame-rate-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
+.ytgif-frame-rate-label svg {
+  color: #ff0000;
+}
+
+.ytgif-frame-rate-options {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.ytgif-frame-rate-btn {
+  flex: 1;
+  padding: 12px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ytgif-frame-rate-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.ytgif-frame-rate-btn--active {
+  background: rgba(255, 0, 0, 0.2);
+  border-color: #ff0000;
+  color: white;
+}
+
+.ytgif-frame-rate-btn--active:hover {
+  background: rgba(255, 0, 0, 0.25);
+}
+
+.ytgif-frame-rate-desc {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: normal;
+}
+
+.ytgif-frame-rate-btn--active .ytgif-frame-rate-desc {
+  color: rgba(255, 255, 255, 0.8);
 }

@@ -27,7 +27,7 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
   const [isDragging, setIsDragging] = useState<'start' | 'end' | 'range' | null>(null);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
-  const [activePreset, setActivePreset] = useState<'3s' | '5s' | '10s' | 'current' | null>(null);
+  const [activePreset, setActivePreset] = useState<'3s' | '5s' | '10s' | null>(null);
   
   const dragStartRef = useRef<{ x: number; startTime: number; endTime: number }>({
     x: 0,
@@ -51,11 +51,6 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
     // Check for 10s preset
     if (Math.abs(duration - 10) < tolerance) {
       return '10s';
-    }
-    // Check for "At Current" (5s centered on current time)
-    const center = (startTime + endTime) / 2;
-    if (Math.abs(duration - 5) < tolerance && Math.abs(center - currentTime) < tolerance) {
-      return 'current';
     }
     
     return null;
@@ -318,18 +313,6 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
           }}
         >
           10s
-        </button>
-        <button 
-          className={`ytgif-preset-btn ${activePreset === 'current' ? 'ytgif-preset-btn--active' : ''}`}
-          onClick={() => {
-            const newStart = currentTime;
-            const newEnd = Math.min(duration, currentTime + 5);
-            onRangeChange(newStart, newEnd);
-            if (onSeek) onSeek(currentTime);
-            setActivePreset('current');
-          }}
-        >
-          From Current
         </button>
       </div>
     </div>

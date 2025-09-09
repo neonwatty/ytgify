@@ -71,15 +71,15 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   }, [goToScreen, currentTime, videoDuration, setScreenData]);
 
 
-  const handleConfirmQuickCapture = (startTime: number, endTime: number) => {
-    console.log('[OverlayWizard] handleConfirmQuickCapture called', { startTime, endTime });
+  const handleConfirmQuickCapture = (startTime: number, endTime: number, frameRate?: number) => {
+    console.log('[OverlayWizard] handleConfirmQuickCapture called', { startTime, endTime, frameRate });
     const selection: TimelineSelection = {
       startTime,
       endTime,
       duration: endTime - startTime
     };
-    // Update the data state with the final selection
-    setScreenData({ startTime, endTime });
+    // Update the data state with the final selection and frame rate
+    setScreenData({ startTime, endTime, frameRate: frameRate || 10 });
     onSelectionChange(selection);
     // Go to text overlay screen instead of processing
     console.log('[OverlayWizard] Navigating to text-overlay screen');
