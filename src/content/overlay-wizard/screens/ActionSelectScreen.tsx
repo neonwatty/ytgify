@@ -45,10 +45,10 @@ const ActionSelectScreen: React.FC<ActionSelectScreenProps> = ({
             </div>
             <h3 className="ytgif-card-title">Quick Capture</h3>
             <p className="ytgif-card-description">
-              Capture 4 seconds from current position
+              Capture 5 seconds from current position
             </p>
             <div className="ytgif-card-detail">
-              {formatTime(Math.max(0, currentTime - 2))} - {formatTime(Math.min(duration, currentTime + 2))}
+              {formatTime(currentTime)} - {formatTime(Math.min(duration, currentTime + 5))}
             </div>
           </button>
 

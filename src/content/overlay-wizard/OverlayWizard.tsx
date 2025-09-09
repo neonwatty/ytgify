@@ -63,9 +63,9 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
 
   const handleWelcomeContinue = React.useCallback(() => {
     console.log('[OverlayWizard] handleWelcomeContinue called, going directly to quick-capture');
-    // Set up default time range (4 seconds from current position)
-    const startTime = Math.max(0, currentTime - 2);
-    const endTime = Math.min(videoDuration, currentTime + 2);
+    // Set up default time range (5 seconds forward from current position)
+    const startTime = currentTime;
+    const endTime = Math.min(videoDuration, currentTime + 5);
     setScreenData({ startTime, endTime });
     goToScreen('quick-capture');
   }, [goToScreen, currentTime, videoDuration, setScreenData]);

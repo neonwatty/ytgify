@@ -18,8 +18,8 @@ const CustomRangeScreen: React.FC<CustomRangeScreenProps> = ({
   onBack,
   formatTime
 }) => {
-  const [startTime, setStartTime] = useState(Math.max(0, currentTime - 2));
-  const [endTime, setEndTime] = useState(Math.min(duration, currentTime + 2));
+  const [startTime, setStartTime] = useState(currentTime);
+  const [endTime, setEndTime] = useState(Math.min(duration, currentTime + 4));
   const [isDragging, setIsDragging] = useState<'start' | 'end' | null>(null);
 
   const gifDuration = endTime - startTime;

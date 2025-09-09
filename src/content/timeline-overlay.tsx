@@ -50,10 +50,10 @@ export const TimelineOverlay: React.FC<TimelineOverlayProps> = ({
       willRenderBar: isCreating && processingStatus
     });
   }, [isCreating, processingStatus]);
-  // Initialize selection around current time
+  // Initialize selection from current time forward
   const [selection, setSelection] = useState<TimelineSelection>(() => {
-    const startTime = Math.max(0, currentTime - 2);
-    const endTime = Math.min(videoDuration, currentTime + 2);
+    const startTime = currentTime;
+    const endTime = Math.min(videoDuration, currentTime + 5);
     return {
       startTime,
       endTime,

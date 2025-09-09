@@ -720,9 +720,9 @@ class YouTubeGifMaker {
       const { videoDuration, currentTime } = message.data;
       console.log('[UI FIX DEBUG] Video data:', { videoDuration, currentTime });
     
-    // Initialize default selection around current time (4 second clip)
-    const startTime = Math.max(0, currentTime - 2);
-    const endTime = Math.min(videoDuration, currentTime + 2);
+    // Initialize default selection from current time forward (5 second clip)
+    const startTime = currentTime;
+    const endTime = Math.min(videoDuration, currentTime + 5);
     this.currentSelection = {
       startTime,
       endTime,

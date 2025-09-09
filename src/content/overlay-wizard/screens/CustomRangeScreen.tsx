@@ -17,9 +17,9 @@ const CustomRangeScreen: React.FC<CustomRangeScreenProps> = ({
   onSeekTo
 }) => {
   const [selection, setSelection] = useState<TimelineSelection>({
-    startTime: Math.max(0, currentTime - 2),
-    endTime: Math.min(videoDuration, currentTime + 2),
-    duration: 4
+    startTime: currentTime,
+    endTime: Math.min(videoDuration, currentTime + 5),
+    duration: Math.min(5, videoDuration - currentTime)
   });
   
   const [isDragging, setIsDragging] = useState<'start' | 'end' | 'range' | null>(null);
@@ -221,22 +221,22 @@ const CustomRangeScreen: React.FC<CustomRangeScreenProps> = ({
           <button 
             className="ytgif-preset-button"
             onClick={() => {
-              const start = Math.max(0, currentTime - 2);
-              const end = Math.min(videoDuration, currentTime + 2);
+              const start = selection.startTime;
+              const end = Math.min(videoDuration, start + 5);
               setSelection({ startTime: start, endTime: end, duration: end - start });
             }}
           >
-            4s at current
+            5s clip
           </button>
           <button 
             className="ytgif-preset-button"
             onClick={() => {
-              const start = Math.max(0, currentTime - 5);
-              const end = Math.min(videoDuration, currentTime + 5);
+              const start = selection.startTime;
+              const end = Math.min(videoDuration, start + 10);
               setSelection({ startTime: start, endTime: end, duration: end - start });
             }}
           >
-            10s at current
+            10s clip
           </button>
           <button 
             className="ytgif-preset-button"
@@ -245,6 +245,16 @@ const CustomRangeScreen: React.FC<CustomRangeScreenProps> = ({
             }}
           >
             First 10s
+          </button>
+          <button 
+            className="ytgif-preset-button"
+            onClick={() => {
+              const start = currentTime;
+              const end = Math.min(videoDuration, currentTime + 5);
+              setSelection({ startTime: start, endTime: end, duration: end - start });
+            }}
+          >
+            From current
           </button>
         </div>
 

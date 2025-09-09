@@ -42,11 +42,11 @@ const ActionSelectScreen: React.FC<ActionSelectScreenProps> = ({
             </p>
             <div className="mt-3 flex items-center gap-2 text-xs text-blue-200">
               <span className="bg-blue-400/30 px-2 py-1 rounded">
-                {formatTime(Math.max(0, currentTime - 2))}
+                {formatTime(currentTime)}
               </span>
               <span>→</span>
               <span className="bg-blue-400/30 px-2 py-1 rounded">
-                {formatTime(Math.min(duration, currentTime + 2))}
+                {formatTime(Math.min(duration, currentTime + 4))}
               </span>
             </div>
           </div>

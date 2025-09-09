@@ -143,7 +143,7 @@ export const QuickPresets: React.FC<QuickPresetsProps> = ({
   const calculationOptions = useMemo<PresetCalculationOptions>(() => ({
     videoDuration,
     currentTime,
-    preferredPosition: 'centered',
+    preferredPosition: 'after',
     minBuffer: 0.5
   }), [videoDuration, currentTime]);
 

@@ -60,11 +60,11 @@ export const TimelineEditorUnified: React.FC<TimelineEditorUnifiedProps> = ({
   className = ''
 }) => {
   const [state, setState] = useState<UnifiedState>({
-    // Initialize selection around current time
+    // Initialize selection from current time forward
     selection: {
-      startTime: Math.max(0, currentTime - 2),
-      endTime: Math.min(videoDuration, currentTime + 3),
-      duration: 5
+      startTime: currentTime,
+      endTime: Math.min(videoDuration, currentTime + 5),
+      duration: Math.min(5, videoDuration - currentTime)
     },
     isExtracting: false,
     extractedFrames: null,
