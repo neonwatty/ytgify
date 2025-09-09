@@ -39,7 +39,7 @@ export class GifEncoder {
   private canvas: OffscreenCanvas;
   private ctx: OffscreenCanvasRenderingContext2D;
   private onProgress?: (progress: GifEncodingProgress) => void;
-  private gif: any; // gif.js instance
+  private gif!: GIF; // gif.js instance - initialized in encode()
 
   constructor(options: GifEncodingOptions, onProgress?: (progress: GifEncodingProgress) => void) {
     this.options = options;
@@ -105,7 +105,7 @@ export class GifEncoder {
                        progress < 0.6 ? 'encoding' : 
                        progress < 0.9 ? 'optimizing' : 'optimizing';
           const percentage = Math.round(progress * 100);
-          this.reportProgress(stage as any, percentage, `Processing: ${percentage}%`);
+          this.reportProgress(stage as GifEncodingProgress['stage'], percentage, `Processing: ${percentage}%`);
         });
 
         // Add finished event listener
@@ -158,7 +158,7 @@ export class GifEncoder {
           this.ctx.putImageData(frame, 0, 0);
           
           // Add canvas frame to GIF
-          this.gif.addFrame(this.ctx, {
+          this.gif.addFrame(this.canvas as unknown as HTMLCanvasElement, {
             copy: true,
             delay: frameDelay
           });
@@ -180,7 +180,6 @@ export class GifEncoder {
       throw createError('gif', `GIF encoding failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
-
 
   // Create thumbnail from first frame
   private async createThumbnail(firstFrame: ImageData): Promise<Blob> {
@@ -224,7 +223,6 @@ export class GifEncoder {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
-
 
 // Export utility function for easy integration
 export async function encodeGif(

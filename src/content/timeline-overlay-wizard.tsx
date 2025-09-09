@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { TimelineSelection, TextOverlay } from '@/types';
+import React, { useCallback } from 'react';
+import { TimelineSelection, TextOverlay, GifMetadata } from '@/types';
 import OverlayWizard from './overlay-wizard/OverlayWizard';
 
 export interface TimelineOverlayWizardProps {
@@ -20,7 +20,7 @@ export interface TimelineOverlayWizardProps {
   gifData?: {
     dataUrl: string;
     size: number;
-    metadata: any;
+    metadata: GifMetadata;
   };
 }
 
@@ -37,15 +37,12 @@ export const TimelineOverlayWizard: React.FC<TimelineOverlayWizardProps> = ({
   processingStatus,
   gifData
 }) => {
-  const [selection, setSelection] = useState<TimelineSelection | null>(null);
-
   const handleSelectionChange = useCallback((newSelection: TimelineSelection) => {
-    setSelection(newSelection);
     onSelectionChange(newSelection);
   }, [onSelectionChange]);
 
   const handleCreateGif = useCallback((finalSelection: TimelineSelection, textOverlays?: TextOverlay[]) => {
-    console.log('[TimelineOverlayWizard] handleCreateGif called with:', { finalSelection, textOverlays });
+    
     handleSelectionChange(finalSelection);
     onCreateGif(finalSelection, textOverlays);
   }, [handleSelectionChange, onCreateGif]);

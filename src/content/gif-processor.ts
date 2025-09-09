@@ -118,11 +118,6 @@ export class ContentScriptGifProcessor {
     const frameCount = rawFrameCount; // No artificial limit
     const frameInterval = duration / frameCount;
 
-    console.log('[ContentScriptGifProcessor] Capturing frames', {
-      frameCount,
-      frameInterval,
-      dimensions: { width, height }
-    });
     logger.info('[ContentScriptGifProcessor] Capturing frames', {
       frameCount,
       frameInterval,
@@ -177,7 +172,13 @@ export class ContentScriptGifProcessor {
       
       // Export frame data for verification (in dev mode)
       if (typeof window !== 'undefined') {
-        const win = window as any;
+        const win = window as Window & { __DEBUG_CAPTURED_FRAMES?: Array<{
+          frameNumber: number;
+          videoTime: number;
+          width: number;
+          height: number;
+          dataUrl: string;
+        }> };
         if (!win.__DEBUG_CAPTURED_FRAMES) {
           win.__DEBUG_CAPTURED_FRAMES = [];
         }
@@ -196,7 +197,7 @@ export class ContentScriptGifProcessor {
       const captureProgress = Math.round(((i + 1) / frameCount) * 100);
       onProgress?.(captureProgress);
       
-      console.log(`[ContentScriptGifProcessor] Captured frame ${i + 1}/${frameCount} at time ${captureTime.toFixed(2)}s`);
+      }s`);
       logger.debug(`[ContentScriptGifProcessor] Captured frame ${i + 1}/${frameCount}`);
     }
     
@@ -220,7 +221,7 @@ export class ContentScriptGifProcessor {
     const { frameRate = 10, quality = 'medium' } = options;
     
     try {
-      console.log(`[ContentScriptGifProcessor] Creating GIF encoder with new abstraction (${frames.length} frames)`);
+      `);
       
       // Create encoder options
       const encoderOptions: EncoderOptions = {
@@ -234,8 +235,7 @@ export class ContentScriptGifProcessor {
       
       // Create GIF encoder using factory
       const encoder = SimpleEncoderFactory.createEncoder('gifenc', encoderOptions);
-      console.log('[ContentScriptGifProcessor] Encoder created successfully');
-      
+
       // Convert canvas frames to encoder format
       const frameData: FrameData[] = frames.map((canvas, index) => {
         const ctx = canvas.getContext('2d');
@@ -284,21 +284,13 @@ export class ContentScriptGifProcessor {
           height: canvas.height
         };
       });
-      
-      console.log(`[ContentScriptGifProcessor] Prepared ${frameData.length} frames for encoding`);
-      
+
       // Encode frames with progress callback
       const result = await encoder.encode(frameData, (progress) => {
-        console.log(`[ContentScriptGifProcessor] Encoding progress: ${progress.percent}%`);
+        
         onProgress?.(progress.percent, progress.message);
       });
-      
-      console.log('[ContentScriptGifProcessor] Encoding complete!', {
-        size: result.size,
-        frameCount: result.frameCount,
-        duration: result.duration
-      });
-      
+
       logger.info('[ContentScriptGifProcessor] GIF encoding finished with gifenc', { 
         size: result.size,
         frameCount: result.frameCount,
@@ -318,11 +310,11 @@ export class ContentScriptGifProcessor {
   /**
    * Save GIF to IndexedDB
    */
-  public async saveGifToStorage(blob: Blob, metadata: any): Promise<string> {
-    console.log('[GifProcessor] saveGifToStorage called', { blobSize: blob.size, metadata });
+  public async saveGifToStorage(blob: Blob, metadata: Record<string, unknown>): Promise<string> {
+    
     return new Promise((resolve, reject) => {
       const dbName = 'YouTubeGifStore';
-      console.log('[GifProcessor] Opening database:', dbName);
+      
       const request = indexedDB.open(dbName, 3);
 
       request.onerror = () => {
@@ -357,9 +349,9 @@ export class ContentScriptGifProcessor {
         const addRequest = store.add(gifData);
 
         addRequest.onsuccess = () => {
-          console.log('[GifProcessor] GIF successfully saved to IndexedDB', { id: metadata.id });
-          logger.info('[ContentScriptGifProcessor] GIF saved to IndexedDB', { id: metadata.id });
-          resolve(metadata.id);
+          .id });
+          logger.info('[ContentScriptGifProcessor] GIF saved to IndexedDB', { id: (metadata as { id: string }).id });
+          resolve((metadata as { id: string }).id);
         };
 
         addRequest.onerror = () => {

@@ -199,7 +199,6 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
   const currentPercent = (currentTime / duration) * 100;
   const previewPercent = previewTime ? (previewTime / duration) * 100 : null;
 
-
   return (
     <div className="ytgif-timeline-scrubber">
       <div 

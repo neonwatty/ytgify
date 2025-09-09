@@ -2,7 +2,6 @@ import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { TimelineSelection, TextOverlay } from '@/types';
 import { TimelineMarkers } from './timeline-markers';
 import { QuickPresets } from './quick-presets';
-import { KeyboardShortcutManager } from '@/utils/keyboard-shortcuts';
 
 // Export format types
 export type ExportFormat = 'gif';
@@ -92,7 +91,6 @@ export const TimelineEditorUnified: React.FC<TimelineEditorUnifiedProps> = ({
   const overlayRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
-  const [shortcutManager] = useState(() => new KeyboardShortcutManager('content'));
 
   // Update selection duration when start/end times change
   useEffect(() => {
@@ -121,17 +119,6 @@ export const TimelineEditorUnified: React.FC<TimelineEditorUnifiedProps> = ({
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  // Auto-extract frames when selection changes (debounced)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (state.selection.duration > 0.5 && state.selection.duration < 30) {
-        extractFrames();
-      }
-    }, 500);
-    
-    return () => clearTimeout(timer);
-  }, [state.selection]);
-
   const extractFrames = useCallback(async () => {
     if (!videoElement || state.isExtracting) return;
     
@@ -151,8 +138,6 @@ export const TimelineEditorUnified: React.FC<TimelineEditorUnifiedProps> = ({
     const frameCount = Math.min(15, Math.ceil(duration * frameRate));
     const frames: ImageData[] = [];
 
-    console.log(`[Frame Extraction] Extracting ${frameCount} frames...`);
-
     try {
       for (let i = 0; i < frameCount; i++) {
         const time = startTime + (i / frameCount) * duration;
@@ -160,6 +145,7 @@ export const TimelineEditorUnified: React.FC<TimelineEditorUnifiedProps> = ({
         
         // Wait for seek to complete
         await new Promise<void>((resolve) => {
+          // eslint-disable-next-line prefer-const
           let timeoutId: number;
           const onSeeked = () => {
             clearTimeout(timeoutId);
@@ -201,7 +187,18 @@ export const TimelineEditorUnified: React.FC<TimelineEditorUnifiedProps> = ({
     if (wasPlaying) {
       videoElement.play();
     }
-  }, [videoElement, state.selection, state.settings.width, state.settings.height]);
+  }, [videoElement, state.selection, state.settings.width, state.settings.height, state.isExtracting]);
+
+  // Auto-extract frames when selection changes (debounced)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (state.selection.duration > 0.5 && state.selection.duration < 30) {
+        extractFrames();
+      }
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [state.selection, extractFrames]);
 
   const handleSelectionChange = useCallback((selection: TimelineSelection) => {
     setState(prev => ({ ...prev, selection }));

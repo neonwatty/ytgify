@@ -13,7 +13,7 @@ export const TimelineOverlayWrapper: React.FC<TimelineOverlayWrapperProps> = (pr
   useEffect(() => {
     const handleProgressUpdate = (event: CustomEvent) => {
       const { stage, progress, message } = event.detail;
-      console.log('[TimelineWrapper] Progress update received:', { stage, progress, message });
+      
       setProcessingStatus({
         stage,
         progress,
@@ -22,7 +22,7 @@ export const TimelineOverlayWrapper: React.FC<TimelineOverlayWrapperProps> = (pr
     };
 
     const handleCreatingStateChange = (event: CustomEvent) => {
-      console.log('[TimelineWrapper] Creating state changed:', event.detail.isCreating);
+      
       setIsCreating(event.detail.isCreating);
       if (!event.detail.isCreating) {
         // Clear status when done

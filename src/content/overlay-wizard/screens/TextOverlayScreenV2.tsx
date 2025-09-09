@@ -74,9 +74,8 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
       });
     }
 
-    console.log('[TextOverlayScreenV2] Creating text overlays:', overlays);
     onConfirm(overlays);
-    console.log('[TextOverlayScreenV2] Called onConfirm with overlay array length:', overlays.length);
+    
   }, [topText, topFontSize, topTextColor, bottomText, bottomFontSize, bottomTextColor, onConfirm]);
 
   const hasText = topText.trim().length > 0 || bottomText.trim().length > 0;
@@ -89,7 +88,7 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
       if (ctx) {
         // Calculate the midpoint of the selected range
         const midTime = startTime + (endTime - startTime) / 2;
-        console.log(`[TextOverlayScreenV2] Capturing frame at midpoint: ${midTime}s (range: ${startTime}s - ${endTime}s)`);
+        `);
         
         // Store original time to restore later
         const originalTime = videoElement.currentTime;
@@ -104,7 +103,7 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
             ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
             const frameUrl = canvas.toDataURL('image/jpeg', 0.9);
             setVideoFrameUrl(frameUrl);
-            console.log(`[TextOverlayScreenV2] Frame captured successfully at ${videoElement.currentTime}s`);
+            
           } catch (error) {
             console.error('[TextOverlayScreenV2] Error capturing frame:', error);
           }

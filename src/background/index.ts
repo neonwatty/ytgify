@@ -1,4 +1,3 @@
-console.log('[BACKGROUND] Service worker loading...');
 
 import { ExtensionMessage } from '@/types';
 import { messageHandler } from './message-handler';
@@ -6,8 +5,6 @@ import { backgroundWorker } from './worker';
 import { logger } from '@/lib/logger';
 import { initializeMessageBus } from '@/shared/message-bus';
 import { sharedLogger, sharedErrorHandler, extensionStateManager } from '@/shared';
-
-console.log('[BACKGROUND] Imports complete, registering listeners...');
 
 // Service Worker lifecycle events with enhanced logging and error handling
 chrome.runtime.onInstalled.addListener(sharedErrorHandler.wrapWithErrorBoundary(async (details) => {
@@ -192,9 +189,9 @@ chrome.runtime.onMessage.addListener((
 // The popup will handle the extension icon click instead
 // Keeping this commented out for reference
 /*
-console.log('[BACKGROUND] Setting up chrome.action.onClicked listener...');
+
 chrome.action.onClicked.addListener(async (tab) => {
-  console.log('[EXTENSION ICON] Button clicked!', tab);
+  
   try {
     sharedLogger.info('[Background] Extension icon clicked', { 
       tabId: tab.id,
@@ -273,21 +270,20 @@ chrome.action.onClicked.addListener(async (tab) => {
 
 // Handle keyboard command
 chrome.commands.onCommand.addListener(async (command) => {
-  console.log('[BACKGROUND] Command received:', command);
-  
+
   if (command === '_execute_action') {
     // Get the active tab
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
     if (!tab || !tab.id || !tab.url) {
-      console.log('[BACKGROUND] No active tab found');
+      
       return;
     }
     
     const isYouTubePage = tab.url.includes('youtube.com/watch') || tab.url.includes('youtube.com/shorts');
     
     if (!isYouTubePage) {
-      console.log('[BACKGROUND] Not on YouTube, navigating...');
+      
       await chrome.tabs.update(tab.id, { url: 'https://www.youtube.com' });
       return;
     }
@@ -298,7 +294,7 @@ chrome.commands.onCommand.addListener(async (command) => {
         type: 'SHOW_WIZARD_DIRECT',
         data: { triggeredBy: 'command' }
       });
-      console.log('[BACKGROUND] Sent SHOW_WIZARD_DIRECT via command');
+      
     } catch (error) {
       console.error('[BACKGROUND] Failed to send message:', error);
     }

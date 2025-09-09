@@ -43,12 +43,7 @@ export const TimelineOverlay: React.FC<TimelineOverlayProps> = ({
 }) => {
   // Debug logging
   React.useEffect(() => {
-    console.log('[TimelineOverlay] Props updated:', { 
-      isCreating, 
-      processingStatus,
-      progressValue: processingStatus?.progress,
-      willRenderBar: isCreating && processingStatus
-    });
+    
   }, [isCreating, processingStatus]);
   // Initialize selection from current time forward
   const [selection, setSelection] = useState<TimelineSelection>(() => {

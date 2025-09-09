@@ -1,5 +1,4 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { ShowTimelineRequest } from '@/types';
 
 const PopupApp: React.FC = () => {
@@ -46,7 +45,7 @@ const PopupApp: React.FC = () => {
     setShowButton(checked);
     // Save to Chrome storage
     chrome.storage.sync.set({ buttonVisibility: checked }, () => {
-      console.log('Button visibility saved:', checked);
+      
     });
   };
 

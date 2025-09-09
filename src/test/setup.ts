@@ -112,13 +112,6 @@ global.ImageData = class MockImageData {
 } as unknown as typeof ImageData;
 
 // Mock Canvas and CanvasRenderingContext2D for GIF processing tests
-interface MockCanvas {
-  getContext: jest.MockedFunction<any>;
-  width: number;
-  height: number;
-  toBlob: jest.MockedFunction<(callback: BlobCallback) => void>;
-  toDataURL: jest.MockedFunction<() => string>;
-}
 
 const createMockContext = (canvas: any) => ({
   drawImage: jest.fn(),

@@ -347,11 +347,8 @@ export class YouTubePlayerIntegration {
 
   // Setup methods
   private setupResizeObserver(): void {
-    this.resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        this.handlePlayerSizeChange();
-        break;
-      }
+    this.resizeObserver = new ResizeObserver(() => {
+      this.handlePlayerSizeChange();
     });
 
     // Start observing when player is found

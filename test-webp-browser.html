@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test WebP Browser Conversion</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+    }
+    h2 {
+      margin-top: 0;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    #output {
+      margin-top: 20px;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border: 1px solid #ddd;
+      margin-top: 10px;
+    }
+    .info {
+      background: #f0f0f0;
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 10px;
+      font-family: monospace;
+    }
+    #fileInput {
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>WebP Browser Conversion Test</h1>
+  <p>This tests the browser's native Canvas API WebP conversion (single frame only)</p>
+  
+  <div class="container">
+    <div class="card">
+      <h2>Input</h2>
+      <input type="file" id="fileInput" accept="image/gif,video/*">
+      <button onclick="testWebPConversion()">Convert to WebP</button>
+      <div id="inputInfo"></div>
+      <img id="inputImage" style="display:none;">
+      <video id="inputVideo" style="display:none; width: 100%;" controls></video>
+    </div>
+    
+    <div class="card">
+      <h2>Output WebP</h2>
+      <div id="output"></div>
+    </div>
+  </div>
+
+  <script>
+    let currentFile = null;
+
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      currentFile = file;
+      const url = URL.createObjectURL(file);
+      
+      if (file.type.startsWith('video/')) {
+        const video = document.getElementById('inputVideo');
+        video.src = url;
+        video.style.display = 'block';
+        document.getElementById('inputImage').style.display = 'none';
+      } else {
+        const img = document.getElementById('inputImage');
+        img.src = url;
+        img.style.display = 'block';
+        document.getElementById('inputVideo').style.display = 'none';
+      }
+      
+      document.getElementById('inputInfo').innerHTML = `
+        <div class="info">
+          File: ${file.name}<br>
+          Type: ${file.type}<br>
+          Size: ${(file.size / 1024).toFixed(1)} KB
+        </div>
+      `;
+    });
+
+    async function testWebPConversion() {
+      if (!currentFile) {
+        alert('Please select a file first');
+        return;
+      }
+      
+      const outputDiv = document.getElementById('output');
+      outputDiv.innerHTML = '<p>Converting to WebP...</p>';
+      
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let source;
+        if (currentFile.type.startsWith('video/')) {
+          source = document.getElementById('inputVideo');
+          // Wait for video to be ready
+          if (source.readyState < 2) {
+            await new Promise(resolve => {
+              source.addEventListener('loadeddata', resolve, { once: true });
+            });
+          }
+        } else {
+          source = document.getElementById('inputImage');
+        }
+        
+        // Set canvas size
+        canvas.width = 640;
+        canvas.height = Math.round((source.videoHeight || source.naturalHeight) * 640 / (source.videoWidth || source.naturalWidth));
+        
+        // Draw the frame
+        ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+        
+        // Add text overlay for testing
+        ctx.font = 'bold 32px Arial';
+        ctx.fillStyle = 'white';
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 3;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const text = 'WebP Test';
+        ctx.strokeText(text, canvas.width / 2, canvas.height / 2);
+        ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+        
+        // Convert to WebP
+        const startTime = performance.now();
+        const blob = await new Promise((resolve, reject) => {
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                resolve(blob);
+              } else {
+                reject(new Error('Failed to create WebP'));
+              }
+            },
+            'image/webp',
+            0.85
+          );
+        });
+        const conversionTime = performance.now() - startTime;
+        
+        // Display result
+        const url = URL.createObjectURL(blob);
+        const originalSize = currentFile.size;
+        const webpSize = blob.size;
+        const reduction = ((1 - webpSize / originalSize) * 100).toFixed(1);
+        
+        outputDiv.innerHTML = `
+          <div class="info">
+            <strong>WebP Created Successfully!</strong><br>
+            Original: ${(originalSize / 1024).toFixed(1)} KB<br>
+            WebP: ${(webpSize / 1024).toFixed(1)} KB<br>
+            Reduction: ${reduction}%<br>
+            Dimensions: ${canvas.width}×${canvas.height}<br>
+            Conversion time: ${conversionTime.toFixed(1)}ms<br>
+            <br>
+            <strong>Note:</strong> Browser Canvas API only supports single-frame WebP
+          </div>
+          <img src="${url}" alt="WebP output">
+          <br>
+          <button onclick="downloadWebP('${url}')">Download WebP</button>
+        `;
+        
+      } catch (error) {
+        outputDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+        console.error('WebP conversion error:', error);
+      }
+    }
+    
+    function downloadWebP(url) {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `test-${Date.now()}.webp`;
+      link.click();
+    }
+  </script>
+</body>
+</html>

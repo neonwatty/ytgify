@@ -15,14 +15,14 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 }) => {
   // Auto-advance after a short delay
   React.useEffect(() => {
-    console.log('[WelcomeScreen] Setting up auto-advance timer');
+    
     const timer = setTimeout(() => {
-      console.log('[WelcomeScreen] Auto-advancing to next screen');
+      
       onContinue();
     }, 1500);
     
     return () => {
-      console.log('[WelcomeScreen] Clearing auto-advance timer');
+      
       clearTimeout(timer);
     };
   }, []); // Empty dependency array - only run once on mount

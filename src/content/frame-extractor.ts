@@ -6,6 +6,7 @@ import { captureInstantFrames } from '@/lib/instant-frame-capture';
 
 export interface ContentFrameExtractionRequest {
   type: 'CONTENT_SCRIPT_EXTRACT_FRAMES';
+  id?: string;
   data: {
     startTime: number;
     endTime: number;
@@ -180,14 +181,7 @@ export class ContentScriptFrameExtractor {
 
       // Chrome message size limit workaround: Send frames in chunks
       logger.info('[ContentScriptFrameExtractor] Preparing response with frame chunks');
-      
-      // Convert frames to transferable format (smaller)
-      const compressedFrames = result.frames.map(frame => ({
-        width: frame.width,
-        height: frame.height,
-        data: Array.from(frame.data) // Convert Uint8ClampedArray to regular array
-      }));
-      
+
       // Send response with frames
       // Send all frames - Chrome can handle larger messages in Manifest V3
       try {

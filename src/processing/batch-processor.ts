@@ -471,7 +471,6 @@ export class BatchProcessor {
     };
 
     // Store result for potential retrieval
-    console.log('Batch job completed:', batchResult);
 
     // Cleanup after delay
     setTimeout(() => {

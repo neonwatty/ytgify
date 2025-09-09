@@ -25,6 +25,8 @@ export {
   OpenEditorRequest,
   LogMessage,
   ErrorResponse,
+  SuccessResponse,
+  DownloadGifRequest,
   GetJobStatusRequest,
   GetJobStatusResponse,
   CancelJobRequest,
@@ -44,5 +46,7 @@ export {
   isTimelineSelectionUpdate,
   isOpenEditorRequest,
   isLogMessage,
+  isDownloadGifRequest,
+  isGetJobStatusRequest,
   createResponse
 } from './messages';

@@ -13,11 +13,18 @@ import {
   GifCreationComplete,
   SaveGifRequest,
   SaveGifResponse,
+  SuccessResponse,
+  ErrorResponse,
+  DownloadGifRequest,
+  GetJobStatusRequest,
+  GifData,
   isExtractFramesRequest,
   isEncodeGifRequest,
   isGetVideoStateRequest,
   isTimelineSelectionUpdate,
-  isLogMessage
+  isLogMessage,
+  isDownloadGifRequest,
+  isGetJobStatusRequest
 } from '@/types';
 import { backgroundWorker, VideoProcessingJob } from './worker';
 import { logger } from '@/lib/logger';
@@ -93,7 +100,7 @@ export class BackgroundMessageHandler {
           type: 'SUCCESS_RESPONSE',
           success: true,
           data: { message: 'GIF creation started' }
-        } as any);
+        } as SuccessResponse);
         
         // Handle the timeline selection asynchronously  
         this.handleTimelineSelectionUpdate(message, sender);
@@ -110,13 +117,13 @@ export class BackgroundMessageHandler {
       }
 
       // Handle GIF download request
-      if ((message as any).type === 'DOWNLOAD_GIF') {
+      if (isDownloadGifRequest(message)) {
         this.handleGifDownload(message, sendResponse);
         return true;
       }
 
-      // Handle job status queries (temporarily cast until types are fully integrated)
-      if ((message as unknown as { type: string }).type === 'GET_JOB_STATUS') {
+      // Handle job status queries
+      if (isGetJobStatusRequest(message)) {
         this.handleJobStatusQuery(message, sender, sendResponse);
         return true;
       }
@@ -463,7 +470,7 @@ export class BackgroundMessageHandler {
   }
 
   // Direct IndexedDB save without storage manager
-  private async saveGifDirectly(gifData: any): Promise<boolean> {
+  private async saveGifDirectly(gifData: GifData): Promise<boolean> {
     return new Promise((resolve) => {
       try {
         logger.info('[MessageHandler] Starting direct IndexedDB save', { id: gifData.id });
@@ -791,7 +798,7 @@ export class BackgroundMessageHandler {
                 thumbnailDataUrl,
                 metadata: encodedData.metadata
               }
-            } as any;
+            };
             originalSendResponse(successResponse);
 
             logger.info('[MessageHandler] GIF creation completed successfully', { 
@@ -824,12 +831,12 @@ export class BackgroundMessageHandler {
 
   // Handle job status queries
   private handleJobStatusQuery(
-    message: ExtensionMessage,
+    message: GetJobStatusRequest,
     _sender: chrome.runtime.MessageSender,
     sendResponse: (response: ExtensionMessage) => void
   ): void {
     try {
-      const { jobId } = (message as unknown as { data: { jobId: string } }).data;
+      const { jobId } = message.data;
       const job = backgroundWorker.getJobStatus(jobId);
 
       if (!job) {
@@ -897,8 +904,8 @@ export class BackgroundMessageHandler {
 
   // Handle GIF download request from content script
   private handleGifDownload(
-    message: any,
-    sendResponse: (response: any) => void
+    message: DownloadGifRequest,
+    sendResponse: (response: ExtensionMessage) => void
   ): void {
     const { url, filename } = message.data;
     
@@ -914,15 +921,17 @@ export class BackgroundMessageHandler {
           error: chrome.runtime.lastError.message 
         });
         sendResponse({ 
+          type: 'ERROR_RESPONSE',
           success: false, 
           error: chrome.runtime.lastError.message 
-        });
+        } as ErrorResponse);
       } else {
         logger.info('[MessageHandler] Download started', { downloadId, filename });
         sendResponse({ 
+          type: 'SUCCESS_RESPONSE',
           success: true, 
-          downloadId 
-        });
+          data: { downloadId }
+        } as SuccessResponse);
       }
     });
   }
@@ -985,7 +994,7 @@ export class BackgroundMessageHandler {
           // Determine stage and message based on job type and progress
           let stage = '';
           let message = '';
-          let details: any = {};
+          const details: Record<string, unknown> = {};
 
           if (job.type === 'extract_frames') {
             if (job.progress < 10) {
@@ -995,10 +1004,13 @@ export class BackgroundMessageHandler {
               stage = 'extracting';
               message = `Extracting frames from video... ${Math.round(job.progress)}%`;
               // Extract frame details if available in job data
-              const jobData = job.data as any;
+              const jobData = job.data as {
+                extractedFrames?: unknown[];
+                settings?: { endTime: number; startTime: number; frameRate: number };
+              };
               if (jobData.extractedFrames) {
                 details.currentFrame = jobData.extractedFrames.length;
-                details.totalFrames = Math.ceil((jobData.settings?.endTime - jobData.settings?.startTime) * jobData.settings?.frameRate);
+                details.totalFrames = jobData.settings ? Math.ceil((jobData.settings.endTime - jobData.settings.startTime) * jobData.settings.frameRate) : 0;
               }
             } else {
               stage = 'finalizing';
@@ -1011,7 +1023,7 @@ export class BackgroundMessageHandler {
             } else if (job.progress < 40) {
               stage = 'encoding';
               message = `Encoding frames to GIF... ${Math.round(job.progress)}%`;
-              const jobData = job.data as any;
+              const jobData = job.data as { frames?: unknown[] };
               if (jobData.frames) {
                 details.totalFrames = jobData.frames.length;
                 details.currentFrame = Math.floor((job.progress / 100) * jobData.frames.length);

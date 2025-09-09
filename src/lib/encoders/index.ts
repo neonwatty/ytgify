@@ -60,8 +60,6 @@ export async function encodeFrames(
     format: preferences?.format || 'gif'
   });
 
-  console.log(`Using ${selection.encoder.name} encoder: ${selection.reason}`);
-
   return selection.encoder.encode(
     frames,
     options,

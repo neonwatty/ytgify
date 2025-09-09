@@ -313,9 +313,8 @@ export class ExtensionStateManager {
   // Debug helper
   debug(): void {
     console.group('Extension State Debug');
-    console.log('Runtime State:', this.runtimeState);
-    console.log('Registered Listeners:', Object.fromEntries(
-      Array.from(this.listeners.entries()).map(([key, listeners]) => [key, listeners.length])
+    
+    ).map(([key, listeners]) => [key, listeners.length])
     ));
     console.groupEnd();
   }

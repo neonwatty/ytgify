@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ExtensionMessage, ShowTimelineRequest } from '@/types';
+import { ShowTimelineRequest } from '@/types';
 import LibraryView from './components/library-view';
 import SettingsView from './components/settings-view';
 

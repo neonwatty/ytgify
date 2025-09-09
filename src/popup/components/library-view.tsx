@@ -132,31 +132,19 @@ const LibraryView: React.FC = () => {
   // Load GIFs from storage
   React.useEffect(() => {
     const loadGifs = async () => {
-      console.log('[LibraryView] Starting to load GIFs...');
+      
       try {
         setIsLoading(true);
         // Check chrome.storage availability
-        console.log('[LibraryView] Chrome storage check:', {
-          hasChrome: typeof chrome !== 'undefined',
-          hasStorage: typeof chrome !== 'undefined' && !!chrome.storage,
-          hasLocal: typeof chrome !== 'undefined' && !!chrome.storage?.local
-        });
-        
+
         // Use chrome storage helper
         const storedGifs = await chromeGifStorage.getAllGifs();
-        console.log('[LibraryView] Retrieved stored GIFs:', {
-          count: storedGifs.length,
-          firstGif: storedGifs[0]
-        });
-        
+
         // Convert to display format
         const displayGifs = await Promise.all(
           storedGifs.map(gif => chromeGifStorage.convertToDisplayFormat(gif))
         );
-        console.log('[LibraryView] Converted to display format:', {
-          count: displayGifs.length
-        });
-        
+
         setGifs(displayGifs);
       } catch (error) {
         console.error('[LibraryView] Failed to load GIFs:', error);

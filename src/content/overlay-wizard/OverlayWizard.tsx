@@ -62,7 +62,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   }, [videoDuration, currentTime, videoTitle, setScreenData]);
 
   const handleWelcomeContinue = React.useCallback(() => {
-    console.log('[OverlayWizard] handleWelcomeContinue called, going directly to quick-capture');
+    
     // Set up default time range (5 seconds forward from current position)
     const startTime = currentTime;
     const endTime = Math.min(videoDuration, currentTime + 5);
@@ -70,9 +70,8 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     goToScreen('quick-capture');
   }, [goToScreen, currentTime, videoDuration, setScreenData]);
 
-
   const handleConfirmQuickCapture = (startTime: number, endTime: number, frameRate?: number) => {
-    console.log('[OverlayWizard] handleConfirmQuickCapture called', { startTime, endTime, frameRate });
+    
     const selection: TimelineSelection = {
       startTime,
       endTime,
@@ -82,7 +81,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     setScreenData({ startTime, endTime, frameRate: frameRate || 10 });
     onSelectionChange(selection);
     // Go to text overlay screen instead of processing
-    console.log('[OverlayWizard] Navigating to text-overlay screen');
+    
     goToScreen('text-overlay');
   };
 
@@ -101,13 +100,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   // Store GIF data when it's created and transition to success
   React.useEffect(() => {
     if (gifData && gifData.dataUrl) {
-      console.log('[OverlayWizard] GIF data received:', {
-        hasDataUrl: !!gifData.dataUrl,
-        size: gifData.size,
-        hasMetadata: !!gifData.metadata,
-        currentScreen
-      });
-      
+
       // Store the data 
       const newData = {
         gifDataUrl: gifData.dataUrl,
@@ -116,13 +109,12 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
       };
       
       setScreenData(newData);
-      console.log('[OverlayWizard] Set screen data with GIF');
-      
+
       // Only transition if we're still on processing screen
       if (currentScreen === 'processing') {
         // Small delay to ensure state is updated
         setTimeout(() => {
-          console.log('[OverlayWizard] Transitioning to success screen with GIF data');
+          
           goToScreen('success');
         }, 100);
       }
@@ -131,14 +123,14 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
 
   // Add handlers for text overlay screen
   const handleConfirmTextOverlay = (overlays: TextOverlay[]) => {
-    console.log('[OverlayWizard] handleConfirmTextOverlay called with overlays:', overlays);
+    
     setScreenData({ textOverlays: overlays });
     const selection: TimelineSelection = {
       startTime: data.startTime || 0,
       endTime: data.endTime || 4,
       duration: (data.endTime || 4) - (data.startTime || 0)
     };
-    console.log('[OverlayWizard] Calling onCreateGif with selection and overlays:', { selection, overlays });
+    
     onCreateGif(selection, overlays);
     goToScreen('processing');
   };
@@ -167,7 +159,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   
   // Debug logging
   React.useEffect(() => {
-    console.log('[OverlayWizard] Current screen:', currentScreen);
+    
   }, [currentScreen]);
 
   return (
@@ -245,7 +237,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
               processingStatus={processingStatus}
               onComplete={() => {
                 // Don't transition here - wait for gifData to be available
-                console.log('[OverlayWizard] Processing complete, waiting for GIF data...');
+                
               }}
               onError={(error) => {
                 console.error('GIF creation error:', error);
@@ -256,11 +248,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
 
           {currentScreen === 'success' && (
             <>
-              {console.log('[OverlayWizard] Rendering SuccessScreen with data:', {
-                hasGifDataUrl: !!data.gifDataUrl,
-                gifSize: data.gifSize,
-                hasGifMetadata: !!data.gifMetadata,
-                dataKeys: Object.keys(data)
+              {
               })}
               <SuccessScreen
                 onDownload={() => {

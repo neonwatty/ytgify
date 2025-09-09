@@ -506,22 +506,20 @@ export const ExportPanelDemo: React.FC<ExportPanelDemoProps> = ({
   }
 
   const handleExport = React.useCallback(async (metadata: Partial<GifData>, options: ExportOptions) => {
-    console.log('Exporting with metadata:', metadata)
-    console.log('Export options:', options)
-    
+
     // Simulate export process
     await new Promise(resolve => setTimeout(resolve, 2000))
     
     if (options.downloadFile) {
-      console.log('Would download file with name:', `${metadata.title?.replace(/\s+/g, '-').toLowerCase()}.gif`)
+      .toLowerCase()}.gif`)
     }
     
     if (options.copyToClipboard) {
-      console.log('Would copy to clipboard')
+      
     }
     
     if (options.saveToLibrary) {
-      console.log('Would save to library')
+      
     }
   }, [])
 

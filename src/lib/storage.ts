@@ -1,5 +1,5 @@
 // Storage interface for GIFs and preferences
-import { GifData, UserPreferences } from '@/types';
+import { UserPreferences } from '@/types';
 
 // Enhanced GIF data type with proper blob handling
 // This matches what the library component expects
@@ -137,7 +137,7 @@ class GifStorage {
       request.onsuccess = () => {
         const results = request.result || [];
         // Map the data to ensure compatibility
-        const mappedResults = results.map((item: any) => {
+        const mappedResults = results.map((item: GifDataWithBlob) => {
           // Ensure gifBlob field exists for component compatibility
           if (item.blob && !item.gifBlob) {
             item.gifBlob = item.blob;

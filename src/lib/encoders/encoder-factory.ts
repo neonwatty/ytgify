@@ -173,7 +173,7 @@ export class EncoderFactory {
     for (const encoderType of encoderPriority) {
       const encoder = await this.getSpecificEncoder(encoderType);
       if (encoder) {
-        console.log(`Auto-selected ${encoderType} encoder`);
+        
         return encoder;
       }
     }
