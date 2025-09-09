@@ -6,6 +6,15 @@ const PopupApp: React.FC = () => {
   const [isYouTubePage, setIsYouTubePage] = React.useState(false);
   const [videoTitle, setVideoTitle] = React.useState<string>('');
   const [isLoading, setIsLoading] = React.useState(false);
+  const [showButton, setShowButton] = React.useState(true);
+
+  // Load button visibility setting
+  React.useEffect(() => {
+    chrome.storage.sync.get(['buttonVisibility'], (result) => {
+      // Default to true if not set
+      setShowButton(result.buttonVisibility !== false);
+    });
+  }, []);
 
   // Check if current tab is YouTube
   React.useEffect(() => {
@@ -31,6 +40,15 @@ const PopupApp: React.FC = () => {
 
     checkCurrentTab();
   }, []);
+
+  // Handle toggle change
+  const handleToggleChange = (checked: boolean) => {
+    setShowButton(checked);
+    // Save to Chrome storage
+    chrome.storage.sync.set({ buttonVisibility: checked }, () => {
+      console.log('Button visibility saved:', checked);
+    });
+  };
 
   const handleCreateGif = async () => {
     if (!isYouTubePage) {
@@ -68,7 +86,7 @@ const PopupApp: React.FC = () => {
 
   // Main minimal launcher view
   return (
-    <div className="popup-modern" style={{ width: '360px', height: '380px' }}>
+    <div className="popup-modern" style={{ width: '360px' }}>
       {/* Subtle Background */}
       <div className="popup-bg-animation">
         <div className="gradient-orb gradient-orb-1"></div>
@@ -85,6 +103,24 @@ const PopupApp: React.FC = () => {
             <h1 className="popup-logo-title">YouTube GIF Maker</h1>
             <p className="popup-logo-subtitle">Create GIFs instantly</p>
           </div>
+        </div>
+      </div>
+
+      {/* Settings Section */}
+      <div className="popup-settings">
+        <div className="settings-item">
+          <label className="settings-label">
+            <span className="settings-text">Show GIF button in player</span>
+            <div className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={showButton}
+                onChange={(e) => handleToggleChange(e.target.checked)}
+                className="toggle-input"
+              />
+              <span className="toggle-slider"></span>
+            </div>
+          </label>
         </div>
       </div>
 

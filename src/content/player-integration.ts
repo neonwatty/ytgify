@@ -111,6 +111,10 @@ export class YouTubePlayerIntegration {
     this.button = null;
   }
 
+  public hasButton(): boolean {
+    return this.button !== null && this.button.parentNode !== null;
+  }
+
   public setButtonState(isActive: boolean): void {
     if (this.isActive !== isActive) {
       this.isActive = isActive;

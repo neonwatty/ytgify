@@ -57,6 +57,7 @@ class YouTubeGifMaker {
   private isWizardMode = false;
   private wizardUpdateInterval: NodeJS.Timeout | null = null;
   private createdGifData: { dataUrl: string; size: number; metadata: any } | undefined = undefined;
+  private buttonVisible = true; // Track button visibility state
 
   constructor() {
     console.log('[YTGif Content Script] Constructor called!');
@@ -105,9 +106,53 @@ class YouTubeGifMaker {
     this.setupOverlayStateListeners();
     this.setupCleanupManager();
     this.setupThemeSystem();
+    this.setupStorageListener();
+    this.loadButtonVisibility();
     this.setupInjectionSystem();
     this.setupFrameExtraction();
     this.findVideoElement();
+  }
+
+  // Setup storage listener for button visibility changes
+  private setupStorageListener() {
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName === 'sync' && changes.buttonVisibility) {
+        const newVisibility = changes.buttonVisibility.newValue !== false;
+        console.log('[Content] Button visibility changed:', newVisibility);
+        this.updateButtonVisibility(newVisibility);
+      }
+    });
+  }
+
+  // Load initial button visibility setting
+  private async loadButtonVisibility() {
+    try {
+      const result = await chrome.storage.sync.get(['buttonVisibility']);
+      // Default to true if not set
+      this.buttonVisible = result.buttonVisibility !== false;
+      console.log('[Content] Initial button visibility:', this.buttonVisible);
+    } catch (error) {
+      console.error('[Content] Error loading button visibility:', error);
+      this.buttonVisible = true; // Default to visible on error
+    }
+  }
+
+  // Update button visibility
+  private updateButtonVisibility(visible: boolean) {
+    this.buttonVisible = visible;
+    
+    if (visible) {
+      // Re-inject button if it was hidden
+      if (!playerIntegration.hasButton()) {
+        playerIntegration.injectButton((event) => {
+          event.preventDefault();
+          this.handleGifButtonClick();
+        });
+      }
+    } else {
+      // Remove button if it should be hidden
+      playerIntegration.removeButton();
+    }
   }
 
   // Setup theme system for automatic YouTube theme matching
@@ -317,6 +362,12 @@ class YouTubeGifMaker {
 
   // Setup enhanced button injection system
   private setupInjectionSystem() {
+    // Only inject button if it should be visible
+    if (!this.buttonVisible) {
+      console.log('[Content] Button visibility is disabled, skipping injection');
+      return;
+    }
+
     // Use the new player integration system for better button positioning
     const injected = playerIntegration.injectButton((event) => {
       event.preventDefault();
