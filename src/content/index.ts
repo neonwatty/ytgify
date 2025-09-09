@@ -75,25 +75,8 @@ class YouTubeGifMaker {
       }
     });
 
-    // Inject a script to expose the function in the page context
-    const script = document.createElement('script');
-    script.textContent = `
-      window.openGifWizard = function() {
-        
-        window.postMessage({ type: 'TRIGGER_GIF_WIZARD' }, '*');
-      };
-       in the console');
-    `;
-    document.head.appendChild(script);
-    script.remove();
-    
-    // Listen for the message from the injected script
-    window.addEventListener('message', (event) => {
-      if (event.data && event.data.type === 'TRIGGER_GIF_WIZARD') {
-        
-        this.handleDirectWizardActivation();
-      }
-    });
+    // openGifWizard functionality is available via keyboard shortcuts and GIF button
+    // No script injection needed - removed for Chrome Web Store compliance
   }
 
   private init() {
@@ -578,7 +561,6 @@ class YouTubeGifMaker {
 
     // Send message to background to handle timeline display (optional)
     // Don't wait for background response - just fire and forget
-    ');
     this.sendMessageToBackground(showTimelineMessage)
       .then(response => {
         this.log('debug', '[Content] Background communication result', { response });
@@ -755,8 +737,6 @@ class YouTubeGifMaker {
     }
     
     document.body.appendChild(overlay);
-    
-     !== null);
 
     // Create React root and render timeline overlay
     
