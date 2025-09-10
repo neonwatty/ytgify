@@ -5,8 +5,8 @@
  * including blob storage, search capabilities, and performance testing.
  */
 
-import { GifDatabase } from '../storage/database';
-import { GifData, GifMetadata } from '../types/storage';
+import { GifDatabase } from '../../../src/storage/database';
+import { GifData, GifMetadata } from '../../../src/types/storage';
 
 // Mock IndexedDB for testing
 const mockIDBDatabase = {
@@ -512,7 +512,7 @@ describe('GIF Database', () => {
       };
 
       jest.spyOn(gifDatabase, 'getAllGifs').mockResolvedValue([oldGif, newGif]);
-      jest.spyOn(gifDatabase, 'deleteGif').mockResolvedValue();
+      jest.spyOn(gifDatabase, 'deleteGif').mockResolvedValue(undefined);
 
       const deletedCount = await gifDatabase.cleanup(30);
       

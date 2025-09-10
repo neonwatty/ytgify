@@ -3,6 +3,7 @@ import { ShowTimelineRequest } from '@/types';
 
 const PopupApp: React.FC = () => {
   const [isYouTubePage, setIsYouTubePage] = React.useState(false);
+  const [isShortsPage, setIsShortsPage] = React.useState(false);
   const [videoTitle, setVideoTitle] = React.useState<string>('');
   const [isLoading, setIsLoading] = React.useState(false);
   const [showButton, setShowButton] = React.useState(true);
@@ -21,13 +22,17 @@ const PopupApp: React.FC = () => {
       try {
         const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
         const currentTab = tabs[0];
-        
+
         if (!currentTab || !currentTab.url) return;
-        
-        const isYoutube = currentTab.url.includes('youtube.com/watch');
-        setIsYouTubePage(isYoutube);
-        
-        if (isYoutube && currentTab.title) {
+
+        const isYoutubeWatch = currentTab.url.includes('youtube.com/watch');
+        const isYoutubeShorts = currentTab.url.includes('youtube.com/shorts');
+        const isYoutubePage = isYoutubeWatch || isYoutubeShorts;
+
+        setIsYouTubePage(isYoutubePage);
+        setIsShortsPage(isYoutubeShorts);
+
+        if ((isYoutubeWatch || isYoutubeShorts) && currentTab.title) {
           // Extract video title from tab title (removes " - YouTube" suffix)
           const title = currentTab.title.replace(' - YouTube', '');
           setVideoTitle(title);
@@ -54,6 +59,11 @@ const PopupApp: React.FC = () => {
       // Open YouTube in new tab
       chrome.tabs.create({ url: 'https://www.youtube.com' });
       window.close();
+      return;
+    }
+
+    if (isShortsPage) {
+      // Show shorts-specific feedback
       return;
     }
 
@@ -125,7 +135,43 @@ const PopupApp: React.FC = () => {
 
       {/* Main Content */}
       <div className="popup-main">
-        {isYouTubePage ? (
+        {isShortsPage ? (
+          <div className="popup-shorts-state">
+            <div className="status-text">
+              <p className="status-title">YouTube Shorts Detected</p>
+              <p className="status-subtitle">We do not yet support YouTube Shorts</p>
+            </div>
+
+            {/* Info Icon */}
+            <div className="status-icon-container">
+              <div className="status-icon info-icon">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Info message */}
+            <div className="info-message">
+              <p className="info-text">Try GIF creation on regular YouTube videos instead!</p>
+            </div>
+
+            {/* Open YouTube Button */}
+            <button
+              onClick={() => {
+                chrome.tabs.create({ url: 'https://www.youtube.com' });
+                window.close();
+              }}
+              className="youtube-button"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+              </svg>
+              <span>Open YouTube</span>
+            </button>
+          </div>
+        ) : isYouTubePage ? (
           <div className="popup-ready-state">
             <div className="status-text">
               <p className="status-title">Ready to Create GIF</p>

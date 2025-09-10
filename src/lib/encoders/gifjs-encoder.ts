@@ -47,7 +47,7 @@ export class GifJsEncoder extends AbstractEncoder {
     return 'gif.js';
   }
 
-  get supportedFormats(): Array<'gif' | 'webp' | 'mp4'> {
+  get supportedFormats(): Array<'gif' | 'mp4'> {
     return ['gif'];
   }
 

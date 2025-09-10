@@ -6,10 +6,9 @@
 import { AbstractEncoder } from './abstract-encoder';
 import { GifencEncoder } from './gifenc-encoder';
 import { GifJsEncoder } from './gifjs-encoder';
-import { WebPEncoder } from './webp-encoder';
 
-export type EncoderType = 'gifenc' | 'gif.js' | 'webp' | 'auto';
-export type FormatType = 'gif' | 'webp' | 'mp4';
+export type EncoderType = 'gifenc' | 'gif.js' | 'auto';
+export type FormatType = 'gif' | 'mp4';
 
 export interface EncoderPreference {
   primary: EncoderType;
@@ -47,9 +46,7 @@ export class EncoderFactory {
     const format = preference.format;
     
     // Handle different format types
-    if (format === 'webp') {
-      return this.getWebPEncoder(preference);
-    } else if (format === 'mp4') {
+    if (format === 'mp4') {
       throw new Error(`Format ${format} not yet supported`);
     }
 
@@ -116,9 +113,6 @@ export class EncoderFactory {
       case 'gif.js':
         encoder = new GifJsEncoder();
         break;
-      case 'webp':
-        encoder = new WebPEncoder();
-        break;
       default:
         throw new Error(`Unknown encoder type: ${type}`);
     }
@@ -140,28 +134,6 @@ export class EncoderFactory {
     }
   }
 
-  /**
-   * Get WebP encoder
-   */
-  private async getWebPEncoder(preference: EncoderPreference): Promise<EncoderSelection> {
-    const encoder = await this.getSpecificEncoder('webp');
-    
-    if (!encoder) {
-      // Fallback to GIF if WebP is not available
-      console.warn('WebP encoder not available, falling back to GIF');
-      const gifPreference: EncoderPreference = {
-        ...preference,
-        format: 'gif'
-      };
-      return this.getEncoder(gifPreference);
-    }
-
-    return {
-      encoder,
-      reason: 'WebP encoder selected for modern image format',
-      characteristics: encoder.characteristics
-    };
-  }
 
   /**
    * Automatically select the best GIF encoder based on environment and performance
@@ -233,7 +205,7 @@ export class EncoderFactory {
     characteristics: AbstractEncoder['characteristics'];
     supportedFormats: string[];
   }>> {
-    const encoderTypes: EncoderType[] = ['gifenc', 'gif.js', 'webp'];
+    const encoderTypes: EncoderType[] = ['gifenc', 'gif.js'];
     const results = [];
 
     for (const type of encoderTypes) {
@@ -357,8 +329,6 @@ export class EncoderFactory {
         return new GifencEncoder();
       case 'gif.js':
         return new GifJsEncoder();
-      case 'webp':
-        return new WebPEncoder();
       default:
         throw new Error(`Unknown encoder type: ${type}`);
     }

@@ -1,4 +1,4 @@
-import { chromeMock } from '../src/test/chrome-mocks';
+import { chromeMock } from '../__mocks__/chrome-mocks';
 
 describe('Background Service Worker Framework Tests', () => {
   beforeEach(() => {

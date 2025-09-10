@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  roots: ['<rootDir>/src', '<rootDir>/tests'],
+  roots: ['<rootDir>/unit'],
   testMatch: ['**/__tests__/**/*.ts?(x)', '**/?(*.)+(spec|test).ts?(x)'],
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
@@ -11,15 +11,14 @@ module.exports = {
     }],
   },
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-    '\\.(css|less|scss|sass)$': '<rootDir>/tests/__mocks__/styleMock.js',
+    '^@/(.*)$': '<rootDir>/../src/$1',
+    '\\.(css|less|scss|sass)$': '<rootDir>/unit/__mocks__/styleMock.js',
   },
-  setupFilesAfterEnv: ['<rootDir>/src/test/setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/unit/__mocks__/setup.ts'],
   collectCoverageFrom: [
-    'src/**/*.{ts,tsx}',
-    '!src/**/*.d.ts', 
-    '!src/**/index.ts',
-    '!src/test/**',
+    '<rootDir>/../src/**/*.{ts,tsx}',
+    '!<rootDir>/../src/**/*.d.ts',
+    '!<rootDir>/../src/**/index.ts',
   ],
   testTimeout: 5000,
   // Test environment options for Chrome extension testing

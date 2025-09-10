@@ -5,7 +5,7 @@
  * and event listener functionality.
  */
 
-import { chromeMock, simulateStorageChange } from './chrome-mocks';
+import { chromeMock, simulateStorageChange } from '../__mocks__/chrome-mocks';
 
 describe('Chrome Storage Framework Tests', () => {
   beforeEach(() => {

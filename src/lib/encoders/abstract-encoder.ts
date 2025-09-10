@@ -22,7 +22,7 @@ export interface EncodingResult {
     fileSize: number;
     encodingTime: number;
     averageFrameTime: number;
-    format: 'gif' | 'webp' | 'mp4';
+    format: 'gif' | 'mp4';
     encoder: string;
   };
   performance: {
@@ -105,7 +105,7 @@ export abstract class AbstractEncoder {
   /**
    * Get supported formats
    */
-  abstract get supportedFormats(): Array<'gif' | 'webp' | 'mp4'>;
+  abstract get supportedFormats(): Array<'gif' | 'mp4'>;
 
   /**
    * Get performance characteristics

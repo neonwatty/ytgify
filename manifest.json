@@ -3,6 +3,8 @@
   "name": "YouTube GIF Maker",
   "version": "1.0.0",
   "description": "Create GIFs directly from YouTube videos with an intuitive visual interface",
+  "author": "Your Name",
+  "homepage_url": "https://github.com/neonwatty/ytgiphy",
   "permissions": [
     "storage",
     "tabs",

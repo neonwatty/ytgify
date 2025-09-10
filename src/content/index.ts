@@ -434,15 +434,23 @@ class YouTubeGifMaker {
   }
 
   private async handleDirectWizardActivation() {
-    
+
     this.log('info', '[Content] Direct wizard activation from extension icon');
-    
+
+    // Check if we're on YouTube Shorts
+    const currentState = youTubeDetector.getCurrentState();
+    if (currentState.isShorts) {
+      this.log('info', '[Content] Shorts detected during direct activation');
+      this.showGifCreationFeedback('info', 'GIF creation is not available on YouTube Shorts. Please open a regular YouTube video to create GIFs.');
+      return;
+    }
+
     // Ensure we have a video element
     if (!this.videoElement) {
-      
+
       await this.findVideoElement();
     }
-    
+
     // Check if we can create a GIF
     const videoState = this.getCurrentVideoState();
 
@@ -485,14 +493,24 @@ class YouTubeGifMaker {
 
   private async handleGifButtonClick() {
     this.log('info', '[Content] GIF button clicked');
-    
+
+    const currentState = youTubeDetector.getCurrentState();
+    const isShorts = currentState.isShorts;
+
+    // Check if we're on YouTube Shorts
+    if (isShorts) {
+      this.log('info', '[Content] Shorts detected - showing feedback');
+      this.showGifCreationFeedback('info', 'GIF creation is not available on YouTube Shorts due to technical limitations. Please try on a regular YouTube video instead.');
+      return;
+    }
+
     // Check if GIF creation is possible on current page
     const canCreate = youTubeDetector.canCreateGif();
-    this.log('info', '[Content] Can create GIF check', { 
-      canCreate, 
-      currentState: youTubeDetector.getCurrentState() 
+    this.log('info', '[Content] Can create GIF check', {
+      canCreate,
+      currentState: currentState
     });
-    
+
     if (!canCreate) {
       this.log('warn', '[Content] GIF creation not supported on current page type, but proceeding anyway for testing');
       // For now, proceed even if canCreateGif returns false to allow functionality

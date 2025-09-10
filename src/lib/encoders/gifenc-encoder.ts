@@ -19,7 +19,7 @@ export class GifencEncoder extends AbstractEncoder {
     return 'gifenc';
   }
 
-  get supportedFormats(): Array<'gif' | 'webp' | 'mp4'> {
+  get supportedFormats(): Array<'gif' | 'mp4'> {
     return ['gif'];
   }
 
