@@ -158,7 +158,7 @@ export class ChromeGifStorage {
       const gifs = result[this.STORAGE_KEY] || [];
       console.debug('[ChromeGifStorage] Retrieved GIFs:', {
         count: gifs.length,
-        ids: gifs.map(g => g.id)
+        ids: gifs.map((g: StoredGif) => g.id)
       });
       return gifs;
     } catch (error) {

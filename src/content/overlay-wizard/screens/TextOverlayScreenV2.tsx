@@ -88,7 +88,6 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
       if (ctx) {
         // Calculate the midpoint of the selected range
         const midTime = startTime + (endTime - startTime) / 2;
-        `);
         
         // Store original time to restore later
         const originalTime = videoElement.currentTime;

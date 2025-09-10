@@ -247,10 +247,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
           )}
 
           {currentScreen === 'success' && (
-            <>
-              {
-              })}
-              <SuccessScreen
+            <SuccessScreen
                 onDownload={() => {
                   // Handle download - this would trigger download from saved GIF
                   if (data.gifDataUrl) {
@@ -269,7 +266,6 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
                 gifDataUrl={data.gifDataUrl}
                 gifMetadata={data.gifMetadata}
               />
-            </>
           )}
         </div>
       </div>

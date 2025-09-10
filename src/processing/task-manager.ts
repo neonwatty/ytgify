@@ -566,7 +566,7 @@ export class TaskManager {
     }
 
     if (tasksToDelete.length > 0) {
-      
+      // Tasks have been removed from the queue
     }
   }
 

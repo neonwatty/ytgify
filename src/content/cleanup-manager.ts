@@ -223,7 +223,7 @@ export class CleanupManager {
       
       await this.runCleanup();
     } else {
-      
+      // No cleanup needed at this time
     }
   }
 
@@ -395,7 +395,7 @@ export class CleanupManager {
         console.error(`[CleanupManager] Failed task: ${r.task}`, r.error);
       });
     } else {
-      
+      // No cleanup needed at this time
     }
   }
 

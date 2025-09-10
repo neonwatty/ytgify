@@ -311,7 +311,7 @@ export class BlobManager {
       try {
         const isPersisted = await navigator.storage.persist();
         if (isPersisted) {
-          
+          // Storage successfully persisted
         }
       } catch (error) {
         console.warn('Failed to persist storage:', error);
