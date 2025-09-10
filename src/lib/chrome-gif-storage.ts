@@ -87,6 +87,7 @@ export class ChromeGifStorage {
 
       // Verify it was saved
       const verification = await chrome.storage.local.get(this.STORAGE_KEY);
+      console.debug('[ChromeGifStorage] Save verification:', { count: verification[this.STORAGE_KEY]?.length });
       
     } catch (error) {
       console.error('[ChromeGifStorage] Failed to save to chrome.storage.local:', error);

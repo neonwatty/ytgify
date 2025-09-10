@@ -327,7 +327,7 @@ export class CleanupManager {
   unregisterCleanupTask(taskId: string): boolean {
     const removed = this.cleanupTasks.delete(taskId);
     if (removed) {
-      
+      // Task successfully removed
     }
     return removed;
   }
