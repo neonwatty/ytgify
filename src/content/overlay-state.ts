@@ -384,10 +384,8 @@ export class OverlayStateManager {
   debug(): void {
     console.group('Overlay State Debug');
     console.log('Current State:', this.state);
-    console.log('Elements:', this.elements);
-    console.log('Registered Listeners:', Object.fromEntries(
-      Array.from(this.listeners.entries()).map(([key, listeners]) => [key, listeners.length])
-    ));
+    console.log('Listeners:', Object.entries(this.listeners)
+      .map(([key, listeners]) => [key, listeners.length]));
     console.groupEnd();
   }
 }

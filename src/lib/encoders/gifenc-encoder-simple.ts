@@ -13,7 +13,7 @@ export class GifencEncoderSimple extends BaseEncoder {
   constructor(options: EncoderOptions) {
     super(options);
     if (this.options.debug) {
-      console.log('[GifencEncoder] Initialized with options:', options);
+      
     }
   }
   
@@ -22,7 +22,7 @@ export class GifencEncoderSimple extends BaseEncoder {
     onProgress?: ProgressCallback
   ): Promise<EncoderResult> {
     if (this.options.debug) {
-      console.log(`[GifencEncoder] Starting encoding of ${frames.length} frames`);
+      
     }
     
     try {
@@ -80,7 +80,7 @@ export class GifencEncoderSimple extends BaseEncoder {
         });
         
         if (this.options.debug) {
-          console.log(`[GifencEncoder] Encoded frame ${i + 1}/${frames.length}`);
+          
         }
       }
       
@@ -99,7 +99,7 @@ export class GifencEncoderSimple extends BaseEncoder {
       const blob = new Blob([bytes], { type: 'image/gif' });
       
       if (this.options.debug) {
-        console.log(`[GifencEncoder] Encoding complete. Size: ${blob.size} bytes`);
+        
       }
       
       logger.info('[GifencEncoder] GIF encoding completed', {

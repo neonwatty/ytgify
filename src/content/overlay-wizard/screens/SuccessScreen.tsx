@@ -23,11 +23,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
   gifMetadata
 }) => {
   React.useEffect(() => {
-    console.log('[SuccessScreen] Rendered with:', {
-      hasGifDataUrl: !!gifDataUrl,
-      gifSize,
-      hasMetadata: !!gifMetadata
-    });
+    
   }, [gifDataUrl, gifSize, gifMetadata]);
   
   const formatSize = (bytes: number) => {

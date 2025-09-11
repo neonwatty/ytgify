@@ -330,7 +330,7 @@ export class GifEncoder {
     if (!this.gifInstance) return;
 
     this.gifInstance.on('start', () => {
-      console.log('GIF encoding started');
+      
     });
 
     this.gifInstance.on('progress', (progress: number) => {
@@ -340,7 +340,7 @@ export class GifEncoder {
     });
 
     this.gifInstance.on('abort', () => {
-      console.log('GIF encoding aborted');
+      
     });
 
     // Monitor for abort signal

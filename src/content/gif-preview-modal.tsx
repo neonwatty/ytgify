@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 interface GifPreviewModalProps {
   gifDataUrl: string;
@@ -32,6 +32,11 @@ export const GifPreviewModal: React.FC<GifPreviewModalProps> = ({
   const animationRef = useRef<number>();
   const autoCloseTimerRef = useRef<NodeJS.Timeout>();
 
+  const handleClose = useCallback(() => {
+    setIsVisible(false);
+    setTimeout(onClose, 300); // Wait for fade out
+  }, [onClose]);
+
   useEffect(() => {
     // Fade in animation
     setTimeout(() => setIsVisible(true), 10);
@@ -49,12 +54,7 @@ export const GifPreviewModal: React.FC<GifPreviewModalProps> = ({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, []);
-
-  const handleClose = () => {
-    setIsVisible(false);
-    setTimeout(onClose, 300); // Wait for fade out
-  };
+  }, [handleClose]);
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';

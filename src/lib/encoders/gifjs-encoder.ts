@@ -47,7 +47,7 @@ export class GifJsEncoder extends AbstractEncoder {
     return 'gif.js';
   }
 
-  get supportedFormats(): Array<'gif' | 'webp' | 'mp4'> {
+  get supportedFormats(): Array<'gif' | 'mp4'> {
     return ['gif'];
   }
 
@@ -212,7 +212,7 @@ export class GifJsEncoder extends AbstractEncoder {
     if (!this.gifInstance) return;
 
     this.gifInstance.on('start', () => {
-      console.log('gif.js encoding started');
+      
     });
 
     this.gifInstance.on('progress', (progress: number) => {
@@ -221,7 +221,7 @@ export class GifJsEncoder extends AbstractEncoder {
     });
 
     this.gifInstance.on('abort', () => {
-      console.log('gif.js encoding aborted');
+      
     });
 
     // Monitor for abort signal

@@ -308,7 +308,7 @@ export function estimateExportSizes(
  */
 export function recommendFormat(
   frames: ExtractedFrame[] | FrameExtractionResult,
-  requirements: {
+  _requirements: {
     maxFileSize?: number; // in bytes
     preferQuality?: boolean;
     needTransparency?: boolean;
@@ -322,9 +322,7 @@ export function recommendFormat(
   if (frameCount < 30) {
     return 'gif';
   }
-  
-  
-  
+
   // Default to GIF
   return 'gif';
 }

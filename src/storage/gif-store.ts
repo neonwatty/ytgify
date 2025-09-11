@@ -141,7 +141,7 @@ export class GifStore {
       if (migration.version > oldVersion) {
         try {
           migration.migrate(db, transaction, oldVersion);
-          console.log(`Migrated to version ${migration.version}`);
+          
         } catch (error) {
           console.error(`Migration to version ${migration.version} failed:`, error);
           throw error;
@@ -213,8 +213,7 @@ export class GifStore {
       if (backup.length > 0) {
         await this.restoreFromBackup(backup);
       }
-      
-      console.log('Database recovery completed successfully');
+
     } catch (error) {
       console.error('Database recovery failed:', error);
       throw new Error('Critical database failure - unable to recover');

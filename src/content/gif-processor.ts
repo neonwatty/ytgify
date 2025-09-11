@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 import { createError } from '@/lib/errors';
 import { SimpleEncoderFactory } from '@/lib/encoders/simple-encoder-factory';
 import { FrameData, EncoderOptions } from '@/lib/encoders/base-encoder';
+import { TextOverlay } from '@/types';
 
 export interface GifProcessingOptions {
   startTime: number;
@@ -11,6 +12,7 @@ export interface GifProcessingOptions {
   width?: number;
   height?: number;
   quality?: 'low' | 'medium' | 'high';
+  textOverlays?: TextOverlay[];
 }
 
 export interface GifProcessingResult {
@@ -116,11 +118,6 @@ export class ContentScriptGifProcessor {
     const frameCount = rawFrameCount; // No artificial limit
     const frameInterval = duration / frameCount;
 
-    console.log('[ContentScriptGifProcessor] Capturing frames', {
-      frameCount,
-      frameInterval,
-      dimensions: { width, height }
-    });
     logger.info('[ContentScriptGifProcessor] Capturing frames', {
       frameCount,
       frameInterval,
@@ -175,7 +172,13 @@ export class ContentScriptGifProcessor {
       
       // Export frame data for verification (in dev mode)
       if (typeof window !== 'undefined') {
-        const win = window as any;
+        const win = window as Window & { __DEBUG_CAPTURED_FRAMES?: Array<{
+          frameNumber: number;
+          videoTime: number;
+          width: number;
+          height: number;
+          dataUrl: string;
+        }> };
         if (!win.__DEBUG_CAPTURED_FRAMES) {
           win.__DEBUG_CAPTURED_FRAMES = [];
         }
@@ -194,7 +197,6 @@ export class ContentScriptGifProcessor {
       const captureProgress = Math.round(((i + 1) / frameCount) * 100);
       onProgress?.(captureProgress);
       
-      console.log(`[ContentScriptGifProcessor] Captured frame ${i + 1}/${frameCount} at time ${captureTime.toFixed(2)}s`);
       logger.debug(`[ContentScriptGifProcessor] Captured frame ${i + 1}/${frameCount}`);
     }
     
@@ -218,8 +220,6 @@ export class ContentScriptGifProcessor {
     const { frameRate = 10, quality = 'medium' } = options;
     
     try {
-      console.log(`[ContentScriptGifProcessor] Creating GIF encoder with new abstraction (${frames.length} frames)`);
-      
       // Create encoder options
       const encoderOptions: EncoderOptions = {
         width: frames[0].width,
@@ -232,13 +232,46 @@ export class ContentScriptGifProcessor {
       
       // Create GIF encoder using factory
       const encoder = SimpleEncoderFactory.createEncoder('gifenc', encoderOptions);
-      console.log('[ContentScriptGifProcessor] Encoder created successfully');
-      
+
       // Convert canvas frames to encoder format
       const frameData: FrameData[] = frames.map((canvas, index) => {
         const ctx = canvas.getContext('2d');
         if (!ctx) {
           throw new Error(`Failed to get context for frame ${index + 1}`);
+        }
+        
+        // Apply text overlays if specified
+        if (options.textOverlays && options.textOverlays.length > 0) {
+          options.textOverlays.forEach(overlay => {
+            ctx.save();
+            
+            // Set font properties
+            ctx.font = `${overlay.fontSize}px ${overlay.fontFamily}`;
+            ctx.fillStyle = overlay.color;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Calculate actual position (overlay.position is in percentage)
+            const x = (overlay.position.x / 100) * canvas.width;
+            const y = (overlay.position.y / 100) * canvas.height;
+            
+            // Add text stroke for better visibility
+            if (overlay.strokeColor) {
+              ctx.strokeStyle = overlay.strokeColor;
+              ctx.lineWidth = overlay.strokeWidth || 2;
+              ctx.strokeText(overlay.text, x, y);
+            } else {
+              // Default black stroke for better visibility
+              ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+              ctx.lineWidth = 2;
+              ctx.strokeText(overlay.text, x, y);
+            }
+            
+            // Draw the text
+            ctx.fillText(overlay.text, x, y);
+            
+            ctx.restore();
+          });
         }
         
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -248,21 +281,13 @@ export class ContentScriptGifProcessor {
           height: canvas.height
         };
       });
-      
-      console.log(`[ContentScriptGifProcessor] Prepared ${frameData.length} frames for encoding`);
-      
+
       // Encode frames with progress callback
       const result = await encoder.encode(frameData, (progress) => {
-        console.log(`[ContentScriptGifProcessor] Encoding progress: ${progress.percent}%`);
+        
         onProgress?.(progress.percent, progress.message);
       });
-      
-      console.log('[ContentScriptGifProcessor] Encoding complete!', {
-        size: result.size,
-        frameCount: result.frameCount,
-        duration: result.duration
-      });
-      
+
       logger.info('[ContentScriptGifProcessor] GIF encoding finished with gifenc', { 
         size: result.size,
         frameCount: result.frameCount,
@@ -282,11 +307,11 @@ export class ContentScriptGifProcessor {
   /**
    * Save GIF to IndexedDB
    */
-  public async saveGifToStorage(blob: Blob, metadata: any): Promise<string> {
-    console.log('[GifProcessor] saveGifToStorage called', { blobSize: blob.size, metadata });
+  public async saveGifToStorage(blob: Blob, metadata: Record<string, unknown>): Promise<string> {
+    
     return new Promise((resolve, reject) => {
       const dbName = 'YouTubeGifStore';
-      console.log('[GifProcessor] Opening database:', dbName);
+      
       const request = indexedDB.open(dbName, 3);
 
       request.onerror = () => {
@@ -321,9 +346,8 @@ export class ContentScriptGifProcessor {
         const addRequest = store.add(gifData);
 
         addRequest.onsuccess = () => {
-          console.log('[GifProcessor] GIF successfully saved to IndexedDB', { id: metadata.id });
-          logger.info('[ContentScriptGifProcessor] GIF saved to IndexedDB', { id: metadata.id });
-          resolve(metadata.id);
+          logger.info('[ContentScriptGifProcessor] GIF saved to IndexedDB', { id: (metadata as { id: string }).id });
+          resolve((metadata as { id: string }).id);
         };
 
         addRequest.onerror = () => {

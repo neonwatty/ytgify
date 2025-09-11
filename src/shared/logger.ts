@@ -143,7 +143,7 @@ export class Logger {
     }
   }
 
-  private doLog(level: LogLevel, message: string, ...args: any[]): void {
+  private doLog(level: LogLevel, message: string, ...args: unknown[]): void {
     if (!this.shouldLog(level)) {
       return;
     }
@@ -174,19 +174,19 @@ export class Logger {
     }
   }
 
-  debug(message: string, ...args: any[]): void {
+  debug(message: string, ...args: unknown[]): void {
     this.doLog(LogLevel.DEBUG, message, ...args);
   }
 
-  info(message: string, ...args: any[]): void {
+  info(message: string, ...args: unknown[]): void {
     this.doLog(LogLevel.INFO, message, ...args);
   }
 
-  warn(message: string, ...args: any[]): void {
+  warn(message: string, ...args: unknown[]): void {
     this.doLog(LogLevel.WARN, message, ...args);
   }
 
-  error(message: string, ...args: any[]): void {
+  error(message: string, ...args: unknown[]): void {
     this.doLog(LogLevel.ERROR, message, ...args);
   }
 

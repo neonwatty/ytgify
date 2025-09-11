@@ -10,7 +10,7 @@ module.exports = (env, argv) => {
     entry: {
       background: './src/background/index.ts',
       content: './src/content/index.ts',
-      popup: './src/popup/index.tsx',
+      popup: './src/popup/index.tsx', // Re-enabled popup for better UX
     },
     output: {
       path: path.resolve(__dirname, 'dist'),
@@ -49,8 +49,9 @@ module.exports = (env, argv) => {
       new MiniCssExtractPlugin({
         filename: '[name].css',
       }),
+      // Re-enabled HtmlWebpackPlugin for popup
       new HtmlWebpackPlugin({
-        template: './src/popup/index.html',
+        template: './popup.html',
         filename: 'popup.html',
         chunks: ['popup'],
       }),

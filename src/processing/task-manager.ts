@@ -566,7 +566,7 @@ export class TaskManager {
     }
 
     if (tasksToDelete.length > 0) {
-      console.log(`Force cleaned up ${tasksToDelete.length} completed tasks`);
+      // Tasks have been removed from the queue
     }
   }
 

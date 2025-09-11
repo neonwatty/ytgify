@@ -32,18 +32,23 @@ export class ChromeGifStorage {
     description?: string;
     gifDataUrl: string;
     thumbnailDataUrl?: string;
-    metadata: any;
+    metadata: {
+      width: number;
+      height: number;
+      duration: number;
+      frameRate: number;
+      fileSize: number;
+      createdAt: Date;
+      lastModified?: Date;
+      youtubeUrl?: string;
+      startTime?: number;
+      endTime?: number;
+      editorVersion?: number;
+      originalGifId?: string;
+    };
     tags?: string[];
   }): Promise<void> {
-    console.log('[ChromeGifStorage] Saving GIF from data URL:', {
-      id: gif.id,
-      title: gif.title,
-      dataUrlLength: gif.gifDataUrl.length,
-      hasChrome: typeof chrome !== 'undefined',
-      hasStorage: typeof chrome !== 'undefined' && !!chrome.storage,
-      hasLocal: typeof chrome !== 'undefined' && !!chrome.storage?.local
-    });
-    
+
     // Validate chrome.storage is available
     if (!chrome?.storage?.local) {
       console.error('[ChromeGifStorage] chrome.storage.local is not available!');
@@ -79,18 +84,11 @@ export class ChromeGifStorage {
     // Save to chrome.storage
     try {
       await chrome.storage.local.set({ [this.STORAGE_KEY]: existing });
-      console.log('[ChromeGifStorage] GIF saved successfully to chrome.storage.local', {
-        storageKey: this.STORAGE_KEY,
-        totalGifs: existing.length,
-        firstGifId: existing[0]?.id
-      });
-      
+
       // Verify it was saved
       const verification = await chrome.storage.local.get(this.STORAGE_KEY);
-      console.log('[ChromeGifStorage] Verification after save:', {
-        hasData: !!verification[this.STORAGE_KEY],
-        count: verification[this.STORAGE_KEY]?.length || 0
-      });
+      console.debug('[ChromeGifStorage] Save verification:', { count: verification[this.STORAGE_KEY]?.length });
+      
     } catch (error) {
       console.error('[ChromeGifStorage] Failed to save to chrome.storage.local:', error);
       throw error;
@@ -103,17 +101,23 @@ export class ChromeGifStorage {
     description?: string;
     blob: Blob;
     thumbnailBlob?: Blob;
-    metadata: any;
+    metadata: {
+      width: number;
+      height: number;
+      duration: number;
+      frameRate: number;
+      fileSize: number;
+      createdAt: Date;
+      lastModified?: Date;
+      youtubeUrl?: string;
+      startTime?: number;
+      endTime?: number;
+      editorVersion?: number;
+      originalGifId?: string;
+    };
     tags?: string[];
   }): Promise<void> {
-    console.log('[ChromeGifStorage] Saving GIF:', {
-      id: gif.id,
-      title: gif.title,
-      hasBlob: !!gif.blob,
-      blobType: gif.blob ? gif.blob.constructor.name : 'undefined',
-      blobSize: gif.blob ? gif.blob.size : 0
-    });
-    
+
     // Convert blobs to data URLs for storage
     const gifDataUrl = await this.blobToDataUrl(gif.blob);
     const thumbnailDataUrl = gif.thumbnailBlob ? await this.blobToDataUrl(gif.thumbnailBlob) : undefined;
@@ -149,11 +153,10 @@ export class ChromeGifStorage {
   }
 
   async getAllGifs(): Promise<StoredGif[]> {
-    console.log('[ChromeGifStorage] Getting all GIFs from storage');
     try {
       const result = await chrome.storage.local.get(this.STORAGE_KEY);
       const gifs = result[this.STORAGE_KEY] || [];
-      console.log('[ChromeGifStorage] Retrieved GIFs:', {
+      console.debug('[ChromeGifStorage] Retrieved GIFs:', {
         count: gifs.length,
         ids: gifs.map((g: StoredGif) => g.id)
       });
@@ -180,7 +183,28 @@ export class ChromeGifStorage {
   }
 
   // Convert stored GIF back to the format expected by components
-  async convertToDisplayFormat(gif: StoredGif): Promise<any> {
+  async convertToDisplayFormat(gif: StoredGif): Promise<{
+    id: string;
+    title: string;
+    description?: string;
+    gifBlob: Blob;
+    thumbnailBlob?: Blob;
+    metadata: {
+      width: number;
+      height: number;
+      duration: number;
+      frameRate: number;
+      fileSize: number;
+      createdAt: Date;
+      lastModified?: Date;
+      youtubeUrl?: string;
+      startTime?: number;
+      endTime?: number;
+      editorVersion?: number;
+      originalGifId?: string;
+    };
+    tags?: string[];
+  }> {
     return {
       id: gif.id,
       title: gif.title,
@@ -189,11 +213,9 @@ export class ChromeGifStorage {
       thumbnailBlob: gif.thumbnailDataUrl ? await this.dataUrlToBlob(gif.thumbnailDataUrl) : undefined,
       metadata: {
         ...gif.metadata,
-        title: gif.title, // Add title to metadata for compatibility
         createdAt: new Date(gif.metadata.createdAt)
       },
-      tags: gif.tags,
-      createdAt: gif.metadata.createdAt
+      tags: gif.tags
     };
   }
 

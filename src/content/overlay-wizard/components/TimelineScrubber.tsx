@@ -27,12 +27,40 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
   const [isDragging, setIsDragging] = useState<'start' | 'end' | 'range' | null>(null);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [activePreset, setActivePreset] = useState<'3s' | '5s' | '10s' | null>(null);
   
   const dragStartRef = useRef<{ x: number; startTime: number; endTime: number }>({
     x: 0,
     startTime: 0,
     endTime: 0
   });
+
+  // Check if current selection matches a preset
+  const detectActivePreset = useCallback(() => {
+    const duration = endTime - startTime;
+    const tolerance = 0.1; // 100ms tolerance
+    
+    // Check for 3s preset
+    if (Math.abs(duration - 3) < tolerance) {
+      return '3s';
+    }
+    // Check for 5s preset
+    if (Math.abs(duration - 5) < tolerance) {
+      return '5s';
+    }
+    // Check for 10s preset
+    if (Math.abs(duration - 10) < tolerance) {
+      return '10s';
+    }
+    
+    return null;
+  }, [startTime, endTime, currentTime]);
+
+  // Update active preset when selection changes
+  useEffect(() => {
+    const preset = detectActivePreset();
+    setActivePreset(preset);
+  }, [detectActivePreset]);
 
   // Convert time to pixel position
   const timeToPosition = useCallback((time: number): number => {
@@ -256,49 +284,34 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
       {/* Quick duration presets */}
       <div className="ytgif-duration-presets">
         <button 
-          className="ytgif-preset-btn"
+          className={`ytgif-preset-btn ${activePreset === '3s' ? 'ytgif-preset-btn--active' : ''}`}
           onClick={() => {
-            const center = (startTime + endTime) / 2;
-            const newStart = Math.max(0, center - 1.5);
-            const newEnd = Math.min(duration, center + 1.5);
-            onRangeChange(newStart, newEnd);
+            const newEnd = Math.min(duration, startTime + 3);
+            onRangeChange(startTime, newEnd);
+            setActivePreset('3s');
           }}
         >
           3s
         </button>
         <button 
-          className="ytgif-preset-btn"
+          className={`ytgif-preset-btn ${activePreset === '5s' ? 'ytgif-preset-btn--active' : ''}`}
           onClick={() => {
-            const center = (startTime + endTime) / 2;
-            const newStart = Math.max(0, center - 2.5);
-            const newEnd = Math.min(duration, center + 2.5);
-            onRangeChange(newStart, newEnd);
+            const newEnd = Math.min(duration, startTime + 5);
+            onRangeChange(startTime, newEnd);
+            setActivePreset('5s');
           }}
         >
           5s
         </button>
         <button 
-          className="ytgif-preset-btn"
+          className={`ytgif-preset-btn ${activePreset === '10s' ? 'ytgif-preset-btn--active' : ''}`}
           onClick={() => {
-            const center = (startTime + endTime) / 2;
-            const newStart = Math.max(0, center - 5);
-            const newEnd = Math.min(duration, center + 5);
-            onRangeChange(newStart, newEnd);
+            const newEnd = Math.min(duration, startTime + 10);
+            onRangeChange(startTime, newEnd);
+            setActivePreset('10s');
           }}
         >
           10s
-        </button>
-        <button 
-          className="ytgif-preset-btn"
-          onClick={() => {
-            const center = currentTime;
-            const newStart = Math.max(0, center - 2.5);
-            const newEnd = Math.min(duration, center + 2.5);
-            onRangeChange(newStart, newEnd);
-            if (onSeek) onSeek(center);
-          }}
-        >
-          At Current
         </button>
       </div>
     </div>

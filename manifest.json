@@ -3,10 +3,13 @@
   "name": "YouTube GIF Maker",
   "version": "1.0.0",
   "description": "Create GIFs directly from YouTube videos with an intuitive visual interface",
+  "author": "Your Name",
+  "homepage_url": "https://github.com/neonwatty/ytgiphy",
   "permissions": [
     "storage",
     "tabs",
     "activeTab",
+    "scripting",
     "clipboardWrite",
     "downloads"
   ],
@@ -37,6 +40,16 @@
       "32": "icons/icon32.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
+    },
+    "default_title": "Click to create GIF (or press Ctrl+Shift+G)"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+G",
+        "mac": "Command+Shift+G"
+      },
+      "description": "Open GIF creation wizard"
     }
   },
   "icons": {

@@ -1,12 +1,17 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { TextOverlay } from '@/types';
 
 interface VideoPreviewProps {
-  videoElement: HTMLVideoElement;
+  videoElement?: HTMLVideoElement;
   startTime: number;
   endTime: number;
   currentVideoTime?: number;
+  currentPreviewTime?: number;
   isPlaying?: boolean;
   onPlayStateChange?: (playing: boolean) => void;
+  onSeek?: (time: number) => void;
+  showTimeControls?: boolean;
+  overlays?: TextOverlay[];
   width?: number;
   height?: number;
 }
@@ -16,8 +21,12 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
   startTime,
   endTime,
   currentVideoTime,
+  currentPreviewTime: externalPreviewTime,
   isPlaying = false,
   onPlayStateChange,
+  onSeek,
+  showTimeControls = false,
+  overlays = [],
   width = 480,
   height = 270
 }) => {
@@ -27,6 +36,35 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
   const [isLooping, setIsLooping] = useState(false);
   const savedVideoStateRef = useRef<{ currentTime: number; paused: boolean } | null>(null);
   
+  // Draw text overlays on canvas
+  const drawTextOverlays = useCallback((ctx: CanvasRenderingContext2D) => {
+    if (!overlays || overlays.length === 0) return;
+    
+    overlays.forEach(overlay => {
+      ctx.save();
+      
+      // Set text properties
+      ctx.font = `${overlay.fontSize}px ${overlay.fontFamily}`;
+      ctx.fillStyle = overlay.color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // Calculate position
+      const x = (overlay.position.x / 100) * width;
+      const y = (overlay.position.y / 100) * height;
+      
+      // Draw text with optional stroke
+      if (overlay.strokeColor && overlay.strokeWidth) {
+        ctx.strokeStyle = overlay.strokeColor;
+        ctx.lineWidth = overlay.strokeWidth;
+        ctx.strokeText(overlay.text, x, y);
+      }
+      
+      ctx.fillText(overlay.text, x, y);
+      ctx.restore();
+    });
+  }, [overlays, width, height]);
+
   // Draw current frame to canvas
   const drawFrame = useCallback(() => {
     if (!canvasRef.current || !videoElement) return;
@@ -37,10 +75,13 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
     try {
       // Draw directly from the main video element
       ctx.drawImage(videoElement, 0, 0, width, height);
+      
+      // Draw text overlays on top
+      drawTextOverlays(ctx);
     } catch (error) {
       console.error('[VideoPreview] Error drawing frame:', error);
     }
-  }, [videoElement, width, height]);
+  }, [videoElement, width, height, drawTextOverlays]);
 
   // Seek video to specific time and draw frame
   const seekAndDraw = useCallback(async (time: number) => {

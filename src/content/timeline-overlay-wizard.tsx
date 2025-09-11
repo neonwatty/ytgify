@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { TimelineSelection } from '@/types';
+import React, { useCallback } from 'react';
+import { TimelineSelection, TextOverlay, GifMetadata } from '@/types';
 import OverlayWizard from './overlay-wizard/OverlayWizard';
 
 export interface TimelineOverlayWizardProps {
@@ -9,7 +9,7 @@ export interface TimelineOverlayWizardProps {
   videoElement?: HTMLVideoElement;
   onSelectionChange: (selection: TimelineSelection) => void;
   onClose: () => void;
-  onCreateGif: () => void;
+  onCreateGif: (selection: TimelineSelection, textOverlays?: TextOverlay[]) => void;
   onSeekTo?: (time: number) => void;
   isCreating?: boolean;
   processingStatus?: {
@@ -20,7 +20,7 @@ export interface TimelineOverlayWizardProps {
   gifData?: {
     dataUrl: string;
     size: number;
-    metadata: any;
+    metadata: GifMetadata;
   };
 }
 
@@ -37,16 +37,14 @@ export const TimelineOverlayWizard: React.FC<TimelineOverlayWizardProps> = ({
   processingStatus,
   gifData
 }) => {
-  const [selection, setSelection] = useState<TimelineSelection | null>(null);
-
   const handleSelectionChange = useCallback((newSelection: TimelineSelection) => {
-    setSelection(newSelection);
     onSelectionChange(newSelection);
   }, [onSelectionChange]);
 
-  const handleCreateGif = useCallback((finalSelection: TimelineSelection) => {
+  const handleCreateGif = useCallback((finalSelection: TimelineSelection, textOverlays?: TextOverlay[]) => {
+    
     handleSelectionChange(finalSelection);
-    onCreateGif();
+    onCreateGif(finalSelection, textOverlays);
   }, [handleSelectionChange, onCreateGif]);
 
   return (

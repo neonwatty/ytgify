@@ -111,6 +111,10 @@ export class YouTubePlayerIntegration {
     this.button = null;
   }
 
+  public hasButton(): boolean {
+    return this.button !== null && this.button.parentNode !== null;
+  }
+
   public setButtonState(isActive: boolean): void {
     if (this.isActive !== isActive) {
       this.isActive = isActive;
@@ -343,11 +347,8 @@ export class YouTubePlayerIntegration {
 
   // Setup methods
   private setupResizeObserver(): void {
-    this.resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        this.handlePlayerSizeChange();
-        break;
-      }
+    this.resizeObserver = new ResizeObserver(() => {
+      this.handlePlayerSizeChange();
     });
 
     // Start observing when player is found

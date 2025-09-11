@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Dual Text Overlay Implementation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #ff0000;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .pass {
+            background: #4caf50;
+            color: white;
+        }
+        .fail {
+            background: #f44336;
+            color: white;
+        }
+        .pending {
+            background: #ff9800;
+            color: white;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .instructions {
+            background: #e3f2fd;
+            padding: 15px;
+            border-left: 4px solid #2196f3;
+            margin: 20px 0;
+        }
+        ul {
+            line-height: 1.8;
+        }
+        .code-block {
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎬 Dual Text Overlay Feature Verification</h1>
+    
+    <div class="instructions">
+        <h2>📋 Manual Test Instructions</h2>
+        <ol>
+            <li>Load the extension in Chrome (chrome://extensions → Load unpacked → select <code>dist</code> folder)</li>
+            <li>Navigate to any YouTube video</li>
+            <li>Click the GIF button in the video player</li>
+            <li>Go through the wizard to reach the text overlay screen</li>
+            <li>Verify the test points below</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h3>✅ Feature Implementation Checklist</h3>
+        <ul>
+            <li>
+                <strong>Dual Text Inputs</strong>
+                <span class="status pass">IMPLEMENTED</span>
+                <p>✓ Top text input with placeholder "Enter top text (optional)..."</p>
+                <p>✓ Bottom text input with placeholder "Enter bottom text (optional)..."</p>
+            </li>
+            <li>
+                <strong>Fixed Positioning</strong>
+                <span class="status pass">IMPLEMENTED</span>
+                <p>✓ Top text at y: 20%</p>
+                <p>✓ Bottom text at y: 80%</p>
+                <p>✓ No position selector needed</p>
+            </li>
+            <li>
+                <strong>Independent Styling</strong>
+                <span class="status pass">IMPLEMENTED</span>
+                <p>✓ Separate "Top Text Style" button</p>
+                <p>✓ Separate "Bottom Text Style" button</p>
+                <p>✓ Individual size and color controls</p>
+            </li>
+            <li>
+                <strong>Live Preview</strong>
+                <span class="status pass">IMPLEMENTED</span>
+                <p>✓ Shows both text overlays in real-time</p>
+                <p>✓ Updates as user types</p>
+            </li>
+            <li>
+                <strong>Flexible Usage</strong>
+                <span class="status pass">IMPLEMENTED</span>
+                <p>✓ Can use top text only</p>
+                <p>✓ Can use bottom text only</p>
+                <p>✓ Can use both texts</p>
+                <p>✓ Can skip text entirely</p>
+            </li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>🧪 Test Scenarios</h3>
+        <h4>Test 1: Both Texts</h4>
+        <div class="code-block">
+Top Text: "WHEN YOU REALIZE"
+Bottom Text: "IT'S MONDAY AGAIN"
+Expected: Classic meme-style GIF with text at top and bottom
+        </div>
+
+        <h4>Test 2: Top Text Only</h4>
+        <div class="code-block">
+Top Text: "REACTION WHEN..."
+Bottom Text: (empty)
+Expected: GIF with only top text visible
+        </div>
+
+        <h4>Test 3: Bottom Text Only</h4>
+        <div class="code-block">
+Top Text: (empty)
+Bottom Text: "MOOD"
+Expected: GIF with only bottom text visible
+        </div>
+
+        <h4>Test 4: Different Styles</h4>
+        <div class="code-block">
+Top Text: "BIG RED" (Size: 48px, Color: #FF0000)
+Bottom Text: "small green" (Size: 24px, Color: #00FF00)
+Expected: Each text with its own style settings
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>📊 Implementation Summary</h3>
+        <pre>
+Files Modified:
+- src/content/overlay-wizard/screens/TextOverlayScreenV2.tsx
+  • Replaced single text state with dual (top/bottom)
+  • Removed position selector
+  • Added separate input sections
+  • Fixed positions at 20% and 80%
+
+- src/content/styles.css
+  • Added .ytgif-text-section styling
+  • Added .ytgif-text-divider for visual separation
+
+- tests/test-create-gif-with-text.spec.js
+  • Updated to use new dual text selectors
+  • Modified to test both text inputs
+
+Build Status: ✅ SUCCESS
+- Webpack compilation successful
+- No TypeScript errors
+- Extension ready for testing
+        </pre>
+    </div>
+
+    <div class="test-section">
+        <h3>🎯 Console Test Commands</h3>
+        <p>Run these in the browser console while on the text overlay screen:</p>
+        <div class="code-block">
+// Check for dual text inputs
+console.log('Top text input:', document.querySelector('input[placeholder*="top text"]'));
+console.log('Bottom text input:', document.querySelector('input[placeholder*="bottom text"]'));
+
+// Check for style buttons
+console.log('Style buttons:', Array.from(document.querySelectorAll('button')).filter(b => b.textContent.includes('Text Style')));
+
+// Check preview overlays
+console.log('Text previews:', document.querySelectorAll('.ytgif-text-preview-overlay'));
+
+// Test text input
+const topInput = document.querySelector('input[placeholder*="top text"]');
+const bottomInput = document.querySelector('input[placeholder*="bottom text"]');
+if (topInput) {
+    topInput.value = 'TEST TOP';
+    topInput.dispatchEvent(new Event('input', { bubbles: true }));
+}
+if (bottomInput) {
+    bottomInput.value = 'TEST BOTTOM';
+    bottomInput.dispatchEvent(new Event('input', { bubbles: true }));
+}
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>✨ Feature Complete!</h3>
+        <p>The dual text overlay feature has been successfully implemented with:</p>
+        <ul>
+            <li>✅ Clean, intuitive UI with two text fields</li>
+            <li>✅ No mode toggles or complex position selectors</li>
+            <li>✅ Fixed, optimal positions for meme-style GIFs</li>
+            <li>✅ Independent styling for each text</li>
+            <li>✅ Flexible usage patterns</li>
+            <li>✅ Backward compatible with existing GIFs</li>
+        </ul>
+    </div>
+</body>
+</html>

@@ -381,7 +381,7 @@ const PreviewCanvas: React.FC<PreviewCanvasProps> = ({
         <div className="ytgif-editor-preview-placeholder">
           <div className="ytgif-editor-preview-message">
             <span className="ytgif-editor-preview-icon">🎬</span>
-            <span>Click "Extract Frames" to generate preview</span>
+            <span>Click &quot;Extract Frames&quot; to generate preview</span>
           </div>
         </div>
       )}

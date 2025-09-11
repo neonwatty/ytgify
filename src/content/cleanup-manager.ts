@@ -36,8 +36,7 @@ export class CleanupManager {
       name: 'Overlay State Cleanup',
       priority: 100,
       cleanup: async () => {
-        console.log('[CleanupManager] Running overlay cleanup');
-        
+
         // Deactivate overlay if active
         if (overlayStateManager.getMode() !== 'inactive') {
           await overlayStateManager.deactivate();
@@ -63,8 +62,7 @@ export class CleanupManager {
       name: 'Extension State Cleanup',
       priority: 90,
       cleanup: async () => {
-        console.log('[CleanupManager] Running extension state cleanup');
-        
+
         // Reset component states
         await extensionStateManager.updateComponentState('timeline', false);
         await extensionStateManager.updateComponentState('editor', false);
@@ -82,8 +80,7 @@ export class CleanupManager {
       name: 'DOM Element Cleanup',
       priority: 80,
       cleanup: () => {
-        console.log('[CleanupManager] Running DOM cleanup');
-        
+
         // Remove all extension-created elements
         const extensionElements = document.querySelectorAll('[id^="ytgif-"], [class*="ytgif-"]');
         extensionElements.forEach(element => {
@@ -108,8 +105,7 @@ export class CleanupManager {
       name: 'Event Listener Cleanup',
       priority: 70,
       cleanup: () => {
-        console.log('[CleanupManager] Running event listener cleanup');
-        
+
         // Note: Individual managers should handle their own listener cleanup
         // This is a backup to ensure no dangling listeners remain
         
@@ -124,8 +120,7 @@ export class CleanupManager {
       name: 'Temporary Storage Cleanup',
       priority: 10,
       cleanup: async () => {
-        console.log('[CleanupManager] Running storage cleanup');
-        
+
         try {
           // Clear any temporary data from session storage
           if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.session) {
@@ -188,7 +183,7 @@ export class CleanupManager {
       name: 'Navigation Listeners Cleanup',
       priority: 60,
       cleanup: () => {
-        console.log('[CleanupManager] Cleaning up navigation listeners');
+        
         urlObserver.disconnect();
         window.removeEventListener('popstate', popstateHandler);
       }
@@ -196,8 +191,7 @@ export class CleanupManager {
   }
 
   private handleNavigation(event: NavigationEvent): void {
-    console.log('[CleanupManager] Navigation detected:', event);
-    
+
     // Clear any existing timeout
     if (this.navigationTimeout) {
       clearTimeout(this.navigationTimeout);
@@ -226,10 +220,10 @@ export class CleanupManager {
     const needsCleanup = this.shouldCleanup(event.from, event.to);
     
     if (needsCleanup) {
-      console.log('[CleanupManager] Navigation requires cleanup');
+      
       await this.runCleanup();
     } else {
-      console.log('[CleanupManager] Navigation does not require cleanup');
+      // No cleanup needed at this time
     }
   }
 
@@ -327,13 +321,13 @@ export class CleanupManager {
     }
     
     this.cleanupTasks.set(task.id, task);
-    console.log(`[CleanupManager] Registered cleanup task: ${task.name}`);
+    
   }
 
   unregisterCleanupTask(taskId: string): boolean {
     const removed = this.cleanupTasks.delete(taskId);
     if (removed) {
-      console.log(`[CleanupManager] Unregistered cleanup task: ${taskId}`);
+      // Task successfully removed
     }
     return removed;
   }
@@ -358,7 +352,7 @@ export class CleanupManager {
   // Manual cleanup trigger
   async runCleanup(): Promise<void> {
     if (this.currentCleanupPromise) {
-      console.log('[CleanupManager] Cleanup already in progress, waiting...');
+      
       await this.currentCleanupPromise;
       return;
     }
@@ -370,12 +364,10 @@ export class CleanupManager {
 
   private async executeCleanup(): Promise<void> {
     if (this.isDestroyed) {
-      console.log('[CleanupManager] Skipping cleanup - manager is destroyed');
+      
       return;
     }
-    
-    console.log('[CleanupManager] Starting cleanup process...');
-    
+
     // Get tasks sorted by priority (highest first)
     const tasks = Array.from(this.cleanupTasks.values())
       .sort((a, b) => b.priority - a.priority);
@@ -384,7 +376,7 @@ export class CleanupManager {
     
     for (const task of tasks) {
       try {
-        console.log(`[CleanupManager] Running cleanup task: ${task.name}`);
+        
         await task.cleanup();
         results.push({ task: task.name, success: true });
       } catch (error) {
@@ -403,7 +395,7 @@ export class CleanupManager {
         console.error(`[CleanupManager] Failed task: ${r.task}`, r.error);
       });
     } else {
-      console.log(`[CleanupManager] Cleanup completed successfully: ${successful} tasks`);
+      // No cleanup needed at this time
     }
   }
 
@@ -434,8 +426,7 @@ export class CleanupManager {
     if (this.isDestroyed) {
       return;
     }
-    
-    console.log('[CleanupManager] Destroying cleanup manager...');
+
     this.isDestroyed = true;
     
     // Clear navigation timeout
@@ -459,20 +450,15 @@ export class CleanupManager {
     // Clear all registered tasks and listeners
     this.cleanupTasks.clear();
     this.navigationListeners = [];
-    
-    console.log('[CleanupManager] Cleanup manager destroyed');
+
   }
 
   // Debug helper
   debug(): void {
     console.group('Cleanup Manager Debug');
-    console.log('Is Destroyed:', this.isDestroyed);
-    console.log('Registered Tasks:', Array.from(this.cleanupTasks.values()).map(t => ({ id: t.id, name: t.name, priority: t.priority })));
-    console.log('Navigation Listeners:', this.navigationListeners.length);
-    console.log('Current Cleanup Promise:', this.currentCleanupPromise ? 'Running' : 'None');
-    console.log('Navigation Timeout:', this.navigationTimeout ? 'Set' : 'None');
-    console.log('Current URL:', window.location.href);
-    console.log('Current Page Type:', this.getPageTypeFromUrl(window.location.href));
+    console.log('Tasks:', Array.from(this.cleanupTasks.values())
+      .map(t => ({ id: t.id, name: t.name, priority: t.priority })));
+    console.log('Listeners:', this.navigationListeners.length);
     console.groupEnd();
   }
 }

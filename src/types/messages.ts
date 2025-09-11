@@ -134,6 +134,21 @@ export interface ErrorResponse extends BaseMessage {
   error: string;
 }
 
+export interface SuccessResponse extends BaseMessage {
+  type: 'SUCCESS_RESPONSE';
+  success: true;
+  data?: unknown;
+}
+
+export interface DownloadGifRequest extends BaseMessage {
+  type: 'DOWNLOAD_GIF';
+  data: {
+    gifId?: string;
+    url: string;
+    filename?: string;
+  };
+}
+
 export interface GetJobStatusRequest extends BaseMessage {
   type: 'GET_JOB_STATUS';
   data: {
@@ -228,6 +243,8 @@ export interface GifCreationComplete extends BaseMessage {
   data?: {
     gifBlob: Blob;
     thumbnailBlob: Blob;
+    gifDataUrl?: string;
+    thumbnailDataUrl?: string;
     metadata: Record<string, unknown>;
   };
   error?: string;
@@ -270,6 +287,17 @@ export interface SaveGifResponse extends BaseMessage {
   error?: string;
 }
 
+// Direct wizard activation from extension icon
+export interface ShowWizardDirectRequest extends BaseMessage {
+  type: 'SHOW_WIZARD_DIRECT';
+  data: {
+    triggeredBy: string;
+  };
+}
+
+// Import from frame-extractor for content script messages
+import type { ContentFrameExtractionRequest } from '../content/frame-extractor';
+
 // Union type for all possible messages
 export type ExtensionMessage = 
   | ExtractFramesRequest
@@ -280,10 +308,13 @@ export type ExtensionMessage =
   | GetVideoStateResponse
   | ShowTimelineRequest
   | HideTimelineRequest
+  | ShowWizardDirectRequest
   | TimelineSelectionUpdate
   | OpenEditorRequest
   | LogMessage
   | ErrorResponse
+  | SuccessResponse
+  | DownloadGifRequest
   | GetJobStatusRequest
   | GetJobStatusResponse
   | CancelJobRequest
@@ -293,7 +324,8 @@ export type ExtensionMessage =
   | VideoDataResponse
   | GifCreationComplete
   | SaveGifRequest
-  | SaveGifResponse;
+  | SaveGifResponse
+  | ContentFrameExtractionRequest;
 
 // Type guards for message validation
 export function isExtractFramesRequest(message: BaseMessage): message is ExtractFramesRequest {
@@ -326,6 +358,14 @@ export function isOpenEditorRequest(message: BaseMessage): message is OpenEditor
 
 export function isLogMessage(message: BaseMessage): message is LogMessage {
   return message.type === 'LOG';
+}
+
+export function isDownloadGifRequest(message: BaseMessage): message is DownloadGifRequest {
+  return message.type === 'DOWNLOAD_GIF';
+}
+
+export function isGetJobStatusRequest(message: BaseMessage): message is GetJobStatusRequest {
+  return message.type === 'GET_JOB_STATUS';
 }
 
 // Response helper function

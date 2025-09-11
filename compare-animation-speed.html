@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GIF vs WebP Animation Speed Comparison</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        
+        .comparison {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 40px 0;
+        }
+        
+        .item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .item h2 {
+            margin-bottom: 15px;
+            color: #555;
+        }
+        
+        .item img {
+            max-width: 400px;
+            height: auto;
+            border: 1px solid #ddd;
+            display: block;
+        }
+        
+        .stats {
+            margin-top: 15px;
+            text-align: left;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .stats strong {
+            color: #333;
+        }
+        
+        .timer {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-size: 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        .frame-counter {
+            font-size: 18px;
+            color: #28a745;
+            margin-top: 10px;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px auto;
+            max-width: 800px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎬 GIF vs WebP Animation Speed Comparison</h1>
+    
+    <div class="warning">
+        <strong>⚠️ Note:</strong> Both animations have 60 frames with 700ms delay per frame (42 seconds total).
+        If they appear to play at different speeds, it may be due to browser rendering differences.
+    </div>
+    
+    <div class="controls">
+        <button onclick="reloadImages()">🔄 Reload Animations</button>
+        <button onclick="startTimer()">⏱️ Start Timer</button>
+        <button onclick="stopTimer()">⏹️ Stop Timer</button>
+    </div>
+    
+    <div class="comparison">
+        <div class="item">
+            <h2>Original GIF</h2>
+            <img id="gif-img" src="tests/downloads/test-gif-with-attempt-text-1757346656916.gif" alt="Original GIF">
+            <div class="timer" id="gif-timer">0.0s</div>
+            <div class="frame-counter" id="gif-frames">Frame: ~1/60</div>
+            <div class="stats">
+                <p><strong>File Size:</strong> 3,406.8 KB</p>
+                <p><strong>Frames:</strong> 60</p>
+                <p><strong>Frame Delay:</strong> 700ms</p>
+                <p><strong>Total Duration:</strong> 42s</p>
+                <p><strong>Expected FPS:</strong> 1.43</p>
+            </div>
+        </div>
+        
+        <div class="item">
+            <h2>Animated WebP</h2>
+            <img id="webp-img" src="tests/webp-outputs/animated-output.webp" alt="Animated WebP">
+            <div class="timer" id="webp-timer">0.0s</div>
+            <div class="frame-counter" id="webp-frames">Frame: ~1/60</div>
+            <div class="stats">
+                <p><strong>File Size:</strong> 626.6 KB</p>
+                <p><strong>Frames:</strong> 60</p>
+                <p><strong>Frame Delay:</strong> 700ms</p>
+                <p><strong>Total Duration:</strong> 42s</p>
+                <p><strong>Expected FPS:</strong> 1.43</p>
+            </div>
+        </div>
+    </div>
+    
+    <div style="text-align: center; margin-top: 40px;">
+        <h3>🔍 Observations</h3>
+        <p id="observations">Watch both animations. Do they appear synchronized?</p>
+    </div>
+    
+    <script>
+        let timerInterval = null;
+        let startTime = null;
+        
+        function reloadImages() {
+            // Force reload by adding timestamp
+            const timestamp = new Date().getTime();
+            document.getElementById('gif-img').src = 'tests/downloads/test-gif-with-attempt-text-1757346656916.gif?' + timestamp;
+            document.getElementById('webp-img').src = 'tests/webp-outputs/animated-output.webp?' + timestamp;
+            
+            // Reset timers
+            document.getElementById('gif-timer').textContent = '0.0s';
+            document.getElementById('webp-timer').textContent = '0.0s';
+            document.getElementById('gif-frames').textContent = 'Frame: ~1/60';
+            document.getElementById('webp-frames').textContent = 'Frame: ~1/60';
+            
+            startTimer();
+        }
+        
+        function startTimer() {
+            stopTimer();
+            startTime = Date.now();
+            
+            timerInterval = setInterval(() => {
+                const elapsed = (Date.now() - startTime) / 1000;
+                const displayTime = elapsed.toFixed(1) + 's';
+                
+                document.getElementById('gif-timer').textContent = displayTime;
+                document.getElementById('webp-timer').textContent = displayTime;
+                
+                // Calculate approximate frame
+                const frameNum = Math.floor(elapsed / 0.7) + 1;
+                const frameDisplay = `Frame: ~${Math.min(frameNum, 60)}/60`;
+                
+                document.getElementById('gif-frames').textContent = frameDisplay;
+                document.getElementById('webp-frames').textContent = frameDisplay;
+                
+                // Check if complete
+                if (elapsed >= 42) {
+                    document.getElementById('observations').innerHTML = 
+                        '<strong>Animation cycle complete!</strong> Did they finish at the same time?';
+                } else if (elapsed >= 21) {
+                    document.getElementById('observations').innerHTML = 
+                        'Halfway through... Are they still synchronized?';
+                }
+                
+            }, 100);
+        }
+        
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+        
+        // Auto-start timer on load
+        window.addEventListener('load', () => {
+            setTimeout(startTimer, 1000);
+        });
+        
+        // Detect if browser might have WebP animation issues
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 1;
+        const supportsWebP = canvas.toDataURL('image/webp').indexOf('image/webp') === 5;
+        
+        if (!supportsWebP) {
+            document.getElementById('observations').innerHTML += 
+                '<br><br>⚠️ Your browser may have limited WebP animation support.';
+        }
+        
+        // Log actual playback info if possible
+        console.log('Testing animation playback...');
+        console.log('GIF expected: 60 frames @ 700ms = 42 seconds');
+        console.log('WebP expected: 60 frames @ 700ms = 42 seconds');
+    </script>
+</body>
+</html>

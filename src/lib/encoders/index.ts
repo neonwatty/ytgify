@@ -6,7 +6,6 @@
 export { AbstractEncoder } from './abstract-encoder';
 export { GifencEncoder } from './gifenc-encoder';
 export { GifJsEncoder } from './gifjs-encoder';
-export { WebPEncoder, isWebPSupported, convertGifFrameToWebP } from './webp-encoder';
 export { 
   EncoderFactory, 
   encoderFactory, 
@@ -59,8 +58,6 @@ export async function encodeFrames(
     fallback: 'gif.js',
     format: preferences?.format || 'gif'
   });
-
-  console.log(`Using ${selection.encoder.name} encoder: ${selection.reason}`);
 
   return selection.encoder.encode(
     frames,

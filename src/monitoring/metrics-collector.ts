@@ -410,7 +410,7 @@ export class MetricsCollector {
         });
       }
     } catch (error) {
-      console.debug('[MetricsCollector] Analytics send failed:', error);
+      // Silently ignore metrics collection errors
     }
   }
 

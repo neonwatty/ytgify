@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Extension WebP</title>
+</head>
+<body>
+    <h1>Extension WebP Test</h1>
+    <p>Steps to test:</p>
+    <ol>
+        <li>Load the built extension from <code>dist/</code> directory in Chrome</li>
+        <li>Go to any YouTube video</li>
+        <li>Click the GIF button in the player controls</li>
+        <li>Select WebP format in the format selection screen</li>
+        <li>Create the animated WebP and check console for errors</li>
+    </ol>
+    
+    <h2>Test node-webpmux directly</h2>
+    <button id="testWebP">Test WebP Creation</button>
+    <div id="result"></div>
+    
+    <script type="module">
+        // Test if node-webpmux works in browser environment
+        document.getElementById('testWebP').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('result');
+            try {
+                // Try to import and use node-webpmux
+                const WebP = await import('./node_modules/node-webpmux/webp.js');
+                resultDiv.innerHTML = '<p style="color: green;">✓ node-webpmux imported successfully</p>';
+                
+                // Try to initialize the library
+                await WebP.Image.initLib();
+                resultDiv.innerHTML += '<p style="color: green;">✓ WebP.Image.initLib() succeeded</p>';
+                
+                // Try to create a simple WebP
+                const testBuffer = await WebP.Image.save(null, {
+                    width: 100,
+                    height: 100,
+                    frames: []
+                });
+                
+                if (testBuffer) {
+                    resultDiv.innerHTML += '<p style="color: green;">✓ WebP.Image.save() succeeded</p>';
+                } else {
+                    resultDiv.innerHTML += '<p style="color: orange;">⚠ WebP.Image.save() returned null</p>';
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">✗ Error: ${error.message}</p>`;
+                console.error('WebP test error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
