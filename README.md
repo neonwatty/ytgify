@@ -2,6 +2,8 @@
 
 A Chrome extension that enables users to create GIFs directly from YouTube videos with an intuitive visual interface integrated into the YouTube player.
 
+https://github.com/user-attachments/assets/dea017db-ec8d-41f7-9e9c-a1048cf5ae4c
+
 ## Features
 
 - **Integrated GIF button** in YouTube's video player control bar
