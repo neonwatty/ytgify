@@ -1,0 +1,47 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="neonGlow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Circular solid black background -->
+  <circle cx="64" cy="64" r="45" fill="#0A0A0A"/>
+
+  <!-- Electric Ocean neon (deep sea to surface, safe blues) -->
+  <g transform="translate(68, 64)" filter="url(#neonGlow)">
+    <!-- Slice 1 - Deep Electric Blue (abyss) -->
+    <clipPath id="ocean1">
+      <rect x="-40" y="-32" width="80" height="11"/>
+    </clipPath>
+    <path d="M -30 -32 L 34 0 L -30 32 Z" fill="#0033CC" clip-path="url(#ocean1)"/>
+
+    <!-- Slice 2 - Neon Sapphire -->
+    <clipPath id="ocean2">
+      <rect x="-40" y="-19" width="80" height="11"/>
+    </clipPath>
+    <path d="M -30 -32 L 34 0 L -30 32 Z" fill="#0066FF" clip-path="url(#ocean2)"/>
+
+    <!-- Slice 3 - Electric Turquoise -->
+    <clipPath id="ocean3">
+      <rect x="-40" y="-6" width="80" height="11"/>
+    </clipPath>
+    <path d="M -30 -32 L 34 0 L -30 32 Z" fill="#00BBFF" clip-path="url(#ocean3)"/>
+
+    <!-- Slice 4 - Bright Aqua (surface) -->
+    <clipPath id="ocean4">
+      <rect x="-40" y="7" width="80" height="11"/>
+    </clipPath>
+    <path d="M -30 -32 L 34 0 L -30 32 Z" fill="#00EEFF" clip-path="url(#ocean4)"/>
+
+    <!-- Slice 5 - Electric Foam (brightest) -->
+    <clipPath id="ocean5">
+      <rect x="-40" y="20" width="80" height="12"/>
+    </clipPath>
+    <path d="M -30 -32 L 34 0 L -30 32 Z" fill="#AAFFFF" clip-path="url(#ocean5)"/>
+  </g>
+</svg>

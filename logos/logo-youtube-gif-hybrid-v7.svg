@@ -1,0 +1,53 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- YouTube red gradient -->
+    <linearGradient id="ytRed7" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF0000;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#CC0000;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- GIF green gradient -->
+    <linearGradient id="gifGreen7" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00D4AA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00A88A;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Shadow filter -->
+    <filter id="shadow7" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+
+  <!-- YouTube-style rounded rectangle (left half) -->
+  <path d="M 20 50
+           Q 20 30, 40 30
+           L 64 30
+           L 64 98
+           L 40 98
+           Q 20 98, 20 78
+           Z"
+        fill="url(#ytRed7)"
+        filter="url(#shadow7)"/>
+
+  <!-- GIF-style rounded rectangle (right half) -->
+  <path d="M 64 30
+           L 88 30
+           Q 108 30, 108 50
+           L 108 78
+           Q 108 98, 88 98
+           L 64 98
+           Z"
+        fill="url(#gifGreen7)"
+        filter="url(#shadow7)"/>
+
+  <!-- Play button on YouTube side -->
+  <g transform="translate(42, 64)">
+    <path d="M -8 -10 L 8 0 L -8 10 Z" fill="white" opacity="0.95"/>
+  </g>
+
+  <!-- GIF text on right side -->
+  <text x="86" y="70" font-family="Arial Black, sans-serif" font-size="18" font-weight="900" fill="white" text-anchor="middle">GIF</text>
+
+  <!-- Gradient blend at center seam -->
+  <rect x="62" y="30" width="4" height="68" fill="url(#combined)" opacity="0.3"/>
+</svg>
