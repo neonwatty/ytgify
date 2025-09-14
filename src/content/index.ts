@@ -30,9 +30,7 @@ import { playerIntegration } from './player-integration';
 import { playerController } from './player-controller';
 import { TimelineOverlayWrapper } from './timeline-overlay-wrapper';
 import { TimelineOverlayWizard } from './timeline-overlay-wizard';
-import { GifPreviewModal } from './gif-preview-modal';
 import { EditorOverlayEnhanced } from './editor-overlay-enhanced';
-import { TimelineEditorUnified } from './timeline-editor-unified';
 import { overlayStateManager } from './overlay-state';
 import { cleanupManager } from './cleanup-manager';
 import { initializeContentScriptFrameExtraction } from './frame-extractor';
@@ -42,7 +40,6 @@ class YouTubeGifMaker {
   private gifButton: HTMLButtonElement | null = null;
   private timelineOverlay: HTMLDivElement | null = null;
   private timelineRoot: Root | null = null;
-  private previewRoot: Root | null = null;
   private editorRoot: Root | null = null;
   private editorOverlay: HTMLDivElement | null = null;
   private isActive = false;
@@ -311,8 +308,6 @@ class YouTubeGifMaker {
       // Clear local references if navigating away from video page
       if (navigationEvent.to !== 'watch' && navigationEvent.to !== 'shorts') {
         this.videoElement = null;
-        // Also close preview if it's open
-        this.closeGifPreview();
         this.currentSelection = null;
       }
     });
@@ -1037,53 +1032,6 @@ class YouTubeGifMaker {
     await this.processGifWithSettings(defaultSettings, textOverlays || []);
   }
 
-  private showUnifiedEditor() {
-    if (!this.videoElement) {
-      this.log('warn', '[Content] Cannot show unified editor - no video element');
-      return;
-    }
-
-    // Hide any existing overlays
-    this.hideTimelineOverlay();
-    this.hideEnhancedEditor();
-
-    // Create unified editor overlay container
-    if (!this.editorOverlay) {
-      this.editorOverlay = document.createElement('div');
-      this.editorOverlay.className = 'ytgif-unified-overlay-container';
-      document.body.appendChild(this.editorOverlay);
-      this.editorRoot = createRoot(this.editorOverlay);
-    }
-
-    const videoDuration = this.videoElement.duration;
-    const currentTime = this.videoElement.currentTime;
-
-    // Render the unified editor
-    this.editorRoot?.render(
-      React.createElement(TimelineEditorUnified, {
-        videoDuration,
-        currentTime,
-        videoElement: this.videoElement,
-        onClose: () => {
-          this.hideEnhancedEditor();
-          this.deactivateGifMode();
-        },
-        onSave: async (selection, settings, textOverlays) => {
-          this.currentSelection = selection;
-          await this.processGifWithSettings(settings, textOverlays);
-        },
-        onExport: async (selection, settings, textOverlays) => {
-          this.currentSelection = selection;
-          await this.processGifWithSettings(settings, textOverlays, true);
-        },
-        onSeekTo: (time) => {
-          if (this.videoElement) {
-            this.videoElement.currentTime = time;
-          }
-        }
-      })
-    );
-  }
 
   private showEnhancedEditor() {
     if (!this.videoElement || !this.currentSelection) return;
@@ -1331,7 +1279,7 @@ class YouTubeGifMaker {
           createdAt: new Date(),
           tags: []
         };
-        this.showGifPreview(gifDataUrl, previewMetadata);
+        // Preview modal removed - wizard handles everything
       }
       
       // Reset creating state
@@ -1361,8 +1309,8 @@ class YouTubeGifMaker {
   }
 
   private hideTimelineOverlay() {
-    // Reset wizard mode flag
-    this.isWizardMode = false;
+    // Don't immediately reset wizard mode - let it persist through GIF save
+    // It will be reset after the GIF is saved or on error
     this.stopWizardUpdates();
     
     if (this.timelineRoot) {
@@ -1585,13 +1533,17 @@ class YouTubeGifMaker {
         
         this.log('info', '[Content] GIF saved to chrome.storage', { id: gifId });
         
-        // If not in wizard mode, show preview modal
+        // Close the timeline overlay immediately if not in wizard mode
         if (!this.isWizardMode) {
-          if (gifDataUrl) {
-            this.showGifPreview(gifDataUrl, message.data.metadata as unknown as GifMetadata);
-          }
-          // Close the timeline overlay immediately
           this.deactivateGifMode();
+        } else {
+          // Reset wizard mode after successful save
+          this.isWizardMode = false;
+        }
+
+        // Reset wizard data after successful save
+        if (this.createdGifData) {
+          this.createdGifData = undefined;
         }
         // In wizard mode, the success screen handles navigation
         
@@ -1599,11 +1551,14 @@ class YouTubeGifMaker {
         this.log('error', '[Content] Failed to save GIF', { error });
         this.showGifCreationFeedback('error', 'GIF created but failed to save to library');
         
-        // Still close overlay after error (unless in wizard mode)
+        // Still close overlay after error
         if (!this.isWizardMode) {
           setTimeout(() => {
             this.deactivateGifMode();
           }, 2000);
+        } else {
+          // Reset wizard mode after error
+          this.isWizardMode = false;
         }
       }
       
@@ -1703,37 +1658,6 @@ class YouTubeGifMaker {
     });
   }
 
-  // Show GIF preview modal
-  private showGifPreview(gifDataUrl: string, metadata?: GifMetadata) {
-    // Create container for preview modal
-    const container = document.createElement('div');
-    container.id = 'ytgif-preview-container';
-    document.body.appendChild(container);
-
-    // Create React root and render preview
-    this.previewRoot = createRoot(container);
-    this.previewRoot.render(
-      React.createElement(GifPreviewModal, {
-        gifDataUrl: gifDataUrl,
-        metadata: metadata,
-        onClose: () => this.closeGifPreview(),
-        onDownload: () => this.downloadGif(gifDataUrl, metadata?.title),
-        onOpenLibrary: () => this.openExtensionPopup()
-      })
-    );
-  }
-
-  // Close GIF preview modal
-  private closeGifPreview() {
-    if (this.previewRoot) {
-      this.previewRoot.unmount();
-      this.previewRoot = null;
-    }
-    const container = document.getElementById('ytgif-preview-container');
-    if (container) {
-      container.remove();
-    }
-  }
 
   // Download GIF
   private downloadGif(dataUrl: string, title?: string) {

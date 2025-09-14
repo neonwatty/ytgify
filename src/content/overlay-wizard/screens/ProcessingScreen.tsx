@@ -66,7 +66,7 @@ const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
               r="54"
               strokeWidth="8"
               fill="none"
-              stroke="#ff0033"
+              stroke="#9966cc"
               strokeDasharray={`${(progress / 100) * 339.292} 339.292`}
               strokeLinecap="round"
               transform="rotate(-90 60 60)"
@@ -133,10 +133,6 @@ const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
           )}
         </div>
 
-        {/* Tips */}
-        <div className="ytgif-processing-tips">
-          <p>💡 Tip: Larger GIFs take more time to process</p>
-        </div>
       </div>
     </div>
   );

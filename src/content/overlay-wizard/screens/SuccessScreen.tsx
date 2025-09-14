@@ -36,13 +36,8 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
     <div className="ytgif-wizard-screen ytgif-success-screen">
       <div className="ytgif-wizard-header">
         <div style={{ width: '20px' }}></div>
-        <h2 className="ytgif-wizard-title">✨ GIF Created Successfully!</h2>
-        <button className="ytgif-close-btn" onClick={onClose}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <line x1="18" y1="6" x2="6" y2="18" strokeWidth={2} />
-            <line x1="6" y1="6" x2="18" y2="18" strokeWidth={2} />
-          </svg>
-        </button>
+        <h2 className="ytgif-wizard-title">GIF Created Successfully!</h2>
+        <div style={{ width: '20px' }}></div>
       </div>
 
       <div className="ytgif-wizard-content">
@@ -99,11 +94,6 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
           </button>
         </div>
 
-        {/* Info */}
-        <div className="ytgif-success-info">
-          <p>Your GIF has been saved to the extension library.</p>
-          <p>You can access it anytime from the extension popup.</p>
-        </div>
       </div>
     </div>
   );
