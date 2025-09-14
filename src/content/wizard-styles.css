@@ -18,11 +18,14 @@
   position: relative;
   width: 90%;
   max-width: 600px;
+  max-height: 90vh; /* Limit height to 90% of viewport */
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   overflow: hidden;
   animation: slideUp 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes slideUp {
@@ -30,10 +33,23 @@
   to { transform: translateY(0); opacity: 1; }
 }
 
+/* Header Container */
+.ytgif-wizard-header-container {
+  position: relative;
+  padding: 16px 40px;
+  background: linear-gradient(to bottom, #2d2d2d 0%, rgba(45, 45, 45, 0.8) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  z-index: 20;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Close Button */
 .ytgif-wizard-close {
   position: absolute;
-  top: 16px;
+  top: 14px;
   right: 16px;
   width: 32px;
   height: 32px;
@@ -57,13 +73,9 @@
 
 /* Progress Indicator */
 .ytgif-wizard-progress {
-  position: absolute;
-  top: 24px;
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
   gap: 8px;
-  z-index: 10;
+  z-index: 5;
 }
 
 .ytgif-progress-dot {
@@ -102,12 +114,36 @@
 /* Wizard Screens */
 .ytgif-wizard-screens {
   position: relative;
-  min-height: 400px;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0; /* Allow shrinking for flexbox */
+}
+
+/* Custom Scrollbar for Wizard Screens */
+.ytgif-wizard-screens::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ytgif-wizard-screens::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.ytgif-wizard-screens::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.ytgif-wizard-screens::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .ytgif-wizard-screen {
-  padding: 60px 40px 40px;
+  padding: 20px 40px 40px;
   animation: screenFadeIn 0.3s ease;
+  min-height: 100%;
+  box-sizing: border-box;
 }
 
 @keyframes screenFadeIn {
@@ -120,9 +156,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 32px;
-  padding: 0 40px;
-  padding-top: 60px;
+  padding: 20px 40px;
+  background: linear-gradient(to bottom, #2d2d2d 0%, transparent 100%);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  min-height: 60px;
 }
 
 .ytgif-back-button {
@@ -156,6 +195,7 @@
 .ytgif-wizard-content {
   color: white;
   text-align: center;
+  padding-bottom: 20px; /* Space for sticky buttons */
 }
 
 /* Welcome Screen */
@@ -1137,7 +1177,12 @@
   display: flex;
   justify-content: center;
   gap: 16px;
-  margin-top: 32px;
+  padding: 20px 40px;
+  background: linear-gradient(to top, #1a1a1a 0%, transparent 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
 }
 
 .ytgif-button-primary,

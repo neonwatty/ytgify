@@ -144,7 +144,7 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
     <div className="ytgif-wizard-screen ytgif-text-overlay-screen">
       {/* Hidden canvas for frame capture */}
       <canvas ref={canvasRef} style={{ display: 'none' }} />
-      
+
       {/* Standard wizard header */}
       <div className="ytgif-wizard-header">
         {onBack && (

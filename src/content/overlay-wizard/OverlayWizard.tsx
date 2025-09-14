@@ -165,23 +165,26 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   return (
     <div className="ytgif-overlay-wizard" role="dialog" aria-modal="true">
       <div className="ytgif-wizard-container">
-        {/* Close button */}
-        <button 
-          className="ytgif-wizard-close"
-          onClick={onClose}
-          aria-label="Close wizard"
-        >
-          ×
-        </button>
+        {/* Fixed header with progress indicator */}
+        <div className="ytgif-wizard-header-container">
+          {/* Close button */}
+          <button
+            className="ytgif-wizard-close"
+            onClick={onClose}
+            aria-label="Close wizard"
+          >
+            ×
+          </button>
 
-        {/* Progress indicator */}
-        <div className="ytgif-wizard-progress">
-          {screens.map((_, index) => (
-            <div 
-              key={index}
-              className={`ytgif-progress-dot ${index <= currentIndex ? 'active' : ''}`}
-            />
-          ))}
+          {/* Progress indicator */}
+          <div className="ytgif-wizard-progress">
+            {screens.map((_, index) => (
+              <div
+                key={index}
+                className={`ytgif-progress-dot ${index <= currentIndex ? 'active' : ''}`}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Screen content with transitions */}
