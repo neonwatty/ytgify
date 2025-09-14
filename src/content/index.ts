@@ -1021,10 +1021,30 @@ class YouTubeGifMaker {
     this.updateTimelineOverlay();
     
     // Use default settings for wizard-initiated GIF creation
+    // Calculate default dimensions based on video aspect ratio
+    // Max dimension of 640px on the longest side
+    const videoAspectRatio = this.videoElement!.videoWidth / this.videoElement!.videoHeight;
+    let defaultWidth = 640;
+    let defaultHeight = 360;
+
+    if (videoAspectRatio > 1) {
+      // Landscape video - limit width to 640
+      defaultWidth = 640;
+      defaultHeight = Math.round(640 / videoAspectRatio);
+    } else {
+      // Portrait or square video - limit height to 640
+      defaultHeight = 640;
+      defaultWidth = Math.round(640 * videoAspectRatio);
+    }
+
+    // Ensure even dimensions
+    defaultWidth = Math.floor(defaultWidth / 2) * 2;
+    defaultHeight = Math.floor(defaultHeight / 2) * 2;
+
     const defaultSettings = {
       frameRate: 15,
-      width: 640,
-      height: 360,
+      width: defaultWidth,
+      height: defaultHeight,
       quality: 'medium' as const
     };
     
@@ -1161,7 +1181,7 @@ class YouTubeGifMaker {
   }
 
   private async processGifWithSettings(settings: Partial<GifSettings> & { frameRate?: number; width?: number; height?: number; quality?: string }, textOverlays: TextOverlay[] = [], download = false) {
-    
+
     if (!this.videoElement || !this.currentSelection) return;
 
     // Set creating state
@@ -1172,6 +1192,24 @@ class YouTubeGifMaker {
 
     const { startTime, endTime } = this.currentSelection;
 
+    // Calculate default dimensions based on video aspect ratio if not provided
+    let width = settings.width;
+    let height = settings.height;
+
+    if (!width || !height) {
+      const videoAspectRatio = this.videoElement.videoWidth / this.videoElement.videoHeight;
+      if (videoAspectRatio > 1) {
+        width = width || 640;
+        height = height || Math.round(640 / videoAspectRatio);
+      } else {
+        height = height || 640;
+        width = width || Math.round(640 * videoAspectRatio);
+      }
+      // Ensure even dimensions
+      width = Math.floor(width / 2) * 2;
+      height = Math.floor(height / 2) * 2;
+    }
+
     try {
       // Process GIF entirely in content script
       const result = await gifProcessor.processVideoToGif(
@@ -1180,8 +1218,8 @@ class YouTubeGifMaker {
           startTime,
           endTime,
           frameRate: settings.frameRate || 15,
-          width: settings.width || 640,
-          height: settings.height || 360,
+          width,
+          height,
           quality: settings.quality || 'medium',
           textOverlays
         },

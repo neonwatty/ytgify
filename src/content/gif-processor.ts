@@ -125,23 +125,34 @@ export class ContentScriptGifProcessor {
     });
 
     // Calculate actual dimensions maintaining aspect ratio
-    const aspectRatio = videoElement.videoWidth / videoElement.videoHeight;
-    let actualWidth = width;
-    let actualHeight = height;
+    const videoAspectRatio = videoElement.videoWidth / videoElement.videoHeight;
+    const targetAspectRatio = width / height;
 
-    // Adjust dimensions to maintain aspect ratio
-    // Priority: maintain width and adjust height
-    actualHeight = actualWidth / aspectRatio;
+    let actualWidth: number;
+    let actualHeight: number;
 
-    // If height exceeds limit, scale based on height instead
-    if (actualHeight > height) {
+    // Fit video within requested dimensions while maintaining aspect ratio
+    if (videoAspectRatio > targetAspectRatio) {
+      // Video is wider than target - fit to width
+      actualWidth = width;
+      actualHeight = Math.round(width / videoAspectRatio);
+    } else {
+      // Video is taller than target - fit to height
       actualHeight = height;
-      actualWidth = actualHeight * aspectRatio;
+      actualWidth = Math.round(height * videoAspectRatio);
     }
 
     // Ensure even dimensions for video encoding
     actualWidth = Math.floor(actualWidth / 2) * 2;
     actualHeight = Math.floor(actualHeight / 2) * 2;
+
+    logger.info('[ContentScriptGifProcessor] Calculated dimensions', {
+      video: { width: videoElement.videoWidth, height: videoElement.videoHeight },
+      requested: { width, height },
+      actual: { width: actualWidth, height: actualHeight },
+      videoAspectRatio,
+      targetAspectRatio
+    });
 
     const frames: HTMLCanvasElement[] = [];
     
