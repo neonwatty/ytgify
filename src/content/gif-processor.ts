@@ -131,15 +131,33 @@ export class ContentScriptGifProcessor {
     let actualWidth: number;
     let actualHeight: number;
 
-    // Fit video within requested dimensions while maintaining aspect ratio
-    if (videoAspectRatio > targetAspectRatio) {
-      // Video is wider than target - fit to width
+    // Check if requested dimensions already maintain the video's aspect ratio (within 2% tolerance)
+    const aspectRatioTolerance = 0.02;
+    const aspectRatioDifference = Math.abs(videoAspectRatio - targetAspectRatio) / videoAspectRatio;
+
+    if (aspectRatioDifference <= aspectRatioTolerance) {
+      // Requested dimensions already maintain aspect ratio - use them directly
       actualWidth = width;
-      actualHeight = Math.round(width / videoAspectRatio);
-    } else {
-      // Video is taller than target - fit to height
       actualHeight = height;
-      actualWidth = Math.round(height * videoAspectRatio);
+      logger.info('[ContentScriptGifProcessor] Using requested dimensions (aspect ratio preserved)', {
+        aspectRatioDifference: `${(aspectRatioDifference * 100).toFixed(1)}%`
+      });
+    } else {
+      // Fit video within requested dimensions while maintaining aspect ratio
+      if (videoAspectRatio > targetAspectRatio) {
+        // Video is wider than target - fit to width
+        actualWidth = width;
+        actualHeight = Math.round(width / videoAspectRatio);
+      } else {
+        // Video is taller than target - fit to height
+        actualHeight = height;
+        actualWidth = Math.round(height * videoAspectRatio);
+      }
+      logger.info('[ContentScriptGifProcessor] Adjusted dimensions to maintain aspect ratio', {
+        requestedRatio: targetAspectRatio,
+        videoRatio: videoAspectRatio,
+        adjustment: videoAspectRatio > targetAspectRatio ? 'fit-to-width' : 'fit-to-height'
+      });
     }
 
     // Ensure even dimensions for video encoding
