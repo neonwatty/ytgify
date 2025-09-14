@@ -26,6 +26,11 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
   const [startTime, setStartTime] = useState(initialStartTime);
   const [endTime, setEndTime] = useState(initialEndTime);
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
+
+  // Debug state changes
+  React.useEffect(() => {
+    console.log('[QuickCaptureScreen] Preview playing state changed:', isPreviewPlaying);
+  }, [isPreviewPlaying]);
   const [previewTime, setPreviewTime] = useState(startTime);
   const [selectedFrameRate, setSelectedFrameRate] = useState(5); // Default to 5 fps
   
@@ -64,15 +69,22 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
 
       <div className="ytgif-wizard-content">
         {/* Video Preview */}
-        {videoElement && (
+        {videoElement ? (
           <VideoPreview
             videoElement={videoElement}
             startTime={startTime}
             endTime={endTime}
             currentVideoTime={currentTime}
             isPlaying={isPreviewPlaying}
-            onPlayStateChange={setIsPreviewPlaying}
+            onPlayStateChange={(playing) => {
+              console.log('[QuickCaptureScreen] onPlayStateChange called with:', playing);
+              setIsPreviewPlaying(playing);
+            }}
           />
+        ) : (
+          <div className="ytgif-preview-fallback">
+            <p>Loading video element...</p>
+          </div>
         )}
         
         {/* Enhanced Timeline Scrubber */}

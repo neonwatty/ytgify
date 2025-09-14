@@ -33,8 +33,9 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
   const [currentPreviewTime, setCurrentPreviewTime] = useState(startTime);
-  const [isLooping, setIsLooping] = useState(false);
+  const isLoopingRef = useRef(false);
   const savedVideoStateRef = useRef<{ currentTime: number; paused: boolean } | null>(null);
+  const lastFrameTimeRef = useRef<number>(0);
   
   // Draw text overlays on canvas
   const drawTextOverlays = useCallback((ctx: CanvasRenderingContext2D) => {
@@ -90,15 +91,15 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
         resolve();
         return;
       }
-      
+
       const onSeeked = () => {
         videoElement.removeEventListener('seeked', onSeeked);
         drawFrame();
         resolve();
       };
-      
+
       videoElement.addEventListener('seeked', onSeeked);
-      
+
       // Save current state before seeking
       if (!savedVideoStateRef.current) {
         savedVideoStateRef.current = {
@@ -106,14 +107,14 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
           paused: videoElement.paused
         };
       }
-      
+
       // Pause video if playing to prevent conflicts
       if (!videoElement.paused) {
         videoElement.pause();
       }
-      
+
       videoElement.currentTime = time;
-      
+
       // Timeout fallback
       setTimeout(() => {
         videoElement.removeEventListener('seeked', onSeeked);
@@ -123,114 +124,152 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
     });
   }, [videoElement, drawFrame]);
 
-  // Handle range playback
-  const playRange = useCallback(async () => {
-    if (!videoElement || !canvasRef.current) return;
-    
+  // Handle range playback - memoized without dependencies that change
+  const playRange = useCallback(() => {
+    if (!videoElement || !canvasRef.current) {
+      console.log('[VideoPreview] Cannot start playback - missing video or canvas');
+      return;
+    }
+
+    console.log('[VideoPreview] Starting playback', { startTime, endTime });
+
     // Save video state before starting preview
-    savedVideoStateRef.current = {
-      currentTime: videoElement.currentTime,
-      paused: videoElement.paused
-    };
-    
+    if (!savedVideoStateRef.current) {
+      savedVideoStateRef.current = {
+        currentTime: videoElement.currentTime,
+        paused: videoElement.paused
+      };
+    }
+
     // Pause main video during preview
     videoElement.pause();
-    
+
     // Start playback from startTime
     let currentTime = startTime;
-    setIsLooping(true);
-    
-    const animate = async () => {
-      if (!isLooping || !isPlaying) return;
-      
-      // Update time
-      currentTime += 0.1; // Advance by 100ms
-      
-      // Check if we've reached the end
-      if (currentTime >= endTime) {
-        currentTime = startTime; // Loop back to start
-      }
-      
-      setCurrentPreviewTime(currentTime);
-      
-      // Seek video and draw frame
-      await seekAndDraw(currentTime);
-      
-      // Continue animation
-      animationFrameRef.current = requestAnimationFrame(() => {
-        setTimeout(animate, 100); // 10 FPS for smoother preview
-      });
-    };
-    
-    animate();
-  }, [startTime, endTime, isPlaying, isLooping, videoElement, seekAndDraw]);
+    isLoopingRef.current = true;
+    lastFrameTimeRef.current = performance.now();
 
-  // Stop playback and restore video state
+    const animate = async () => {
+      // Check if we should continue - use ref value only
+      if (!isLoopingRef.current) {
+        console.log('[VideoPreview] Stopping animation loop - isLooping is false');
+        return;
+      }
+
+      const now = performance.now();
+      const deltaTime = (now - lastFrameTimeRef.current) / 1000; // Convert to seconds
+
+      // Only update if enough time has passed (target 10 FPS = 100ms)
+      if (deltaTime >= 0.1) {
+        // Update time
+        currentTime += deltaTime;
+
+        // Check if we've reached the end
+        if (currentTime >= endTime) {
+          currentTime = startTime; // Loop back to start
+        }
+
+        setCurrentPreviewTime(currentTime);
+
+        // Seek video and draw frame
+        try {
+          await seekAndDraw(currentTime);
+        } catch (error) {
+          console.error('[VideoPreview] Error during seekAndDraw:', error);
+        }
+
+        lastFrameTimeRef.current = now;
+      }
+
+      // Continue animation
+      animationFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    // Start the animation
+    animate();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoElement, startTime, endTime]);
+
+  // Stop playback and restore video state - stable reference
   const stopPlayback = useCallback(() => {
-    setIsLooping(false);
-    
+    console.log('[VideoPreview] Stopping playback');
+    isLoopingRef.current = false;
+
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = undefined;
     }
-    
+
     // Restore original video state
     if (videoElement && savedVideoStateRef.current) {
       videoElement.currentTime = savedVideoStateRef.current.currentTime;
       if (!savedVideoStateRef.current.paused) {
-        videoElement.play();
+        videoElement.play().catch(err => {
+          console.error('[VideoPreview] Error restoring video playback:', err);
+        });
       }
       savedVideoStateRef.current = null;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoElement]);
 
   // Handle play state changes
   useEffect(() => {
+    console.log('[VideoPreview] Play state changed:', isPlaying);
     if (isPlaying) {
       playRange();
     } else {
       stopPlayback();
     }
-    
+
     return () => {
-      stopPlayback();
+      if (isPlaying) {
+        stopPlayback();
+      }
     };
-  }, [isPlaying, playRange, stopPlayback]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying]);
 
   // Initial frame draw and sync with main video
   useEffect(() => {
     if (!isPlaying && videoElement) {
       // When not playing preview, show current video time if it's within selection
-      const timeToShow = currentVideoTime !== undefined && 
-                        currentVideoTime >= startTime && 
-                        currentVideoTime <= endTime 
-                        ? currentVideoTime 
+      const timeToShow = currentVideoTime !== undefined &&
+                        currentVideoTime >= startTime &&
+                        currentVideoTime <= endTime
+                        ? currentVideoTime
                         : startTime;
       seekAndDraw(timeToShow);
       setCurrentPreviewTime(timeToShow);
     }
-  }, [startTime, currentVideoTime, isPlaying, seekAndDraw, videoElement, endTime]);
-  
-  // Update preview when selection changes
-  useEffect(() => {
-    if (!isPlaying && videoElement) {
-      seekAndDraw(startTime);
-      setCurrentPreviewTime(startTime);
-    }
-  }, [endTime, isPlaying, startTime, seekAndDraw, videoElement]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startTime, endTime, currentVideoTime, isPlaying, videoElement]);
 
   // Draw initial frame
   useEffect(() => {
     if (videoElement) {
       drawFrame();
     }
-  }, [videoElement, drawFrame]);
-  
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoElement]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      stopPlayback();
+      isLoopingRef.current = false;
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      // Restore video state if needed
+      if (videoElement && savedVideoStateRef.current) {
+        videoElement.currentTime = savedVideoStateRef.current.currentTime;
+        if (!savedVideoStateRef.current.paused) {
+          videoElement.play().catch(() => {});
+        }
+      }
     };
-  }, [stopPlayback]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Format time for display
   const formatTime = (seconds: number): string => {
@@ -253,9 +292,14 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
         {/* Playback overlay */}
         {!isPlaying && (
           <div className="ytgif-preview-overlay">
-            <button 
+            <button
               className="ytgif-preview-play-button"
-              onClick={() => onPlayStateChange?.(true)}
+              onClick={() => {
+                console.log('[VideoPreview] Play overlay clicked');
+                if (onPlayStateChange) {
+                  onPlayStateChange(true);
+                }
+              }}
             >
               <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
                 <path d="M8 5v14l11-7z" />
@@ -272,9 +316,14 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
       
       {/* Preview controls */}
       <div className="ytgif-preview-controls">
-        <button 
+        <button
           className={`ytgif-preview-control-btn ${isPlaying ? 'playing' : ''}`}
-          onClick={() => onPlayStateChange?.(!isPlaying)}
+          onClick={() => {
+            console.log('[VideoPreview] Play/pause button clicked, current state:', isPlaying);
+            if (onPlayStateChange) {
+              onPlayStateChange(!isPlaying);
+            }
+          }}
         >
           {isPlaying ? (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -291,9 +340,20 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
           {(endTime - startTime).toFixed(1)}s clip
         </span>
         
-        <button 
+        <button
           className="ytgif-preview-control-btn"
-          onClick={() => seekAndDraw(startTime)}
+          onClick={() => {
+            console.log('[VideoPreview] Reset button clicked');
+            // Stop playback if playing
+            if (isPlaying) {
+              onPlayStateChange?.(false);
+            }
+            // Reset to start
+            setCurrentPreviewTime(startTime);
+            seekAndDraw(startTime).catch(err => {
+              console.error('[VideoPreview] Error resetting to start:', err);
+            });
+          }}
           title="Reset to start"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">

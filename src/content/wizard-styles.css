@@ -475,6 +475,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: auto;
+  z-index: 1;
   background: rgba(0, 0, 0, 0.3);
   cursor: pointer;
 }
@@ -488,6 +490,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: auto;
+  z-index: 2;
   cursor: pointer;
   transition: transform 0.2s, background 0.2s;
 }
