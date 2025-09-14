@@ -111,7 +111,7 @@ export class ContentScriptGifProcessor {
     options: GifProcessingOptions,
     onProgress?: (progress: number) => void
   ): Promise<HTMLCanvasElement[]> {
-    const { startTime, endTime, frameRate = 5, width = 240, height = 180 } = options;
+    const { startTime, endTime, frameRate = 5, width = 480, height = 270 } = options;
     const duration = endTime - startTime;
     // Calculate proper frame count based on duration and frame rate
     const rawFrameCount = Math.ceil(duration * frameRate);
@@ -128,13 +128,18 @@ export class ContentScriptGifProcessor {
     const aspectRatio = videoElement.videoWidth / videoElement.videoHeight;
     let actualWidth = width;
     let actualHeight = height;
-    
-    if (actualWidth / actualHeight > aspectRatio) {
+
+    // Adjust dimensions to maintain aspect ratio
+    // Priority: maintain width and adjust height
+    actualHeight = actualWidth / aspectRatio;
+
+    // If height exceeds limit, scale based on height instead
+    if (actualHeight > height) {
+      actualHeight = height;
       actualWidth = actualHeight * aspectRatio;
-    } else {
-      actualHeight = actualWidth / aspectRatio;
     }
-    
+
+    // Ensure even dimensions for video encoding
     actualWidth = Math.floor(actualWidth / 2) * 2;
     actualHeight = Math.floor(actualHeight / 2) * 2;
 
