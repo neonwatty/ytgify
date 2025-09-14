@@ -91,25 +91,36 @@ class YouTubeGifMaker {
 
   // Setup storage listener for button visibility changes
   private setupStorageListener() {
-    chrome.storage.onChanged.addListener((changes, areaName) => {
-      if (areaName === 'sync' && changes.buttonVisibility) {
-        const newVisibility = changes.buttonVisibility.newValue !== false;
-        
-        this.updateButtonVisibility(newVisibility);
-      }
-    });
+    // Check if Chrome storage API is available
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
+      chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName === 'sync' && changes.buttonVisibility) {
+          const newVisibility = changes.buttonVisibility.newValue !== false;
+
+          this.updateButtonVisibility(newVisibility);
+        }
+      });
+    } else {
+      this.log('warn', '[Content] Chrome storage API not available for listener setup');
+    }
   }
 
   // Load initial button visibility setting
   private async loadButtonVisibility() {
-    try {
-      const result = await chrome.storage.sync.get(['buttonVisibility']);
-      // Default to true if not set
-      this.buttonVisible = result.buttonVisibility !== false;
-      
-    } catch (error) {
-      console.error('[Content] Error loading button visibility:', error);
-      this.buttonVisible = true; // Default to visible on error
+    // Check if Chrome storage API is available
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+      try {
+        const result = await chrome.storage.sync.get(['buttonVisibility']);
+        // Default to true if not set
+        this.buttonVisible = result.buttonVisibility !== false;
+
+      } catch (error) {
+        console.error('[Content] Error loading button visibility:', error);
+        this.buttonVisible = true; // Default to visible on error
+      }
+    } else {
+      this.log('warn', '[Content] Chrome storage API not available, using default button visibility');
+      this.buttonVisible = true; // Default to visible when storage isn't available
     }
   }
 
