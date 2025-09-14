@@ -86,9 +86,9 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        // Calculate the midpoint of the selected range
-        const midTime = startTime + (endTime - startTime) / 2;
-        
+        // Use the start time for consistency with QuickCaptureScreen
+        const frameTime = startTime;
+
         // Store original time to restore later
         const originalTime = videoElement.currentTime;
         
@@ -112,14 +112,14 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
             videoElement.currentTime = originalTime;
           }, 100);
         };
-        
-        // Seek to the midpoint and capture
+
+        // Seek to the frame time and capture
         const performCapture = () => {
-          videoElement.currentTime = midTime;
-          
+          videoElement.currentTime = frameTime;
+
           // Use requestAnimationFrame to ensure the frame is rendered
           const checkAndCapture = () => {
-            if (Math.abs(videoElement.currentTime - midTime) < 0.1) {
+            if (Math.abs(videoElement.currentTime - frameTime) < 0.1) {
               // We're close enough to the target time
               requestAnimationFrame(() => {
                 captureFrame();
