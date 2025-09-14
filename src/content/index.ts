@@ -51,7 +51,7 @@ class YouTubeGifMaker {
   private isWizardMode = false;
   private wizardUpdateInterval: NodeJS.Timeout | null = null;
   private createdGifData: { dataUrl: string; size: number; metadata: any } | undefined = undefined;
-  private buttonVisible = true; // Track button visibility state
+  private buttonVisible = false; // Track button visibility state - default to hidden
 
   constructor() {
     
@@ -95,7 +95,7 @@ class YouTubeGifMaker {
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
       chrome.storage.onChanged.addListener((changes, areaName) => {
         if (areaName === 'sync' && changes.buttonVisibility) {
-          const newVisibility = changes.buttonVisibility.newValue !== false;
+          const newVisibility = changes.buttonVisibility.newValue === true;
 
           this.updateButtonVisibility(newVisibility);
         }
@@ -111,16 +111,16 @@ class YouTubeGifMaker {
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
       try {
         const result = await chrome.storage.sync.get(['buttonVisibility']);
-        // Default to true if not set
-        this.buttonVisible = result.buttonVisibility !== false;
+        // Default to false if not set
+        this.buttonVisible = result.buttonVisibility === true;
 
       } catch (error) {
         console.error('[Content] Error loading button visibility:', error);
-        this.buttonVisible = true; // Default to visible on error
+        this.buttonVisible = false; // Default to hidden on error
       }
     } else {
       this.log('warn', '[Content] Chrome storage API not available, using default button visibility');
-      this.buttonVisible = true; // Default to visible when storage isn't available
+      this.buttonVisible = false; // Default to hidden when storage isn't available
     }
   }
 

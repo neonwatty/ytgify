@@ -392,8 +392,8 @@ body[theater] .ytgif-timeline-overlay,
   cursor: pointer;
   display: inline-block;
   font-size: 1rem;
-  height: 36px;
-  line-height: 36px;
+  height: 28px;
+  line-height: 28px;
   margin: 0;
   outline: none;
   overflow: hidden;
@@ -402,7 +402,7 @@ body[theater] .ytgif-timeline-overlay,
   text-decoration: none;
   transition: opacity 0.1s cubic-bezier(0.4, 0.0, 1, 1);
   user-select: none;
-  width: 36px;
+  width: 28px;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -441,8 +441,8 @@ body[theater] .ytgif-timeline-overlay,
 
 /* Logo icon specific styles */
 img.ytgif-button-icon {
-  width: 24px;
-  height: 24px;
+  width: 18px;
+  height: 18px;
   padding: 2px;
 }
 
@@ -453,9 +453,9 @@ img.ytgif-button-icon {
 
 /* Small player adjustments (< 480px width) */
 .ytgif-player-button.ytgif-small-player {
-  width: 32px;
-  height: 32px;
-  line-height: 32px;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
   font-size: 0.9rem;
 }
 
@@ -465,9 +465,9 @@ img.ytgif-button-icon {
 
 /* Medium player adjustments (480px - 854px width) */
 .ytgif-player-button.ytgif-medium-player {
-  width: 36px;
-  height: 36px;
-  line-height: 36px;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
   font-size: 1rem;
 }
 
@@ -477,17 +477,17 @@ img.ytgif-button-icon {
 
 /* Large player adjustments (> 854px width) */
 .ytgif-player-button.ytgif-large-player {
-  width: 36px;
-  height: 36px;
-  line-height: 36px;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
   font-size: 1rem;
 }
 
 /* Compact mode adjustments */
 .ytgif-player-button.ytgif-compact-mode {
-  width: 32px;
-  height: 32px;
-  line-height: 32px;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
   margin: 0 2px;
 }
 
@@ -497,9 +497,9 @@ img.ytgif-button-icon {
 
 /* Theater mode adjustments */
 .ytgif-player-button.ytgif-theater-mode {
-  width: 40px;
-  height: 40px;
-  line-height: 40px;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
   font-size: 1.1rem;
 }
 
@@ -509,9 +509,9 @@ img.ytgif-button-icon {
 
 /* Fullscreen mode adjustments */
 .ytgif-player-button.ytgif-fullscreen-mode {
-  width: 44px;
-  height: 44px;
-  line-height: 44px;
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
   font-size: 1.1rem;
 }
 
@@ -567,15 +567,15 @@ img.ytgif-button-icon {
 /* Touch device optimizations */
 @media (pointer: coarse) {
   .ytgif-button {
-    min-width: 36px;
-    min-height: 36px;
+    min-width: 28px;
+    min-height: 28px;
   }
 
   .ytgif-player-button.ytgif-small-player {
-    min-width: 36px;
-    min-height: 36px;
-    width: 36px;
-    height: 36px;
+    min-width: 28px;
+    min-height: 28px;
+    width: 28px;
+    height: 28px;
   }
 }
 

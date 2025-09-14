@@ -6,13 +6,13 @@ const PopupApp: React.FC = () => {
   const [isShortsPage, setIsShortsPage] = React.useState(false);
   const [videoTitle, setVideoTitle] = React.useState<string>('');
   const [isLoading, setIsLoading] = React.useState(false);
-  const [showButton, setShowButton] = React.useState(true);
+  const [showButton, setShowButton] = React.useState(false);
 
   // Load button visibility setting
   React.useEffect(() => {
     chrome.storage.sync.get(['buttonVisibility'], (result) => {
-      // Default to true if not set
-      setShowButton(result.buttonVisibility !== false);
+      // Default to false if not set
+      setShowButton(result.buttonVisibility === true);
     });
   }, []);
 
