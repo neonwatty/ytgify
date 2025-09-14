@@ -25,13 +25,8 @@ chrome.runtime.onInstalled.addListener(sharedErrorHandler.wrapWithErrorBoundary(
     await initializeStorage();
     
     if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
-      // First install - open welcome/tutorial
-      chrome.tabs.create({
-        url: 'https://youtube.com',
-        active: true
-      });
-      
-      sharedLogger.info('[Background] First install - opened YouTube welcome tab', {}, 'background');
+      // First install - log the event without opening a tab
+      sharedLogger.info('[Background] First install completed', {}, 'background');
       sharedLogger.trackUserAction('first_install');
     }
     
