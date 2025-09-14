@@ -116,44 +116,30 @@ export class PreferencesManager {
   // Specialized preference getters
   async getGifCreationDefaults(): Promise<{
     frameRate: number;
-    quality: number;
-    maxDuration: number;
-    autoSave: boolean;
+    quality: 'low' | 'medium' | 'high';
+    width: number;
+    autoDownload: boolean;
   }> {
     const preferences = await this.getPreferences();
     return {
       frameRate: preferences.defaultFrameRate,
       quality: preferences.defaultQuality,
-      maxDuration: preferences.maxDuration,
-      autoSave: preferences.autoSave
+      width: preferences.defaultWidth,
+      autoDownload: preferences.autoDownload
     };
   }
 
   async getUIPreferences(): Promise<{
     theme: 'light' | 'dark' | 'system';
-    showThumbnails: boolean;
-    gridSize: 'small' | 'medium' | 'large';
+    showAdvancedOptions: boolean;
   }> {
     const preferences = await this.getPreferences();
     return {
       theme: preferences.theme,
-      showThumbnails: preferences.showThumbnails,
-      gridSize: preferences.gridSize
+      showAdvancedOptions: preferences.showAdvancedOptions
     };
   }
 
-  async getStoragePreferences(): Promise<{
-    maxStorageSize: number;
-    autoCleanup: boolean;
-    cleanupOlderThan: number;
-  }> {
-    const preferences = await this.getPreferences();
-    return {
-      maxStorageSize: preferences.maxStorageSize,
-      autoCleanup: preferences.autoCleanup,
-      cleanupOlderThan: preferences.cleanupOlderThan
-    };
-  }
 
   // Theme-specific methods
   async getTheme(): Promise<'light' | 'dark' | 'system'> {
@@ -201,23 +187,15 @@ export class PreferencesManager {
       case 'defaultFrameRate':
         return typeof value === 'number' && value > 0 && value <= 60;
       case 'defaultQuality':
-        return typeof value === 'number' && value >= 10 && value <= 100;
-      case 'maxDuration':
-        return typeof value === 'number' && value > 0 && value <= 60;
-      case 'autoSave':
+        return ['low', 'medium', 'high'].includes(value as string);
+      case 'defaultWidth':
+        return typeof value === 'number' && value > 0 && value <= 1920;
+      case 'autoDownload':
         return typeof value === 'boolean';
       case 'theme':
         return ['light', 'dark', 'system'].includes(value as string);
-      case 'showThumbnails':
+      case 'showAdvancedOptions':
         return typeof value === 'boolean';
-      case 'gridSize':
-        return ['small', 'medium', 'large'].includes(value as string);
-      case 'maxStorageSize':
-        return typeof value === 'number' && value > 0 && value <= 2000;
-      case 'autoCleanup':
-        return typeof value === 'boolean';
-      case 'cleanupOlderThan':
-        return typeof value === 'number' && value > 0;
       default:
         return true;
     }

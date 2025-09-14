@@ -18,8 +18,7 @@ import {
   SuccessResponse,
   ErrorResponse
 } from '@/types';
-import { GifData, GifMetadata, GifSettings } from '@/types/storage';
-import { chromeGifStorage } from '@/lib/chrome-gif-storage';
+import { GifData, GifSettings } from '@/types/storage';
 import { youTubeDetector, YouTubeNavigationEvent } from './youtube-detector';
 import { injectionManager } from './injection-manager';
 import { extensionStateManager } from '@/shared';
@@ -51,7 +50,7 @@ class YouTubeGifMaker {
   private extractedFrames: ImageData[] | null = null;
   private isWizardMode = false;
   private wizardUpdateInterval: NodeJS.Timeout | null = null;
-  private createdGifData: { dataUrl: string; size: number; metadata: GifMetadata } | undefined = undefined;
+  private createdGifData: { dataUrl: string; size: number; metadata: any } | undefined = undefined;
   private buttonVisible = true; // Track button visibility state
 
   constructor() {
@@ -1264,7 +1263,7 @@ class YouTubeGifMaker {
       });
       
       // Create proper GIF metadata
-      const gifMetadata: GifMetadata = {
+      const gifMetadata = {
         id: `gif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         title: document.title || 'YouTube GIF',
         width: settings.width || 640,
@@ -1306,7 +1305,7 @@ class YouTubeGifMaker {
         link.click();
       } else {
         // Show preview modal with download button
-        const previewMetadata: GifMetadata = {
+        const previewMetadata = {
           id: `gif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           title: `youtube-gif-${Date.now()}`,
           width: settings.width || 640,
@@ -1521,55 +1520,8 @@ class YouTubeGifMaker {
           gifBlobType: message.data.gifBlob ? message.data.gifBlob.constructor.name : 'undefined'
         });
         
-        // Use data URLs if available, otherwise try to use blobs
-        const gifDataUrl = message.data.gifDataUrl;
-        const thumbnailDataUrl = message.data.thumbnailDataUrl;
-        
-        if (gifDataUrl) {
-          // Save using data URLs directly (already converted)
-          await chromeGifStorage.saveGifFromDataUrl({
-            id: gifId,
-            title: document.title.replace(' - YouTube', ''),
-            description: `GIF created from YouTube video`,
-            gifDataUrl,
-            thumbnailDataUrl,
-            metadata: {
-              width: (message.data.metadata?.width as number) || 480,
-              height: (message.data.metadata?.height as number) || 360,
-              duration: (message.data.metadata?.duration as number) || (this.currentSelection?.duration || 0) * 1000,
-              frameRate: 15,
-              fileSize: (message.data.metadata?.fileSize as number) || 0,
-              createdAt: new Date(),
-              youtubeUrl: window.location.href,
-              startTime: this.currentSelection?.startTime || 0,
-              endTime: this.currentSelection?.endTime || 0
-            },
-            tags: []
-          });
-        } else {
-          // Fallback to blob method (likely won't work due to serialization)
-          await chromeGifStorage.saveGif({
-            id: gifId,
-            title: document.title.replace(' - YouTube', ''),
-            description: `GIF created from YouTube video`,
-            blob: message.data.gifBlob,
-            thumbnailBlob: message.data.thumbnailBlob,
-          metadata: {
-            width: (message.data.metadata?.width as number) || 480,
-            height: (message.data.metadata?.height as number) || 360,
-            duration: (message.data.metadata?.duration as number) || (this.currentSelection?.duration || 0) * 1000,
-            frameRate: 15,
-            fileSize: (message.data.metadata?.fileSize as number) || message.data.gifBlob.size,
-            createdAt: new Date(),
-            youtubeUrl: window.location.href,
-            startTime: this.currentSelection?.startTime || 0,
-            endTime: this.currentSelection?.endTime || 0
-          },
-            tags: []
-          });
-        }
-        
-        this.log('info', '[Content] GIF saved to chrome.storage', { id: gifId });
+        // GIF creation complete - download handled by background worker
+        this.log('info', '[Content] GIF creation complete', { id: gifId });
         
         // Close the timeline overlay immediately if not in wizard mode
         if (!this.isWizardMode) {

@@ -1,5 +1,4 @@
 import { UserPreferences } from '@/types/storage';
-import { chromeStorageManager } from '@/storage/chrome-storage';
 
 export interface ExtensionRuntimeState {
   isYouTubePage: boolean;
@@ -51,9 +50,10 @@ export class ExtensionStateManager {
   }
 
   private setupStorageListener(): void {
-    chromeStorageManager.addEventListener((event) => {
-      if (event.type === 'preferences-updated') {
-        this.emit('preferences-changed', event.data);
+    // Listen for chrome storage changes
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName === 'sync' && changes.preferences) {
+        this.emit('preferences-changed', changes.preferences.newValue);
       }
     });
   }
@@ -212,30 +212,51 @@ export class ExtensionStateManager {
 
   // User preferences delegation
   async getPreferences(): Promise<UserPreferences> {
-    return chromeStorageManager.getPreferences();
+    const result = await chrome.storage.sync.get('preferences');
+    return result.preferences || this.getDefaultPreferences();
+  }
+
+  private getDefaultPreferences(): UserPreferences {
+    return {
+      defaultQuality: 'high',
+      autoDownload: true,
+      defaultFrameRate: 15,
+      defaultWidth: 480,
+      showAdvancedOptions: false,
+      theme: 'system'
+    };
   }
 
   async savePreferences(preferences: Partial<UserPreferences>): Promise<void> {
-    await chromeStorageManager.savePreferences(preferences);
+    const current = await this.getPreferences();
+    const updated = { ...current, ...preferences };
+    await chrome.storage.sync.set({ preferences: updated });
+    this.emit('preferences-changed', updated);
   }
 
   async updatePreference<K extends keyof UserPreferences>(
     key: K,
     value: UserPreferences[K]
   ): Promise<void> {
-    await chromeStorageManager.updatePreference(key, value);
+    const preferences = await this.getPreferences();
+    preferences[key] = value;
+    await chrome.storage.sync.set({ preferences });
+    this.emit('preferences-changed', preferences);
   }
 
   async resetPreferences(): Promise<void> {
-    await chromeStorageManager.resetPreferences();
+    const defaults = this.getDefaultPreferences();
+    await chrome.storage.sync.set({ preferences: defaults });
+    this.emit('preferences-changed', defaults);
   }
 
   async getTheme(): Promise<'light' | 'dark' | 'system'> {
-    return chromeStorageManager.getTheme();
+    const preferences = await this.getPreferences();
+    return preferences.theme || 'system';
   }
 
   async setTheme(theme: 'light' | 'dark' | 'system'): Promise<void> {
-    await chromeStorageManager.setTheme(theme);
+    await this.updatePreference('theme', theme);
   }
 
   async getGifSettings(): Promise<{
@@ -244,7 +265,13 @@ export class ExtensionStateManager {
     maxDuration: number;
     autoSave: boolean;
   }> {
-    return chromeStorageManager.getGifSettings();
+    const result = await chrome.storage.sync.get('gifSettings');
+    return result.gifSettings || {
+      frameRate: 15,
+      quality: 10,
+      maxDuration: 30,
+      autoSave: true
+    };
   }
 
   // Event system

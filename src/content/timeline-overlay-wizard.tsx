@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { TimelineSelection, TextOverlay, GifMetadata } from '@/types';
+import { TimelineSelection, TextOverlay } from '@/types';
 import OverlayWizard from './overlay-wizard/OverlayWizard';
 
 export interface TimelineOverlayWizardProps {
@@ -20,7 +20,7 @@ export interface TimelineOverlayWizardProps {
   gifData?: {
     dataUrl: string;
     size: number;
-    metadata: GifMetadata;
+    metadata: any;
   };
 }
 
