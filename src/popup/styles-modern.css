@@ -44,6 +44,13 @@ body {
   gap: 12px;
 }
 
+.popup-logo-svg {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  filter: drop-shadow(0 2px 8px rgba(255, 0, 102, 0.15));
+}
+
 .popup-logo {
   width: 48px;
   height: 48px;

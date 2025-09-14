@@ -17,12 +17,12 @@
     </filter>
   </defs>
 
-  <!-- Larger circular background - using more space -->
-  <circle cx="64" cy="64" r="60" fill="#0f0f0f"/>
-  <circle cx="64" cy="64" r="59" fill="none" stroke="url(#redPurpleGradient)" stroke-width="1.5" opacity="0.4"/>
+  <!-- Dark circular background with gradient border -->
+  <circle cx="64" cy="64" r="45" fill="#0f0f0f"/>
+  <circle cx="64" cy="64" r="44" fill="none" stroke="url(#redPurpleGradient)" stroke-width="1" opacity="0.3"/>
 
-  <!-- Larger play button arrow -->
-  <g transform="translate(70, 64) scale(1.35)" filter="url(#softGlow)">
+  <!-- Play button arrow with smooth gradient transition -->
+  <g transform="translate(68, 64)" filter="url(#softGlow)">
     <!-- Slice 1 - Pure Red -->
     <clipPath id="g1">
       <rect x="-40" y="-32" width="80" height="11"/>

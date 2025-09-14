@@ -38,9 +38,11 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       <div className="ytgif-wizard-content">
         {/* Logo */}
         <div className="ytgif-logo-container">
-          <div className="ytgif-logo">
-            <span>G</span>
-          </div>
+          <img
+            src={chrome.runtime.getURL('icons/icon.svg')}
+            alt="YTGify Logo"
+            className="ytgif-logo-svg"
+          />
         </div>
 
         {/* Title */}

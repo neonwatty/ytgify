@@ -105,9 +105,12 @@ const PopupApp: React.FC = () => {
       {/* Simple Header */}
       <div className="popup-header">
         <div className="popup-logo-container">
-          <div className="popup-logo">
-            <span className="logo-text">G</span>
-          </div>
+          <img
+            src="icons/icon.svg"
+            alt="YTGify Logo"
+            className="popup-logo-svg"
+            style={{ width: '48px', height: '48px' }}
+          />
           <div>
             <h1 className="popup-logo-title">YouTube GIF Maker</h1>
             <p className="popup-logo-subtitle">Create GIFs instantly</p>
