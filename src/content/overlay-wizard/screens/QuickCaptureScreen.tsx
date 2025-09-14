@@ -27,7 +27,7 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
   const [endTime, setEndTime] = useState(initialEndTime);
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
   const [previewTime, setPreviewTime] = useState(startTime);
-  const [selectedFrameRate, setSelectedFrameRate] = useState(10); // Default to 10 fps
+  const [selectedFrameRate, setSelectedFrameRate] = useState(5); // Default to 5 fps
   
   const handleRangeChange = useCallback((newStart: number, newEnd: number) => {
     setStartTime(newStart);
