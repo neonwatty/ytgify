@@ -49,5 +49,5 @@
   <text x="86" y="70" font-family="Arial Black, sans-serif" font-size="18" font-weight="900" fill="white" text-anchor="middle">GIF</text>
 
   <!-- Gradient blend at center seam -->
-  <rect x="62" y="30" width="4" height="68" fill="url(#combined)" opacity="0.3"/>
+  <rect x="62" y="30" width="4" height="68" fill="#808080" opacity="0.3"/>
 </svg>
