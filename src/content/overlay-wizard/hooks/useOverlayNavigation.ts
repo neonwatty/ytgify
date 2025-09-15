@@ -3,7 +3,6 @@ import { TextOverlay } from '@/types';
 
 export type OverlayScreenType =
   | 'welcome'
-  | 'action-select'
   | 'quick-capture'
   | 'text-overlay'
   | 'processing'
