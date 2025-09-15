@@ -637,9 +637,58 @@
   border-radius: 4px;
 }
 
+/* Timeline info group */
+.ytgif-timeline-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ytgif-timeline-start {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+}
+
 /* Screen 2: Capture timeline customization */
 .ytgif-quick-capture-screen .ytgif-timeline-value {
   background: rgba(255, 0, 102, 0.2);
+}
+
+/* Timeline track container for positioning marks */
+.ytgif-timeline-track-container {
+  position: relative;
+  padding-bottom: 20px;
+}
+
+/* Timeline hash marks - same style as slider marks */
+.ytgif-timeline-marks {
+  position: absolute;
+  top: 58px; /* Position below the timeline track */
+  left: 0;
+  right: 0;
+  height: 30px;
+  pointer-events: none;
+}
+
+.ytgif-timeline-mark {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ytgif-timeline-mark-line {
+  width: 1px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.3);
+  margin-bottom: 4px;
+}
+
+.ytgif-timeline-mark-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
 }
 
 .ytgif-timeline-track {

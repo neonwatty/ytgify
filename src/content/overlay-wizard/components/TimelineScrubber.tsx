@@ -194,78 +194,115 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
       <div className="ytgif-timeline-container">
         <div className="ytgif-timeline-header">
           <span className="ytgif-timeline-label">Timeline Selection</span>
-          <span className="ytgif-timeline-value">{(endTime - startTime).toFixed(1)}s selected</span>
+          <div className="ytgif-timeline-info">
+            <span className="ytgif-timeline-start">Start: {formatTime(startTime)}</span>
+            <span className="ytgif-timeline-value">{(endTime - startTime).toFixed(1)}s</span>
+          </div>
         </div>
 
-        <div
-          ref={timelineRef}
-          className="ytgif-timeline-track"
-          onClick={handleTimelineClick}
-        >
-          {/* Background track */}
-          <div className="ytgif-timeline-background" />
-
-          {/* Selection range */}
+        <div className="ytgif-timeline-track-container">
           <div
-            className="ytgif-timeline-selection"
-            style={{
-              left: `${startPercent}%`,
-              width: `${widthPercent}%`
-            }}
-            onMouseDown={(e) => handleMouseDown(e, 'range')}
+            ref={timelineRef}
+            className="ytgif-timeline-track"
+            onClick={handleTimelineClick}
           >
-            {/* Start handle */}
+            {/* Background track */}
+            <div className="ytgif-timeline-background" />
+
+            {/* Selection range */}
             <div
-              className="ytgif-timeline-handle ytgif-handle-start"
-              onMouseDown={(e) => handleMouseDown(e, 'start')}
-              title={formatTime(startTime)}
+              className="ytgif-timeline-selection"
+              style={{
+                left: `${startPercent}%`,
+                width: `${widthPercent}%`
+              }}
+              onMouseDown={(e) => handleMouseDown(e, 'range')}
             >
-              <div className="ytgif-handle-grip" />
+              {/* Start handle */}
+              <div
+                className="ytgif-timeline-handle ytgif-handle-start"
+                onMouseDown={(e) => handleMouseDown(e, 'start')}
+                title={formatTime(startTime)}
+              >
+                <div className="ytgif-handle-grip" />
+              </div>
+
+              {/* End handle */}
+              <div
+                className="ytgif-timeline-handle ytgif-handle-end"
+                onMouseDown={(e) => handleMouseDown(e, 'end')}
+                title={formatTime(endTime)}
+              >
+                <div className="ytgif-handle-grip" />
+              </div>
+
+              {/* Duration label */}
+              <div className="ytgif-selection-duration">
+                {(endTime - startTime).toFixed(1)}s
+              </div>
             </div>
 
-            {/* End handle */}
+            {/* Current video time indicator */}
             <div
-              className="ytgif-timeline-handle ytgif-handle-end"
-              onMouseDown={(e) => handleMouseDown(e, 'end')}
-              title={formatTime(endTime)}
-            >
-              <div className="ytgif-handle-grip" />
-            </div>
+              className={`ytgif-timeline-current ${
+                currentTime >= startTime && currentTime <= endTime
+                  ? 'ytgif-timeline-current-in-range'
+                  : 'ytgif-timeline-current-out-range'
+              }`}
+              style={{ left: `${currentPercent}%` }}
+              title={`Current video time: ${formatTime(currentTime)}`}
+            />
 
-            {/* Duration label */}
-            <div className="ytgif-selection-duration">
-              {(endTime - startTime).toFixed(1)}s
-            </div>
+            {/* Preview playhead (when playing preview) */}
+            {previewPercent !== null && (
+              <div
+                className="ytgif-timeline-preview-head"
+                style={{ left: `${previewPercent}%` }}
+              />
+            )}
+
+            {/* Hover tooltip */}
+            {showTooltip && hoverTime !== null && (
+              <div
+                className="ytgif-timeline-tooltip"
+                style={{ left: `${(hoverTime / duration) * 100}%` }}
+              >
+                {formatTime(hoverTime)}
+              </div>
+            )}
           </div>
 
-          {/* Current video time indicator */}
-          <div
-            className={`ytgif-timeline-current ${
-              currentTime >= startTime && currentTime <= endTime
-                ? 'ytgif-timeline-current-in-range'
-                : 'ytgif-timeline-current-out-range'
-            }`}
-            style={{ left: `${currentPercent}%` }}
-            title={`Current video time: ${formatTime(currentTime)}`}
-          />
+          {/* Hash marks for timeline */}
+          <div className="ytgif-timeline-marks">
+            {(() => {
+              // Calculate appropriate interval based on video duration
+              let interval = 5; // Default 5 second intervals
+              if (duration > 60) interval = 10;
+              if (duration > 120) interval = 20;
+              if (duration > 300) interval = 30;
+              if (duration < 20) interval = 2;
 
-          {/* Preview playhead (when playing preview) */}
-          {previewPercent !== null && (
-            <div
-              className="ytgif-timeline-preview-head"
-              style={{ left: `${previewPercent}%` }}
-            />
-          )}
+              const marks = [];
+              for (let i = 0; i <= duration; i += interval) {
+                marks.push(i);
+              }
 
-          {/* Hover tooltip */}
-          {showTooltip && hoverTime !== null && (
-            <div
-              className="ytgif-timeline-tooltip"
-              style={{ left: `${(hoverTime / duration) * 100}%` }}
-            >
-              {formatTime(hoverTime)}
-            </div>
-          )}
+              return marks.map((mark) => {
+                const position = (mark / duration) * 100;
+
+                return (
+                  <div
+                    key={mark}
+                    className="ytgif-timeline-mark"
+                    style={{ left: `${position}%` }}
+                  >
+                    <div className="ytgif-timeline-mark-line" />
+                    <div className="ytgif-timeline-mark-label">{formatTime(mark)}</div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
         </div>
 
         {/* Time labels */}
