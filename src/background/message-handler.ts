@@ -44,7 +44,7 @@ export class BackgroundMessageHandler {
 
   private constructor(options: MessageHandlerOptions = {}) {
     this.options = {
-      enableProgressUpdates: true,
+      enableProgressUpdates: typeof process !== 'undefined' && process.env.NODE_ENV !== 'test',
       maxConcurrentJobs: 5,
       jobTimeout: 300000, // 5 minutes
       ...options
@@ -58,6 +58,13 @@ export class BackgroundMessageHandler {
       BackgroundMessageHandler.instance = new BackgroundMessageHandler(options);
     }
     return BackgroundMessageHandler.instance;
+  }
+
+  public static resetInstance(): void {
+    if (BackgroundMessageHandler.instance) {
+      BackgroundMessageHandler.instance.cleanup();
+      BackgroundMessageHandler.instance = undefined as any;
+    }
   }
 
   // Main message routing handler

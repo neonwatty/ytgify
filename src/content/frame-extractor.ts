@@ -46,6 +46,10 @@ export class ContentScriptFrameExtractor {
     return ContentScriptFrameExtractor.instance;
   }
 
+  public static resetInstance(): void {
+    ContentScriptFrameExtractor.instance = undefined as any;
+  }
+
   // Initialize message handling from background script
   private initializeMessageHandling(): void {
     // Check if chrome.runtime is available
@@ -132,12 +136,13 @@ export class ContentScriptFrameExtractor {
 
       // Try simplified extractor with timeout
       let result;
-      const extractionTimeout = new Promise<never>((_, reject) => 
-        setTimeout(() => {
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      const extractionTimeout = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
           logger.error('[ContentScriptFrameExtractor] Extraction timeout after 15s');
           reject(new Error('Extraction timeout'));
-        }, 15000)
-      );
+        }, 15000);
+      });
       
       logger.info('[ContentScriptFrameExtractor] Starting extractFramesSimple with timeout');
       try {
@@ -145,11 +150,13 @@ export class ContentScriptFrameExtractor {
           extractFramesSimple(videoElement, processingOptions, onProgress),
           extractionTimeout
         ]);
+        if (timeoutId) clearTimeout(timeoutId);
         logger.info('[ContentScriptFrameExtractor] extractFramesSimple completed', {
           frameCount: result.frames.length,
           method: result.metadata.extractionMethod
         });
       } catch (timeoutError) {
+        if (timeoutId) clearTimeout(timeoutId);
         logger.warn('[ContentScriptFrameExtractor] Simple extraction timed out, using instant capture', {
           error: timeoutError instanceof Error ? timeoutError.message : 'Unknown error'
         });
