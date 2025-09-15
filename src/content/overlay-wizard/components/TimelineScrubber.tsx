@@ -27,7 +27,7 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
   const [isDragging, setIsDragging] = useState<'start' | 'end' | 'range' | null>(null);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
-  const [activePreset, setActivePreset] = useState<'3s' | '5s' | '10s' | null>(null);
+  const [durationSliderValue, setDurationSliderValue] = useState(endTime - startTime);
   
   const dragStartRef = useRef<{ x: number; startTime: number; endTime: number }>({
     x: 0,
@@ -35,32 +35,21 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
     endTime: 0
   });
 
-  // Check if current selection matches a preset
-  const detectActivePreset = useCallback(() => {
-    const duration = endTime - startTime;
-    const tolerance = 0.1; // 100ms tolerance
-    
-    // Check for 3s preset
-    if (Math.abs(duration - 3) < tolerance) {
-      return '3s';
-    }
-    // Check for 5s preset
-    if (Math.abs(duration - 5) < tolerance) {
-      return '5s';
-    }
-    // Check for 10s preset
-    if (Math.abs(duration - 10) < tolerance) {
-      return '10s';
-    }
-    
-    return null;
-  }, [startTime, endTime, currentTime]);
-
-  // Update active preset when selection changes
+  // Update slider value when handles are dragged
   useEffect(() => {
-    const preset = detectActivePreset();
-    setActivePreset(preset);
-  }, [detectActivePreset]);
+    setDurationSliderValue(endTime - startTime);
+  }, [startTime, endTime]);
+
+  // Handle slider change
+  const handleDurationSliderChange = (value: number) => {
+    const newValue = parseFloat(value.toFixed(1));
+    const maxEnd = Math.min(startTime + newValue, duration);
+    onRangeChange(startTime, maxEnd);
+    setDurationSliderValue(newValue);
+  };
+
+  // Calculate slider constraints
+  const maxSliderValue = Math.min(20, duration - startTime);
 
   // Convert time to pixel position
   const timeToPosition = useCallback((time: number): number => {
@@ -281,38 +270,31 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
         <span className="ytgif-label-end">{formatTime(duration)}</span>
       </div>
       
-      {/* Quick duration presets */}
-      <div className="ytgif-duration-presets">
-        <button 
-          className={`ytgif-preset-btn ${activePreset === '3s' ? 'ytgif-preset-btn--active' : ''}`}
-          onClick={() => {
-            const newEnd = Math.min(duration, startTime + 3);
-            onRangeChange(startTime, newEnd);
-            setActivePreset('3s');
-          }}
-        >
-          3s
-        </button>
-        <button 
-          className={`ytgif-preset-btn ${activePreset === '5s' ? 'ytgif-preset-btn--active' : ''}`}
-          onClick={() => {
-            const newEnd = Math.min(duration, startTime + 5);
-            onRangeChange(startTime, newEnd);
-            setActivePreset('5s');
-          }}
-        >
-          5s
-        </button>
-        <button 
-          className={`ytgif-preset-btn ${activePreset === '10s' ? 'ytgif-preset-btn--active' : ''}`}
-          onClick={() => {
-            const newEnd = Math.min(duration, startTime + 10);
-            onRangeChange(startTime, newEnd);
-            setActivePreset('10s');
-          }}
-        >
-          10s
-        </button>
+      {/* Duration slider */}
+      <div className="ytgif-duration-slider">
+        <div className="ytgif-slider-header">
+          <span className="ytgif-slider-label">Clip Duration</span>
+          <span className="ytgif-slider-value">{durationSliderValue.toFixed(1)}s</span>
+        </div>
+        <input
+          type="range"
+          className="ytgif-slider-input"
+          min="1"
+          max={maxSliderValue}
+          step="0.1"
+          value={durationSliderValue}
+          onChange={(e) => handleDurationSliderChange(parseFloat(e.target.value))}
+          aria-label="GIF duration"
+          aria-valuemin={1}
+          aria-valuemax={maxSliderValue}
+          aria-valuenow={durationSliderValue}
+          disabled={duration < 1}
+        />
+        {duration < 1 && (
+          <div className="ytgif-slider-disabled-message">
+            Video too short for GIF creation
+          </div>
+        )}
       </div>
     </div>
   );

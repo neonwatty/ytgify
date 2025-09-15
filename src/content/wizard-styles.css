@@ -762,52 +762,138 @@
   color: #ff0066;
 }
 
-.ytgif-duration-presets {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
+.ytgif-duration-slider {
   margin-top: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
 }
 
-.ytgif-preset-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+.ytgif-slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.ytgif-slider-label {
   color: rgba(255, 255, 255, 0.8);
-  padding: 6px 12px;
-  border-radius: 4px;
   font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
 }
 
-.ytgif-preset-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+.ytgif-slider-value {
   color: #fff;
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.ytgif-preset-btn.ytgif-preset-btn--active {
-  background: rgba(255, 0, 0, 0.2) !important;
-  color: #fff;
-  border-color: #ff0000;
+  font-size: 14px;
   font-weight: 600;
+  background: rgba(255, 0, 0, 0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
-.ytgif-preset-btn.ytgif-preset-btn--active:hover {
-  background: rgba(255, 0, 0, 0.25) !important;
-  border-color: #ff0000;
+.ytgif-slider-input {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+  transition: background 0.2s;
 }
 
-/* Screen 2: Capture preset buttons */
-.ytgif-quick-capture-screen .ytgif-preset-btn.ytgif-preset-btn--active {
-  background: rgba(255, 0, 102, 0.2) !important;
-  border-color: #ff0066;
+.ytgif-slider-input:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
 }
 
-.ytgif-quick-capture-screen .ytgif-preset-btn.ytgif-preset-btn--active:hover {
-  background: rgba(255, 0, 102, 0.25) !important;
-  border-color: #ff0066;
+.ytgif-slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ff0000;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.ytgif-slider-input::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+}
+
+.ytgif-slider-input::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ff0000;
+  cursor: pointer;
+  transition: transform 0.2s;
+  border: none;
+}
+
+.ytgif-slider-input::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+}
+
+.ytgif-slider-input:focus {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.ytgif-slider-input:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.3);
+}
+
+.ytgif-slider-input:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.3);
+}
+
+.ytgif-slider-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ytgif-slider-input:disabled::-webkit-slider-thumb {
+  cursor: not-allowed;
+}
+
+.ytgif-slider-input:disabled::-moz-range-thumb {
+  cursor: not-allowed;
+}
+
+.ytgif-slider-disabled-message {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* Screen 2: Capture slider customization */
+.ytgif-quick-capture-screen .ytgif-slider-value {
+  background: rgba(255, 0, 102, 0.2);
+}
+
+.ytgif-quick-capture-screen .ytgif-slider-input::-webkit-slider-thumb {
+  background: #ff0066;
+}
+
+.ytgif-quick-capture-screen .ytgif-slider-input::-moz-range-thumb {
+  background: #ff0066;
+}
+
+.ytgif-quick-capture-screen .ytgif-slider-input::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 8px rgba(255, 0, 102, 0.5);
+}
+
+.ytgif-quick-capture-screen .ytgif-slider-input::-moz-range-thumb:hover {
+  box-shadow: 0 0 8px rgba(255, 0, 102, 0.5);
+}
+
+.ytgif-quick-capture-screen .ytgif-slider-input:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(255, 0, 102, 0.3);
+}
+
+.ytgif-quick-capture-screen .ytgif-slider-input:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 3px rgba(255, 0, 102, 0.3);
 }
 
 /* Preview Fallback */
