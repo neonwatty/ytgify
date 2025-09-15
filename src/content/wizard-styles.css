@@ -608,6 +608,40 @@
   position: relative;
 }
 
+/* Timeline Container - Similar to duration slider */
+.ytgif-timeline-container {
+  margin-bottom: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.ytgif-timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.ytgif-timeline-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+}
+
+.ytgif-timeline-value {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  background: rgba(255, 0, 0, 0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* Screen 2: Capture timeline customization */
+.ytgif-quick-capture-screen .ytgif-timeline-value {
+  background: rgba(255, 0, 102, 0.2);
+}
+
 .ytgif-timeline-track {
   position: relative;
   height: 48px;

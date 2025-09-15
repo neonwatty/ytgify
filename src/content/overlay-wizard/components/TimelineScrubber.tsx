@@ -190,84 +190,92 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
 
   return (
     <div className="ytgif-timeline-scrubber">
-      <div 
-        ref={timelineRef}
-        className="ytgif-timeline-track"
-        onClick={handleTimelineClick}
-      >
-        {/* Background track */}
-        <div className="ytgif-timeline-background" />
-        
-        {/* Selection range */}
-        <div 
-          className="ytgif-timeline-selection"
-          style={{
-            left: `${startPercent}%`,
-            width: `${widthPercent}%`
-          }}
-          onMouseDown={(e) => handleMouseDown(e, 'range')}
-        >
-          {/* Start handle */}
-          <div 
-            className="ytgif-timeline-handle ytgif-handle-start"
-            onMouseDown={(e) => handleMouseDown(e, 'start')}
-            title={formatTime(startTime)}
-          >
-            <div className="ytgif-handle-grip" />
-          </div>
-          
-          {/* End handle */}
-          <div 
-            className="ytgif-timeline-handle ytgif-handle-end"
-            onMouseDown={(e) => handleMouseDown(e, 'end')}
-            title={formatTime(endTime)}
-          >
-            <div className="ytgif-handle-grip" />
-          </div>
-          
-          {/* Duration label */}
-          <div className="ytgif-selection-duration">
-            {(endTime - startTime).toFixed(1)}s
-          </div>
+      {/* Timeline Selection Container */}
+      <div className="ytgif-timeline-container">
+        <div className="ytgif-timeline-header">
+          <span className="ytgif-timeline-label">Timeline Selection</span>
+          <span className="ytgif-timeline-value">{(endTime - startTime).toFixed(1)}s selected</span>
         </div>
-        
-        {/* Current video time indicator */}
-        <div 
-          className={`ytgif-timeline-current ${
-            currentTime >= startTime && currentTime <= endTime 
-              ? 'ytgif-timeline-current-in-range' 
-              : 'ytgif-timeline-current-out-range'
-          }`}
-          style={{ left: `${currentPercent}%` }}
-          title={`Current video time: ${formatTime(currentTime)}`}
-        />
-        
-        {/* Preview playhead (when playing preview) */}
-        {previewPercent !== null && (
-          <div 
-            className="ytgif-timeline-preview-head"
-            style={{ left: `${previewPercent}%` }}
-          />
-        )}
-        
-        {/* Hover tooltip */}
-        {showTooltip && hoverTime !== null && (
-          <div 
-            className="ytgif-timeline-tooltip"
-            style={{ left: `${(hoverTime / duration) * 100}%` }}
+
+        <div
+          ref={timelineRef}
+          className="ytgif-timeline-track"
+          onClick={handleTimelineClick}
+        >
+          {/* Background track */}
+          <div className="ytgif-timeline-background" />
+
+          {/* Selection range */}
+          <div
+            className="ytgif-timeline-selection"
+            style={{
+              left: `${startPercent}%`,
+              width: `${widthPercent}%`
+            }}
+            onMouseDown={(e) => handleMouseDown(e, 'range')}
           >
-            {formatTime(hoverTime)}
+            {/* Start handle */}
+            <div
+              className="ytgif-timeline-handle ytgif-handle-start"
+              onMouseDown={(e) => handleMouseDown(e, 'start')}
+              title={formatTime(startTime)}
+            >
+              <div className="ytgif-handle-grip" />
+            </div>
+
+            {/* End handle */}
+            <div
+              className="ytgif-timeline-handle ytgif-handle-end"
+              onMouseDown={(e) => handleMouseDown(e, 'end')}
+              title={formatTime(endTime)}
+            >
+              <div className="ytgif-handle-grip" />
+            </div>
+
+            {/* Duration label */}
+            <div className="ytgif-selection-duration">
+              {(endTime - startTime).toFixed(1)}s
+            </div>
           </div>
-        )}
-      </div>
-      
-      {/* Time labels */}
-      <div className="ytgif-timeline-labels">
-        <span className="ytgif-label-start">{formatTime(0)}</span>
-        <span className="ytgif-label-selection">
-          {formatTime(startTime)} - {formatTime(endTime)}
-        </span>
-        <span className="ytgif-label-end">{formatTime(duration)}</span>
+
+          {/* Current video time indicator */}
+          <div
+            className={`ytgif-timeline-current ${
+              currentTime >= startTime && currentTime <= endTime
+                ? 'ytgif-timeline-current-in-range'
+                : 'ytgif-timeline-current-out-range'
+            }`}
+            style={{ left: `${currentPercent}%` }}
+            title={`Current video time: ${formatTime(currentTime)}`}
+          />
+
+          {/* Preview playhead (when playing preview) */}
+          {previewPercent !== null && (
+            <div
+              className="ytgif-timeline-preview-head"
+              style={{ left: `${previewPercent}%` }}
+            />
+          )}
+
+          {/* Hover tooltip */}
+          {showTooltip && hoverTime !== null && (
+            <div
+              className="ytgif-timeline-tooltip"
+              style={{ left: `${(hoverTime / duration) * 100}%` }}
+            >
+              {formatTime(hoverTime)}
+            </div>
+          )}
+        </div>
+
+        {/* Time labels */}
+        <div className="ytgif-timeline-labels">
+          <span className="ytgif-label-start">{formatTime(0)}</span>
+          <span className="ytgif-label-selection">
+            {formatTime(startTime)} - {formatTime(endTime)}
+          </span>
+          <span className="ytgif-label-end">{formatTime(duration)}</span>
+        </div>
       </div>
       
       {/* Duration slider */}
