@@ -50,7 +50,7 @@ class YouTubeGifMaker {
   private extractedFrames: ImageData[] | null = null;
   private isWizardMode = false;
   private wizardUpdateInterval: NodeJS.Timeout | null = null;
-  private createdGifData: { dataUrl: string; size: number; metadata: any } | undefined = undefined;
+  private createdGifData: { dataUrl: string; size: number; metadata: Record<string, unknown> } | undefined = undefined;
   private buttonVisible = false; // Track button visibility state - default to hidden
 
   constructor() {
@@ -710,104 +710,6 @@ class YouTubeGifMaker {
     // Use the new wizard overlay
     this.showWizardOverlay(message);
     return;
-    
-    // Old timeline overlay code (kept for reference)
-    try {
-      // Remove existing overlay
-      this.hideTimelineOverlay();
-
-      const { videoDuration, currentTime } = message.data;
-
-    // Initialize default selection from current time forward (5 second clip)
-    const startTime = currentTime;
-    const endTime = Math.min(videoDuration, currentTime + 5);
-    this.currentSelection = {
-      startTime,
-      endTime,
-      duration: endTime - startTime
-    };
-
-    // Create timeline overlay container with guaranteed visibility
-    const overlay = document.createElement('div');
-    overlay.id = 'ytgif-timeline-overlay';
-    this.timelineOverlay = overlay;
-    
-    // Force visibility with inline styles - Phase 1 immediate fix
-    
-    overlay.style.cssText = `
-      position: fixed !important;
-      bottom: 100px !important;
-      left: 50% !important;
-      transform: translateX(-50%) !important;
-      width: 90% !important;
-      max-width: 800px !important;
-      background: rgba(0, 0, 0, 0.95) !important;
-      padding: 20px !important;
-      border-radius: 12px !important;
-      z-index: 2147483647 !important;
-      display: block !important;
-      visibility: visible !important;
-      color: white !important;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
-    `;
-    
-    // Add debug border in development
-    if (process.env.NODE_ENV === 'development') {
-      overlay.style.border = '2px solid rgba(255, 0, 0, 0.5)';
-      console.debug('[Debug] Timeline overlay created', {
-        rect: overlay.getBoundingClientRect()
-      });
-    }
-    
-    document.body.appendChild(overlay);
-
-    // Create React root and render timeline overlay
-    
-    try {
-      this.timelineRoot = createRoot(overlay);
-      
-    } catch (reactError) {
-      console.error('[UI FIX DEBUG] Failed to create React root:', reactError);
-      throw reactError;
-    }
-    
-    // Register elements with overlay state manager
-    overlayStateManager.setElements(overlay, this.timelineRoot);
-
-    try {
-      if (!this.timelineRoot) {
-        throw new Error('Timeline root not created');
-      }
-      this.timelineRoot!.render(
-        React.createElement(TimelineOverlayWrapper, {
-        videoDuration,
-        currentTime,
-        onSelectionChange: this.handleSelectionChange.bind(this),
-        onClose: this.deactivateGifMode.bind(this),
-        onCreateGif: this.handleCreateGif.bind(this),
-        onSeekTo: this.handleSeekTo.bind(this),
-        onPreviewToggle: this.handlePreviewToggle.bind(this),
-        isCreating: this.isCreatingGif,
-        isPreviewActive: playerController.isPreviewActive(),
-        processingStatus: this.processingStatus
-      })
-      );
-      
-    } catch (renderError) {
-      console.error('[UI FIX DEBUG] Failed to render React component:', renderError);
-      throw renderError;
-    }
-
-    this.log('debug', '[Content] Timeline overlay shown with React + inline styles fix', { 
-      videoDuration, 
-      currentTime,
-      initialSelection: this.currentSelection,
-      hasInlineStyles: true
-    });
-    } catch (error) {
-      console.error('[UI FIX DEBUG] Error in showTimelineOverlay:', error);
-      this.log('error', '[Content] Failed to show timeline overlay', { error });
-    }
   }
 
   private handleSelectionChange(selection: TimelineSelection) {
@@ -1315,18 +1217,6 @@ class YouTubeGifMaker {
         link.download = `youtube-gif-${Date.now()}.gif`;
         link.click();
       } else {
-        // Show preview modal with download button
-        const previewMetadata = {
-          id: `gif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          title: `youtube-gif-${Date.now()}`,
-          width: settings.width || 640,
-          height: settings.height || 360,
-          duration: endTime - startTime,
-          frameRate: settings.frameRate || 15,
-          fileSize: result.blob.size,
-          createdAt: new Date(),
-          tags: []
-        };
         // Preview modal removed - wizard handles everything
       }
       

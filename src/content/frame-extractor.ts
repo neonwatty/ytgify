@@ -251,7 +251,7 @@ export class ContentScriptFrameExtractor {
             return iframeVideo;
           }
         }
-      } catch (error) {
+      } catch {
         // Ignore cross-origin iframe access errors
         logger.debug('[ContentScriptFrameExtractor] Cannot access iframe content (cross-origin)');
       }

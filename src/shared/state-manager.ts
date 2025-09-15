@@ -108,7 +108,7 @@ export class ExtensionStateManager {
              !!chrome.runtime.id && 
              (chrome.runtime.getURL('').includes('chrome-extension://') || 
               (typeof window !== 'undefined' && window.location.protocol === 'chrome-extension:'));
-    } catch (error) {
+    } catch {
       return false;
     }
   }

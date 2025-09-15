@@ -70,7 +70,7 @@ class SharedErrorHandler {
     try {
       const result = await chrome.storage.sync.get(['errorReportingEnabled']);
       this.errorReportingEnabled = result.errorReportingEnabled ?? true;
-    } catch (error) {
+    } catch {
       this.errorReportingEnabled = true;
     }
   }

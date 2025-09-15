@@ -20,7 +20,7 @@ export interface TimelineOverlayWizardProps {
   gifData?: {
     dataUrl: string;
     size: number;
-    metadata: any;
+    metadata: Record<string, unknown>;
   };
 }
 

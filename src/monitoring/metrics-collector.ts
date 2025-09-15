@@ -409,7 +409,7 @@ export class MetricsCollector {
           data: payload
         });
       }
-    } catch (error) {
+    } catch {
       // Silently ignore metrics collection errors
     }
   }

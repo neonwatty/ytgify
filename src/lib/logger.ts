@@ -114,7 +114,7 @@ export class Logger {
           await chrome.storage.local.remove(key);
         }
       }
-    } catch (error) {
+    } catch {
       // Silently fail if storage is not available
     }
   }
