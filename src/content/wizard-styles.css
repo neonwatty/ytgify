@@ -305,13 +305,11 @@
 }
 
 /* Screen 2: Capture Screens - #ff0066 theme */
-.ytgif-quick-capture-screen .ytgif-button-primary,
-.ytgif-custom-range-screen .ytgif-button-primary {
+.ytgif-quick-capture-screen .ytgif-button-primary {
   background: linear-gradient(135deg, #ff0066 0%, #dd0055 100%);
 }
 
-.ytgif-quick-capture-screen .ytgif-button-primary:hover:not(:disabled),
-.ytgif-custom-range-screen .ytgif-button-primary:hover:not(:disabled) {
+.ytgif-quick-capture-screen .ytgif-button-primary:hover:not(:disabled) {
   box-shadow: 0 4px 20px rgba(255, 0, 102, 0.3);
 }
 
@@ -542,13 +540,11 @@
 }
 
 /* Screen 2: Capture preview play button */
-.ytgif-quick-capture-screen .ytgif-preview-play-button,
-.ytgif-custom-range-screen .ytgif-preview-play-button {
+.ytgif-quick-capture-screen .ytgif-preview-play-button {
   background: rgba(255, 0, 102, 0.9);
 }
 
-.ytgif-quick-capture-screen .ytgif-preview-play-button:hover,
-.ytgif-custom-range-screen .ytgif-preview-play-button:hover {
+.ytgif-quick-capture-screen .ytgif-preview-play-button:hover {
   background: #ff0066;
 }
 
@@ -595,8 +591,7 @@
 }
 
 /* Screen 2: Capture preview control buttons */
-.ytgif-quick-capture-screen .ytgif-preview-control-btn.playing,
-.ytgif-custom-range-screen .ytgif-preview-control-btn.playing {
+.ytgif-quick-capture-screen .ytgif-preview-control-btn.playing {
   background: rgba(255, 0, 102, 0.3);
   border-color: #ff0066;
 }
@@ -644,8 +639,7 @@
 }
 
 /* Screen 2: Capture timeline selection */
-.ytgif-quick-capture-screen .ytgif-timeline-selection,
-.ytgif-custom-range-screen .ytgif-timeline-selection {
+.ytgif-quick-capture-screen .ytgif-timeline-selection {
   background: rgba(255, 0, 102, 0.3);
   border: 1px solid #ff0066;
 }
@@ -665,8 +659,7 @@
 }
 
 /* Screen 2: Capture timeline handles */
-.ytgif-quick-capture-screen .ytgif-timeline-handle,
-.ytgif-custom-range-screen .ytgif-timeline-handle {
+.ytgif-quick-capture-screen .ytgif-timeline-handle {
   background: #ff0066;
 }
 
@@ -713,16 +706,13 @@
 }
 
 /* Screen 2: Capture timeline current indicator */
-.ytgif-quick-capture-screen .ytgif-timeline-current,
-.ytgif-custom-range-screen .ytgif-timeline-current {
+.ytgif-quick-capture-screen .ytgif-timeline-current {
   background: #ff0066;
   box-shadow: 0 0 4px rgba(255, 0, 102, 0.3);
 }
 
 .ytgif-quick-capture-screen .ytgif-timeline-current-in-range,
-.ytgif-custom-range-screen .ytgif-timeline-current-in-range,
-.ytgif-quick-capture-screen .ytgif-timeline-current-out-range,
-.ytgif-custom-range-screen .ytgif-timeline-current-out-range {
+.ytgif-quick-capture-screen .ytgif-timeline-current-out-range {
   background: #ff0066 !important;
   box-shadow: 0 0 6px rgba(255, 0, 102, 0.5);
 }
@@ -767,8 +757,7 @@
 }
 
 /* Screen 2: Capture label selection */
-.ytgif-quick-capture-screen .ytgif-label-selection,
-.ytgif-custom-range-screen .ytgif-label-selection {
+.ytgif-quick-capture-screen .ytgif-label-selection {
   background: rgba(255, 0, 102, 0.2);
   color: #ff0066;
 }
@@ -811,14 +800,12 @@
 }
 
 /* Screen 2: Capture preset buttons */
-.ytgif-quick-capture-screen .ytgif-preset-btn.ytgif-preset-btn--active,
-.ytgif-custom-range-screen .ytgif-preset-btn.ytgif-preset-btn--active {
+.ytgif-quick-capture-screen .ytgif-preset-btn.ytgif-preset-btn--active {
   background: rgba(255, 0, 102, 0.2) !important;
   border-color: #ff0066;
 }
 
-.ytgif-quick-capture-screen .ytgif-preset-btn.ytgif-preset-btn--active:hover,
-.ytgif-custom-range-screen .ytgif-preset-btn.ytgif-preset-btn--active:hover {
+.ytgif-quick-capture-screen .ytgif-preset-btn.ytgif-preset-btn--active:hover {
   background: rgba(255, 0, 102, 0.25) !important;
   border-color: #ff0066;
 }
@@ -969,8 +956,7 @@
 }
 
 /* Screen 2: Capture additional timeline selection */
-.ytgif-quick-capture-screen .ytgif-timeline-track .ytgif-timeline-selection,
-.ytgif-custom-range-screen .ytgif-timeline-track .ytgif-timeline-selection {
+.ytgif-quick-capture-screen .ytgif-timeline-track .ytgif-timeline-selection {
   background: rgba(255, 0, 102, 0.3);
   border: 2px solid #ff0066;
 }
@@ -987,8 +973,7 @@
 }
 
 /* Screen 2: Capture selection handles */
-.ytgif-quick-capture-screen .ytgif-selection-handle,
-.ytgif-custom-range-screen .ytgif-selection-handle {
+.ytgif-quick-capture-screen .ytgif-selection-handle {
   background: #ff0066;
 }
 
@@ -1118,8 +1103,7 @@
 }
 
 /* Screen 2: Capture time input focus */
-.ytgif-quick-capture-screen .ytgif-time-input:focus,
-.ytgif-custom-range-screen .ytgif-time-input:focus {
+.ytgif-quick-capture-screen .ytgif-time-input:focus {
   border-color: #ff0066;
 }
 
@@ -1137,8 +1121,7 @@
 }
 
 /* Screen 2: Capture duration value */
-.ytgif-quick-capture-screen .ytgif-duration-value,
-.ytgif-custom-range-screen .ytgif-duration-value {
+.ytgif-quick-capture-screen .ytgif-duration-value {
   color: #ff0066;
 }
 
@@ -1254,8 +1237,7 @@
 }
 
 /* Screen 2: Capture frame rate icon */
-.ytgif-quick-capture-screen .ytgif-frame-rate-label svg,
-.ytgif-custom-range-screen .ytgif-frame-rate-label svg {
+.ytgif-quick-capture-screen .ytgif-frame-rate-label svg {
   color: #ff0066;
 }
 
@@ -1299,14 +1281,12 @@
 }
 
 /* Screen 2: Capture frame rate buttons */
-.ytgif-quick-capture-screen .ytgif-frame-rate-btn--active,
-.ytgif-custom-range-screen .ytgif-frame-rate-btn--active {
+.ytgif-quick-capture-screen .ytgif-frame-rate-btn--active {
   background: rgba(255, 0, 102, 0.2);
   border-color: #ff0066;
 }
 
-.ytgif-quick-capture-screen .ytgif-frame-rate-btn--active:hover,
-.ytgif-custom-range-screen .ytgif-frame-rate-btn--active:hover {
+.ytgif-quick-capture-screen .ytgif-frame-rate-btn--active:hover {
   background: rgba(255, 0, 102, 0.25);
 }
 

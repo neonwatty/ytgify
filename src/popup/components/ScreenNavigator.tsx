@@ -26,7 +26,6 @@ const ScreenNavigator: React.FC<ScreenNavigatorProps> = ({
         'welcome',
         'action-select',
         'quick-capture',
-        'custom-range',
         'processing',
         'success'
       ];
@@ -52,7 +51,6 @@ const ScreenNavigator: React.FC<ScreenNavigatorProps> = ({
       'welcome': 1,
       'action-select': 2,
       'quick-capture': 3,
-      'custom-range': 3,
       'processing': 4,
       'success': 5
     };

@@ -1,11 +1,10 @@
 import { useState, useCallback } from 'react';
 import { TextOverlay } from '@/types';
 
-export type OverlayScreenType = 
+export type OverlayScreenType =
   | 'welcome'
-  | 'action-select' 
+  | 'action-select'
   | 'quick-capture'
-  | 'custom-range'
   | 'text-overlay'
   | 'processing'
   | 'success';

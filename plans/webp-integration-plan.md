@@ -97,11 +97,10 @@ Given browser limitations discovered in testing, we have two options:
 
 Add new screen type:
 ```typescript
-export type OverlayScreenType = 
+export type OverlayScreenType =
   | 'welcome'
-  | 'action-select' 
+  | 'action-select'
   | 'quick-capture'
-  | 'custom-range'
   | 'text-overlay'
   | 'format-selection'  // NEW
   | 'processing'

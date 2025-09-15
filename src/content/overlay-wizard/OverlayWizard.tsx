@@ -3,7 +3,6 @@ import { TimelineSelection, TextOverlay } from '@/types';
 import { useOverlayNavigation } from './hooks/useOverlayNavigation';
 import WelcomeScreen from './screens/WelcomeScreen';
 import QuickCaptureScreen from './screens/QuickCaptureScreen';
-import CustomRangeScreen from './screens/CustomRangeScreen';
 import TextOverlayScreenV2 from './screens/TextOverlayScreenV2';
 import ProcessingScreen from './screens/ProcessingScreen';
 import SuccessScreen from './screens/SuccessScreen';
@@ -85,17 +84,6 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     goToScreen('text-overlay');
   };
 
-  const handleConfirmCustomRange = (startTime: number, endTime: number) => {
-    const selection: TimelineSelection = {
-      startTime,
-      endTime,
-      duration: endTime - startTime
-    };
-    setScreenData({ startTime, endTime });
-    onSelectionChange(selection);
-    // Go to text overlay screen instead of processing
-    goToScreen('text-overlay');
-  };
 
   // Store GIF data when it's created and transition to success
   React.useEffect(() => {
@@ -147,13 +135,13 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
 
   // Progress dots for navigation indicator
   const screens = ['welcome', 'capture', 'text', 'processing', 'success'];
-  const currentIndex = currentScreen === 'quick-capture' || currentScreen === 'custom-range' 
-    ? 1 
+  const currentIndex = currentScreen === 'quick-capture'
+    ? 1
     : currentScreen === 'text-overlay'
     ? 2
     : currentScreen === 'processing'
     ? 3
-    : currentScreen === 'success' 
+    : currentScreen === 'success'
     ? 4
     : screens.indexOf(currentScreen);
   
@@ -211,15 +199,6 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
             />
           )}
 
-          {currentScreen === 'custom-range' && (
-            <CustomRangeScreen
-              videoDuration={videoDuration}
-              currentTime={currentTime}
-              onConfirm={handleConfirmCustomRange}
-              onBack={goBack}
-              onSeekTo={onSeekTo}
-            />
-          )}
 
           {currentScreen === 'text-overlay' && (
             <TextOverlayScreenV2
