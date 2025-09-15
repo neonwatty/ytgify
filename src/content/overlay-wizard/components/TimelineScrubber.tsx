@@ -102,21 +102,28 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
     }
   }, [isDragging, positionToTime, startTime, endTime, duration, onRangeChange, onSeek]);
 
-  // Handle mouse move during drag
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isDragging) {
-      // Update hover position
-      if (timelineRef.current) {
-        const rect = timelineRef.current.getBoundingClientRect();
-        if (e.clientX >= rect.left && e.clientX <= rect.right) {
-          setHoverTime(positionToTime(e.clientX));
-          setShowTooltip(true);
-        } else {
-          setShowTooltip(false);
-        }
-      }
-      return;
+  // Handle mouse enter on timeline
+  const handleTimelineMouseEnter = useCallback(() => {
+    setShowTooltip(true);
+  }, []);
+
+  // Handle mouse leave on timeline
+  const handleTimelineMouseLeave = useCallback(() => {
+    setShowTooltip(false);
+    setHoverTime(null);
+  }, []);
+
+  // Handle mouse move on timeline (local to timeline element)
+  const handleTimelineMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging && timelineRef.current) {
+      const hoverTimeValue = positionToTime(e.clientX);
+      setHoverTime(hoverTimeValue);
     }
+  }, [isDragging, positionToTime]);
+
+  // Handle mouse move during drag (global document listener)
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging) return;
 
     const deltaX = e.clientX - dragStartRef.current.x;
     const deltaTime = (deltaX / timelineRef.current!.offsetWidth) * duration;
@@ -132,14 +139,14 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
     }
 
     onRangeChange(newStart, newEnd);
-  }, [isDragging, positionToTime, duration, startTime, endTime, onRangeChange]);
+  }, [isDragging, duration, startTime, endTime, onRangeChange]);
 
   // Handle mouse up
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
   }, []);
 
-  // Add/remove event listeners
+  // Add/remove event listeners for dragging only
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
@@ -147,12 +154,6 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
-      };
-    } else {
-      // Add hover listener even when not dragging
-      document.addEventListener('mousemove', handleMouseMove);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
       };
     }
   }, [isDragging, handleMouseMove, handleMouseUp]);
@@ -183,6 +184,9 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
           ref={timelineRef}
           className="ytgif-timeline-track"
           onClick={handleTimelineClick}
+          onMouseEnter={handleTimelineMouseEnter}
+          onMouseLeave={handleTimelineMouseLeave}
+          onMouseMove={handleTimelineMouseMove}
         >
           {/* Background track */}
           <div className="ytgif-timeline-background" />

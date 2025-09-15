@@ -61,10 +61,10 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   }, [videoDuration, currentTime, videoTitle, setScreenData]);
 
   const handleWelcomeContinue = React.useCallback(() => {
-    
-    // Set up default time range (5 seconds forward from current position)
+
+    // Set up default time range (10 seconds forward from current position)
     const startTime = currentTime;
-    const endTime = Math.min(videoDuration, currentTime + 5);
+    const endTime = Math.min(videoDuration, currentTime + 10);
     setScreenData({ startTime, endTime });
     goToScreen('quick-capture');
   }, [goToScreen, currentTime, videoDuration, setScreenData]);
@@ -115,8 +115,8 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     setScreenData({ textOverlays: overlays });
     const selection: TimelineSelection = {
       startTime: data.startTime || 0,
-      endTime: data.endTime || 4,
-      duration: (data.endTime || 4) - (data.startTime || 0)
+      endTime: data.endTime || 10,
+      duration: (data.endTime || 10) - (data.startTime || 0)
     };
     
     onCreateGif(selection, overlays);
@@ -126,8 +126,8 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   const handleSkipTextOverlay = () => {
     const selection: TimelineSelection = {
       startTime: data.startTime || 0,
-      endTime: data.endTime || 4,
-      duration: (data.endTime || 4) - (data.startTime || 0)
+      endTime: data.endTime || 10,
+      duration: (data.endTime || 10) - (data.startTime || 0)
     };
     onCreateGif(selection, []);
     goToScreen('processing');
@@ -189,7 +189,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
           {currentScreen === 'quick-capture' && (
             <QuickCaptureScreen
               startTime={data.startTime || 0}
-              endTime={data.endTime || 4}
+              endTime={data.endTime || 10}
               currentTime={currentTime}
               duration={videoDuration}
               videoElement={videoElement}

@@ -154,7 +154,7 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
             </svg>
           </button>
         )}
-        <h2 className="ytgif-wizard-title">Add Text to Your GIF</h2>
+        <h2 className="ytgif-wizard-title">Add Text</h2>
         <div style={{ width: '20px' }}></div>
       </div>
 
