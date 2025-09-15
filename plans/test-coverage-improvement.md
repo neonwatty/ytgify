@@ -1,24 +1,25 @@
 # Test Coverage Improvement Plan
 
-## Current State
-- **Current Coverage**: 66.88% overall
-- **Files Tested**: Only 4 out of 139 TypeScript files
+## Current State (Verified)
+- **Current Coverage**: 66.88% overall (Lines: 68.75%, Statements: 66.88%, Branches: 61.7%, Functions: 62.96%)
+- **Files Tested**: Only 4 out of 137 TypeScript files
 - **Test Suites**: 4 test suites with 73 tests
+- **Last Updated**: January 2025
 
 ## Coverage Breakdown
 
 ### ✅ Currently Tested (4 files)
-| File | Coverage | Status |
-|------|----------|--------|
-| popup-modern.tsx | 96.15% | Excellent |
-| TimelineScrubber.tsx | 51.51% | Needs improvement |
-| aspect-ratio.ts | Tested | Processing module |
-| background (partial) | Partial | Basic tests only |
+| File | Coverage | Status | Location |
+|------|----------|--------|----------|
+| popup-modern.tsx | 96.15% | Excellent | src/popup/popup-modern.tsx |
+| TimelineScrubber.tsx | 51.51% | Needs improvement | src/content/overlay-wizard/components/TimelineScrubber.tsx |
+| aspect-ratio.ts | Tested | Processing module | src/processing/aspect-ratio.ts |
+| background/index.ts | Partial | Basic tests only | src/background/index.ts |
 
-### ❌ Major Untested Areas (135+ files)
+### ❌ Major Untested Areas (133 files)
 
 #### 🔴 Critical Core Components (HIGH PRIORITY)
-**Content Scripts** (`src/content/`) - 0% coverage
+**Content Scripts** (`src/content/`) - 0% coverage (34 files total)
 - `index.ts` - Main content script entry point
 - `frame-extractor.ts` - Core GIF creation functionality
 - `gif-processor.ts` - GIF processing logic
@@ -26,13 +27,15 @@
 - `overlay-state.ts` - UI state management
 - `cleanup-manager.ts` - Resource cleanup
 - `editor-overlay.tsx` - Editor UI components
+- `player-integration.ts` - Video player control
+- `timeline-overlay.tsx` - Timeline selection UI
 
 **Background Services** (`src/background/`) - Minimal coverage
 - `message-handler.ts` - Cross-component communication
 - `worker.ts` - Background processing
 
 #### 🔴 GIF Encoding/Processing (CRITICAL)
-**Libraries** (`src/lib/`) - 0% coverage
+**Libraries** (`src/lib/`) - 0% coverage (17 files total)
 - `gif-encoder.ts` / `gif-encoder-v2.ts` - Core encoding logic
 - `instant-frame-capture.ts` - Frame extraction
 - `service-worker-video-processor.ts` - Video processing
@@ -40,8 +43,9 @@
 - `logger.ts` - Logging system
 - `errors.ts` - Error handling
 - `utils.ts` - Utility functions
+- `encoders/` subdirectory - Multiple encoder implementations
 
-**Processing Pipeline** (`src/processing/`) - 0% coverage
+**Processing Pipeline** (`src/processing/`) - 6% coverage (16 files, only aspect-ratio.ts tested)
 - `gif-encoder.ts` - GIF encoding
 - `frame-extractor.ts` - Frame extraction
 - `video-decoder.ts` - Video decoding
@@ -56,12 +60,18 @@
 - `task-manager.ts` - Task orchestration
 
 #### 🟡 UI Components (MEDIUM PRIORITY)
-**Popup & Overlay Screens** (`src/popup/screens/` & `src/content/overlay-wizard/screens/`) - 0% coverage
+**Overlay Wizard Screens** (`src/content/overlay-wizard/screens/`) - 0% coverage (7 files)
 - `WelcomeScreen.tsx`
 - `QuickCaptureScreen.tsx`
 - `TextOverlayScreenV2.tsx`
 - `ProcessingScreen.tsx`
 - `SuccessScreen.tsx`
+- `FormatSelectionScreen.tsx`
+- `TextOverlayScreen.tsx`
+
+**Popup Screens** (`src/popup/screens/`) - 0% coverage (2 files)
+- `WelcomeScreen.tsx`
+- `QuickCaptureScreen.tsx`
 
 **Hooks** (`src/popup/hooks/`) - 0% coverage
 - `useScreenNavigation.ts`
@@ -309,12 +319,157 @@
 - Coverage reporting (✅ configured)
 - Test fixtures storage
 
+## Chrome API Mocking Strategy
+
+### Required Mock APIs
+1. **chrome.runtime**
+   - `sendMessage()` - For content/background communication
+   - `onMessage.addListener()` - Message listeners
+   - `getURL()` - For accessing extension resources
+
+2. **chrome.storage**
+   - `local.get()` / `local.set()` - Settings persistence
+   - `sync.get()` / `sync.set()` - Synced settings
+
+3. **chrome.tabs**
+   - `query()` - Finding active tabs
+   - `sendMessage()` - Tab communication
+
+4. **chrome.scripting**
+   - `executeScript()` - Script injection
+
+### Mock Implementation Example
+```typescript
+// tests/__mocks__/chrome.ts
+export const mockChrome = {
+  runtime: {
+    sendMessage: jest.fn((message, callback) => {
+      // Simulate async response
+      setTimeout(() => callback?.(mockResponses[message.type]), 0);
+    }),
+    onMessage: {
+      addListener: jest.fn(),
+      removeListener: jest.fn()
+    },
+    getURL: jest.fn((path) => `chrome-extension://mock-id/${path}`)
+  },
+  storage: {
+    local: createStorageMock(),
+    sync: createStorageMock()
+  }
+};
+```
+
+## Coverage-Guided Testing Approach
+
+### 1. Use Coverage Reports to Find Critical Paths
+```bash
+# Generate detailed coverage report
+npm test -- --coverage --coverageReporters=html
+
+# Open coverage/index.html to visualize uncovered lines
+# Focus on red (uncovered) branches in critical files
+```
+
+### 2. Priority Testing Based on Code Complexity
+- **High Complexity + Low Coverage = CRITICAL**
+- Use cyclomatic complexity to identify risky untested code
+- Focus on functions with multiple branches/conditions
+
+### 3. Incremental Coverage Goals
+- **Week 1**: Cover all error paths in critical files
+- **Week 2**: Cover happy paths in user-facing features
+- **Week 3**: Edge cases and boundary conditions
+- **Week 4**: Integration and E2E scenarios
+
+## Detailed Implementation Recommendations
+
+### Phase 1: Core Infrastructure Setup (Day 1-2)
+
+#### 1. Create Test Utilities Module
+```typescript
+// tests/utils/test-helpers.ts
+export const createMockVideo = (duration = 100) => ({
+  currentTime: 0,
+  duration,
+  paused: false,
+  play: jest.fn(),
+  pause: jest.fn()
+});
+
+export const createMockCanvas = () => ({
+  getContext: jest.fn(() => createMock2DContext()),
+  toBlob: jest.fn((callback) => callback(new Blob()))
+});
+
+export const waitForMessageResponse = () =>
+  new Promise(resolve => setTimeout(resolve, 10));
+```
+
+#### 2. Set Up Test Data Fixtures
+```typescript
+// tests/fixtures/
+- sample-frames.ts     // Mock video frame data
+- gif-settings.ts      // Test GIF configurations
+- timeline-data.ts     // Timeline selection fixtures
+- error-scenarios.ts   // Common error cases
+```
+
+### Phase 2: Critical Path Testing (Week 1)
+
+#### Frame Extraction Tests (frame-extractor.ts)
+```typescript
+describe('FrameExtractor', () => {
+  it('should extract frames at specified intervals');
+  it('should handle video element not ready');
+  it('should respect memory limits');
+  it('should cancel extraction on navigation');
+  it('should report progress accurately');
+});
+```
+
+#### GIF Encoding Tests (gif-encoder-v2.ts)
+```typescript
+describe('GifEncoderV2', () => {
+  it('should encode with different quality settings');
+  it('should handle large frame counts (>100)');
+  it('should optimize palette for each frame');
+  it('should abort encoding on user cancel');
+  it('should estimate file size accurately');
+});
+```
+
+### Phase 3: User Flow Testing (Week 2)
+
+#### Timeline Selection Tests
+```typescript
+describe('Timeline Selection Flow', () => {
+  it('should select valid time range');
+  it('should prevent invalid selections');
+  it('should update preview on change');
+  it('should persist selection state');
+});
+```
+
+### Phase 4: Integration Testing (Week 3-4)
+
+#### End-to-End GIF Creation
+```typescript
+describe('Complete GIF Creation', () => {
+  it('should create GIF from YouTube video');
+  it('should handle network interruptions');
+  it('should cleanup resources on failure');
+  it('should save to IndexedDB');
+});
+```
+
 ## Next Steps
 
 1. **Immediate Actions (Day 1-2)**
-   - Set up comprehensive Chrome API mocks
+   - Set up comprehensive Chrome API mocks using the strategy above
    - Create test utilities for video/canvas operations
    - Establish test file structure matching src/
+   - Install additional testing libraries if needed (e.g., @testing-library/user-event)
 
 2. **Priority 1 Implementation (Week 1-2)**
    - Write unit tests for frame-extractor.ts
@@ -336,6 +491,88 @@
    - Monitor coverage trends weekly
    - Add tests incrementally with each PR
    - Refactor code for better testability where needed
+   - Use pre-commit hooks to enforce minimum coverage
+
+## Testing Best Practices
+
+### 1. Test Organization
+```
+tests/
+├── unit/                   # Isolated unit tests
+│   ├── content/           # Mirror src structure
+│   ├── lib/
+│   ├── processing/
+│   └── background/
+├── integration/           # Component interaction tests
+│   ├── message-flow/     # Content↔Background communication
+│   ├── gif-creation/     # End-to-end GIF workflow
+│   └── ui-flows/         # User interaction sequences
+├── fixtures/             # Test data and mocks
+├── utils/               # Test helpers and utilities
+└── __mocks__/          # Module mocks
+```
+
+### 2. Test Naming Convention
+- **File**: `[component-name].test.ts`
+- **Test Suite**: `describe('ComponentName', () => {})`
+- **Test Case**: `it('should [expected behavior] when [condition]')`
+
+### 3. Coverage Thresholds
+```json
+// jest.config.js
+"coverageThreshold": {
+  "global": {
+    "branches": 80,
+    "functions": 80,
+    "lines": 85,
+    "statements": 85
+  },
+  "src/content/frame-extractor.ts": {
+    "branches": 95,
+    "functions": 95,
+    "lines": 95,
+    "statements": 95
+  }
+}
+```
+
+### 4. Continuous Integration Checks
+```yaml
+# .github/workflows/test.yml
+- name: Run tests with coverage
+  run: npm test -- --coverage --coverageReporters=json-summary
+
+- name: Check coverage thresholds
+  run: npm run test:coverage:check
+
+- name: Comment PR with coverage
+  uses: actions/coverage-action@v2
+```
+
+### 5. Performance Testing Considerations
+- Test GIF encoding with various sizes (100KB to 10MB)
+- Measure memory usage during frame extraction
+- Benchmark encoding speed for different quality settings
+- Test with videos of different lengths (5s, 30s, 2min)
+
+## Risk Mitigation
+
+### High-Risk Untested Areas
+1. **Memory Management** in frame extraction
+   - Risk: Browser crashes with large videos
+   - Mitigation: Add memory limit tests
+
+2. **Chrome API Failures**
+   - Risk: Extension breaks on API changes
+   - Mitigation: Comprehensive API mocking and error handling tests
+
+3. **YouTube Player Changes**
+   - Risk: Injection fails with YouTube updates
+   - Mitigation: Robust element detection tests
+
+4. **Race Conditions**
+   - Risk: Message timing issues
+   - Mitigation: Async flow testing with various delays
 
 ## Notes
 
@@ -344,3 +581,161 @@
 - Maintain test performance as coverage grows
 - Consider snapshot testing for UI components
 - Add visual regression tests for editor UI
+
+## Quick Start Implementation Guide
+
+### 1. First Test to Write (frame-extractor.ts)
+```typescript
+// tests/unit/content/frame-extractor.test.ts
+import { FrameExtractor } from '@/content/frame-extractor';
+import { createMockVideo, createMockCanvas } from '../../utils/test-helpers';
+
+describe('FrameExtractor', () => {
+  let frameExtractor: FrameExtractor;
+  let mockVideo: HTMLVideoElement;
+  let mockCanvas: HTMLCanvasElement;
+
+  beforeEach(() => {
+    mockVideo = createMockVideo(30); // 30 second video
+    mockCanvas = createMockCanvas();
+    frameExtractor = new FrameExtractor(mockVideo, mockCanvas);
+  });
+
+  describe('extractFrames', () => {
+    it('should extract frames at 1 second intervals', async () => {
+      const frames = await frameExtractor.extractFrames({
+        startTime: 0,
+        endTime: 5,
+        frameRate: 1
+      });
+
+      expect(frames).toHaveLength(5);
+      expect(mockVideo.currentTime).toBe(5);
+    });
+
+    it('should handle video load errors', async () => {
+      mockVideo.addEventListener = jest.fn((event, callback) => {
+        if (event === 'error') setTimeout(callback, 10);
+      });
+
+      await expect(frameExtractor.extractFrames({
+        startTime: 0,
+        endTime: 5,
+        frameRate: 1
+      })).rejects.toThrow('Video load error');
+    });
+
+    it('should respect memory limits', async () => {
+      // Test with many frames to trigger memory limit
+      const frames = await frameExtractor.extractFrames({
+        startTime: 0,
+        endTime: 100, // Large range
+        frameRate: 10,
+        maxMemoryMB: 50
+      });
+
+      expect(frames.length).toBeLessThan(1000); // Should be limited
+    });
+  });
+});
+```
+
+### 2. Message Handler Test Example
+```typescript
+// tests/unit/background/message-handler.test.ts
+import { MessageHandler } from '@/background/message-handler';
+import { mockChrome } from '../../__mocks__/chrome';
+
+describe('MessageHandler', () => {
+  let handler: MessageHandler;
+
+  beforeEach(() => {
+    global.chrome = mockChrome;
+    handler = new MessageHandler();
+  });
+
+  it('should route frame extraction requests', async () => {
+    const message = {
+      type: 'EXTRACT_FRAMES',
+      payload: { startTime: 0, endTime: 5 }
+    };
+
+    const response = await handler.handleMessage(message);
+
+    expect(response.success).toBe(true);
+    expect(response.frames).toBeDefined();
+  });
+
+  it('should handle unknown message types', async () => {
+    const message = { type: 'UNKNOWN' };
+
+    const response = await handler.handleMessage(message);
+
+    expect(response.success).toBe(false);
+    expect(response.error).toContain('Unknown message type');
+  });
+});
+```
+
+### 3. React Component Test Example
+```typescript
+// tests/unit/content/overlay-wizard/screens/ProcessingScreen.test.tsx
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { ProcessingScreen } from '@/content/overlay-wizard/screens/ProcessingScreen';
+
+describe('ProcessingScreen', () => {
+  it('should display progress percentage', () => {
+    render(
+      <ProcessingScreen
+        progress={75}
+        status="Encoding frames..."
+      />
+    );
+
+    expect(screen.getByText('75%')).toBeInTheDocument();
+    expect(screen.getByText('Encoding frames...')).toBeInTheDocument();
+  });
+
+  it('should show cancel button when cancellable', () => {
+    const onCancel = jest.fn();
+
+    render(
+      <ProcessingScreen
+        progress={50}
+        status="Processing..."
+        onCancel={onCancel}
+      />
+    );
+
+    const cancelButton = screen.getByRole('button', { name: /cancel/i });
+    expect(cancelButton).toBeInTheDocument();
+  });
+});
+```
+
+### 4. Commands to Start Testing
+
+```bash
+# 1. Set up test structure
+mkdir -p tests/{unit/{content,lib,processing,background},integration,fixtures,utils}
+
+# 2. Create first test utilities
+touch tests/utils/test-helpers.ts
+touch tests/__mocks__/chrome.ts
+touch tests/fixtures/sample-frames.ts
+
+# 3. Run tests in watch mode while developing
+npm run test:watch
+
+# 4. Generate coverage report
+npm test -- --coverage --coverageReporters=html
+open coverage/index.html
+
+# 5. Test specific file patterns
+npm test frame-extractor     # Test frame extraction
+npm test processing          # Test processing modules
+npm test content             # Test content scripts
+```
+
+This comprehensive plan provides a roadmap to achieve 85-90% test coverage systematically while maintaining code quality and catching critical bugs early.

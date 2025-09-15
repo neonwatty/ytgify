@@ -42,7 +42,7 @@ const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
     <div className="ytgif-processing-screen">
       <div className="ytgif-wizard-header">
         <div style={{ width: '20px' }}></div>
-        <h2 className="ytgif-wizard-title">Creating Your GIF</h2>
+        <h2 className="ytgif-wizard-title">Cooking Up Your GIF</h2>
         <div style={{ width: '20px' }}></div>
       </div>
 
@@ -101,7 +101,7 @@ const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
                 <circle cx="8" cy="8" r="2" />
                 <path d="M14 8h6M14 12h6M14 16h6M4 16l4-4 2 2 4-4" />
               </svg>
-              <span>Capturing frames from video</span>
+              <span>Its all coming together...</span>
             </>
           )}
           {stage === 'encoding' && (
