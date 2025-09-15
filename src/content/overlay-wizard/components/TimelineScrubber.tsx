@@ -298,7 +298,12 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
               if (mark > maxSliderValue) return null;
 
               // Calculate position as percentage
-              const position = ((mark - 1) / (maxSliderValue - 1)) * 100;
+              // The slider goes from min (1) to max (maxSliderValue)
+              // So we need to map the mark value within this range
+              const sliderMin = 1;
+              const sliderRange = maxSliderValue - sliderMin;
+              const markOffset = mark - sliderMin;
+              const position = (markOffset / sliderRange) * 100;
 
               return (
                 <div
