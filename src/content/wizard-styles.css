@@ -191,6 +191,22 @@
   text-align: center;
 }
 
+.ytgif-wizard-tagline {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  font-weight: 400;
+  margin: 8px 0 0 0;
+  text-align: center;
+}
+
+.ytgif-wizard-helper {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: 400;
+  margin: 0 0 16px 0;
+  text-align: center;
+}
+
 /* Wizard Content */
 .ytgif-wizard-content {
   color: white;

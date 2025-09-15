@@ -63,11 +63,13 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h2 className="ytgif-wizard-title">Create Your Clip</h2>
+        <h2 className="ytgif-wizard-title">Select Your Perfect Moment</h2>
         <div style={{ width: '20px' }}></div>
       </div>
 
       <div className="ytgif-wizard-content">
+        {/* Helper text */}
+        <p className="ytgif-wizard-helper">Drag the timeline to choose your clip</p>
         {/* Video Preview */}
         {videoElement ? (
           <VideoPreview
@@ -113,21 +115,21 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
               onClick={() => setSelectedFrameRate(5)}
             >
               5 fps
-              <span className="ytgif-frame-rate-desc">Smaller file</span>
+              <span className="ytgif-frame-rate-desc">Smaller file • Classic GIF feel</span>
             </button>
             <button 
               className={`ytgif-frame-rate-btn ${selectedFrameRate === 10 ? 'ytgif-frame-rate-btn--active' : ''}`}
               onClick={() => setSelectedFrameRate(10)}
             >
               10 fps
-              <span className="ytgif-frame-rate-desc">Balanced</span>
+              <span className="ytgif-frame-rate-desc">Balanced • Recommended</span>
             </button>
             <button 
               className={`ytgif-frame-rate-btn ${selectedFrameRate === 15 ? 'ytgif-frame-rate-btn--active' : ''}`}
               onClick={() => setSelectedFrameRate(15)}
             >
               15 fps
-              <span className="ytgif-frame-rate-desc">Smoother</span>
+              <span className="ytgif-frame-rate-desc">Smoother • Larger file</span>
             </button>
           </div>
         </div>
@@ -185,7 +187,7 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
-            Create GIF
+            Continue to Customize →
           </button>
         </div>
       </div>

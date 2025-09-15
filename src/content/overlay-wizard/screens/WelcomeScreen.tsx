@@ -46,7 +46,10 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
         </div>
 
         {/* Title */}
-        <h1 className="ytgif-wizard-title">Create a GIF</h1>
+        <h1 className="ytgif-wizard-title">Transform This Moment Into a GIF</h1>
+
+        {/* Tagline */}
+        <p className="ytgif-wizard-tagline">Capture, customize, and share in seconds</p>
 
         {/* Video Info */}
         <div className="ytgif-video-info">
@@ -65,7 +68,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
           <div className="ytgif-dot"></div>
         </div>
 
-        <p className="ytgif-auto-advance">Starting automatically...</p>
+        <p className="ytgif-auto-advance">Getting everything ready...</p>
       </div>
     </div>
   );
