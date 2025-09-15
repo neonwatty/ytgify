@@ -276,20 +276,43 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
           <span className="ytgif-slider-label">Clip Duration</span>
           <span className="ytgif-slider-value">{durationSliderValue.toFixed(1)}s</span>
         </div>
-        <input
-          type="range"
-          className="ytgif-slider-input"
-          min="1"
-          max={maxSliderValue}
-          step="0.1"
-          value={durationSliderValue}
-          onChange={(e) => handleDurationSliderChange(parseFloat(e.target.value))}
-          aria-label="GIF duration"
-          aria-valuemin={1}
-          aria-valuemax={maxSliderValue}
-          aria-valuenow={durationSliderValue}
-          disabled={duration < 1}
-        />
+        <div className="ytgif-slider-container">
+          <input
+            type="range"
+            className="ytgif-slider-input"
+            min="1"
+            max={maxSliderValue}
+            step="0.1"
+            value={durationSliderValue}
+            onChange={(e) => handleDurationSliderChange(parseFloat(e.target.value))}
+            aria-label="GIF duration"
+            aria-valuemin={1}
+            aria-valuemax={maxSliderValue}
+            aria-valuenow={durationSliderValue}
+            disabled={duration < 1}
+          />
+          {/* Hash marks */}
+          <div className="ytgif-slider-marks">
+            {[0, 5, 10, 15, 20].map((mark) => {
+              // Only show marks that are within the slider range
+              if (mark < 1 || mark > maxSliderValue) return null;
+
+              // Calculate position as percentage
+              const position = ((mark - 1) / (maxSliderValue - 1)) * 100;
+
+              return (
+                <div
+                  key={mark}
+                  className="ytgif-slider-mark"
+                  style={{ left: `${position}%` }}
+                >
+                  <div className="ytgif-slider-mark-line" />
+                  <div className="ytgif-slider-mark-label">{mark}s</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
         {duration < 1 && (
           <div className="ytgif-slider-disabled-message">
             Video too short for GIF creation

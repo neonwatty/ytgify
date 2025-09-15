@@ -867,6 +867,46 @@
   margin-top: 8px;
 }
 
+/* Slider container for positioning marks */
+.ytgif-slider-container {
+  position: relative;
+  padding-bottom: 20px;
+}
+
+/* Hash marks container */
+.ytgif-slider-marks {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  right: 0;
+  height: 30px;
+  pointer-events: none;
+}
+
+/* Individual mark */
+.ytgif-slider-mark {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Mark vertical line */
+.ytgif-slider-mark-line {
+  width: 1px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.3);
+  margin-bottom: 4px;
+}
+
+/* Mark label */
+.ytgif-slider-mark-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+}
+
 /* Screen 2: Capture slider customization */
 .ytgif-quick-capture-screen .ytgif-slider-value {
   background: rgba(255, 0, 102, 0.2);
