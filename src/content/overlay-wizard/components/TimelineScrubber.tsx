@@ -293,9 +293,9 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
           />
           {/* Hash marks */}
           <div className="ytgif-slider-marks">
-            {[0, 5, 10, 15, 20].map((mark) => {
+            {[1, 5, 10, 15, 20].map((mark) => {
               // Only show marks that are within the slider range
-              if (mark < 1 || mark > maxSliderValue) return null;
+              if (mark > maxSliderValue) return null;
 
               // Calculate position as percentage
               const position = ((mark - 1) / (maxSliderValue - 1)) * 100;
