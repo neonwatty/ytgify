@@ -227,19 +227,7 @@ body[theater] .ytgif-timeline-overlay,
   margin-bottom: 12px;
 }
 
-.ytgif-timeline-track {
-  position: relative;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  margin-bottom: 8px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.ytgif-timeline-track:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
+/* Timeline track styles removed - now defined in wizard-styles.css */
 
 .ytgif-timeline-progress {
   position: absolute;
@@ -259,50 +247,9 @@ body[theater] .ytgif-timeline-overlay,
   height: 16px;
 }
 
-.ytgif-timeline-handle {
-  position: absolute;
-  width: 12px;
-  height: 16px;
-  background: #ff0000;
-  border: 2px solid white;
-  border-radius: 2px;
-  cursor: grab;
-  transform: translateX(-50%);
-  transition: all 0.2s ease;
-  z-index: 10;
-}
+/* Timeline handle styles removed - now defined in wizard-styles.css */
 
-.ytgif-timeline-handle:hover {
-  background: #ff3333;
-  box-shadow: 0 2px 8px rgba(255, 0, 0, 0.3);
-  transform: translateX(-50%) scale(1.1);
-}
-
-.ytgif-timeline-handle:active,
-.ytgif-timeline-handle[data-dragging="true"] {
-  cursor: grabbing;
-  background: #cc0000;
-  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.5);
-  transform: translateX(-50%) scale(1.2);
-}
-
-.ytgif-timeline-start {
-  left: 20%;
-}
-
-.ytgif-timeline-end {
-  left: 60%;
-}
-
-.ytgif-timeline-selection {
-  position: absolute;
-  top: 4px;
-  left: 20%;
-  right: 40%;
-  height: 8px;
-  background: rgba(255, 0, 0, 0.3);
-  border-radius: 4px;
-}
+/* Timeline selection styles removed - now defined in wizard-styles.css */
 
 .ytgif-timeline-info {
   text-align: center;
@@ -617,15 +564,7 @@ img.ytgif-button-icon {
 }
 
 /* Enhanced selection visualization */
-.ytgif-timeline-selection {
-  background: linear-gradient(90deg, 
-    rgba(255, 0, 0, 0.2) 0%, 
-    rgba(255, 0, 0, 0.4) 50%, 
-    rgba(255, 0, 0, 0.2) 100%
-  );
-  border: 1px solid rgba(255, 0, 0, 0.6);
-  border-radius: 4px;
-}
+/* Duplicate timeline selection styles removed - defined in wizard-styles.css */
 
 /* Tooltip styles */
 .ytgif-tooltip {

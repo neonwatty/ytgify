@@ -644,121 +644,76 @@
 
 .ytgif-timeline-track {
   position: relative;
-  height: 48px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
   cursor: pointer;
-  margin-bottom: 8px;
+  margin-bottom: 20px;
+  margin-top: 12px;
 }
 
 .ytgif-timeline-background {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 2px;
+  display: none; /* No longer needed */
 }
 
 .ytgif-timeline-selection {
   position: absolute;
   top: 0;
   bottom: 0;
-  background: rgba(255, 0, 51, 0.3);
-  border: 1px solid #ff0033;
-  border-radius: 4px;
-  cursor: move;
+  background: #ff0033;
+  border-radius: 3px;
+  pointer-events: none;
 }
 
 /* Screen 2: Capture timeline selection */
 .ytgif-quick-capture-screen .ytgif-timeline-selection {
-  background: rgba(255, 0, 102, 0.3);
-  border: 1px solid #ff0066;
+  background: #ff0066;
 }
 
 .ytgif-timeline-handle {
   position: absolute;
   top: 50%;
-  transform: translateY(-50%);
-  width: 12px;
-  height: 24px;
-  background: #ff0033;
-  border-radius: 3px;
-  cursor: ew-resize;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  background: #ff0000;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s;
+  z-index: 2;
 }
 
-/* Screen 2: Capture timeline handles */
+/* Screen 2: Capture timeline handle */
 .ytgif-quick-capture-screen .ytgif-timeline-handle {
   background: #ff0066;
 }
 
-.ytgif-timeline-handle.ytgif-handle-start {
-  left: -6px;
+.ytgif-timeline-handle:hover {
+  transform: translate(-50%, -50%) scale(1.2);
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
 }
 
-.ytgif-timeline-handle.ytgif-handle-end {
-  right: -6px;
+.ytgif-timeline-handle:active {
+  transform: translate(-50%, -50%) scale(1.1);
 }
 
-.ytgif-handle-grip {
-  width: 2px;
-  height: 10px;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 1px;
+/* Screen 2: Capture timeline handle hover */
+.ytgif-quick-capture-screen .ytgif-timeline-handle:hover {
+  box-shadow: 0 0 8px rgba(255, 0, 102, 0.5);
 }
 
-.ytgif-selection-duration {
-  display: none; /* Hide the duration label in the selection */
-}
-
-.ytgif-timeline-current {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: #ff0000;
-  pointer-events: none;
-  transition: all 0.3s ease;
-  box-shadow: 0 0 4px rgba(255, 0, 0, 0.3);
-}
-
-.ytgif-timeline-current-in-range {
-  background: #ff0000 !important;
-  box-shadow: 0 0 6px rgba(255, 0, 0, 0.5);
-  width: 4px;
-}
-
-.ytgif-timeline-current-out-range {
-  background: #ff0000 !important;
-  box-shadow: 0 0 6px rgba(255, 0, 0, 0.5);
-  width: 4px;
-}
-
-/* Screen 2: Capture timeline current indicator */
-.ytgif-quick-capture-screen .ytgif-timeline-current {
-  background: #ff0066;
-  box-shadow: 0 0 4px rgba(255, 0, 102, 0.3);
-}
-
-.ytgif-quick-capture-screen .ytgif-timeline-current-in-range,
-.ytgif-quick-capture-screen .ytgif-timeline-current-out-range {
-  background: #ff0066 !important;
-  box-shadow: 0 0 6px rgba(255, 0, 102, 0.5);
-}
+/* Selection duration label removed - no longer needed with single handle */
+/* Current time indicator removed - single handle design doesn't need it */
 
 .ytgif-timeline-preview-head {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: -6px;
+  bottom: -6px;
   width: 2px;
   background: #ffff00;
   pointer-events: none;
   box-shadow: 0 0 4px rgba(255, 255, 0, 0.5);
+  z-index: 1;
 }
 
 .ytgif-timeline-tooltip {
@@ -1092,58 +1047,13 @@
   margin-bottom: 32px;
 }
 
-.ytgif-timeline-track {
-  position: relative;
-  height: 60px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  overflow: hidden;
-  margin-bottom: 8px;
-}
+/* Duplicate timeline styles removed - defined earlier in the file */
 
 .ytgif-timeline-interactive {
   cursor: pointer;
 }
 
-.ytgif-timeline-selection {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  background: rgba(255, 0, 0, 0.3);
-  border: 2px solid #ff0000;
-  border-radius: 4px;
-  cursor: move;
-}
-
-/* Screen 2: Capture additional timeline selection */
-.ytgif-quick-capture-screen .ytgif-timeline-track .ytgif-timeline-selection {
-  background: rgba(255, 0, 102, 0.3);
-  border: 2px solid #ff0066;
-}
-
-.ytgif-selection-handle {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 12px;
-  height: 30px;
-  background: #ff0000;
-  border-radius: 3px;
-  cursor: ew-resize;
-}
-
-/* Screen 2: Capture selection handles */
-.ytgif-quick-capture-screen .ytgif-selection-handle {
-  background: #ff0066;
-}
-
-.ytgif-handle-start {
-  left: -6px;
-}
-
-.ytgif-handle-end {
-  right: -6px;
-}
+/* Legacy handle styles removed - using single handle now */
 
 .ytgif-timeline-cursor {
   position: absolute;
