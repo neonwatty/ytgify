@@ -194,7 +194,6 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
       <div className="ytgif-timeline-container">
         <div className="ytgif-timeline-header">
           <span className="ytgif-timeline-label">Timeline Selection</span>
-          <span className="ytgif-timeline-value">{(endTime - startTime).toFixed(1)}s selected</span>
         </div>
 
         <div
