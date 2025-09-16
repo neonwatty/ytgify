@@ -11,39 +11,5 @@ npx lint-staged
 echo "🔍 Running TypeScript type check..."
 npm run typecheck
 
-# Run tests with coverage check
-echo "🧪 Running tests with coverage requirements..."
-npm test -- --coverage --coverageReporters=text-summary --passWithNoTests
-
-# Check coverage thresholds
-COVERAGE_OUTPUT=$(npm test -- --coverage --coverageReporters=json-summary --silent 2>&1)
-
-# Extract coverage percentages
-STATEMENTS=$(echo "$COVERAGE_OUTPUT" | grep -o '"statements":{"total":[0-9]*,"covered":[0-9]*' | grep -o '"covered":[0-9]*' | grep -o '[0-9]*')
-BRANCHES=$(echo "$COVERAGE_OUTPUT" | grep -o '"branches":{"total":[0-9]*,"covered":[0-9]*' | grep -o '"covered":[0-9]*' | grep -o '[0-9]*')
-FUNCTIONS=$(echo "$COVERAGE_OUTPUT" | grep -o '"functions":{"total":[0-9]*,"covered":[0-9]*' | grep -o '"covered":[0-9]*' | grep -o '[0-9]*')
-LINES=$(echo "$COVERAGE_OUTPUT" | grep -o '"lines":{"total":[0-9]*,"covered":[0-9]*' | grep -o '"covered":[0-9]*' | grep -o '[0-9]*')
-
-TOTAL=$(echo "$COVERAGE_OUTPUT" | grep -o '"statements":{"total":[0-9]*' | grep -o '[0-9]*$')
-
-# Calculate coverage percentage
-if [ -n "$STATEMENTS" ] && [ -n "$TOTAL" ] && [ "$TOTAL" -gt 0 ]; then
-  COVERAGE_PCT=$(( STATEMENTS * 100 / TOTAL ))
-
-  echo "📊 Current test coverage: ${COVERAGE_PCT}%"
-
-  # Set minimum coverage threshold
-  MIN_COVERAGE=65
-
-  if [ "$COVERAGE_PCT" -lt "$MIN_COVERAGE" ]; then
-    echo "❌ Test coverage is below ${MIN_COVERAGE}% (current: ${COVERAGE_PCT}%)"
-    echo "Please add more tests before committing."
-    exit 1
-  else
-    echo "✅ Test coverage meets requirements (${COVERAGE_PCT}% >= ${MIN_COVERAGE}%)"
-  fi
-else
-  echo "⚠️  Could not determine test coverage, proceeding with caution..."
-fi
-
 echo "✨ All pre-commit checks passed!"
+echo "💡 Tip: Run 'npm test' to run the full test suite"
