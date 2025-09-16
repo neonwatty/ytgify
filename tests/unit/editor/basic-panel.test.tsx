@@ -24,8 +24,8 @@ jest.mock('@/components/ui/select', () => ({
           {React.isValidElement(content) &&
             React.Children.map((content as any).props?.children, (child: any) =>
               React.isValidElement(child) ?
-                <option key={child.props.value} value={child.props.value}>
-                  {child.props.children}
+                <option key={(child as any).props.value} value={(child as any).props.value}>
+                  {(child as any).props.children}
                 </option> : null
             )
           }
@@ -457,11 +457,11 @@ describe('BasicControlPanel', () => {
 
       // Simulate rapid changes
       fireEvent.change(frameRateSlider, { target: { value: '10' } });
-      fireEvent.change(frameRateSlider, { target: { value: '15' } });
-      fireEvent.change(frameRateSlider, { target: { value: '20' } });
+      fireEvent.change(frameRateSlider, { target: { value: '18' } });
+      fireEvent.change(frameRateSlider, { target: { value: '25' } });
 
       expect(mockOnSettingsChange).toHaveBeenCalledTimes(3);
-      expect(mockOnSettingsChange).toHaveBeenLastCalledWith({ frameRate: 20 });
+      expect(mockOnSettingsChange).toHaveBeenLastCalledWith({ frameRate: 25 });
     });
 
     it('should maintain other settings when changing one', () => {

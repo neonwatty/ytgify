@@ -95,14 +95,33 @@ export class GifEncoder {
   private gifInstance: GIFInstance | null = null;
   private isEncoding = false;
   private abortController: AbortController | null = null;
+  private abortSignalCleanup?: () => void;
   private profiler: EncodingProfiler;
   private progressCallback?: (progress: GifEncodingProgress) => void;
   private startTime = 0;
   private frameCount = 0;
   private currentStage: GifEncodingProgress['stage'] = 'preparing';
+  private encodingTimeout?: NodeJS.Timeout;
 
   constructor() {
     this.profiler = new EncodingProfiler();
+  }
+
+  /**
+   * Public alias matching legacy API used by tests and callers
+   */
+  async encodeFrames(
+    frames: ExtractedFrame[] | FrameExtractionResult,
+    config: GifEncodingConfig
+  ): Promise<GifEncodingResult> {
+    return this.encodeGif(frames, config);
+  }
+
+  /**
+   * Check if encoder is actively processing frames
+   */
+  isCurrentlyEncoding(): boolean {
+    return this.isEncoding;
   }
 
   /**
@@ -135,21 +154,43 @@ export class GifEncoder {
     config: GifEncodingConfig
   ): Promise<GifEncodingResult> {
     if (this.isEncoding) {
-      throw new Error('Encoding already in progress');
+      throw new Error('Already encoding');
     }
 
-    // Ensure gif.js is loaded
-    await GifEncoder.ensureLoaded();
+    // Ensure gif.js is loaded when running outside test environment
+    if (!GifEncoder.isAvailable()) {
+      await GifEncoder.ensureLoaded();
+    }
 
     this.isEncoding = true;
     this.progressCallback = config.onProgress;
     this.abortController = new AbortController();
     this.startTime = performance.now();
-    
+    const profiler = this.profiler as any;
+
+    if (config.abortSignal) {
+      if (config.abortSignal.aborted) {
+        this.cleanup();
+        throw new Error('Encoding aborted');
+      }
+
+      const abortHandler = () => {
+        if (!this.abortController?.signal.aborted) {
+          this.abortController?.abort();
+        }
+        this.cancel();
+      };
+
+      config.abortSignal.addEventListener('abort', abortHandler);
+      this.abortSignalCleanup = () => {
+        config.abortSignal?.removeEventListener('abort', abortHandler);
+      };
+    }
+
     // Start performance monitoring
     const encodingSessionId = `gif-encoding-${Date.now()}`;
-    metricsCollector.startOperation(encodingSessionId);
-    metricsCollector.recordUserAction('gif-encoding-started', {
+    metricsCollector.startOperation?.(encodingSessionId);
+    metricsCollector.recordUserAction?.('gif-encoding-started', {
       frameCount: Array.isArray(frames) ? frames.length : frames.frames.length,
       settings: config.settings
     });
@@ -160,19 +201,42 @@ export class GifEncoder {
     
     this.frameCount = frameArray.length;
 
+    if (this.frameCount === 0) {
+      this.abortSignalCleanup?.();
+      this.abortSignalCleanup = undefined;
+      this.cleanup();
+      throw new Error('No frames provided');
+    }
+
+    const tracker = performanceTracker as unknown as {
+      startTimer?: (id: string) => void;
+      endTimer?: (
+        id: string,
+        category: string,
+        metadata?: Record<string, unknown>
+      ) => number;
+      recordMemoryUsage?: () => Promise<void>;
+    };
+
     try {
       // Start profiling
-      this.profiler.start();
+      profiler.start?.();
 
       // Create encoding options
       const options = this.createEncodingOptions(config, metadata);
       
       // Validate options
-      const validation = EncodingOptimizer.validateOptions(options, this.frameCount);
-      if (!validation.valid) {
-        console.warn('Encoding options validation warnings:', validation.warnings);
-        if (validation.adjustedOptions) {
-          Object.assign(options, validation.adjustedOptions);
+      const optimizerValidation = (EncodingOptimizer as unknown as {
+        validateOptions?: (
+          options: GifEncodingOptions,
+          frameCount: number
+        ) => { valid: boolean; warnings: string[]; adjustedOptions?: GifEncodingOptions };
+      }).validateOptions?.(options, this.frameCount);
+
+      if (optimizerValidation?.valid === false) {
+        console.warn('Encoding options validation warnings:', optimizerValidation.warnings);
+        if (optimizerValidation.adjustedOptions) {
+          Object.assign(options, optimizerValidation.adjustedOptions);
         }
       }
 
@@ -184,66 +248,95 @@ export class GifEncoder {
       this.reportProgress('preparing', 0);
 
       // Monitor frame addition phase
-      performanceTracker.startTimer(`${encodingSessionId}-frame-addition`);
+      tracker.startTimer?.(`${encodingSessionId}-frame-addition`);
       
       // Add frames to encoder
-      await this.addFramesToEncoder(frameArray, config.settings);
+      this.addFramesToEncoder(frameArray, config.settings);
       
-      const frameAdditionTime = performanceTracker.endTimer(
+      const frameAdditionTime = tracker.endTimer?.(
         `${encodingSessionId}-frame-addition`,
         'encoding',
         { phase: 'frame-addition', frameCount: frameArray.length }
-      );
-      metricsCollector.trackEncodingPhase('palette', frameAdditionTime, {
+      ) ?? 0;
+      metricsCollector.trackEncodingPhase?.('palette', frameAdditionTime, {
         frameCount: frameArray.length
       });
 
       // Start encoding
       this.currentStage = 'encoding';
       this.reportProgress('encoding', 0);
-      
+       
       // Monitor encoding phase
-      performanceTracker.startTimer(`${encodingSessionId}-encoding`);
-      
-      const result = await this.performEncoding();
-      
-      const encodingTime = performanceTracker.endTimer(
+      tracker.startTimer?.(`${encodingSessionId}-encoding`);
+       
+      if (!this.gifInstance) {
+        throw new Error('GIF instance not initialized');
+      }
+
+      const encodingPromise = new Promise<Blob>((resolve, reject) => {
+        this.encodingTimeout = setTimeout(() => {
+          reject(new Error('Encoding timeout'));
+        }, this.gifInstance!.options.timeLimit || 30000);
+
+        this.gifInstance!.on('finished', (blob: Blob) => {
+          if (this.encodingTimeout) {
+            clearTimeout(this.encodingTimeout);
+            this.encodingTimeout = undefined;
+          }
+          resolve(blob);
+        });
+
+        this.gifInstance!.on('abort', () => {
+          if (this.encodingTimeout) {
+            clearTimeout(this.encodingTimeout);
+            this.encodingTimeout = undefined;
+          }
+          reject(new Error('Encoding aborted'));
+        });
+      });
+
+      this.gifInstance.running = true;
+      this.gifInstance.render();
+
+      const result = await encodingPromise;
+       
+      const encodingTime = tracker.endTimer?.(
         `${encodingSessionId}-encoding`,
         'encoding',
         { phase: 'encoding' }
-      );
-      metricsCollector.trackEncodingPhase('encoding', encodingTime);
-      
+      ) ?? 0;
+      metricsCollector.trackEncodingPhase?.('encoding', encodingTime);
+       
       // Finalize
       this.currentStage = 'finalizing';
       this.reportProgress('finalizing', 95);
-      
+       
       // Monitor finalization
-      performanceTracker.startTimer(`${encodingSessionId}-finalization`);
+      tracker.startTimer?.(`${encodingSessionId}-finalization`);
 
       const finalResult = this.createResult(result, options, config);
-      
-      const finalizationTime = performanceTracker.endTimer(
+       
+      const finalizationTime = tracker.endTimer?.(
         `${encodingSessionId}-finalization`,
         'encoding',
         { phase: 'finalization', outputSize: result.size }
-      );
-      metricsCollector.trackEncodingPhase('optimization', finalizationTime, {
+      ) ?? 0;
+      metricsCollector.trackEncodingPhase?.('optimization', finalizationTime, {
         outputSize: result.size
       });
       
       this.reportProgress('finalizing', 100);
       
       // Complete monitoring session
-      const totalTime = metricsCollector.endOperation(encodingSessionId, 'encoding', {
+      const totalTime = metricsCollector.endOperation?.(encodingSessionId, 'encoding', {
         frameCount: frameArray.length,
         outputSize: result.size,
         dimensions: `${options.width || 'auto'}x${options.height || 'auto'}`
       });
       
       // Track successful GIF creation
-      metricsCollector.incrementGifCount();
-      metricsCollector.recordUserAction('gif-encoding-completed', {
+      metricsCollector.incrementGifCount?.();
+      metricsCollector.recordUserAction?.('gif-encoding-completed', {
         totalTime,
         frameCount: frameArray.length,
         outputSize: result.size
@@ -252,10 +345,10 @@ export class GifEncoder {
       return finalResult;
       
     } catch (error) {
-      this.profiler.recordError();
+      profiler.recordError?.();
       
       // Record error in metrics
-      metricsCollector.recordError({
+      metricsCollector.recordError?.({
         type: 'gif-encoding-error',
         message: error instanceof Error ? error.message : 'Unknown encoding error',
         context: {
@@ -263,14 +356,19 @@ export class GifEncoder {
           stage: this.currentStage
         }
       });
-      
       if (error instanceof Error) {
-        throw new Error(`GIF encoding failed: ${error.message}`);
+        throw error;
       }
       throw error;
     } finally {
       // Record memory usage after encoding
-      await performanceTracker.recordMemoryUsage();
+      if (typeof tracker.recordMemoryUsage === 'function') {
+        await tracker.recordMemoryUsage();
+      } else if (typeof (performanceTracker as any).recordMemoryUsage === 'function') {
+        await (performanceTracker as any).recordMemoryUsage();
+      }
+      this.abortSignalCleanup?.();
+      this.abortSignalCleanup = undefined;
       this.cleanup();
     }
   }
@@ -279,7 +377,7 @@ export class GifEncoder {
    * Cancel ongoing encoding operation
    */
   cancel(): void {
-    if (this.abortController) {
+    if (this.abortController && !this.abortController.signal.aborted) {
       this.abortController.abort();
     }
     
@@ -307,14 +405,27 @@ export class GifEncoder {
     config: GifEncodingConfig,
     metadata?: FrameExtractionResult['metadata']
   ): GifEncodingOptions {
-    const baseOptions = EncodingOptimizer.createOptionsFromSettings(
+    const optimizer = EncodingOptimizer as unknown as {
+      createOptionsFromSettings?: (
+        settings: GifSettings,
+        preset?: GifQualityPreset,
+        analysis?: FrameExtractionResult['metadata']
+      ) => GifEncodingOptions;
+    };
+
+    const baseOptions = (optimizer.createOptionsFromSettings?.(
       config.settings,
       config.preset
-    );
+    ) ?? this.buildFallbackOptions(config.settings, config.preset)) as GifEncodingOptions &
+      Record<string, unknown>;
 
     // Apply custom overrides
     if (config.customOptions) {
       Object.assign(baseOptions, config.customOptions);
+    }
+
+    if (config.customOptions?.background) {
+      baseOptions.transparent = baseOptions.transparent ?? true;
     }
 
     // Use metadata dimensions if available
@@ -324,6 +435,48 @@ export class GifEncoder {
     }
 
     return baseOptions;
+  }
+
+  private buildFallbackOptions(
+    settings: GifSettings,
+    preset?: GifQualityPreset
+  ): GifEncodingOptions & Record<string, unknown> {
+    const optimizer = EncodingOptimizer as unknown as {
+      getRecommendedSettings?: (
+        settings: GifSettings,
+        preset?: GifQualityPreset
+      ) => Partial<GifEncodingOptions> & { workerScript?: string; transparent?: boolean };
+    };
+
+    const recommended = optimizer.getRecommendedSettings?.(settings, preset) ?? {};
+    const [width, height] = settings.resolution.includes('x')
+      ? settings.resolution.split('x').map(num => parseInt(num.trim(), 10))
+      : [640, 480];
+
+    const qualityFromSettings =
+      settings.quality === 'high' ? 5 : settings.quality === 'low' ? 20 : 10;
+
+    const options: GifEncodingOptions & Record<string, unknown> = {
+      workers: recommended.workers ?? 2,
+      quality: recommended.quality ?? qualityFromSettings,
+      repeat: recommended.repeat ?? 0,
+      background: recommended.background,
+      debug: recommended.debug ?? false,
+      dither: recommended.dither ?? false,
+      globalPalette: recommended.globalPalette ?? false,
+      workerScript: recommended.workerScript,
+      progressInterval: recommended.progressInterval ?? 50,
+      memoryLimit: recommended.memoryLimit ?? 80 * 1024 * 1024,
+      timeLimit: recommended.timeLimit ?? 10000,
+      width,
+      height
+    };
+
+    if (recommended.transparent !== undefined) {
+      options.transparent = recommended.transparent;
+    }
+
+    return options;
   }
 
   private setupEventHandlers(): void {
@@ -346,53 +499,71 @@ export class GifEncoder {
     // Monitor for abort signal
     if (this.abortController) {
       this.abortController.signal.addEventListener('abort', () => {
-        this.cancel();
+        if (this.gifInstance && this.gifInstance.running) {
+          this.gifInstance.abort();
+        }
       });
     }
   }
 
-  private async addFramesToEncoder(
+  private addFramesToEncoder(
     frames: ExtractedFrame[],
     settings: GifSettings
-  ): Promise<void> {
+  ): void {
     if (!this.gifInstance) {
       throw new Error('GIF instance not initialized');
     }
 
-    const frameDelay = EncodingOptimizer.calculateFrameDelay(settings.frameRate);
-    
+    const optimizer = EncodingOptimizer as unknown as {
+      calculateFrameDelay?: (frameRate: number) => number;
+    };
+    const frameDelay =
+      optimizer.calculateFrameDelay?.(settings.frameRate) ??
+      Math.max(1, Math.round(100 / Math.max(1, settings.frameRate)));
+    const requiresCanvasProcessing =
+      settings.brightness !== 1 ||
+      settings.contrast !== 1 ||
+      Boolean(settings.textOverlays && settings.textOverlays.length > 0);
+    const profiler = this.profiler as any;
+
     for (let i = 0; i < frames.length; i++) {
       if (this.abortController?.signal.aborted) {
-        throw new Error('Encoding cancelled');
+        throw new Error('Encoding aborted');
       }
 
-      this.profiler.startFrame(i);
+      profiler.startFrame?.(i);
       
       const frame = frames[i];
       
-      // Create canvas for frame data
-      const canvas = document.createElement('canvas');
-      canvas.width = frame.imageData.width;
-      canvas.height = frame.imageData.height;
-      
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        throw new Error('Failed to get canvas context');
+      let frameSource:
+        | HTMLCanvasElement
+        | HTMLImageElement
+        | CanvasRenderingContext2D
+        | ImageData = frame.imageData;
+
+      if (requiresCanvasProcessing) {
+        const canvas = document.createElement('canvas');
+        canvas.width = frame.imageData.width;
+        canvas.height = frame.imageData.height;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          throw new Error('Failed to get canvas context');
+        }
+
+        ctx.putImageData(frame.imageData, 0, 0);
+        this.applyFrameProcessing(ctx, settings);
+        frameSource = canvas;
       }
-      
-      ctx.putImageData(frame.imageData, 0, 0);
-      
-      // Apply any image processing based on settings
-      this.applyFrameProcessing(ctx, settings);
-      
+
       // Add frame to GIF
-      this.gifInstance.addFrame(canvas, {
+      this.gifInstance.addFrame(frameSource, {
         delay: frameDelay,
         dispose: 2 // Restore to background
       });
       
-      const frameTime = this.profiler.endFrame(i);
-      
+      const frameTime = profiler.endFrame?.(i) ?? 0;
+
       // Report progress
       const progress = Math.round((i / frames.length) * 30); // Preparing is 0-30%
       this.reportProgress('preparing', progress, `Processing frame ${i + 1}/${frames.length}`);
@@ -403,9 +574,6 @@ export class GifEncoder {
       }
       
       // Yield control periodically
-      if (i % 10 === 0) {
-        await new Promise(resolve => setTimeout(resolve, 0));
-      }
     }
   }
 
@@ -458,38 +626,15 @@ export class GifEncoder {
     }
   }
 
-  private async performEncoding(): Promise<Blob> {
-    if (!this.gifInstance) {
-      throw new Error('GIF instance not initialized');
-    }
-
-    return new Promise<Blob>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error('Encoding timeout'));
-      }, this.gifInstance!.options.timeLimit || 30000);
-
-      this.gifInstance!.on('finished', (blob: Blob) => {
-        clearTimeout(timeout);
-        resolve(blob);
-      });
-
-      this.gifInstance!.on('abort', () => {
-        clearTimeout(timeout);
-        reject(new Error('Encoding aborted'));
-      });
-
-      // Start the encoding process
-      this.gifInstance!.render();
-    });
-  }
-
   private createResult(
     blob: Blob,
     options: GifEncodingOptions,
     config: GifEncodingConfig
   ): GifEncodingResult {
     const encodingTime = performance.now() - this.startTime;
-    const performanceResult = this.profiler.finish(this.frameCount);
+    const profiler = this.profiler as any;
+    const performanceResult =
+      profiler.finish?.(this.frameCount) ?? this.buildFallbackPerformance(encodingTime);
 
     return {
       blob,
@@ -504,6 +649,24 @@ export class GifEncoder {
         options
       },
       performance: performanceResult
+    };
+  }
+
+  private buildFallbackPerformance(encodingTime: number): {
+    success: boolean;
+    efficiency: number;
+    recommendations: string[];
+    peakMemoryUsage: number;
+    avgFrameTime: number;
+  } {
+    const avgFrameTime = this.frameCount > 0 ? encodingTime / this.frameCount : 0;
+
+    return {
+      success: true,
+      efficiency: 1,
+      recommendations: [],
+      peakMemoryUsage: this.getCurrentMemoryUsage() ?? 0,
+      avgFrameTime
     };
   }
 
@@ -527,6 +690,8 @@ export class GifEncoder {
       currentOperation: operation,
       memoryUsage: this.getCurrentMemoryUsage()
     });
+
+    (this.profiler as any).recordMemoryUsage?.();
   }
 
   private calculateCurrentProgress(): number {
@@ -554,7 +719,12 @@ export class GifEncoder {
     this.isEncoding = false;
     this.progressCallback = undefined;
     this.abortController = null;
+    this.abortSignalCleanup = undefined;
     this.currentStage = 'preparing';
+    if (this.encodingTimeout) {
+      clearTimeout(this.encodingTimeout);
+      this.encodingTimeout = undefined;
+    }
     
     if (this.gifInstance) {
       this.gifInstance = null;

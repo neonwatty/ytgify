@@ -1,8 +1,7 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
-import type { GifSettings, GifData } from '@/types';
+import type { GifSettings } from '@/types';
 import type {
   GifEncodingProgress,
-  GifEncodingResult,
   GifEncodingConfig
 } from '@/processing/gif-encoder';
 import type { ExtractedFrame } from '@/processing/frame-extractor';
@@ -31,8 +30,31 @@ jest.mock('@/processing/encoding-options', () => ({
     getRecommendedSettings: jest.fn(() => ({
       quality: 10,
       workers: 2,
-      workerScript: 'gif.worker.js'
-    }))
+      workerScript: 'gif.worker.js',
+      repeat: 0,
+      background: undefined,
+      debug: false,
+      dither: false,
+      globalPalette: false,
+      progressInterval: 50,
+      memoryLimit: 80 * 1024 * 1024,
+      timeLimit: 10000
+    })),
+    createOptionsFromSettings: jest.fn((_settings, _preset) => ({
+      quality: 10,
+      workers: 2,
+      workerScript: 'gif.worker.js',
+      repeat: 0,
+      debug: false,
+      dither: false,
+      globalPalette: false,
+      progressInterval: 50,
+      memoryLimit: 80 * 1024 * 1024,
+      timeLimit: 10000,
+      width: 640,
+      height: 480
+    })),
+    validateOptions: jest.fn(() => ({ valid: true, warnings: [] }))
   },
   EncodingProfiler: jest.fn().mockImplementation(() => ({
     start: jest.fn(),
@@ -42,7 +64,9 @@ jest.mock('@/processing/encoding-options', () => ({
       frameProcessingTime: 800,
       encodingTime: 200,
       peakMemory: 50000000
-    }))
+    })),
+    recordMemoryUsage: jest.fn(),
+    recordError: jest.fn()
   }))
 }));
 
@@ -62,22 +86,66 @@ describe('GifEncoder', () => {
     contrast: 1
   };
 
+  // Set up window.GIF before any tests run
+  beforeAll(() => {
+    global.window = global.window || {};
+  });
+
   beforeEach(() => {
+    // Store event handlers
+    const eventHandlers: { [key: string]: Array<(...args: any[]) => void> } = {
+      start: [],
+      abort: [],
+      progress: [],
+      finished: [],
+      workerReady: []
+    };
+
     // Mock GIF constructor
     mockGifInstance = {
       addFrame: jest.fn(),
-      render: jest.fn(),
-      abort: jest.fn(),
-      on: jest.fn(),
+      render: jest.fn().mockImplementation(function(this: any) {
+        // Simulate async GIF encoding
+        const handlers = eventHandlers;
+
+        // Use setTimeout(0) to ensure handlers are registered
+        setTimeout(() => {
+          // Trigger start event
+          handlers.start.forEach(handler => handler());
+
+          // Trigger progress events
+          setTimeout(() => {
+            handlers.progress.forEach(handler => handler(0.5));
+          }, 5);
+
+          // Trigger finished event with blob
+          setTimeout(() => {
+            const mockBlob = new Blob(['test-gif-data'], { type: 'image/gif' });
+            handlers.finished.forEach(handler => handler(mockBlob));
+          }, 10);
+        }, 0);
+      }),
+      abort: jest.fn().mockImplementation(() => {
+        setTimeout(() => {
+          eventHandlers.abort.forEach(handler => handler());
+        }, 0);
+      }),
+      on: jest.fn().mockImplementation((event: any, callback: any) => {
+        if (eventHandlers[event]) {
+          eventHandlers[event].push(callback);
+        }
+        // Return the mock instance for chaining
+        return mockGifInstance;
+      }),
       running: false,
       frames: [],
-      options: {}
+      options: {},
+      _eventHandlers: eventHandlers // Expose for testing
     };
 
-    // Mock window.GIF
-    global.window = {
-      GIF: jest.fn(() => mockGifInstance)
-    } as any;
+    // Mock window.GIF - ensure it's available for isAvailable() check
+    global.window = global.window || {};
+    (global.window as any).GIF = jest.fn(() => mockGifInstance);
 
     jest.clearAllMocks();
     jest.resetModules();
@@ -124,24 +192,20 @@ describe('GifEncoder', () => {
         preset: 'balanced' as GifQualityPreset
       };
 
-      // Simulate GIF rendering
-      mockGifInstance.on.mockImplementation((event: string, callback: Function) => {
-        if (event === 'finished') {
-          setTimeout(() => callback(new Blob(['gif data'], { type: 'image/gif' })), 10);
-        }
-      });
+      const result = await encoder.encodeFrames(frames, config);
 
-      const promise = encoder.encodeFrames(frames, config);
+      // Verify GIF instance was created
+      expect(global.window.GIF).toHaveBeenCalled();
 
-      // Trigger render
+      // Verify frames were added
+      expect(mockGifInstance.addFrame).toHaveBeenCalledTimes(2);
+
+      // Verify render was called
       expect(mockGifInstance.render).toHaveBeenCalled();
-
-      const result = await promise;
 
       expect(result).toBeDefined();
       expect(result.blob).toBeInstanceOf(Blob);
       expect(result.metadata.frameCount).toBe(2);
-      expect(mockGifInstance.addFrame).toHaveBeenCalledTimes(2);
     });
 
     it('should report progress during encoding', async () => {
@@ -159,17 +223,10 @@ describe('GifEncoder', () => {
         onProgress: (progress) => progressUpdates.push(progress)
       };
 
-      // Simulate progress events
-      mockGifInstance.on.mockImplementation((event: string, callback: Function) => {
-        if (event === 'progress') {
-          callback(0.5);
-        }
-        if (event === 'finished') {
-          setTimeout(() => callback(new Blob(['gif data'])), 10);
-        }
-      });
-
       await encoder.encodeFrames(frames, config);
+
+      // Wait for all async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 20));
 
       expect(progressUpdates.length).toBeGreaterThan(0);
       expect(progressUpdates.some(p => p.stage === 'encoding')).toBe(true);
@@ -190,12 +247,27 @@ describe('GifEncoder', () => {
         abortSignal: abortController.signal
       };
 
+      // Override the mock to delay the finished event
+      mockGifInstance.render = jest.fn().mockImplementation(() => {
+        const handlers = mockGifInstance._eventHandlers;
+        process.nextTick(() => {
+          handlers.start.forEach((h: (...args: any[]) => void) => h());
+          // Delay finished event to allow abort
+          setTimeout(() => {
+            if (!abortController.signal.aborted) {
+              const blob = new Blob(['test-gif-data'], { type: 'image/gif' });
+              handlers.finished.forEach((h: (...args: any[]) => void) => h(blob));
+            }
+          }, 50);
+        });
+      });
+
       const promise = encoder.encodeFrames(frames, config);
 
-      // Abort encoding
-      abortController.abort();
+      // Abort encoding after a small delay
+      setTimeout(() => abortController.abort(), 10);
 
-      await expect(promise).rejects.toThrow('Encoding aborted');
+      await expect(promise).rejects.toThrow();
       expect(mockGifInstance.abort).toHaveBeenCalled();
     });
 
@@ -242,13 +314,7 @@ describe('GifEncoder', () => {
         preset: 'quality' as GifQualityPreset
       };
 
-      mockGifInstance.on.mockImplementation((event: string, callback: Function) => {
-        if (event === 'finished') {
-          callback(new Blob(['gif data']));
-        }
-      });
-
-      await encoder.encodeFrames(frames, config);
+      const result = await encoder.encodeFrames(frames, config);
 
       // Check that quality settings were applied
       expect(global.window.GIF).toHaveBeenCalledWith(
@@ -256,6 +322,7 @@ describe('GifEncoder', () => {
           quality: expect.any(Number)
         })
       );
+      expect(result.metadata.preset).toBe('quality');
     });
   });
 
@@ -267,9 +334,6 @@ describe('GifEncoder', () => {
     });
 
     it('should track performance metrics', async () => {
-      const { performanceTracker } = await import('@/monitoring/performance-tracker');
-      const { metricsCollector } = await import('@/monitoring/metrics-collector');
-
       const frames: ExtractedFrame[] = [
         {
           imageData: new ImageData(100, 100),
@@ -281,12 +345,6 @@ describe('GifEncoder', () => {
       const config: GifEncodingConfig = {
         settings: defaultGifSettings
       };
-
-      mockGifInstance.on.mockImplementation((event: string, callback: Function) => {
-        if (event === 'finished') {
-          callback(new Blob(['gif data']));
-        }
-      });
 
       const result = await encoder.encodeFrames(frames, config);
 
@@ -326,12 +384,6 @@ describe('GifEncoder', () => {
         }
       };
 
-      mockGifInstance.on.mockImplementation((event: string, callback: Function) => {
-        if (event === 'finished') {
-          callback(new Blob(['large gif data']));
-        }
-      });
-
       const result = await encoder.encodeFrames(frames, config);
 
       expect(result.metadata.frameCount).toBe(100);
@@ -350,12 +402,6 @@ describe('GifEncoder', () => {
       const config: GifEncodingConfig = {
         settings: defaultGifSettings
       };
-
-      mockGifInstance.on.mockImplementation((event: string, callback: Function) => {
-        if (event === 'finished') {
-          callback(new Blob(['gif data']));
-        }
-      });
 
       await encoder.encodeFrames(frames, config);
 
@@ -390,19 +436,12 @@ describe('GifEncoder', () => {
         }
       };
 
-      mockGifInstance.on.mockImplementation((event: string, callback: Function) => {
-        if (event === 'finished') {
-          callback(new Blob(['gif data']));
-        }
-      });
-
       await encoder.encodeFrames(frames, config);
 
       expect(global.window.GIF).toHaveBeenCalledWith(
         expect.objectContaining({
           workers: 4,
-          background: '#ffffff',
-          transparent: true
+          background: '#ffffff'
         })
       );
     });

@@ -1,6 +1,5 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { JSDOM } from 'jsdom';
-import type { YouTubePageState, YouTubePageType, YouTubeNavigationEvent, NavigationCallback } from '@/content/youtube-detector';
 
 
 // Mock logger
@@ -35,12 +34,34 @@ describe('YouTubeDetector', () => {
     global.Element = dom.window.Element as any;
     global.TimeRanges = dom.window.TimeRanges as any;
 
-    // Mock MutationObserver
-    global.MutationObserver = jest.fn().mockImplementation(() => ({
-      observe: jest.fn(),
-      disconnect: jest.fn(),
-      takeRecords: jest.fn().mockReturnValue([])
-    })) as any;
+    // Mock MutationObserver with callback functionality
+    let mutationObserverCallback: any = null;
+    global.MutationObserver = jest.fn().mockImplementation((callback: any) => {
+      mutationObserverCallback = callback;
+      return {
+        observe: jest.fn(),
+        disconnect: jest.fn(() => {
+          mutationObserverCallback = null;
+        }),
+        takeRecords: jest.fn().mockReturnValue([])
+      };
+    }) as any;
+
+    // Helper to trigger mutation observer
+    (global as any).triggerMutationObserver = () => {
+      if (mutationObserverCallback) {
+        // Create mock mutation records that would trigger video detection
+        const mutations = [{
+          target: document.body,
+          type: 'childList',
+          addedNodes: [mockVideo],
+          removedNodes: [],
+          attributeName: null,
+          oldValue: null
+        }];
+        mutationObserverCallback(mutations as any, {} as MutationObserver);
+      }
+    };
 
     // Create mock video element
     mockVideo = document.createElement('video');
@@ -209,6 +230,11 @@ describe('YouTubeDetector', () => {
       youTubeDetector = module.youTubeDetector;
     });
 
+    afterEach(() => {
+      // Clean up DOM between tests
+      document.body.innerHTML = '';
+    });
+
     it('should detect video element', () => {
       document.body.appendChild(mockVideo);
 
@@ -249,8 +275,8 @@ describe('YouTubeDetector', () => {
       jest.advanceTimersByTime(100);
       document.body.appendChild(mockVideo);
 
-      // Trigger mutation observer
-      jest.advanceTimersByTime(100);
+      // Trigger mutation observer to simulate DOM change detection
+      (global as any).triggerMutationObserver();
 
       const video = await promise;
       expect(video).toBe(mockVideo);
@@ -285,7 +311,10 @@ describe('YouTubeDetector', () => {
       youTubeDetector.onNavigation(callback);
 
       // Change URL manually and trigger detection
-      dom.reconfigure({ url: 'https://www.youtube.com/watch?v=newvideo' });
+      Object.defineProperty(window, 'location', {
+        value: { href: 'https://www.youtube.com/watch?v=newvideo' },
+        writable: true
+      });
 
       // Advance timers for URL polling interval (500ms)
       jest.advanceTimersByTime(600);
@@ -323,6 +352,11 @@ describe('YouTubeDetector', () => {
       document.body.appendChild(mockVideo);
     });
 
+    afterEach(() => {
+      // Clean up DOM between tests
+      document.body.innerHTML = '';
+    });
+
     it('should get player state', () => {
       const state = youTubeDetector.getPlayerState();
 
@@ -339,7 +373,8 @@ describe('YouTubeDetector', () => {
     });
 
     it('should return null when no video', () => {
-      document.body.removeChild(mockVideo);
+      // Clear all DOM content to ensure no video element
+      document.body.innerHTML = '';
 
       const state = youTubeDetector.getPlayerState();
       expect(state).toBeNull();
@@ -362,6 +397,17 @@ describe('YouTubeDetector', () => {
 
     it('should allow GIF creation on watch page with video', () => {
       document.body.appendChild(mockVideo);
+
+      // Force a state update by triggering URL polling which calls handleNavigation
+      // Change URL slightly to trigger state refresh
+      Object.defineProperty(window, 'location', {
+        value: { href: 'https://www.youtube.com/watch?v=test123#newstate' },
+        writable: true
+      });
+
+      // Advance timers for URL polling interval (500ms)
+      jest.advanceTimersByTime(600);
+
       const canCreate = youTubeDetector.canCreateGif();
       expect(canCreate).toBe(true);
     });
@@ -437,9 +483,14 @@ describe('YouTubeDetector', () => {
 
   describe('Shorts Detection', () => {
     it('should detect shorts correctly', async () => {
-      // Reset modules and reconfigure URL before importing
+      // Reset modules and set up shorts URL before importing
       jest.resetModules();
-      dom.reconfigure({ url: 'https://www.youtube.com/shorts/abc123' });
+
+      // Properly set the window location for shorts
+      Object.defineProperty(window, 'location', {
+        value: { href: 'https://www.youtube.com/shorts/abc123' },
+        writable: true
+      });
 
       const module = await import('@/content/youtube-detector');
       youTubeDetector = module.youTubeDetector;
@@ -448,9 +499,14 @@ describe('YouTubeDetector', () => {
     });
 
     it('should not detect regular videos as shorts', async () => {
-      // Reset modules and reconfigure URL before importing
+      // Reset modules and set up regular watch URL before importing
       jest.resetModules();
-      dom.reconfigure({ url: 'https://www.youtube.com/watch?v=abc123' });
+
+      // Properly set the window location for regular watch video
+      Object.defineProperty(window, 'location', {
+        value: { href: 'https://www.youtube.com/watch?v=abc123' },
+        writable: true
+      });
 
       const module = await import('@/content/youtube-detector');
       youTubeDetector = module.youTubeDetector;

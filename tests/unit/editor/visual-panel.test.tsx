@@ -193,7 +193,7 @@ describe('VisualAdjustmentPanel', () => {
 
       const resetButtons = screen.getAllByTitle('Reset to default');
       // Find the contrast reset button (should be after brightness)
-      const contrastReset = resetButtons.find((btn) => {
+      resetButtons.find((btn) => {
         // Click and check which setting was reset
         fireEvent.click(btn);
         return mockOnSettingsChange.mock.calls.some(
@@ -327,7 +327,7 @@ describe('VisualAdjustmentPanel', () => {
         />
       );
 
-      const previewElement = container.querySelector('.bg-gradient-to-r') as HTMLElement;
+      const previewElement = container.querySelector('.bg-gradient-to-r.from-blue-500') as HTMLElement;
       expect(previewElement.style.filter).toBe('brightness(1.5) contrast(0.8)');
     });
   });
@@ -489,10 +489,10 @@ describe('VisualAdjustmentPanel', () => {
       expect(resetAllButton).toBeDisabled();
 
       const presetButtons = [
-        screen.getByText('Bright & Vivid'),
-        screen.getByText('Dark Mode'),
-        screen.getByText('Fast Motion'),
-        screen.getByText('Slow Motion')
+        screen.getByText('Bright & Vivid').closest('button'),
+        screen.getByText('Dark Mode').closest('button'),
+        screen.getByText('Fast Motion').closest('button'),
+        screen.getByText('Slow Motion').closest('button')
       ];
       presetButtons.forEach(button => {
         expect(button).toBeDisabled();
@@ -540,7 +540,7 @@ describe('VisualAdjustmentPanel', () => {
 
       expect(screen.getByText('0.10x')).toBeInTheDocument();
       expect(screen.getByText('2.50x')).toBeInTheDocument();
-      expect(screen.getByText('0.25x')).toBeInTheDocument();
+      expect(screen.getAllByText('0.25x')).toHaveLength(2); // One in speed display, one in indicators
     });
   });
 });
