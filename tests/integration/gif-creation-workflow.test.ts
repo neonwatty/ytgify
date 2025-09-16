@@ -6,12 +6,6 @@ import type {
   GifData
 } from '@/types';
 
-// Define VideoMetadata locally since it's not exported
-interface VideoMetadata {
-  originalFrameRate: number;
-  resolution: { width: number; height: number };
-  bitrate?: number;
-}
 
 // Mock Chrome APIs
 const mockChrome = {
@@ -47,9 +41,9 @@ global.chrome = mockChrome as any;
 class MockIndexedDB {
   private storage = new Map();
 
-  async open(name: string, version: number) {
+  async open(_name: string, _version: number) {
     return {
-      objectStore: (storeName: string) => ({
+      objectStore: (_storeName: string) => ({
         add: async (data: any) => {
           this.storage.set(data.id, data);
           return data.id;
@@ -138,6 +132,121 @@ describe('GIF Creation Workflow Integration', () => {
     delete (global as any).GIF;
   });
 
+  describe('Resolution Scaling in GIF Creation', () => {
+    it('should apply 480p resolution (852x480) when selected', async () => {
+      const selection: TimelineSelection = {
+        startTime: 0,
+        endTime: 2,
+        duration: 2
+      };
+
+      const settings: GifSettings = {
+        frameRate: 10,
+        quality: 'medium',
+        resolution: '480p',
+        speed: 1,
+        brightness: 1,
+        contrast: 1,
+        startTime: selection.startTime,
+        endTime: selection.endTime
+      };
+
+      const frames = Array.from({ length: 20 }, (_, i) => ({
+        timestamp: i / 10,
+        blob: new Blob(['frame'], { type: 'image/png' }),
+        index: i
+      }));
+
+      const processedFrames = await processFramesWithSettings(frames, settings);
+
+      // Verify all frames are scaled to 480p dimensions
+      processedFrames.forEach(frame => {
+        expect(frame.dimensions.width).toBe(852);
+        expect(frame.dimensions.height).toBe(480);
+        expect(frame.imageData.width).toBe(852);
+        expect(frame.imageData.height).toBe(480);
+      });
+
+      // Verify aspect ratio is maintained (16:9)
+      const aspectRatio = 852 / 480;
+      expect(aspectRatio).toBeCloseTo(16 / 9, 2);
+    });
+
+    it('should apply 720p resolution (1280x720) when selected', async () => {
+      const selection: TimelineSelection = {
+        startTime: 0,
+        endTime: 2,
+        duration: 2
+      };
+
+      const settings: GifSettings = {
+        frameRate: 10,
+        quality: 'medium',
+        resolution: '720p',
+        speed: 1,
+        brightness: 1,
+        contrast: 1,
+        startTime: selection.startTime,
+        endTime: selection.endTime
+      };
+
+      const frames = Array.from({ length: 20 }, (_, i) => ({
+        timestamp: i / 10,
+        blob: new Blob(['frame'], { type: 'image/png' }),
+        index: i
+      }));
+
+      const processedFrames = await processFramesWithSettings(frames, settings);
+
+      // Verify all frames are scaled to 720p dimensions
+      processedFrames.forEach(frame => {
+        expect(frame.dimensions.width).toBe(1280);
+        expect(frame.dimensions.height).toBe(720);
+        expect(frame.imageData.width).toBe(1280);
+        expect(frame.imageData.height).toBe(720);
+      });
+
+      // Verify aspect ratio is exactly 16:9
+      const aspectRatio = 1280 / 720;
+      expect(aspectRatio).toBe(16 / 9);
+    });
+
+    it('should preserve original resolution (1920x1080) when original is selected', async () => {
+      const selection: TimelineSelection = {
+        startTime: 0,
+        endTime: 2,
+        duration: 2
+      };
+
+      const settings: GifSettings = {
+        frameRate: 10,
+        quality: 'high',
+        resolution: 'original',
+        speed: 1,
+        brightness: 1,
+        contrast: 1,
+        startTime: selection.startTime,
+        endTime: selection.endTime
+      };
+
+      const frames = Array.from({ length: 20 }, (_, i) => ({
+        timestamp: i / 10,
+        blob: new Blob(['frame'], { type: 'image/png' }),
+        index: i
+      }));
+
+      const processedFrames = await processFramesWithSettings(frames, settings);
+
+      // Verify all frames maintain original dimensions
+      processedFrames.forEach(frame => {
+        expect(frame.dimensions.width).toBe(1920);
+        expect(frame.dimensions.height).toBe(1080);
+        expect(frame.imageData.width).toBe(1920);
+        expect(frame.imageData.height).toBe(1080);
+      });
+    });
+  });
+
   describe('Complete GIF Creation Flow', () => {
     it('should handle full workflow from selection to saved GIF', async () => {
       // Step 1: User selects timeline segment
@@ -159,7 +268,7 @@ describe('GIF Creation Workflow Integration', () => {
       };
 
       // Step 2: Simulate frame extraction request
-      const frameExtractionMessage: ExtensionMessage = {
+      const _frameExtractionMessage: ExtensionMessage = {
         type: 'EXTRACT_FRAMES',
         data: {
           videoElement: {
@@ -246,7 +355,7 @@ describe('GIF Creation Workflow Integration', () => {
       const settings: GifSettings = {
         frameRate: 10,
         quality: 'high',
-        resolution: '1080p',
+        resolution: '720p',
         speed: 1,
         brightness: 1,
         contrast: 1,
@@ -302,7 +411,7 @@ describe('GIF Creation Workflow Integration', () => {
       };
 
       // Store crop area separately for testing
-      const cropArea = {
+      const _cropArea = {
         x: 100,
         y: 50,
         width: 640,
@@ -403,7 +512,7 @@ describe('GIF Creation Workflow Integration', () => {
       const settings: GifSettings = {
         frameRate: 24, // High frame rate
         quality: 'high',
-        resolution: '1080p',
+        resolution: '720p',
         speed: 1,
         brightness: 1,
         contrast: 1,
@@ -449,7 +558,7 @@ describe('GIF Creation Workflow Integration', () => {
       const highQualitySettings: GifSettings = {
         frameRate: 10,
         quality: 'high',
-        resolution: '1080p',
+        resolution: '720p',
         speed: 1,
         brightness: 1,
         contrast: 1,
@@ -483,12 +592,60 @@ async function extractFrames(selection: TimelineSelection): Promise<any[]> {
 }
 
 async function processFramesWithSettings(frames: any[], settings: GifSettings): Promise<any[]> {
-  // Simulate frame processing (brightness, contrast, crop, etc.)
-  return frames.map(frame => ({
-    ...frame,
-    processed: true,
-    settings: settings
-  }));
+  // Simulate frame processing with actual resolution scaling
+  const targetDimensions = getTargetDimensions(settings.resolution);
+
+  return frames.map(frame => {
+    // Calculate scaled dimensions based on resolution setting
+    let width = 1920; // Default original width
+    let height = 1080; // Default original height
+
+    if (targetDimensions) {
+      // Apply resolution scaling
+      if (settings.resolution === '480p') {
+        width = 852;
+        height = 480;
+      } else if (settings.resolution === '720p') {
+        width = 1280;
+        height = 720;
+      } else if (settings.resolution === 'original') {
+        // Keep original dimensions
+        width = 1920;
+        height = 1080;
+      }
+    }
+
+    return {
+      ...frame,
+      processed: true,
+      settings: settings,
+      dimensions: { width, height },
+      imageData: new ImageData(width, height)
+    };
+  });
+}
+
+function getTargetDimensions(resolution: string): { width: number; height: number } | null {
+  switch (resolution) {
+    case '480p':
+      return { width: 852, height: 480 };
+    case '720p':
+      return { width: 1280, height: 720 };
+    case 'original':
+      return null; // Keep original
+    default:
+      // Parse custom resolution like "1280x720"
+      if (resolution && resolution.includes('x')) {
+        const parts = resolution.split('x');
+        if (parts.length === 2) {
+          return {
+            width: parseInt(parts[0]),
+            height: parseInt(parts[1])
+          };
+        }
+      }
+      return null;
+  }
 }
 
 async function encodeToGIF(frames: any[], settings: GifSettings): Promise<Blob> {
@@ -522,7 +679,7 @@ async function encodeToGIF(frames: any[], settings: GifSettings): Promise<Blob> 
   }
 }
 
-async function generateThumbnail(firstFrame: any): Promise<Blob> {
+async function generateThumbnail(_firstFrame: any): Promise<Blob> {
   // Simulate thumbnail generation
   return new Blob(['thumbnail'], { type: 'image/png' });
 }

@@ -14,7 +14,7 @@ interface OverlayWizardProps {
   videoElement?: HTMLVideoElement;
   onSelectionChange: (selection: TimelineSelection) => void;
   onClose: () => void;
-  onCreateGif: (selection: TimelineSelection, textOverlays?: TextOverlay[]) => void;
+  onCreateGif: (selection: TimelineSelection, textOverlays?: TextOverlay[], resolution?: string) => void;
   onSeekTo?: (time: number) => void;
   isCreating?: boolean;
   processingStatus?: {
@@ -25,7 +25,7 @@ interface OverlayWizardProps {
   gifData?: {
     dataUrl: string;
     size: number;
-    metadata: any;
+    metadata: unknown;
   };
 }
 
@@ -38,7 +38,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   onClose,
   onCreateGif,
   onSeekTo,
-  isCreating = false,
+  isCreating: _isCreating = false,
   processingStatus,
   gifData
 }) => {
@@ -69,18 +69,18 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     goToScreen('quick-capture');
   }, [goToScreen, currentTime, videoDuration, setScreenData]);
 
-  const handleConfirmQuickCapture = (startTime: number, endTime: number, frameRate?: number) => {
-    
+  const handleConfirmQuickCapture = (startTime: number, endTime: number, frameRate?: number, resolution?: string) => {
+
     const selection: TimelineSelection = {
       startTime,
       endTime,
       duration: endTime - startTime
     };
-    // Update the data state with the final selection and frame rate
-    setScreenData({ startTime, endTime, frameRate: frameRate || 10 });
+    // Update the data state with the final selection, frame rate, and resolution
+    setScreenData({ startTime, endTime, frameRate: frameRate || 10, resolution: resolution || '480p' });
     onSelectionChange(selection);
     // Go to text overlay screen instead of processing
-    
+
     goToScreen('text-overlay');
   };
 
@@ -111,15 +111,15 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
 
   // Add handlers for text overlay screen
   const handleConfirmTextOverlay = (overlays: TextOverlay[]) => {
-    
+
     setScreenData({ textOverlays: overlays });
     const selection: TimelineSelection = {
       startTime: data.startTime || 0,
       endTime: data.endTime || 10,
       duration: (data.endTime || 10) - (data.startTime || 0)
     };
-    
-    onCreateGif(selection, overlays);
+
+    onCreateGif(selection, overlays, data.resolution);
     goToScreen('processing');
   };
 
@@ -129,7 +129,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
       endTime: data.endTime || 10,
       duration: (data.endTime || 10) - (data.startTime || 0)
     };
-    onCreateGif(selection, []);
+    onCreateGif(selection, [], data.resolution);
     goToScreen('processing');
   };
 

@@ -9,7 +9,7 @@ export interface TimelineOverlayWizardProps {
   videoElement?: HTMLVideoElement;
   onSelectionChange: (selection: TimelineSelection) => void;
   onClose: () => void;
-  onCreateGif: (selection: TimelineSelection, textOverlays?: TextOverlay[]) => void;
+  onCreateGif: (selection: TimelineSelection, textOverlays?: TextOverlay[], resolution?: string) => void;
   onSeekTo?: (time: number) => void;
   isCreating?: boolean;
   processingStatus?: {
@@ -41,10 +41,10 @@ export const TimelineOverlayWizard: React.FC<TimelineOverlayWizardProps> = ({
     onSelectionChange(newSelection);
   }, [onSelectionChange]);
 
-  const handleCreateGif = useCallback((finalSelection: TimelineSelection, textOverlays?: TextOverlay[]) => {
-    
+  const handleCreateGif = useCallback((finalSelection: TimelineSelection, textOverlays?: TextOverlay[], resolution?: string) => {
+
     handleSelectionChange(finalSelection);
-    onCreateGif(finalSelection, textOverlays);
+    onCreateGif(finalSelection, textOverlays, resolution);
   }, [handleSelectionChange, onCreateGif]);
 
   return (

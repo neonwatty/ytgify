@@ -11,6 +11,12 @@ import type {
   MessageBusOptions
 } from '@/shared/message-bus';
 
+import type {
+  EventMessage,
+  BaseRequest,
+  BaseResponse
+} from '@/shared/messages';
+
 // Mock logger
 jest.mock('@/lib/logger', () => ({
   logger: {

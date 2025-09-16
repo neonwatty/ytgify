@@ -1394,3 +1394,91 @@
 .ytgif-frame-rate-btn--active .ytgif-frame-rate-desc {
   color: rgba(255, 255, 255, 0.8);
 }
+
+/* Resolution Section */
+.ytgif-resolution-section {
+  margin: 20px 0 10px 0;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ytgif-resolution-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+}
+
+.ytgif-resolution-label svg {
+  color: #ff0000;
+}
+
+/* Screen 2: Capture resolution icon */
+.ytgif-quick-capture-screen .ytgif-resolution-label svg {
+  color: #ff0066;
+}
+
+.ytgif-resolution-options {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.ytgif-resolution-btn {
+  flex: 1;
+  padding: 12px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.ytgif-resolution-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.ytgif-resolution-btn--active {
+  background: rgba(255, 0, 0, 0.2);
+  border-color: #ff0000;
+  color: white;
+}
+
+.ytgif-resolution-btn--active:hover {
+  background: rgba(255, 0, 0, 0.25);
+}
+
+/* Screen 2: Capture resolution buttons */
+.ytgif-quick-capture-screen .ytgif-resolution-btn--active {
+  background: rgba(255, 0, 102, 0.2);
+  border-color: #ff0066;
+}
+
+.ytgif-quick-capture-screen .ytgif-resolution-btn--active:hover {
+  background: rgba(255, 0, 102, 0.25);
+}
+
+.ytgif-resolution-desc {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: normal;
+}
+
+.ytgif-resolution-btn--active .ytgif-resolution-desc {
+  color: rgba(255, 255, 255, 0.8);
+}

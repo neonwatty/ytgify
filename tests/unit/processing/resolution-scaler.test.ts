@@ -1,0 +1,319 @@
+import { describe, it, expect, beforeEach } from '@jest/globals';
+import { ResolutionScaler, RESOLUTION_PRESETS } from '@/processing/resolution-scaler';
+
+describe('ResolutionScaler', () => {
+  let scaler: ResolutionScaler;
+
+  beforeEach(() => {
+    scaler = new ResolutionScaler();
+  });
+
+  describe('Resolution Presets', () => {
+    it('should have exactly 4 resolution presets', () => {
+      expect(RESOLUTION_PRESETS).toHaveLength(4);
+    });
+
+    it('should include 360p, 480p, 720p, and original presets', () => {
+      const presetNames = RESOLUTION_PRESETS.map(p => p.name);
+      expect(presetNames).toEqual(['original', '720p', '480p', '360p']);
+    });
+
+    it('should have correct target heights for each preset', () => {
+      const presets = RESOLUTION_PRESETS.reduce((acc, p) => {
+        acc[p.name] = p.targetHeight;
+        return acc;
+      }, {} as Record<string, number>);
+
+      expect(presets).toEqual({
+        'original': 0,
+        '720p': 720,
+        '480p': 480,
+        '360p': 360
+      });
+    });
+
+    it('should have correct file size multipliers', () => {
+      const multipliers = RESOLUTION_PRESETS.reduce((acc, p) => {
+        acc[p.name] = p.fileSizeMultiplier;
+        return acc;
+      }, {} as Record<string, number>);
+
+      expect(multipliers).toEqual({
+        'original': 4.0,
+        '720p': 2.0,
+        '480p': 1.3,
+        '360p': 1.0
+      });
+    });
+  });
+
+  describe('getPresetByName', () => {
+    it('should return correct preset for valid names', () => {
+      expect(scaler.getPresetByName('480p')?.targetHeight).toBe(480);
+      expect(scaler.getPresetByName('720p')?.targetHeight).toBe(720);
+      expect(scaler.getPresetByName('original')?.targetHeight).toBe(0);
+      expect(scaler.getPresetByName('360p')?.targetHeight).toBe(360);
+    });
+
+    it('should return undefined for invalid preset names', () => {
+      expect(scaler.getPresetByName('1080p')).toBeUndefined();
+      expect(scaler.getPresetByName('invalid')).toBeUndefined();
+      expect(scaler.getPresetByName('')).toBeUndefined();
+    });
+  });
+
+  describe('calculateScaledDimensions', () => {
+    describe('with original preset', () => {
+      it('should return original dimensions unchanged', () => {
+        const preset = scaler.getPresetByName('original')!;
+        const result = scaler.calculateScaledDimensions(1920, 1080, preset);
+
+        expect(result).toEqual({
+          width: 1920,
+          height: 1080,
+          scaleFactor: 1.0,
+          originalWidth: 1920,
+          originalHeight: 1080,
+          aspectRatio: 1920 / 1080
+        });
+      });
+    });
+
+    describe('with 720p preset', () => {
+      it('should scale 1080p video to 720p correctly', () => {
+        const preset = scaler.getPresetByName('720p')!;
+        const result = scaler.calculateScaledDimensions(1920, 1080, preset);
+
+        expect(result.height).toBe(720);
+        expect(result.width).toBe(1280);
+        expect(result.scaleFactor).toBeCloseTo(720 / 1080);
+      });
+
+      it('should scale portrait video correctly', () => {
+        const preset = scaler.getPresetByName('720p')!;
+        const result = scaler.calculateScaledDimensions(1080, 1920, preset);
+
+        expect(result.height).toBe(720);
+        expect(result.width).toBe(404); // Should be even
+        expect(result.scaleFactor).toBeCloseTo(720 / 1920);
+      });
+    });
+
+    describe('with 480p preset', () => {
+      it('should scale 720p video to 480p correctly', () => {
+        const preset = scaler.getPresetByName('480p')!;
+        const result = scaler.calculateScaledDimensions(1280, 720, preset);
+
+        expect(result.height).toBe(480);
+        expect(result.width).toBe(852); // Should be even: Math.floor(853.33 / 2) * 2
+        expect(result.scaleFactor).toBeCloseTo(480 / 720);
+      });
+
+      it('should handle square video correctly', () => {
+        const preset = scaler.getPresetByName('480p')!;
+        const result = scaler.calculateScaledDimensions(720, 720, preset);
+
+        expect(result.height).toBe(480);
+        expect(result.width).toBe(480);
+        expect(result.aspectRatio).toBe(1.0);
+      });
+    });
+
+    describe('with 360p preset', () => {
+      it('should scale to 360p for memory optimization', () => {
+        const preset = scaler.getPresetByName('360p')!;
+        const result = scaler.calculateScaledDimensions(1920, 1080, preset);
+
+        expect(result.height).toBe(360);
+        expect(result.width).toBe(640);
+        expect(result.scaleFactor).toBeCloseTo(360 / 1080);
+      });
+    });
+
+    describe('no upscaling behavior', () => {
+      it('should not upscale video smaller than target resolution', () => {
+        const preset = scaler.getPresetByName('720p')!;
+        const result = scaler.calculateScaledDimensions(640, 480, preset);
+
+        // Should keep original dimensions
+        expect(result.width).toBe(640);
+        expect(result.height).toBe(480);
+        expect(result.scaleFactor).toBe(1.0);
+      });
+
+      it('should not upscale 360p video to 480p', () => {
+        const preset = scaler.getPresetByName('480p')!;
+        const result = scaler.calculateScaledDimensions(640, 360, preset);
+
+        expect(result.width).toBe(640);
+        expect(result.height).toBe(360);
+        expect(result.scaleFactor).toBe(1.0);
+      });
+    });
+
+    describe('even dimension enforcement', () => {
+      it('should ensure width is even', () => {
+        const preset = scaler.getPresetByName('480p')!;
+        // This would normally result in width 853.33
+        const result = scaler.calculateScaledDimensions(1280, 720, preset);
+
+        expect(result.width % 2).toBe(0);
+        expect(result.height % 2).toBe(0);
+      });
+
+      it('should ensure height is even', () => {
+        const preset = scaler.getPresetByName('720p')!;
+        const result = scaler.calculateScaledDimensions(1921, 1081, preset);
+
+        expect(result.width % 2).toBe(0);
+        expect(result.height % 2).toBe(0);
+      });
+    });
+
+    describe('aspect ratio preservation', () => {
+      it('should preserve 16:9 aspect ratio', () => {
+        const preset = scaler.getPresetByName('480p')!;
+        const result = scaler.calculateScaledDimensions(1920, 1080, preset);
+
+        const originalRatio = 1920 / 1080;
+        const scaledRatio = result.width / result.height;
+
+        // Allow small difference due to even number rounding
+        expect(Math.abs(originalRatio - scaledRatio)).toBeLessThan(0.01);
+      });
+
+      it('should preserve 9:16 portrait aspect ratio', () => {
+        const preset = scaler.getPresetByName('480p')!;
+        const result = scaler.calculateScaledDimensions(1080, 1920, preset);
+
+        const originalRatio = 1080 / 1920;
+        const scaledRatio = result.width / result.height;
+
+        expect(Math.abs(originalRatio - scaledRatio)).toBeLessThan(0.01);
+      });
+
+      it('should preserve 1:1 square aspect ratio', () => {
+        const preset = scaler.getPresetByName('480p')!;
+        const result = scaler.calculateScaledDimensions(1080, 1080, preset);
+
+        expect(result.width).toBe(result.height);
+        expect(result.aspectRatio).toBe(1.0);
+      });
+    });
+
+    describe('edge cases', () => {
+      it('should handle very small videos', () => {
+        const preset = scaler.getPresetByName('480p')!;
+        const result = scaler.calculateScaledDimensions(100, 100, preset);
+
+        expect(result.width).toBe(100);
+        expect(result.height).toBe(100);
+        expect(result.scaleFactor).toBe(1.0);
+      });
+
+      it('should handle ultra-wide videos', () => {
+        const preset = scaler.getPresetByName('480p')!;
+        const result = scaler.calculateScaledDimensions(3840, 1080, preset);
+
+        expect(result.height).toBe(480);
+        const expectedWidth = Math.floor(3840 * (480 / 1080) / 2) * 2;
+        expect(result.width).toBe(expectedWidth);
+      });
+
+      it('should handle ultra-tall videos', () => {
+        const preset = scaler.getPresetByName('480p')!;
+        const result = scaler.calculateScaledDimensions(1080, 3840, preset);
+
+        expect(result.height).toBe(480);
+        const expectedWidth = Math.floor(1080 * (480 / 3840) / 2) * 2;
+        expect(result.width).toBe(expectedWidth);
+      });
+    });
+
+    describe('with string preset parameter', () => {
+      it('should accept preset name as string', () => {
+        const result = scaler.calculateScaledDimensions(1920, 1080, '480p');
+
+        expect(result.height).toBe(480);
+        expect(result.width).toBe(852); // Even number
+      });
+
+      it('should throw error for invalid string preset', () => {
+        expect(() => {
+          scaler.calculateScaledDimensions(1920, 1080, 'invalid');
+        }).toThrow('Invalid resolution preset: invalid');
+      });
+    });
+  });
+
+  describe('getRecommendedPreset', () => {
+    it('should recommend 720p or original for text content', () => {
+      const preset = scaler.getRecommendedPreset(1920, 1080, 'text');
+      expect(preset.name).toBe('720p');
+
+      const presetSmall = scaler.getRecommendedPreset(640, 480, 'text');
+      expect(presetSmall.name).toBe('original');
+    });
+
+    it('should recommend 480p or original for animation content', () => {
+      const preset = scaler.getRecommendedPreset(1920, 1080, 'animation');
+      expect(preset.name).toBe('480p');
+
+      const presetSmall = scaler.getRecommendedPreset(320, 240, 'animation');
+      expect(presetSmall.name).toBe('original');
+    });
+
+    it('should recommend lower resolution for video with size target', () => {
+      const preset = scaler.getRecommendedPreset(1920, 1080, 'video', 4);
+      expect(preset.name).toBe('360p');
+    });
+
+    it('should recommend 480p for mixed content by default', () => {
+      const preset = scaler.getRecommendedPreset(1920, 1080, 'mixed');
+      expect(preset.name).toBe('480p');
+    });
+  });
+
+  describe('estimateQualityLoss', () => {
+    it('should return 0 for no scaling or upscaling', () => {
+      expect(scaler.estimateQualityLoss(1.0)).toBe(0);
+      expect(scaler.estimateQualityLoss(1.5)).toBe(0);
+    });
+
+    it('should return higher loss for more aggressive downscaling', () => {
+      const loss50 = scaler.estimateQualityLoss(0.5);
+      const loss25 = scaler.estimateQualityLoss(0.25);
+      const loss10 = scaler.estimateQualityLoss(0.1);
+
+      expect(loss50).toBeGreaterThan(0);
+      expect(loss25).toBeGreaterThan(loss50);
+      expect(loss10).toBeGreaterThan(loss25);
+    });
+
+    it('should cap quality loss at 1.0', () => {
+      expect(scaler.estimateQualityLoss(0.001)).toBeLessThanOrEqual(1.0);
+    });
+
+    it('should never return negative quality loss', () => {
+      expect(scaler.estimateQualityLoss(2.0)).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe('getPresetForFileSize', () => {
+    it('should select appropriate preset for target file size', () => {
+      // Target is half the base size
+      const preset = scaler.getPresetForFileSize(1920, 1080, 5, 10);
+      expect(preset.fileSizeMultiplier).toBeLessThanOrEqual(1.3);
+    });
+
+    it('should avoid original preset when reducing file size', () => {
+      const preset = scaler.getPresetForFileSize(1920, 1080, 2, 10);
+      expect(preset.name).not.toBe('original');
+    });
+
+    it('should default to lowest preset for very small target', () => {
+      const preset = scaler.getPresetForFileSize(1920, 1080, 0.5, 10);
+      expect(preset.name).toBe('360p');
+    });
+  });
+});

@@ -8,7 +8,7 @@ interface QuickCaptureScreenProps {
   currentTime: number;
   duration: number;
   videoElement?: HTMLVideoElement;
-  onConfirm: (startTime: number, endTime: number, frameRate?: number) => void;
+  onConfirm: (startTime: number, endTime: number, frameRate?: number, resolution?: string) => void;
   onBack: () => void;
   onSeekTo?: (time: number) => void;
 }
@@ -33,6 +33,7 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
   }, [isPreviewPlaying]);
   const [previewTime, setPreviewTime] = useState(startTime);
   const [selectedFrameRate, setSelectedFrameRate] = useState(5); // Default to 5 fps
+  const [selectedResolution, setSelectedResolution] = useState('480p'); // Default to 480p for balance
   
   const handleRangeChange = useCallback((newStart: number, newEnd: number) => {
     setStartTime(newStart);
@@ -47,11 +48,6 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
       onSeekTo(time);
     }
   }, [onSeekTo]);
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const gifDuration = endTime - startTime;
 
@@ -99,6 +95,40 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
           onRangeChange={handleRangeChange}
           onSeek={handleSeek}
         />
+
+        {/* Resolution Options */}
+        <div className="ytgif-resolution-section">
+          <div className="ytgif-resolution-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Resolution</span>
+          </div>
+          <div className="ytgif-resolution-options">
+            <button
+              className={`ytgif-resolution-btn ${selectedResolution === '480p' ? 'ytgif-resolution-btn--active' : ''}`}
+              onClick={() => setSelectedResolution('480p')}
+            >
+              480p SD
+              <span className="ytgif-resolution-desc">Smaller file • Quick sharing</span>
+            </button>
+            <button
+              className={`ytgif-resolution-btn ${selectedResolution === '720p' ? 'ytgif-resolution-btn--active' : ''}`}
+              onClick={() => setSelectedResolution('720p')}
+            >
+              720p HD
+              <span className="ytgif-resolution-desc">Balanced • Good quality</span>
+            </button>
+            <button
+              className={`ytgif-resolution-btn ${selectedResolution === 'original' ? 'ytgif-resolution-btn--active' : ''}`}
+              onClick={() => setSelectedResolution('original')}
+            >
+              Original
+              <span className="ytgif-resolution-desc">Best quality • Larger file</span>
+            </button>
+          </div>
+        </div>
 
         {/* Frame Rate Options */}
         <div className="ytgif-frame-rate-section">
@@ -160,7 +190,15 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             <span className="ytgif-info-label">Est. Size:</span>
-            <span className="ytgif-info-value">~{(gifDuration * selectedFrameRate * 0.05).toFixed(1)}MB</span>
+            <span className="ytgif-info-value">~{(() => {
+              const resolutionMultipliers: Record<string, number> = {
+                '480p': 1.0,
+                '720p': 2.0,
+                'original': 3.5
+              };
+              const sizeEstimate = gifDuration * selectedFrameRate * 0.05 * resolutionMultipliers[selectedResolution];
+              return sizeEstimate.toFixed(1);
+            })()}MB</span>
           </div>
         </div>
 
@@ -180,8 +218,8 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
         {/* Action Buttons */}
         <div className="ytgif-wizard-actions">
           <button className="ytgif-button-primary" onClick={() => {
-            // Pass the current selection and frame rate
-            onConfirm(startTime, endTime, selectedFrameRate);
+            // Pass the current selection, frame rate, and resolution
+            onConfirm(startTime, endTime, selectedFrameRate, selectedResolution);
           }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}

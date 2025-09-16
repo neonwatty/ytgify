@@ -43,6 +43,8 @@ describe('YouTubePlayerIntegration', () => {
   let YouTubePlayerIntegration: any;
   let playerIntegration: any;
   let dom: JSDOM;
+  let mockPlayerContainer: HTMLElement | null;
+  let mockControlsContainer: HTMLElement | null;
 
   beforeEach(() => {
     // Use fake timers
@@ -128,6 +130,9 @@ describe('YouTubePlayerIntegration', () => {
     jest.useRealTimers();
     // Clean up chrome mock
     delete (global as any).chrome;
+    // Clean up mock elements
+    mockPlayerContainer = null;
+    mockControlsContainer = null;
   });
 
   describe('Singleton Instance', () => {

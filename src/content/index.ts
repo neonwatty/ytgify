@@ -686,7 +686,9 @@ class YouTubeGifMaker {
           videoElement: this.videoElement || undefined,
           onSelectionChange: this.handleSelectionChange.bind(this),
           onClose: this.deactivateGifMode.bind(this),
-          onCreateGif: this.handleCreateGif.bind(this),
+          onCreateGif: (selection: TimelineSelection, textOverlays?: TextOverlay[], resolution?: string) => {
+            this.handleCreateGif(selection, textOverlays, resolution);
+          },
           onSeekTo: this.handleSeekTo.bind(this),
           isCreating: this.isCreatingGif,
           processingStatus: this.processingStatus,
@@ -752,9 +754,9 @@ class YouTubeGifMaker {
           videoElement: this.videoElement || undefined,
           onSelectionChange: this.handleSelectionChange.bind(this),
           onClose: this.deactivateGifMode.bind(this),
-          onCreateGif: (selection: TimelineSelection, textOverlays?: TextOverlay[]) => {
-            
-            this.handleCreateGif(selection, textOverlays);
+          onCreateGif: (selection: TimelineSelection, textOverlays?: TextOverlay[], resolution?: string) => {
+
+            this.handleCreateGif(selection, textOverlays, resolution);
           },
           onSeekTo: this.handleSeekTo.bind(this),
           isCreating: this.isCreatingGif,
@@ -770,7 +772,12 @@ class YouTubeGifMaker {
           currentTime: videoState.currentTime,
           onSelectionChange: this.handleSelectionChange.bind(this),
           onClose: this.deactivateGifMode.bind(this),
-          onCreateGif: this.handleCreateGif.bind(this),
+          onCreateGif: () => {
+            // Old timeline mode doesn't support resolution
+            if (this.currentSelection) {
+              this.handleCreateGif(this.currentSelection);
+            }
+          },
           onSeekTo: this.handleSeekTo.bind(this),
           onPreviewToggle: this.handlePreviewToggle.bind(this),
           isCreating: this.isCreatingGif,
@@ -896,11 +903,11 @@ class YouTubeGifMaker {
     return compactSelectors.some(selector => document.querySelector(selector) !== null);
   }
 
-  private async handleCreateGif(selection?: TimelineSelection, textOverlays?: TextOverlay[]) {
-    
+  private async handleCreateGif(selection?: TimelineSelection, textOverlays?: TextOverlay[], resolution?: string) {
+
     // Use provided selection or fall back to current selection
     const gifSelection = selection || this.currentSelection;
-    
+
     if (!this.videoElement || !gifSelection) {
       this.log('warn', '[Content] Cannot create GIF - missing video or selection');
       return;
@@ -934,29 +941,75 @@ class YouTubeGifMaker {
     
     // Use default settings for wizard-initiated GIF creation
     // Calculate default dimensions based on video aspect ratio
-    // Max dimension of 640px on the longest side
-    const videoAspectRatio = this.videoElement!.videoWidth / this.videoElement!.videoHeight;
-    let defaultWidth = 640;
-    let defaultHeight = 360;
+    let scaledWidth = 640;
+    let scaledHeight = 360;
 
-    if (videoAspectRatio > 1) {
-      // Landscape video - limit width to 640
-      defaultWidth = 640;
-      defaultHeight = Math.round(640 / videoAspectRatio);
-    } else {
-      // Portrait or square video - limit height to 640
-      defaultHeight = 640;
-      defaultWidth = Math.round(640 * videoAspectRatio);
+    try {
+      // Try to use ResolutionScaler for intelligent scaling
+      const { ResolutionScaler } = await import('@/processing/resolution-scaler');
+      const resolutionScaler = new ResolutionScaler();
+      const preset = resolutionScaler.getPresetByName(resolution || '480p');
+
+      if (preset && this.videoElement) {
+        const videoWidth = this.videoElement.videoWidth;
+        const videoHeight = this.videoElement.videoHeight;
+
+        // Check estimated memory usage
+        const pixelCount = videoWidth * videoHeight;
+        const estimatedMemoryMB = (pixelCount * 4 * 2) / (1024 * 1024); // RGBA * 2 canvases
+
+        // Progressive degradation for memory constraints
+        let targetResolution = resolution || '480p';
+        if (estimatedMemoryMB > 1000) {
+          this.log('warn', '[Content] Very large video detected, forcing 360p', { estimatedMemoryMB });
+          targetResolution = '360p';
+        } else if (estimatedMemoryMB > 500) {
+          this.log('warn', '[Content] Large video detected, limiting to 480p', { estimatedMemoryMB });
+          targetResolution = '480p';
+        }
+
+        const finalPreset = resolutionScaler.getPresetByName(targetResolution) || preset;
+        const scaledDimensions = resolutionScaler.calculateScaledDimensions(
+          videoWidth,
+          videoHeight,
+          finalPreset
+        );
+
+        scaledWidth = scaledDimensions.width;
+        scaledHeight = scaledDimensions.height;
+
+        this.log('info', '[Content] Resolution scaling applied', {
+          original: { width: videoWidth, height: videoHeight },
+          scaled: { width: scaledWidth, height: scaledHeight },
+          preset: finalPreset.name
+        });
+      }
+    } catch (error) {
+      // Fallback to default dimensions if ResolutionScaler fails
+      this.log('error', '[Content] ResolutionScaler failed, using fallback dimensions', { error });
+
+      // Calculate fallback dimensions based on video aspect ratio
+      const videoAspectRatio = this.videoElement!.videoWidth / this.videoElement!.videoHeight;
+
+      if (videoAspectRatio > 1) {
+        // Landscape video - limit width to 640
+        scaledWidth = 640;
+        scaledHeight = Math.round(640 / videoAspectRatio);
+      } else {
+        // Portrait or square video - limit height to 640
+        scaledHeight = 640;
+        scaledWidth = Math.round(640 * videoAspectRatio);
+      }
+
+      // Ensure even dimensions
+      scaledWidth = Math.floor(scaledWidth / 2) * 2;
+      scaledHeight = Math.floor(scaledHeight / 2) * 2;
     }
-
-    // Ensure even dimensions
-    defaultWidth = Math.floor(defaultWidth / 2) * 2;
-    defaultHeight = Math.floor(defaultHeight / 2) * 2;
 
     const defaultSettings = {
       frameRate: 15,
-      width: defaultWidth,
-      height: defaultHeight,
+      width: scaledWidth,
+      height: scaledHeight,
       quality: 'medium' as const
     };
     
@@ -1123,6 +1176,12 @@ class YouTubeGifMaker {
     }
 
     try {
+      // Add memory check before processing
+      const estimatedMemoryMB = (width * height * 4 * 2) / (1024 * 1024);
+      if (estimatedMemoryMB > 1000) {
+        throw new Error('Video dimensions too large for safe processing. Please reduce resolution.');
+      }
+
       // Process GIF entirely in content script
       const result = await gifProcessor.processVideoToGif(
         this.videoElement,
@@ -1228,21 +1287,38 @@ class YouTubeGifMaker {
       
     } catch (error) {
       console.error('[Content] GIF creation failed:', error);
-      this.log('error', '[Content] Failed to create GIF - caught exception', { 
+      this.log('error', '[Content] Failed to create GIF - caught exception', {
         error,
         errorMessage: error instanceof Error ? error.message : String(error),
         errorStack: error instanceof Error ? error.stack : undefined
       });
-      
+
+      // Provide more specific error messages
+      let errorMessage = 'Failed to create GIF. ';
+      if (error instanceof Error) {
+        if (error.message.includes('memory') || error.message.includes('dimensions')) {
+          errorMessage = 'GIF creation failed due to memory constraints. Try reducing the resolution or duration.';
+        } else if (error.message.includes('canvas')) {
+          errorMessage = 'Failed to process video frames. Please refresh and try again.';
+        } else if (error.message.includes('storage')) {
+          errorMessage = 'Failed to save GIF. Check your browser storage settings.';
+        } else {
+          errorMessage += error.message;
+        }
+      }
+
+      // Update processing status with error
+      this.processingStatus = { stage: 'error', progress: 0, message: errorMessage };
+      this.updateTimelineOverlay();
+
       // Only reset creating state if there's an actual error
       this.isCreatingGif = false;
       window.dispatchEvent(new CustomEvent('ytgif-creating-state', {
         detail: { isCreating: false }
       }));
-      
+
       // Show error feedback with actual error message
-      const errorMsg = error instanceof Error ? error.message : 'Failed to start GIF creation';
-      this.showGifCreationFeedback('error', errorMsg);
+      this.showGifCreationFeedback('error', errorMessage);
     }
   }
 
