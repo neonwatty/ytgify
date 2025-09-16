@@ -15,13 +15,13 @@ describe('CanvasProcessor - Resolution Scaling', () => {
       putImageData: jest.fn(),
       clearRect: jest.fn(),
       imageSmoothingEnabled: true,
-      imageSmoothingQuality: 'high' as ImageSmoothingQuality
+      imageSmoothingQuality: 'high' as ImageSmoothingQuality,
     } as any;
 
     mockCanvas = {
       width: 0,
       height: 0,
-      getContext: jest.fn().mockReturnValue(mockContext)
+      getContext: jest.fn().mockReturnValue(mockContext),
     } as any;
 
     // Mock document.createElement to return our mock canvas
@@ -44,20 +44,20 @@ describe('CanvasProcessor - Resolution Scaling', () => {
           {
             imageData: new ImageData(1920, 1080),
             timestamp: 0,
-            frameIndex: 0
+            frameIndex: 0,
           },
           {
             imageData: new ImageData(1920, 1080),
             timestamp: 100,
-            frameIndex: 1
-          }
+            frameIndex: 1,
+          },
         ];
 
         // Process frames with 480p resolution
         const config = {
           targetWidth: 852,
           targetHeight: 480,
-          maintainAspectRatio: true
+          maintainAspectRatio: true,
         };
 
         const result = await processor.processFrames(frames, config);
@@ -82,14 +82,14 @@ describe('CanvasProcessor - Resolution Scaling', () => {
           {
             imageData: new ImageData(1280, 720),
             timestamp: 0,
-            frameIndex: 0
-          }
+            frameIndex: 0,
+          },
         ];
 
         const config = {
           targetWidth: 852,
           targetHeight: 480,
-          maintainAspectRatio: true
+          maintainAspectRatio: true,
         };
 
         const result = await processor.processFrames(frames, config);
@@ -105,14 +105,14 @@ describe('CanvasProcessor - Resolution Scaling', () => {
           {
             imageData: new ImageData(640, 360),
             timestamp: 0,
-            frameIndex: 0
-          }
+            frameIndex: 0,
+          },
         ];
 
         const config = {
           targetWidth: 852,
           targetHeight: 480,
-          maintainAspectRatio: true
+          maintainAspectRatio: true,
         };
 
         const result = await processor.processFrames(frames, config);
@@ -129,19 +129,19 @@ describe('CanvasProcessor - Resolution Scaling', () => {
           {
             imageData: new ImageData(1920, 1080),
             timestamp: 0,
-            frameIndex: 0
+            frameIndex: 0,
           },
           {
             imageData: new ImageData(1920, 1080),
             timestamp: 100,
-            frameIndex: 1
-          }
+            frameIndex: 1,
+          },
         ];
 
         const config = {
           targetWidth: 1280,
           targetHeight: 720,
-          maintainAspectRatio: true
+          maintainAspectRatio: true,
         };
 
         const result = await processor.processFrames(frames, config);
@@ -166,14 +166,14 @@ describe('CanvasProcessor - Resolution Scaling', () => {
           {
             imageData: new ImageData(3840, 2160),
             timestamp: 0,
-            frameIndex: 0
-          }
+            frameIndex: 0,
+          },
         ];
 
         const config = {
           targetWidth: 1280,
           targetHeight: 720,
-          maintainAspectRatio: true
+          maintainAspectRatio: true,
         };
 
         const result = await processor.processFrames(frames, config);
@@ -189,14 +189,14 @@ describe('CanvasProcessor - Resolution Scaling', () => {
           {
             imageData: new ImageData(640, 360),
             timestamp: 0,
-            frameIndex: 0
-          }
+            frameIndex: 0,
+          },
         ];
 
         const config = {
           targetWidth: 1280,
           targetHeight: 720,
-          maintainAspectRatio: true
+          maintainAspectRatio: true,
         };
 
         const result = await processor.processFrames(frames, config);
@@ -213,13 +213,13 @@ describe('CanvasProcessor - Resolution Scaling', () => {
           {
             imageData: new ImageData(1920, 1080),
             timestamp: 0,
-            frameIndex: 0
-          }
+            frameIndex: 0,
+          },
         ];
 
         // When no target dimensions are specified, original should be preserved
         const config = {
-          maintainAspectRatio: true
+          maintainAspectRatio: true,
         };
 
         const result = await processor.processFrames(frames, config);
@@ -236,12 +236,12 @@ describe('CanvasProcessor - Resolution Scaling', () => {
           {
             imageData: new ImageData(3840, 2160),
             timestamp: 0,
-            frameIndex: 0
-          }
+            frameIndex: 0,
+          },
         ];
 
         const config = {
-          maintainAspectRatio: true
+          maintainAspectRatio: true,
         };
 
         const result = await processor.processFrames(frames, config);
@@ -258,12 +258,12 @@ describe('CanvasProcessor - Resolution Scaling', () => {
           {
             imageData: new ImageData(640, 360),
             timestamp: 0,
-            frameIndex: 0
-          }
+            frameIndex: 0,
+          },
         ];
 
         const config = {
-          maintainAspectRatio: true
+          maintainAspectRatio: true,
         };
 
         const result = await processor.processFrames(frames, config);
@@ -282,13 +282,13 @@ describe('CanvasProcessor - Resolution Scaling', () => {
           {
             imageData: new ImageData(1080, 1920),
             timestamp: 0,
-            frameIndex: 0
-          }
+            frameIndex: 0,
+          },
         ];
 
         const config = {
           targetHeight: 480,
-          maintainAspectRatio: true
+          maintainAspectRatio: true,
         };
 
         const result = await processor.processFrames(frames, config);
@@ -307,13 +307,13 @@ describe('CanvasProcessor - Resolution Scaling', () => {
           {
             imageData: new ImageData(1080, 1080),
             timestamp: 0,
-            frameIndex: 0
-          }
+            frameIndex: 0,
+          },
         ];
 
         const config = {
           targetHeight: 480,
-          maintainAspectRatio: true
+          maintainAspectRatio: true,
         };
 
         const result = await processor.processFrames(frames, config);
@@ -332,28 +332,27 @@ describe('CanvasProcessor - Resolution Scaling', () => {
           {
             imageData: new ImageData(2560, 1080),
             timestamp: 0,
-            frameIndex: 0
-          }
+            frameIndex: 0,
+          },
         ];
 
         const config = {
           targetHeight: 720,
-          maintainAspectRatio: true
+          maintainAspectRatio: true,
         };
 
         const result = await processor.processFrames(frames, config);
 
         // For 2560x1080 scaled to height 720, calculate expected width
         const originalAspectRatio = 2560 / 1080;
-        const expectedWidth = Math.round(originalAspectRatio * 720);
-        // Make it even for video encoding (1707 -> 1706)
-        // const evenWidth = expectedWidth % 2 === 0 ? expectedWidth : expectedWidth - 1;
+        // Width should be 1706 after rounding and making even
 
         expect(result.frames[0].processedDimensions.width).toBe(1706);
         expect(result.frames[0].processedDimensions.height).toBe(720);
 
         // Verify aspect ratio is approximately maintained
-        const resultAspectRatio = result.frames[0].processedDimensions.width / result.frames[0].processedDimensions.height;
+        const resultAspectRatio =
+          result.frames[0].processedDimensions.width / result.frames[0].processedDimensions.height;
         expect(resultAspectRatio).toBeCloseTo(originalAspectRatio, 2);
       });
     });
@@ -363,19 +362,19 @@ describe('CanvasProcessor - Resolution Scaling', () => {
         const frames: ExtractedFrame[] = Array.from({ length: 10 }, (_, i) => ({
           imageData: new ImageData(1920, 1080),
           timestamp: i * 100,
-          frameIndex: i
+          frameIndex: i,
         }));
 
         const config = {
           targetWidth: 1280,
           targetHeight: 720,
-          maintainAspectRatio: true
+          maintainAspectRatio: true,
         };
 
         const result = await processor.processFrames(frames, config);
 
         // Verify all frames have the same dimensions
-        result.frames.forEach(frame => {
+        result.frames.forEach((frame) => {
           expect(frame.processedDimensions.width).toBe(1280);
           expect(frame.processedDimensions.height).toBe(720);
         });
@@ -386,19 +385,19 @@ describe('CanvasProcessor - Resolution Scaling', () => {
       });
     });
 
-describe('Even Dimension Enforcement', () => {
+    describe('Even Dimension Enforcement', () => {
       it('should ensure dimensions are even for video encoding compatibility', async () => {
         const frames: ExtractedFrame[] = [
           {
             imageData: new ImageData(1921, 1081),
             timestamp: 0,
-            frameIndex: 0
-          }
+            frameIndex: 0,
+          },
         ];
 
         const config = {
           targetHeight: 480,
-          maintainAspectRatio: true
+          maintainAspectRatio: true,
         };
 
         const result = await processor.processFrames(frames, config);
@@ -415,13 +414,13 @@ describe('Even Dimension Enforcement', () => {
           {
             imageData: new ImageData(1920, 1080),
             timestamp: 0,
-            frameIndex: 0
-          }
+            frameIndex: 0,
+          },
         ];
 
         const config = {
           targetWidth: 1280,
-          targetHeight: 720
+          targetHeight: 720,
         };
 
         const result = await processor.processFrames(frames, config);

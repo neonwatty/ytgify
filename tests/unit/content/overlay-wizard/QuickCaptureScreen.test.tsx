@@ -1,5 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import QuickCaptureScreen from '@/content/overlay-wizard/screens/QuickCaptureScreen';
 
@@ -15,7 +15,7 @@ describe('QuickCaptureScreen', () => {
     duration: 60,
     onConfirm: mockOnConfirm,
     onBack: mockOnBack,
-    onSeekTo: mockOnSeekTo
+    onSeekTo: mockOnSeekTo,
   };
 
   beforeEach(() => {
@@ -81,16 +81,16 @@ describe('QuickCaptureScreen', () => {
 
       // Click 720p
       fireEvent.click(screen.getByText('720p HD').closest('button')!);
-      let activeButtons = screen.getAllByRole('button').filter(btn =>
-        btn.className.includes('ytgif-resolution-btn--active')
-      );
+      let activeButtons = screen
+        .getAllByRole('button')
+        .filter((btn) => btn.className.includes('ytgif-resolution-btn--active'));
       expect(activeButtons).toHaveLength(1);
 
       // Click Original
       fireEvent.click(screen.getByText('Original').closest('button')!);
-      activeButtons = screen.getAllByRole('button').filter(btn =>
-        btn.className.includes('ytgif-resolution-btn--active')
-      );
+      activeButtons = screen
+        .getAllByRole('button')
+        .filter((btn) => btn.className.includes('ytgif-resolution-btn--active'));
       expect(activeButtons).toHaveLength(1);
     });
   });
@@ -114,7 +114,7 @@ describe('QuickCaptureScreen', () => {
 
   describe('File Size Estimation', () => {
     it('should update file size estimate based on resolution', () => {
-      const { rerender } = render(<QuickCaptureScreen {...defaultProps} />);
+      render(<QuickCaptureScreen {...defaultProps} />);
 
       // Default 480p with 5fps
       let sizeText = screen.getByText(/~.*MB/);
@@ -170,7 +170,7 @@ describe('QuickCaptureScreen', () => {
       const size5s = parseFloat(sizeText.textContent?.match(/~(.*)MB/)?.[1] || '0');
 
       // 5 second should be roughly half of 10 second (with some tolerance)
-      expect(Math.abs(size5s - (size10s / 2))).toBeLessThan(2.0);
+      expect(Math.abs(size5s - size10s / 2)).toBeLessThan(2.0);
     });
   });
 
@@ -227,7 +227,9 @@ describe('QuickCaptureScreen', () => {
     it('should call onBack when back button is clicked', () => {
       render(<QuickCaptureScreen {...defaultProps} />);
 
-      const backButton = screen.getByRole('button', { name: '' }).parentElement?.querySelector('.ytgif-back-button');
+      const backButton = screen
+        .getByRole('button', { name: '' })
+        .parentElement?.querySelector('.ytgif-back-button');
       if (backButton) {
         fireEvent.click(backButton);
       }

@@ -35,7 +35,7 @@ export default tseslint.config(
       },
     },
     plugins: {
-      'react': reactPlugin,
+      react: reactPlugin,
       'react-hooks': reactHooksPlugin,
     },
     settings: {
@@ -45,7 +45,15 @@ export default tseslint.config(
     },
     rules: {
       '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_|^error$' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_|^error$',
+          varsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_|^error$',
+        },
+      ],
       '@typescript-eslint/no-explicit-any': 'warn',
       ...reactPlugin.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off',
@@ -68,5 +76,5 @@ export default tseslint.config(
       'scripts/**/*.js',
       'tests/**/*.js',
     ],
-  },
+  }
 );
