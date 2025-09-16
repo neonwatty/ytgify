@@ -264,6 +264,55 @@ export class MessageBus {
     return listenerId;
   }
 
+  // Generic on method for compatibility
+  public on(messageType: string, handler: MessageHandler): () => void {
+    const listenerId = generateMessageId();
+    const listeners = this.handlers.get(messageType) || [];
+
+    listeners.push({
+      id: listenerId,
+      handler,
+      options: {}
+    });
+
+    this.handlers.set(messageType, listeners);
+
+    // Return unregister function
+    return () => this.removeHandler(messageType, listenerId);
+  }
+
+  // Once method for single-use handlers
+  public once(messageType: string, handler: MessageHandler): () => void {
+    const listenerId = generateMessageId();
+
+    const wrappedHandler: MessageHandler = async (message, sender) => {
+      const result = await handler(message, sender);
+      this.removeHandler(messageType, listenerId);
+      return result;
+    };
+
+    const listeners = this.handlers.get(messageType) || [];
+    listeners.push({
+      id: listenerId,
+      handler: wrappedHandler,
+      options: { once: true }
+    });
+
+    this.handlers.set(messageType, listeners);
+
+    return () => this.removeHandler(messageType, listenerId);
+  }
+
+  // Broadcast method for sending events
+  public broadcast(event: EventMessage): void {
+    this.sendEvent(event, 'broadcast');
+  }
+
+  // Emit local event (same as sendEvent)
+  public emit(event: EventMessage): void {
+    this.sendEvent(event);
+  }
+
   // Remove a handler
   public removeHandler(messageType: string, handlerId: string): boolean {
     const listeners = this.handlers.get(messageType);
@@ -277,7 +326,7 @@ export class MessageBus {
     }
 
     listeners.splice(index, 1);
-    
+
     if (listeners.length === 0) {
       this.handlers.delete(messageType);
     }
@@ -434,8 +483,13 @@ export class MessageBus {
     this.pendingRequests.clear();
     this.handlers.clear();
     this.isInitialized = false;
-    
+
     this.log('info', 'MessageBus cleaned up');
+  }
+
+  // Alias for cleanup for compatibility
+  public destroy(): void {
+    this.cleanup();
   }
 
   // Internal logging

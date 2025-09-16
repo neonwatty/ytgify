@@ -356,10 +356,17 @@ export async function extractVideoFramesInServiceWorker(
 export function createServiceWorkerProcessorOptions(
   messageData: {
     videoElement: { currentTime: number; duration: number; videoWidth: number; videoHeight: number };
-    settings: { startTime: number; endTime: number; frameRate: number; quality: 'low' | 'medium' | 'high' };
+    settings: {
+      startTime: number;
+      endTime: number;
+      frameRate: number;
+      quality: 'low' | 'medium' | 'high';
+      maxWidth?: number;
+      maxHeight?: number;
+    };
   }
 ): ServiceWorkerVideoProcessingOptions {
-  return {
+  const options: ServiceWorkerVideoProcessingOptions = {
     startTime: messageData.settings.startTime,
     endTime: messageData.settings.endTime,
     frameRate: messageData.settings.frameRate,
@@ -367,4 +374,13 @@ export function createServiceWorkerProcessorOptions(
     videoWidth: messageData.videoElement.videoWidth,
     videoHeight: messageData.videoElement.videoHeight
   };
+
+  if (messageData.settings.maxWidth !== undefined) {
+    options.maxWidth = messageData.settings.maxWidth;
+  }
+  if (messageData.settings.maxHeight !== undefined) {
+    options.maxHeight = messageData.settings.maxHeight;
+  }
+
+  return options;
 }

@@ -10,6 +10,11 @@
 
 import '@testing-library/jest-dom';
 import { chromeMock } from './chrome-mocks';
+import { TextDecoder, TextEncoder } from 'util';
+
+// Add TextEncoder/TextDecoder polyfills for jsdom
+(global as any).TextEncoder = TextEncoder;
+(global as any).TextDecoder = TextDecoder;
 
 // Set up Chrome extension API mocks globally
 (global as any).chrome = chromeMock;
@@ -59,10 +64,12 @@ Object.defineProperty(window, 'close', {
 });
 
 // Mock URL and Blob for file handling tests
-global.URL = {
-  createObjectURL: jest.fn(() => 'mock-blob-url'),
-  revokeObjectURL: jest.fn(),
-} as any;
+// Import URL from Node.js for proper URL parsing
+import { URL } from 'url';
+global.URL = URL as any;
+// Add the mock methods for object URLs
+(global.URL as any).createObjectURL = jest.fn(() => 'mock-blob-url');
+(global.URL as any).revokeObjectURL = jest.fn();
 
 global.Blob = class MockBlob {
   constructor(public parts: BlobPart[], public options: BlobPropertyBag = {}) {}
