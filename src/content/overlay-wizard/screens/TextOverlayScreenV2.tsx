@@ -16,24 +16,21 @@ interface TextOverlayScreenProps {
 const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
   startTime,
   endTime,
-  videoDuration,
   videoElement,
-  textOverlays = [],
   onConfirm,
   onSkip,
   onBack,
-  onSeekTo
 }) => {
   // Top text state
   const [topText, setTopText] = useState('');
   const [topFontSize, setTopFontSize] = useState(32);
   const [topTextColor, setTopTextColor] = useState('#FFFFFF');
-  
+
   // Bottom text state
   const [bottomText, setBottomText] = useState('');
   const [bottomFontSize, setBottomFontSize] = useState(32);
   const [bottomTextColor, setBottomTextColor] = useState('#FFFFFF');
-  
+
   const [showTopAdvanced, setShowTopAdvanced] = useState(false);
   const [showBottomAdvanced, setShowBottomAdvanced] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -41,7 +38,7 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
 
   const handleAddText = useCallback(() => {
     const overlays: TextOverlay[] = [];
-    
+
     // Add top text if present
     if (topText.trim()) {
       overlays.push({
@@ -49,15 +46,15 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
         text: topText.trim(),
         position: {
           x: 50, // Center horizontally
-          y: 20  // Top position
+          y: 20, // Top position
         },
         fontSize: topFontSize,
         fontFamily: 'Arial',
         color: topTextColor,
-        animation: 'none'
+        animation: 'none',
       });
     }
-    
+
     // Add bottom text if present
     if (bottomText.trim()) {
       overlays.push({
@@ -65,17 +62,16 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
         text: bottomText.trim(),
         position: {
           x: 50, // Center horizontally
-          y: 80  // Bottom position
+          y: 80, // Bottom position
         },
         fontSize: bottomFontSize,
         fontFamily: 'Arial',
         color: bottomTextColor,
-        animation: 'none'
+        animation: 'none',
       });
     }
 
     onConfirm(overlays);
-    
   }, [topText, topFontSize, topTextColor, bottomText, bottomFontSize, bottomTextColor, onConfirm]);
 
   const hasText = topText.trim().length > 0 || bottomText.trim().length > 0;
@@ -91,22 +87,21 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
 
         // Store original time to restore later
         const originalTime = videoElement.currentTime;
-        
+
         // Set canvas size to match video
         canvas.width = videoElement.videoWidth || 640;
         canvas.height = videoElement.videoHeight || 360;
-        
+
         // Function to capture the frame
         const captureFrame = () => {
           try {
             ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
             const frameUrl = canvas.toDataURL('image/jpeg', 0.9);
             setVideoFrameUrl(frameUrl);
-            
           } catch (error) {
             console.error('[TextOverlayScreenV2] Error capturing frame:', error);
           }
-          
+
           // Restore original time after a short delay
           setTimeout(() => {
             videoElement.currentTime = originalTime;
@@ -129,11 +124,11 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
               requestAnimationFrame(checkAndCapture);
             }
           };
-          
+
           // Start checking after a small delay
           setTimeout(checkAndCapture, 100);
         };
-        
+
         // Perform the capture
         performCapture();
       }
@@ -150,7 +145,12 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
         {onBack && (
           <button onClick={onBack} className="ytgif-back-button">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </button>
         )}
@@ -165,7 +165,7 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
         <div className="ytgif-video-preview-section">
           <div className="ytgif-video-preview-frame">
             {videoFrameUrl ? (
-              <div 
+              <div
                 className="ytgif-frame-preview"
                 style={{
                   backgroundImage: `url(${videoFrameUrl})`,
@@ -176,11 +176,11 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
                   height: '300px',
                   position: 'relative',
                   borderRadius: '8px',
-                  backgroundColor: '#000'
+                  backgroundColor: '#000',
                 }}
               >
                 {topText.trim() && (
-                  <div 
+                  <div
                     className="ytgif-text-preview-overlay"
                     style={{
                       position: 'absolute',
@@ -194,14 +194,14 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
                       whiteSpace: 'nowrap',
                       maxWidth: '90%',
                       overflow: 'hidden',
-                      textOverflow: 'ellipsis'
+                      textOverflow: 'ellipsis',
                     }}
                   >
                     {topText}
                   </div>
                 )}
                 {bottomText.trim() && (
-                  <div 
+                  <div
                     className="ytgif-text-preview-overlay"
                     style={{
                       position: 'absolute',
@@ -215,7 +215,7 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
                       whiteSpace: 'nowrap',
                       maxWidth: '90%',
                       overflow: 'hidden',
-                      textOverflow: 'ellipsis'
+                      textOverflow: 'ellipsis',
                     }}
                   >
                     {bottomText}
@@ -224,10 +224,17 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
               </div>
             ) : (
               <div className="ytgif-preview-placeholder">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="2" y="2" width="20" height="20" rx="2" ry="2"/>
-                  <circle cx="8" cy="8" r="2"/>
-                  <polyline points="23 16 16 9 8 17 2 11"/>
+                <svg
+                  width="64"
+                  height="64"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <rect x="2" y="2" width="20" height="20" rx="2" ry="2" />
+                  <circle cx="8" cy="8" r="2" />
+                  <polyline points="23 16 16 9 8 17 2 11" />
                 </svg>
                 <p>Loading video preview...</p>
               </div>
@@ -357,28 +364,28 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
         </div>
       </div>
 
-        {/* Standard Action Buttons */}
-        <div className="ytgif-wizard-actions">
-          <button 
-            className="ytgif-button-secondary"
-            onClick={onSkip}
-            type="button"
-          >
-            Skip This Step
-          </button>
-          
-          <button 
-            className="ytgif-button-primary"
-            onClick={hasText ? handleAddText : onSkip}
-            type="button"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-            {hasText ? 'Apply Text & Continue' : 'Create GIF Without Text'}
-          </button>
-        </div>
+      {/* Standard Action Buttons */}
+      <div className="ytgif-wizard-actions">
+        <button className="ytgif-button-secondary" onClick={onSkip} type="button">
+          Skip This Step
+        </button>
+
+        <button
+          className="ytgif-button-primary"
+          onClick={hasText ? handleAddText : onSkip}
+          type="button"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+            />
+          </svg>
+          {hasText ? 'Apply Text & Continue' : 'Create GIF Without Text'}
+        </button>
+      </div>
     </div>
   );
 };

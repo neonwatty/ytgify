@@ -1,31 +1,27 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
-import { TextOverlay } from "@/types"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Slider } from "@/components/ui/slider"
+import * as React from 'react';
+import { cn } from '@/lib/utils';
+import { TextOverlay } from '@/types';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+} from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface TextControlsProps {
-  overlays: TextOverlay[]
-  selectedOverlayId?: string | null
-  onUpdateOverlay: (overlay: TextOverlay) => void
-  onAddOverlay: () => void
-  onDeleteOverlay: (overlayId: string) => void
-  onSelectOverlay: (overlayId: string | null) => void
-  className?: string
-  disabled?: boolean
+  overlays: TextOverlay[];
+  selectedOverlayId?: string | null;
+  onUpdateOverlay: (overlay: TextOverlay) => void;
+  onAddOverlay: () => void;
+  onDeleteOverlay: (overlayId: string) => void;
+  onSelectOverlay: (overlayId: string | null) => void;
+  className?: string;
+  disabled?: boolean;
 }
 
 const FONT_FAMILIES = [
@@ -39,7 +35,7 @@ const FONT_FAMILIES = [
   { value: 'Comic Sans MS, cursive', label: 'Comic Sans MS' },
   { value: 'Trebuchet MS, sans-serif', label: 'Trebuchet MS' },
   { value: 'Tahoma, sans-serif', label: 'Tahoma' },
-]
+];
 
 const PRESET_COLORS = [
   '#FFFFFF', // White
@@ -54,45 +50,34 @@ const PRESET_COLORS = [
   '#800080', // Purple
   '#FFC0CB', // Pink
   '#A52A2A', // Brown
-]
+];
 
 const ANIMATION_OPTIONS = [
   { value: 'none', label: 'Static' },
   { value: 'fade-in', label: 'Fade In' },
   { value: 'fade-out', label: 'Fade Out' },
-]
+];
 
 interface ColorPickerProps {
-  color: string
-  onChange: (color: string) => void
-  disabled?: boolean
+  color: string;
+  onChange: (color: string) => void;
+  disabled?: boolean;
 }
 
-const ColorPicker: React.FC<ColorPickerProps> = ({ 
-  color, 
-  onChange, 
-  disabled = false 
-}) => {
-  const [customColor, setCustomColor] = React.useState(color)
+const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange, disabled = false }) => {
+  const [customColor, setCustomColor] = React.useState(color);
 
   const handleCustomColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newColor = e.target.value
-    setCustomColor(newColor)
-    onChange(newColor)
-  }
+    const newColor = e.target.value;
+    setCustomColor(newColor);
+    onChange(newColor);
+  };
 
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className="w-full h-10 p-2"
-          disabled={disabled}
-        >
-          <div
-            className="w-full h-full rounded border"
-            style={{ backgroundColor: color }}
-          />
+        <Button variant="outline" className="w-full h-10 p-2" disabled={disabled}>
+          <div className="w-full h-full rounded border" style={{ backgroundColor: color }} />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-4">
@@ -104,10 +89,10 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
                 <button
                   key={presetColor}
                   className={cn(
-                    "w-8 h-8 rounded border-2 transition-all",
-                    color === presetColor 
-                      ? "border-primary scale-110" 
-                      : "border-muted hover:border-muted-foreground"
+                    'w-8 h-8 rounded border-2 transition-all',
+                    color === presetColor
+                      ? 'border-primary scale-110'
+                      : 'border-muted hover:border-muted-foreground'
                   )}
                   style={{ backgroundColor: presetColor }}
                   onClick={() => onChange(presetColor)}
@@ -115,7 +100,7 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
               ))}
             </div>
           </div>
-          
+
           <div>
             <h4 className="text-sm font-medium mb-2">Custom Color</h4>
             <div className="flex gap-2">
@@ -129,8 +114,8 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
                 type="text"
                 value={customColor}
                 onChange={(e) => {
-                  setCustomColor(e.target.value)
-                  onChange(e.target.value)
+                  setCustomColor(e.target.value);
+                  onChange(e.target.value);
                 }}
                 placeholder="#FFFFFF"
                 className="flex-1"
@@ -140,8 +125,8 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
         </div>
       </PopoverContent>
     </Popover>
-  )
-}
+  );
+};
 
 export const TextControls: React.FC<TextControlsProps> = ({
   overlays,
@@ -151,88 +136,102 @@ export const TextControls: React.FC<TextControlsProps> = ({
   onDeleteOverlay,
   onSelectOverlay,
   className,
-  disabled = false
+  disabled = false,
 }) => {
   const selectedOverlay = React.useMemo(
-    () => overlays.find(overlay => overlay.id === selectedOverlayId),
+    () => overlays.find((overlay) => overlay.id === selectedOverlayId),
     [overlays, selectedOverlayId]
-  )
+  );
 
-  const handleTextChange = React.useCallback((text: string) => {
-    if (!selectedOverlay) return
-    onUpdateOverlay({
-      ...selectedOverlay,
-      text: text || 'Text'
-    })
-  }, [selectedOverlay, onUpdateOverlay])
+  const handleTextChange = React.useCallback(
+    (text: string) => {
+      if (!selectedOverlay) return;
+      onUpdateOverlay({
+        ...selectedOverlay,
+        text: text || 'Text',
+      });
+    },
+    [selectedOverlay, onUpdateOverlay]
+  );
 
-  const handleFontSizeChange = React.useCallback((fontSize: number[]) => {
-    if (!selectedOverlay) return
-    onUpdateOverlay({
-      ...selectedOverlay,
-      fontSize: fontSize[0]
-    })
-  }, [selectedOverlay, onUpdateOverlay])
+  const handleFontSizeChange = React.useCallback(
+    (fontSize: number[]) => {
+      if (!selectedOverlay) return;
+      onUpdateOverlay({
+        ...selectedOverlay,
+        fontSize: fontSize[0],
+      });
+    },
+    [selectedOverlay, onUpdateOverlay]
+  );
 
-  const handleFontFamilyChange = React.useCallback((fontFamily: string) => {
-    if (!selectedOverlay) return
-    onUpdateOverlay({
-      ...selectedOverlay,
-      fontFamily
-    })
-  }, [selectedOverlay, onUpdateOverlay])
+  const handleFontFamilyChange = React.useCallback(
+    (fontFamily: string) => {
+      if (!selectedOverlay) return;
+      onUpdateOverlay({
+        ...selectedOverlay,
+        fontFamily,
+      });
+    },
+    [selectedOverlay, onUpdateOverlay]
+  );
 
-  const handleColorChange = React.useCallback((color: string) => {
-    if (!selectedOverlay) return
-    onUpdateOverlay({
-      ...selectedOverlay,
-      color
-    })
-  }, [selectedOverlay, onUpdateOverlay])
+  const handleColorChange = React.useCallback(
+    (color: string) => {
+      if (!selectedOverlay) return;
+      onUpdateOverlay({
+        ...selectedOverlay,
+        color,
+      });
+    },
+    [selectedOverlay, onUpdateOverlay]
+  );
 
-  const handleAnimationChange = React.useCallback((animation: string) => {
-    if (!selectedOverlay) return
-    onUpdateOverlay({
-      ...selectedOverlay,
-      animation: animation as 'none' | 'fade-in' | 'fade-out'
-    })
-  }, [selectedOverlay, onUpdateOverlay])
+  const handleAnimationChange = React.useCallback(
+    (animation: string) => {
+      if (!selectedOverlay) return;
+      onUpdateOverlay({
+        ...selectedOverlay,
+        animation: animation as 'none' | 'fade-in' | 'fade-out',
+      });
+    },
+    [selectedOverlay, onUpdateOverlay]
+  );
 
-  const moveOverlay = React.useCallback((direction: 'up' | 'down') => {
-    if (!selectedOverlay) return
-    
-    const currentIndex = overlays.findIndex(o => o.id === selectedOverlay.id)
-    if (currentIndex === -1) return
+  const moveOverlay = React.useCallback(
+    (direction: 'up' | 'down') => {
+      if (!selectedOverlay) return;
 
-    const newIndex = direction === 'up' 
-      ? Math.max(0, currentIndex - 1)
-      : Math.min(overlays.length - 1, currentIndex + 1)
+      const currentIndex = overlays.findIndex((o) => o.id === selectedOverlay.id);
+      if (currentIndex === -1) return;
 
-    if (newIndex === currentIndex) return
+      const newIndex =
+        direction === 'up'
+          ? Math.max(0, currentIndex - 1)
+          : Math.min(overlays.length - 1, currentIndex + 1);
 
-    // This would require a reordering mechanism in the parent component
-    // For now, we'll just update the position slightly to indicate the action
-    const offset = direction === 'up' ? -1 : 1
-    onUpdateOverlay({
-      ...selectedOverlay,
-      position: {
-        x: selectedOverlay.position.x,
-        y: Math.max(0, selectedOverlay.position.y + offset)
-      }
-    })
-  }, [selectedOverlay, overlays, onUpdateOverlay])
+      if (newIndex === currentIndex) return;
+
+      // This would require a reordering mechanism in the parent component
+      // For now, we'll just update the position slightly to indicate the action
+      const offset = direction === 'up' ? -1 : 1;
+      onUpdateOverlay({
+        ...selectedOverlay,
+        position: {
+          x: selectedOverlay.position.x,
+          y: Math.max(0, selectedOverlay.position.y + offset),
+        },
+      });
+    },
+    [selectedOverlay, overlays, onUpdateOverlay]
+  );
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className={cn('space-y-6', className)}>
       {/* Add Text Button */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Text Overlays</h3>
-        <Button
-          onClick={onAddOverlay}
-          disabled={disabled}
-          variant="default"
-          size="sm"
-        >
+        <Button onClick={onAddOverlay} disabled={disabled} variant="default" size="sm">
           Add Text
         </Button>
       </div>
@@ -246,10 +245,10 @@ export const TextControls: React.FC<TextControlsProps> = ({
               <div
                 key={overlay.id}
                 className={cn(
-                  "flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors",
-                  overlay.id === selectedOverlayId 
-                    ? "border-primary bg-primary/5" 
-                    : "border-border hover:border-muted-foreground"
+                  'flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors',
+                  overlay.id === selectedOverlayId
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-muted-foreground'
                 )}
                 onClick={() => onSelectOverlay(overlay.id)}
               >
@@ -269,8 +268,8 @@ export const TextControls: React.FC<TextControlsProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={(e) => {
-                    e.stopPropagation()
-                    onDeleteOverlay(overlay.id)
+                    e.stopPropagation();
+                    onDeleteOverlay(overlay.id);
                   }}
                   className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
                   disabled={disabled}
@@ -324,9 +323,7 @@ export const TextControls: React.FC<TextControlsProps> = ({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium">Font Size</label>
-              <span className="text-sm text-muted-foreground">
-                {selectedOverlay.fontSize}px
-              </span>
+              <span className="text-sm text-muted-foreground">{selectedOverlay.fontSize}px</span>
             </div>
             <Slider
               value={[selectedOverlay.fontSize]}
@@ -432,10 +429,10 @@ export const TextControls: React.FC<TextControlsProps> = ({
       {overlays.length === 0 && (
         <div className="p-4 bg-muted/50 rounded-lg text-center">
           <div className="text-sm text-muted-foreground">
-            No text overlays yet. Click "Add Text" to get started.
+            No text overlays yet. Click &quot;Add Text&quot; to get started.
           </div>
         </div>
       )}
     </div>
-  )
-}
+  );
+};

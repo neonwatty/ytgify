@@ -1,69 +1,68 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
-import { GifData } from "@/types"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import * as React from 'react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface MetadataFormProps {
-  title: string
-  description: string
-  filename: string
-  tags: string[]
-  onTitleChange: (title: string) => void
-  onDescriptionChange: (description: string) => void
-  onFilenameChange: (filename: string) => void
-  onTagsChange: (tags: string[]) => void
-  className?: string
-  disabled?: boolean
+  title: string;
+  description: string;
+  filename: string;
+  tags: string[];
+  onTitleChange: (title: string) => void;
+  onDescriptionChange: (description: string) => void;
+  onFilenameChange: (filename: string) => void;
+  onTagsChange: (tags: string[]) => void;
+  className?: string;
+  disabled?: boolean;
 }
 
 interface TagInputProps {
-  tags: string[]
-  onTagsChange: (tags: string[]) => void
-  placeholder?: string
-  disabled?: boolean
-  className?: string
+  tags: string[];
+  onTagsChange: (tags: string[]) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
 }
 
 const TagInput: React.FC<TagInputProps> = ({
   tags,
   onTagsChange,
-  placeholder = "Add tags...",
+  placeholder = 'Add tags...',
   disabled = false,
-  className
+  className,
 }) => {
-  const [inputValue, setInputValue] = React.useState("")
-  const [isComposing, setIsComposing] = React.useState(false)
+  const [inputValue, setInputValue] = React.useState('');
+  const [isComposing, setIsComposing] = React.useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value)
-  }
+    setInputValue(e.target.value);
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (isComposing) return
+    if (isComposing) return;
 
     if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault()
-      addTag()
+      e.preventDefault();
+      addTag();
     } else if (e.key === 'Backspace' && inputValue === '' && tags.length > 0) {
-      removeTag(tags.length - 1)
+      removeTag(tags.length - 1);
     }
-  }
+  };
 
   const addTag = () => {
-    const trimmedValue = inputValue.trim().replace(/,+$/, '') // Remove trailing commas
+    const trimmedValue = inputValue.trim().replace(/,+$/, ''); // Remove trailing commas
     if (trimmedValue && !tags.includes(trimmedValue)) {
-      onTagsChange([...tags, trimmedValue])
+      onTagsChange([...tags, trimmedValue]);
     }
-    setInputValue("")
-  }
+    setInputValue('');
+  };
 
   const removeTag = (indexToRemove: number) => {
-    onTagsChange(tags.filter((_, index) => index !== indexToRemove))
-  }
+    onTagsChange(tags.filter((_, index) => index !== indexToRemove));
+  };
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn('space-y-2', className)}>
       <div className="flex flex-wrap gap-2 p-2 border rounded-md min-h-[2.5rem] bg-background">
         {tags.map((tag, index) => (
           <span
@@ -90,18 +89,20 @@ const TagInput: React.FC<TagInputProps> = ({
           onCompositionStart={() => setIsComposing(true)}
           onCompositionEnd={() => setIsComposing(false)}
           onBlur={addTag}
-          placeholder={tags.length === 0 ? placeholder : ""}
+          placeholder={tags.length === 0 ? placeholder : ''}
           disabled={disabled}
           className="flex-1 min-w-[120px] outline-none bg-transparent text-sm placeholder:text-muted-foreground"
         />
       </div>
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>Press Enter or comma to add tags</span>
-        <span>{tags.length} tag{tags.length !== 1 ? 's' : ''}</span>
+        <span>
+          {tags.length} tag{tags.length !== 1 ? 's' : ''}
+        </span>
       </div>
     </div>
-  )
-}
+  );
+};
 
 export const MetadataForm: React.FC<MetadataFormProps> = ({
   title,
@@ -113,10 +114,10 @@ export const MetadataForm: React.FC<MetadataFormProps> = ({
   onFilenameChange,
   onTagsChange,
   className,
-  disabled = false
+  disabled = false,
 }) => {
-  const [titleError, setTitleError] = React.useState<string | null>(null)
-  const [filenameError, setFilenameError] = React.useState<string | null>(null)
+  const [titleError, setTitleError] = React.useState<string | null>(null);
+  const [filenameError, setFilenameError] = React.useState<string | null>(null);
 
   // Generate suggested filename from title
   const generateFilename = React.useCallback((title: string) => {
@@ -125,74 +126,85 @@ export const MetadataForm: React.FC<MetadataFormProps> = ({
       .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
       .replace(/\s+/g, '-') // Replace spaces with hyphens
       .replace(/-+/g, '-') // Remove duplicate hyphens
-      .trim()
-    
-    return sanitized || 'untitled-gif'
-  }, [])
+      .trim();
+
+    return sanitized || 'untitled-gif';
+  }, []);
 
   // Auto-generate filename when title changes (if filename is empty or was auto-generated)
   React.useEffect(() => {
     if (title && (!filename || filename === generateFilename(title))) {
-      onFilenameChange(generateFilename(title))
+      onFilenameChange(generateFilename(title));
     }
-  }, [title, filename, generateFilename, onFilenameChange])
+  }, [title, filename, generateFilename, onFilenameChange]);
 
   // Validate title
   React.useEffect(() => {
     if (title.trim() === '') {
-      setTitleError('Title is required')
+      setTitleError('Title is required');
     } else if (title.length < 3) {
-      setTitleError('Title must be at least 3 characters')
+      setTitleError('Title must be at least 3 characters');
     } else if (title.length > 100) {
-      setTitleError('Title must be less than 100 characters')
+      setTitleError('Title must be less than 100 characters');
     } else {
-      setTitleError(null)
+      setTitleError(null);
     }
-  }, [title])
+  }, [title]);
 
   // Validate filename
   React.useEffect(() => {
-    const filenameRegex = /^[a-zA-Z0-9\s\-_]+$/
+    const filenameRegex = /^[a-zA-Z0-9\s\-_]+$/;
     if (filename.trim() === '') {
-      setFilenameError('Filename is required')
+      setFilenameError('Filename is required');
     } else if (!filenameRegex.test(filename)) {
-      setFilenameError('Filename can only contain letters, numbers, spaces, hyphens, and underscores')
+      setFilenameError(
+        'Filename can only contain letters, numbers, spaces, hyphens, and underscores'
+      );
     } else if (filename.length > 50) {
-      setFilenameError('Filename must be less than 50 characters')
+      setFilenameError('Filename must be less than 50 characters');
     } else {
-      setFilenameError(null)
+      setFilenameError(null);
     }
-  }, [filename])
+  }, [filename]);
 
-  const handleTitleChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    onTitleChange(e.target.value)
-  }, [onTitleChange])
+  const handleTitleChange = React.useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onTitleChange(e.target.value);
+    },
+    [onTitleChange]
+  );
 
-  const handleDescriptionChange = React.useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onDescriptionChange(e.target.value)
-  }, [onDescriptionChange])
+  const handleDescriptionChange = React.useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      onDescriptionChange(e.target.value);
+    },
+    [onDescriptionChange]
+  );
 
-  const handleFilenameChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    onFilenameChange(e.target.value)
-  }, [onFilenameChange])
+  const handleFilenameChange = React.useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onFilenameChange(e.target.value);
+    },
+    [onFilenameChange]
+  );
 
   const handleGenerateFilename = React.useCallback(() => {
     if (title) {
-      onFilenameChange(generateFilename(title))
+      onFilenameChange(generateFilename(title));
     }
-  }, [title, generateFilename, onFilenameChange])
+  }, [title, generateFilename, onFilenameChange]);
 
   const clearForm = React.useCallback(() => {
-    onTitleChange("")
-    onDescriptionChange("")
-    onFilenameChange("")
-    onTagsChange([])
-  }, [onTitleChange, onDescriptionChange, onFilenameChange, onTagsChange])
+    onTitleChange('');
+    onDescriptionChange('');
+    onFilenameChange('');
+    onTagsChange([]);
+  }, [onTitleChange, onDescriptionChange, onFilenameChange, onTagsChange]);
 
-  const hasValidationErrors = titleError || filenameError
+  const hasValidationErrors = titleError || filenameError;
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className={cn('space-y-6', className)}>
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Metadata</h3>
         <Button
@@ -218,12 +230,10 @@ export const MetadataForm: React.FC<MetadataFormProps> = ({
           onChange={handleTitleChange}
           placeholder="Enter GIF title..."
           disabled={disabled}
-          className={titleError ? "border-destructive" : ""}
+          className={titleError ? 'border-destructive' : ''}
           maxLength={100}
         />
-        {titleError && (
-          <p className="text-xs text-destructive">{titleError}</p>
-        )}
+        {titleError && <p className="text-xs text-destructive">{titleError}</p>}
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>A descriptive title for your GIF</span>
           <span>{title.length}/100</span>
@@ -275,14 +285,12 @@ export const MetadataForm: React.FC<MetadataFormProps> = ({
             onChange={handleFilenameChange}
             placeholder="Enter filename..."
             disabled={disabled}
-            className={cn("flex-1", filenameError ? "border-destructive" : "")}
+            className={cn('flex-1', filenameError ? 'border-destructive' : '')}
             maxLength={50}
           />
           <span className="text-sm text-muted-foreground">.gif</span>
         </div>
-        {filenameError && (
-          <p className="text-xs text-destructive">{filenameError}</p>
-        )}
+        {filenameError && <p className="text-xs text-destructive">{filenameError}</p>}
         <div className="flex justify-between text-xs text-muted-foreground">
           <span>Filename for download (without .gif extension)</span>
           <span>{filename.length}/50</span>
@@ -291,9 +299,7 @@ export const MetadataForm: React.FC<MetadataFormProps> = ({
 
       {/* Tags Input */}
       <div className="space-y-2">
-        <label className="text-sm font-medium">
-          Tags
-        </label>
+        <label className="text-sm font-medium">Tags</label>
         <TagInput
           tags={tags}
           onTagsChange={onTagsChange}
@@ -307,9 +313,7 @@ export const MetadataForm: React.FC<MetadataFormProps> = ({
 
       {/* Suggested Tags */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-muted-foreground">
-          Suggested Tags
-        </label>
+        <label className="text-sm font-medium text-muted-foreground">Suggested Tags</label>
         <div className="flex flex-wrap gap-2">
           {['funny', 'reaction', 'meme', 'animation', 'short', 'loop'].map((suggestedTag) => (
             <button
@@ -345,7 +349,11 @@ export const MetadataForm: React.FC<MetadataFormProps> = ({
           </div>
           <div>
             <span className="font-medium">Filename:</span>{' '}
-            {filename ? `${filename}.gif` : <span className="text-muted-foreground italic">No filename</span>}
+            {filename ? (
+              `${filename}.gif`
+            ) : (
+              <span className="text-muted-foreground italic">No filename</span>
+            )}
           </div>
           {description && (
             <div>
@@ -364,5 +372,5 @@ export const MetadataForm: React.FC<MetadataFormProps> = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};

@@ -16,22 +16,19 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
   duration,
   startTime,
   endTime,
-  currentTime = 0,
   previewTime,
   onRangeChange,
   onSeek,
-  minDuration = 0.5,
-  maxDuration = 30
 }) => {
   const timelineRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
   const [durationSliderValue, setDurationSliderValue] = useState(endTime - startTime);
-  
+
   const dragStartRef = useRef<{ x: number; startTime: number }>({
     x: 0,
-    startTime: 0
+    startTime: 0,
   });
 
   // Update slider value when handles are dragged
@@ -50,57 +47,59 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
   // Calculate slider constraints
   const maxSliderValue = Math.min(20, duration - startTime);
 
-  // Convert time to pixel position
-  const timeToPosition = useCallback((time: number): number => {
-    if (!timelineRef.current) return 0;
-    const width = timelineRef.current.offsetWidth;
-    return (time / duration) * width;
-  }, [duration]);
-
   // Convert pixel position to time
-  const positionToTime = useCallback((x: number): number => {
-    if (!timelineRef.current) return 0;
-    const rect = timelineRef.current.getBoundingClientRect();
-    const relativeX = Math.max(0, Math.min(x - rect.left, rect.width));
-    return (relativeX / rect.width) * duration;
-  }, [duration]);
+  const positionToTime = useCallback(
+    (x: number): number => {
+      if (!timelineRef.current) return 0;
+      const rect = timelineRef.current.getBoundingClientRect();
+      const relativeX = Math.max(0, Math.min(x - rect.left, rect.width));
+      return (relativeX / rect.width) * duration;
+    },
+    [duration]
+  );
 
   // Handle mouse down on handle
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    setIsDragging(true);
-    dragStartRef.current = {
-      x: e.clientX,
-      startTime
-    };
-  }, [startTime]);
+      setIsDragging(true);
+      dragStartRef.current = {
+        x: e.clientX,
+        startTime,
+      };
+    },
+    [startTime]
+  );
 
   // Handle timeline click (move handle to position)
-  const handleTimelineClick = useCallback((e: React.MouseEvent) => {
-    if (isDragging) return;
+  const handleTimelineClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (isDragging) return;
 
-    const clickTime = positionToTime(e.clientX);
-    const currentDuration = endTime - startTime;
+      const clickTime = positionToTime(e.clientX);
+      const currentDuration = endTime - startTime;
 
-    // Calculate new start and end based on click position
-    let newStart = clickTime;
-    let newEnd = Math.min(clickTime + currentDuration, duration);
+      // Calculate new start and end based on click position
+      let newStart = clickTime;
+      let newEnd = Math.min(clickTime + currentDuration, duration);
 
-    // If we hit the end of the video, adjust both start and end
-    if (newEnd >= duration) {
-      newEnd = duration;
-      newStart = Math.max(0, duration - currentDuration);
-    }
+      // If we hit the end of the video, adjust both start and end
+      if (newEnd >= duration) {
+        newEnd = duration;
+        newStart = Math.max(0, duration - currentDuration);
+      }
 
-    onRangeChange(newStart, newEnd);
+      onRangeChange(newStart, newEnd);
 
-    // Also seek to this position if callback provided
-    if (onSeek) {
-      onSeek(clickTime);
-    }
-  }, [isDragging, positionToTime, startTime, endTime, duration, onRangeChange, onSeek]);
+      // Also seek to this position if callback provided
+      if (onSeek) {
+        onSeek(clickTime);
+      }
+    },
+    [isDragging, positionToTime, startTime, endTime, duration, onRangeChange, onSeek]
+  );
 
   // Handle mouse enter on timeline
   const handleTimelineMouseEnter = useCallback(() => {
@@ -114,32 +113,41 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
   }, []);
 
   // Handle mouse move on timeline (local to timeline element)
-  const handleTimelineMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging && timelineRef.current) {
-      const hoverTimeValue = positionToTime(e.clientX);
-      setHoverTime(hoverTimeValue);
-    }
-  }, [isDragging, positionToTime]);
+  const handleTimelineMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      if (!isDragging && timelineRef.current) {
+        const hoverTimeValue = positionToTime(e.clientX);
+        setHoverTime(hoverTimeValue);
+      }
+    },
+    [isDragging, positionToTime]
+  );
 
   // Handle mouse move during drag (global document listener)
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isDragging) return;
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isDragging) return;
 
-    const deltaX = e.clientX - dragStartRef.current.x;
-    const deltaTime = (deltaX / timelineRef.current!.offsetWidth) * duration;
+      const deltaX = e.clientX - dragStartRef.current.x;
+      const deltaTime = (deltaX / timelineRef.current!.offsetWidth) * duration;
 
-    const currentDuration = endTime - startTime;
-    let newStart = Math.max(0, Math.min(dragStartRef.current.startTime + deltaTime, duration - currentDuration));
-    let newEnd = Math.min(newStart + currentDuration, duration);
+      const currentDuration = endTime - startTime;
+      let newStart = Math.max(
+        0,
+        Math.min(dragStartRef.current.startTime + deltaTime, duration - currentDuration)
+      );
+      let newEnd = Math.min(newStart + currentDuration, duration);
 
-    // If we hit the end of the video, clamp both values
-    if (newEnd >= duration) {
-      newEnd = duration;
-      newStart = Math.max(0, duration - currentDuration);
-    }
+      // If we hit the end of the video, clamp both values
+      if (newEnd >= duration) {
+        newEnd = duration;
+        newStart = Math.max(0, duration - currentDuration);
+      }
 
-    onRangeChange(newStart, newEnd);
-  }, [isDragging, duration, startTime, endTime, onRangeChange]);
+      onRangeChange(newStart, newEnd);
+    },
+    [isDragging, duration, startTime, endTime, onRangeChange]
+  );
 
   // Handle mouse up
   const handleMouseUp = useCallback(() => {
@@ -169,7 +177,6 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
   const startPercent = (startTime / duration) * 100;
   const endPercent = (endTime / duration) * 100;
   const widthPercent = endPercent - startPercent;
-  const currentPercent = (currentTime / duration) * 100;
   const previewPercent = previewTime ? (previewTime / duration) * 100 : null;
 
   return (
@@ -196,7 +203,7 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
             className="ytgif-timeline-selection"
             style={{
               left: `${startPercent}%`,
-              width: `${widthPercent}%`
+              width: `${widthPercent}%`,
             }}
           />
 
@@ -210,10 +217,7 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
 
           {/* Preview playhead (when playing preview) */}
           {previewPercent !== null && (
-            <div
-              className="ytgif-timeline-preview-head"
-              style={{ left: `${previewPercent}%` }}
-            />
+            <div className="ytgif-timeline-preview-head" style={{ left: `${previewPercent}%` }} />
           )}
 
           {/* Hover tooltip */}
@@ -236,7 +240,7 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
           <span className="ytgif-label-end">{formatTime(duration)}</span>
         </div>
       </div>
-      
+
       {/* Duration slider */}
       <div className="ytgif-duration-slider">
         <div className="ytgif-slider-header">
@@ -281,11 +285,7 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
               }
 
               return (
-                <div
-                  key={mark}
-                  className="ytgif-slider-mark"
-                  style={{ left: `${position}%` }}
-                >
+                <div key={mark} className="ytgif-slider-mark" style={{ left: `${position}%` }}>
                   <div className="ytgif-slider-mark-line" />
                   <div className="ytgif-slider-mark-label">{mark}s</div>
                 </div>
@@ -294,9 +294,7 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
           </div>
         </div>
         {duration < 1 && (
-          <div className="ytgif-slider-disabled-message">
-            Video too short for GIF creation
-          </div>
+          <div className="ytgif-slider-disabled-message">Video too short for GIF creation</div>
         )}
       </div>
     </div>
