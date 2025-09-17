@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { TimelineSelection, TextOverlay } from '@/types';
 import { useOverlayNavigation } from './hooks/useOverlayNavigation';
-import WelcomeScreen from './screens/WelcomeScreen';
+import FeedbackScreen from './screens/FeedbackScreen';
 import QuickCaptureScreen from './screens/QuickCaptureScreen';
 import TextOverlayScreenV2 from './screens/TextOverlayScreenV2';
 import ProcessingScreen from './screens/ProcessingScreen';
@@ -48,7 +48,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   processingStatus,
   gifData,
 }) => {
-  const navigation = useOverlayNavigation('welcome');
+  const navigation = useOverlayNavigation('quick-capture');
   const { currentScreen, data, goToScreen, goBack, setScreenData } = navigation;
 
   // Initialize with video data
@@ -60,13 +60,14 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     });
   }, [videoDuration, currentTime, videoTitle, setScreenData]);
 
-  const handleWelcomeContinue = React.useCallback(() => {
-    // Set up default time range (10 seconds forward from current position)
-    const startTime = currentTime;
-    const endTime = Math.min(videoDuration, currentTime + 10);
-    setScreenData({ startTime, endTime });
-    goToScreen('quick-capture');
-  }, [goToScreen, currentTime, videoDuration, setScreenData]);
+  // Initialize with default time range when starting with quick-capture
+  React.useEffect(() => {
+    if (currentScreen === 'quick-capture' && !data.startTime && !data.endTime) {
+      const startTime = currentTime;
+      const endTime = Math.min(videoDuration, currentTime + 10);
+      setScreenData({ startTime, endTime });
+    }
+  }, [currentScreen, currentTime, videoDuration, data.startTime, data.endTime, setScreenData]);
 
   const handleConfirmQuickCapture = (
     startTime: number,
@@ -138,17 +139,19 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   };
 
   // Progress dots for navigation indicator
-  const screens = ['welcome', 'capture', 'text', 'processing', 'success'];
+  const screens = ['capture', 'text', 'processing', 'success', 'feedback'];
   const currentIndex =
     currentScreen === 'quick-capture'
-      ? 1
+      ? 0
       : currentScreen === 'text-overlay'
-        ? 2
+        ? 1
         : currentScreen === 'processing'
-          ? 3
+          ? 2
           : currentScreen === 'success'
-            ? 4
-            : screens.indexOf(currentScreen);
+            ? 3
+            : currentScreen === 'feedback'
+              ? 4
+              : 0;
 
   // Debug logging
   React.useEffect(() => {}, [currentScreen]);
@@ -176,15 +179,6 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
 
         {/* Screen content with transitions */}
         <div className="ytgif-wizard-screens">
-          {currentScreen === 'welcome' && (
-            <WelcomeScreen
-              videoTitle={videoTitle}
-              videoDuration={videoDuration}
-              onContinue={handleWelcomeContinue}
-              onClose={onClose}
-            />
-          )}
-
           {currentScreen === 'quick-capture' && (
             <QuickCaptureScreen
               startTime={data.startTime || 0}
@@ -240,10 +234,24 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
                 // Go back to quick capture screen to create another GIF
                 goToScreen('quick-capture');
               }}
+              onFeedback={() => {
+                // Go to feedback screen
+                goToScreen('feedback');
+              }}
               onClose={onClose}
               gifSize={data.gifSize}
               gifDataUrl={data.gifDataUrl}
               gifMetadata={data.gifMetadata}
+            />
+          )}
+
+          {currentScreen === 'feedback' && (
+            <FeedbackScreen
+              onBack={() => {
+                // Go back to success screen
+                goToScreen('success');
+              }}
+              onClose={onClose}
             />
           )}
         </div>

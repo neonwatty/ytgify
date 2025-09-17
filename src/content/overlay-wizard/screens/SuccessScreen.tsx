@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
 interface SuccessScreenProps {
   onDownload?: () => void;
   onBack?: () => void;
+  onFeedback?: () => void;
   onClose?: () => void;
   gifSize?: number;
   gifDataUrl?: string;
@@ -14,18 +15,15 @@ interface SuccessScreenProps {
   };
 }
 
-const SuccessScreen: React.FC<SuccessScreenProps> = ({ 
+const SuccessScreen: React.FC<SuccessScreenProps> = ({
   onDownload,
   onBack,
-  onClose,
+  onFeedback,
+  onClose: _onClose,
   gifSize,
   gifDataUrl,
-  gifMetadata
+  gifMetadata,
 }) => {
-  React.useEffect(() => {
-    
-  }, [gifDataUrl, gifSize, gifMetadata]);
-  
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -44,14 +42,12 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
         {/* GIF Preview */}
         {gifDataUrl && (
           <div className="ytgif-success-preview">
-            <img 
-              src={gifDataUrl} 
-              alt="Created GIF"
-              className="ytgif-success-preview-image"
-            />
+            <img src={gifDataUrl} alt="Created GIF" className="ytgif-success-preview-image" />
             {gifMetadata && (
               <div className="ytgif-success-metadata">
-                <span>{gifMetadata.width}×{gifMetadata.height}</span>
+                <span>
+                  {gifMetadata.width}×{gifMetadata.height}
+                </span>
                 <span>•</span>
                 <span>{formatSize(gifSize || 0)}</span>
                 <span>•</span>
@@ -70,16 +66,19 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
         {/* Success Message */}
         <div className="ytgif-success-message">
           <h3>Your GIF is ready!</h3>
-          {!gifDataUrl && gifSize && (
-            <p className="ytgif-gif-size">Size: {formatSize(gifSize)}</p>
-          )}
+          {!gifDataUrl && gifSize && <p className="ytgif-gif-size">Size: {formatSize(gifSize)}</p>}
         </div>
 
         {/* Success Actions */}
         <div className="ytgif-success-actions">
           <button className="ytgif-button-secondary" onClick={onBack}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
             Back
           </button>
@@ -94,6 +93,20 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
           </button>
         </div>
 
+        {/* Feedback Action */}
+        <div className="ytgif-success-feedback-action">
+          <button className="ytgif-button-secondary" onClick={onFeedback}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
+            </svg>
+            Give Feedback
+          </button>
+        </div>
       </div>
     </div>
   );
