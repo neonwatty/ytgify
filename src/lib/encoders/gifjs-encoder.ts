@@ -3,34 +3,31 @@
  * Legacy encoder with good browser support
  */
 
-import { 
-  AbstractEncoder, 
-  EncodingOptions, 
-  EncodingResult, 
-  EncodingProgress, 
-  FrameData 
+import {
+  AbstractEncoder,
+  EncodingOptions,
+  EncodingResult,
+  EncodingProgress,
+  FrameData,
 } from './abstract-encoder';
 
 // gif.js type definitions
-interface GIFConstructor {
-  new (options?: any): GIFJsInstance;
-}
 
 interface GIFJsInstance {
   addFrame(
     element: HTMLCanvasElement | HTMLImageElement | CanvasRenderingContext2D | ImageData,
     options?: { delay?: number; copy?: boolean; dispose?: number }
   ): void;
-  
+
   render(): void;
   abort(): void;
-  
+
   on(event: 'start', callback: () => void): void;
   on(event: 'abort', callback: () => void): void;
   on(event: 'progress', callback: (progress: number) => void): void;
   on(event: 'finished', callback: (blob: Blob) => void): void;
   on(event: 'workerReady', callback: (worker: Worker) => void): void;
-  
+
   running: boolean;
   frames: any[];
   options: any;
@@ -56,7 +53,7 @@ export class GifJsEncoder extends AbstractEncoder {
       speed: 'medium' as const,
       quality: 'medium' as const,
       memoryUsage: 'high' as const,
-      browserSupport: 'excellent' as const
+      browserSupport: 'excellent' as const,
     };
   }
 
@@ -119,11 +116,12 @@ export class GifJsEncoder extends AbstractEncoder {
 
     // Convert quality setting to gif.js format
     const quality = this.mapQualityToGifJs(options.quality);
-    
+
     // Get worker script URL for Chrome extension context
-    const workerScript = typeof chrome !== 'undefined' && chrome.runtime?.getURL 
-      ? chrome.runtime.getURL('gif.worker.js')
-      : '/gif.worker.js';
+    const workerScript =
+      typeof chrome !== 'undefined' && chrome.runtime?.getURL
+        ? chrome.runtime.getURL('gif.worker.js')
+        : '/gif.worker.js';
 
     // Initialize gif.js instance (cast to our interface)
     this.gifInstance = new (window as any).GIF({
@@ -135,7 +133,7 @@ export class GifJsEncoder extends AbstractEncoder {
       repeat: options.loop ? 0 : -1, // 0 = loop forever, -1 = no loop
       dither: options.dithering || false,
       debug: false,
-      background: options.backgroundColor || undefined
+      background: options.backgroundColor || undefined,
     });
 
     // Set up event handlers
@@ -154,10 +152,10 @@ export class GifJsEncoder extends AbstractEncoder {
 
       const frame = frames[i];
       const frameDelay = frame.delay !== undefined ? frame.delay : baseFrameDelay;
-      
+
       // Put ImageData onto canvas
       this.ctx!.putImageData(frame.imageData, 0, 0);
-      
+
       // Add canvas frame to GIF (convert OffscreenCanvas to regular canvas context)
       const regularCanvas = document.createElement('canvas');
       regularCanvas.width = this.canvas!.width;
@@ -168,7 +166,7 @@ export class GifJsEncoder extends AbstractEncoder {
         this.gifInstance!.addFrame(regularCtx, {
           copy: true,
           delay: frameDelay,
-          dispose: 2 // Restore to background
+          dispose: 2, // Restore to background
         });
       }
 
@@ -183,7 +181,7 @@ export class GifJsEncoder extends AbstractEncoder {
 
     // Start encoding and wait for completion
     const blob = await this.renderGif();
-    
+
     const encodingTime = performance.now() - this.startTime;
 
     this.reportProgress('completed', 100, 'Encoding complete');
@@ -198,32 +196,28 @@ export class GifJsEncoder extends AbstractEncoder {
         encodingTime,
         averageFrameTime: encodingTime / frames.length,
         format: 'gif',
-        encoder: this.name
+        encoder: this.name,
       },
       performance: {
         success: true,
         efficiency: this.calculateEfficiency(encodingTime, frames.length),
         recommendations: this.generateRecommendations(options, frames.length, encodingTime),
-        peakMemoryUsage: this.getCurrentMemoryUsage() || 0
-      }
+        peakMemoryUsage: this.getCurrentMemoryUsage() || 0,
+      },
     };
   }
 
   private setupEventHandlers(abortSignal?: AbortSignal): void {
     if (!this.gifInstance) return;
 
-    this.gifInstance.on('start', () => {
-      
-    });
+    this.gifInstance.on('start', () => {});
 
     this.gifInstance.on('progress', (progress: number) => {
       const percentage = 30 + Math.round(progress * 60); // Encoding is 30-90%
       this.reportProgress('encoding', percentage, `Encoding: ${Math.round(progress * 100)}%`);
     });
 
-    this.gifInstance.on('abort', () => {
-      
-    });
+    this.gifInstance.on('abort', () => {});
 
     // Monitor for abort signal
     if (abortSignal) {
@@ -263,12 +257,16 @@ export class GifJsEncoder extends AbstractEncoder {
 
   private mapQualityToGifJs(quality: 'low' | 'medium' | 'high' | number): number {
     if (typeof quality === 'number') return quality;
-    
+
     switch (quality) {
-      case 'low': return 20;
-      case 'medium': return 10;
-      case 'high': return 5;
-      default: return 10;
+      case 'low':
+        return 20;
+      case 'medium':
+        return 10;
+      case 'high':
+        return 5;
+      default:
+        return 10;
     }
   }
 
@@ -287,23 +285,23 @@ export class GifJsEncoder extends AbstractEncoder {
   ): string[] {
     const recommendations: string[] = [];
     const timePerFrame = encodingTime / frameCount;
-    
+
     if (timePerFrame > 200) {
       recommendations.push('Consider using gifenc encoder for better performance');
     }
-    
+
     if (frameCount > 150) {
       recommendations.push('Large frame count with gif.js - consider reducing or using gifenc');
     }
-    
+
     if (options.width * options.height > 800 * 600) {
       recommendations.push('High resolution with gif.js may be slow - consider gifenc encoder');
     }
-    
+
     if (encodingTime > 30000) {
       recommendations.push('Long encoding time detected - try gifenc encoder for 2x performance');
     }
-    
+
     return recommendations;
   }
 

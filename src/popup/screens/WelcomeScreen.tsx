@@ -12,7 +12,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   isYouTubePage,
   videoTitle,
   isLoading,
-  onContinue
+  onContinue,
 }) => {
   return (
     <div className="h-full flex flex-col items-center justify-center p-6 text-center">
@@ -24,9 +24,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       </div>
 
       {/* Title */}
-      <h1 className="text-lg font-semibold text-gray-900 mb-2">
-        YouTube GIF Maker
-      </h1>
+      <h1 className="text-lg font-semibold text-gray-900 mb-2">YouTube GIF Maker</h1>
 
       {/* Status */}
       {isLoading ? (
@@ -39,16 +37,14 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
           <p className="text-sm text-gray-600 mb-2">Video detected!</p>
           {videoTitle && (
             <p className="text-xs font-medium text-gray-900 line-clamp-2 max-w-[280px]">
-              "{videoTitle}"
+              &quot;{videoTitle}&quot;
             </p>
           )}
         </div>
       ) : (
         <div className="mb-6">
           <div className="text-3xl mb-3">📺</div>
-          <p className="text-sm text-gray-600">
-            Please navigate to a YouTube video
-          </p>
+          <p className="text-sm text-gray-600">Please navigate to a YouTube video</p>
           <p className="text-xs text-gray-500 mt-1">
             Open any YouTube video to start creating GIFs
           </p>
@@ -57,22 +53,18 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
       {/* Action Button */}
       <Button
-        variant={isYouTubePage ? "youtube" : "outline"}
+        variant={isYouTubePage ? 'youtube' : 'outline'}
         onClick={onContinue}
         disabled={!isYouTubePage || isLoading}
         className="w-full max-w-[200px]"
       >
-        {isYouTubePage ? "Get Started" : "Open YouTube"}
+        {isYouTubePage ? 'Get Started' : 'Open YouTube'}
       </Button>
 
       {/* Quick Links */}
       <div className="mt-6 flex gap-4 text-xs">
-        <button className="text-gray-500 hover:text-gray-700">
-          📚 Library
-        </button>
-        <button className="text-gray-500 hover:text-gray-700">
-          ⚙️ Settings
-        </button>
+        <button className="text-gray-500 hover:text-gray-700">📚 Library</button>
+        <button className="text-gray-500 hover:text-gray-700">⚙️ Settings</button>
       </div>
     </div>
   );
