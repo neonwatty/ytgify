@@ -1,18 +1,22 @@
 # Chrome Web Store Listing Content
 
 ## Extension Name
+
 YouTube GIF Maker
 
 ## Short Description (132 characters max)
+
 Create high-quality GIFs from YouTube videos instantly. Add text overlays, adjust speed, and build your personal GIF library.
 
 ## Categories
+
 - Primary: Productivity
 - Secondary: Photos
 
 ## Detailed Description
 
 ### Headline
+
 Transform YouTube Videos into Perfect GIFs in Seconds! 🎬
 
 ### Main Description
@@ -22,29 +26,34 @@ Transform YouTube Videos into Perfect GIFs in Seconds! 🎬
 ### ✨ Key Features
 
 **🎯 One-Click GIF Creation**
+
 - Seamlessly integrated into YouTube's player
 - Create GIFs without leaving the video page
 - Visual timeline for precise moment selection
 
 **🎨 Professional Editing Tools**
+
 - Add custom text overlays (top and bottom)
 - Choose from multiple fonts and styles
 - Adjust colors, size, and positioning
 - Real-time preview of your creation
 
 **⚡ Flexible Output Options**
+
 - Multiple quality presets (Fast, Balanced, High Quality)
 - Custom resolution settings (240p to 1080p)
 - Adjustable frame rates (5-30 FPS)
 - Smart compression for optimal file sizes
 
 **📚 Built-in GIF Library**
+
 - Save all your creations automatically
 - Search and organize your GIF collection
 - Quick access to recent creations
 - Re-edit or delete GIFs anytime
 
 **🚀 Advanced Features**
+
 - Timeline scrubber for frame-perfect selection
 - Keyboard shortcuts for power users (Ctrl+Shift+G)
 - Multiple export formats support
@@ -109,6 +118,7 @@ Unlike online GIF makers that require video downloads and uploads, our extension
 - Updates: Regular feature additions and bug fixes
 
 ### 🏷️ Tags
+
 gif, youtube, gif maker, video to gif, meme creator, gif creator, youtube downloader, gif generator, video converter, animation
 
 ---
@@ -118,16 +128,21 @@ gif, youtube, gif maker, video to gif, meme creator, gif creator, youtube downlo
 ## Additional Store Information
 
 ### Language
+
 English
 
 ### Promotional Text (optional)
+
 Turn YouTube moments into GIFs instantly! No downloads, no uploads, no watermarks. Just click and create.
 
 ### Why should users install your extension?
+
 Users should install YouTube GIF Maker because it's the fastest, easiest, and most privacy-focused way to create GIFs from YouTube videos. With professional editing features and zero data collection, it's the perfect tool for anyone who wants to capture and share video moments.
 
 ### Version Notes (What's New)
+
 Version 1.0.0
+
 - Initial release
 - Core GIF creation functionality
 - Text overlay support
@@ -136,10 +151,13 @@ Version 1.0.0
 - Multiple quality presets
 
 ### Website
+
 https://github.com/neonwatty/ytgiphy
 
 ### Support Email
-[To be added]
+
+neonwatty@gmail.com
 
 ### Support URL
+
 https://github.com/neonwatty/ytgiphy/issues
