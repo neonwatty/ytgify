@@ -18,13 +18,12 @@ interface TextOverlayScreenProps {
 const TextOverlayScreen: React.FC<TextOverlayScreenProps> = ({
   startTime,
   endTime,
-  videoDuration,
   videoElement,
   textOverlays = [],
   onConfirm,
   onSkip,
   onBack,
-  onSeekTo
+  onSeekTo,
 }) => {
   const [overlays, setOverlays] = useState<TextOverlay[]>(textOverlays);
   const [previewTime, setPreviewTime] = useState(startTime);
@@ -37,20 +36,24 @@ const TextOverlayScreen: React.FC<TextOverlayScreenProps> = ({
     onConfirm(overlays);
   }, [overlays, onConfirm]);
 
-  const handlePreviewSeek = useCallback((time: number) => {
-    const clampedTime = Math.max(startTime, Math.min(endTime, time));
-    setPreviewTime(clampedTime);
-    if (onSeekTo) {
-      onSeekTo(clampedTime);
-    }
-  }, [startTime, endTime, onSeekTo]);
+  const handlePreviewSeek = useCallback(
+    (time: number) => {
+      const clampedTime = Math.max(startTime, Math.min(endTime, time));
+      setPreviewTime(clampedTime);
+      if (onSeekTo) {
+        onSeekTo(clampedTime);
+      }
+    },
+    [startTime, endTime, onSeekTo]
+  );
 
   return (
     <div className="ytgif-wizard-screen ytgif-text-overlay-screen">
       <div className="ytgif-wizard-header">
         <h2 className="ytgif-wizard-title">Add Text</h2>
         <p className="ytgif-wizard-subtitle">
-          Add text overlays to enhance your GIF. Drag to position, customize appearance, and add animations.
+          Add text overlays to enhance your GIF. Drag to position, customize appearance, and add
+          animations.
         </p>
       </div>
 
@@ -72,9 +75,7 @@ const TextOverlayScreen: React.FC<TextOverlayScreenProps> = ({
             overlays={overlays}
             onUpdateOverlays={handleUpdateOverlays}
             previewContent={
-              <div className="ytgif-text-preview-placeholder">
-                Preview shows above with video
-              </div>
+              <div className="ytgif-text-preview-placeholder">Preview shows above with video</div>
             }
           />
         </div>
@@ -82,23 +83,17 @@ const TextOverlayScreen: React.FC<TextOverlayScreenProps> = ({
 
       <div className="ytgif-wizard-actions">
         {onBack && (
-          <button 
-            className="ytgif-wizard-btn ytgif-wizard-btn-secondary"
-            onClick={onBack}
-          >
+          <button className="ytgif-wizard-btn ytgif-wizard-btn-secondary" onClick={onBack}>
             Back
           </button>
         )}
-        
+
         <div className="ytgif-wizard-actions-right">
-          <button 
-            className="ytgif-wizard-btn ytgif-wizard-btn-secondary"
-            onClick={onSkip}
-          >
+          <button className="ytgif-wizard-btn ytgif-wizard-btn-secondary" onClick={onSkip}>
             Skip Text
           </button>
-          
-          <button 
+
+          <button
             className="ytgif-wizard-btn ytgif-wizard-btn-primary"
             onClick={handleConfirm}
             disabled={overlays.length === 0}

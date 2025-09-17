@@ -1,30 +1,30 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import * as React from 'react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface CropArea {
-  x: number
-  y: number
-  width: number
-  height: number
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 interface CropToolProps {
-  originalWidth: number
-  originalHeight: number
-  cropArea?: CropArea
-  onCropChange: (cropArea: CropArea | null) => void
-  className?: string
-  disabled?: boolean
-  children?: React.ReactNode
+  originalWidth: number;
+  originalHeight: number;
+  cropArea?: CropArea;
+  onCropChange: (cropArea: CropArea | null) => void;
+  className?: string;
+  disabled?: boolean;
+  children?: React.ReactNode;
 }
 
 const DEFAULT_CROP_AREA: CropArea = {
   x: 50,
   y: 50,
   width: 200,
-  height: 150
-}
+  height: 150,
+};
 
 export const CropTool: React.FC<CropToolProps> = ({
   originalWidth,
@@ -33,202 +33,225 @@ export const CropTool: React.FC<CropToolProps> = ({
   onCropChange,
   className,
   disabled = false,
-  children
+  children,
 }) => {
-  const containerRef = React.useRef<HTMLDivElement>(null)
-  const [isDragging, setIsDragging] = React.useState(false)
-  const [isResizing, setIsResizing] = React.useState<string | null>(null)
-  const [dragOffset, setDragOffset] = React.useState({ x: 0, y: 0 })
-  const [containerBounds, setContainerBounds] = React.useState<DOMRect | null>(null)
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [isResizing, setIsResizing] = React.useState<string | null>(null);
+  const [dragOffset, setDragOffset] = React.useState({ x: 0, y: 0 });
+  const [containerBounds, setContainerBounds] = React.useState<DOMRect | null>(null);
 
   // Update container bounds on mount and resize
   React.useEffect(() => {
-    if (!containerRef.current) return
+    if (!containerRef.current) return;
 
     const updateBounds = () => {
       if (containerRef.current) {
-        setContainerBounds(containerRef.current.getBoundingClientRect())
+        setContainerBounds(containerRef.current.getBoundingClientRect());
       }
-    }
+    };
 
-    updateBounds()
-    
-    const resizeObserver = new ResizeObserver(updateBounds)
-    resizeObserver.observe(containerRef.current)
+    updateBounds();
 
-    return () => resizeObserver.disconnect()
-  }, [])
+    const resizeObserver = new ResizeObserver(updateBounds);
+    resizeObserver.observe(containerRef.current);
+
+    return () => resizeObserver.disconnect();
+  }, []);
 
   // Calculate scale factor between displayed container and original dimensions
   const scaleFactor = React.useMemo(() => {
-    if (!containerBounds) return 1
-    return Math.min(containerBounds.width / originalWidth, containerBounds.height / originalHeight)
-  }, [containerBounds, originalWidth, originalHeight])
+    if (!containerBounds) return 1;
+    return Math.min(containerBounds.width / originalWidth, containerBounds.height / originalHeight);
+  }, [containerBounds, originalWidth, originalHeight]);
 
   // Handle mouse down on crop area (start dragging)
-  const handleMouseDown = React.useCallback((e: React.MouseEvent) => {
-    if (disabled || !cropArea || !containerBounds) return
+  const handleMouseDown = React.useCallback(
+    (e: React.MouseEvent) => {
+      if (disabled || !cropArea || !containerBounds) return;
 
-    e.preventDefault()
-    e.stopPropagation()
+      e.preventDefault();
+      e.stopPropagation();
 
-    const rect = e.currentTarget.getBoundingClientRect()
-    setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    })
-    setIsDragging(true)
-  }, [disabled, cropArea, containerBounds])
+      const rect = e.currentTarget.getBoundingClientRect();
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
+      setIsDragging(true);
+    },
+    [disabled, cropArea, containerBounds]
+  );
 
   // Handle mouse down on resize handles
-  const handleResizeStart = React.useCallback((e: React.MouseEvent, direction: string) => {
-    if (disabled || !cropArea) return
+  const handleResizeStart = React.useCallback(
+    (e: React.MouseEvent, direction: string) => {
+      if (disabled || !cropArea) return;
 
-    e.preventDefault()
-    e.stopPropagation()
-    setIsResizing(direction)
-  }, [disabled, cropArea])
+      e.preventDefault();
+      e.stopPropagation();
+      setIsResizing(direction);
+    },
+    [disabled, cropArea]
+  );
 
   // Handle mouse movement for dragging and resizing
   React.useEffect(() => {
-    if ((!isDragging && !isResizing) || !cropArea || !containerBounds) return
+    if ((!isDragging && !isResizing) || !cropArea || !containerBounds) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const containerX = e.clientX - containerBounds.left
-      const containerY = e.clientY - containerBounds.top
+      const containerX = e.clientX - containerBounds.left;
+      const containerY = e.clientY - containerBounds.top;
 
       if (isDragging) {
         // Calculate new position
-        const newX = Math.max(0, Math.min(
-          containerBounds.width - cropArea.width,
-          containerX - dragOffset.x
-        ))
-        const newY = Math.max(0, Math.min(
-          containerBounds.height - cropArea.height,
-          containerY - dragOffset.y
-        ))
+        const newX = Math.max(
+          0,
+          Math.min(containerBounds.width - cropArea.width, containerX - dragOffset.x)
+        );
+        const newY = Math.max(
+          0,
+          Math.min(containerBounds.height - cropArea.height, containerY - dragOffset.y)
+        );
 
         onCropChange({
           ...cropArea,
           x: newX,
-          y: newY
-        })
+          y: newY,
+        });
       } else if (isResizing) {
         // Calculate new dimensions based on resize direction
-        let newCrop = { ...cropArea }
+        let newCrop = { ...cropArea };
 
         switch (isResizing) {
-          case 'nw': // Northwest
-            const nwWidth = cropArea.width + (cropArea.x - containerX)
-            const nwHeight = cropArea.height + (cropArea.y - containerY)
+          case 'nw': {
+            // Northwest
+            const nwWidth = cropArea.width + (cropArea.x - containerX);
+            const nwHeight = cropArea.height + (cropArea.y - containerY);
             if (nwWidth > 50 && nwHeight > 50) {
               newCrop = {
                 x: Math.max(0, containerX),
                 y: Math.max(0, containerY),
                 width: Math.min(nwWidth, cropArea.x + cropArea.width),
-                height: Math.min(nwHeight, cropArea.y + cropArea.height)
-              }
+                height: Math.min(nwHeight, cropArea.y + cropArea.height),
+              };
             }
-            break
+            break;
+          }
 
-          case 'ne': // Northeast
-            const neWidth = containerX - cropArea.x
-            const neHeight = cropArea.height + (cropArea.y - containerY)
+          case 'ne': {
+            // Northeast
+            const neWidth = containerX - cropArea.x;
+            const neHeight = cropArea.height + (cropArea.y - containerY);
             if (neWidth > 50 && neHeight > 50) {
               newCrop = {
                 ...cropArea,
                 y: Math.max(0, containerY),
                 width: Math.min(neWidth, containerBounds.width - cropArea.x),
-                height: Math.min(neHeight, cropArea.y + cropArea.height)
-              }
+                height: Math.min(neHeight, cropArea.y + cropArea.height),
+              };
             }
-            break
+            break;
+          }
 
-          case 'sw': // Southwest  
-            const swWidth = cropArea.width + (cropArea.x - containerX)
-            const swHeight = containerY - cropArea.y
+          case 'sw': {
+            // Southwest
+            const swWidth = cropArea.width + (cropArea.x - containerX);
+            const swHeight = containerY - cropArea.y;
             if (swWidth > 50 && swHeight > 50) {
               newCrop = {
                 x: Math.max(0, containerX),
                 y: cropArea.y,
                 width: Math.min(swWidth, cropArea.x + cropArea.width),
-                height: Math.min(swHeight, containerBounds.height - cropArea.y)
-              }
+                height: Math.min(swHeight, containerBounds.height - cropArea.y),
+              };
             }
-            break
+            break;
+          }
 
-          case 'se': // Southeast
+          case 'se': {
+            // Southeast
             newCrop = {
               ...cropArea,
-              width: Math.max(50, Math.min(containerX - cropArea.x, containerBounds.width - cropArea.x)),
-              height: Math.max(50, Math.min(containerY - cropArea.y, containerBounds.height - cropArea.y))
-            }
-            break
+              width: Math.max(
+                50,
+                Math.min(containerX - cropArea.x, containerBounds.width - cropArea.x)
+              ),
+              height: Math.max(
+                50,
+                Math.min(containerY - cropArea.y, containerBounds.height - cropArea.y)
+              ),
+            };
+            break;
+          }
         }
 
-        onCropChange(newCrop)
+        onCropChange(newCrop);
       }
-    }
+    };
 
     const handleMouseUp = () => {
-      setIsDragging(false)
-      setIsResizing(null)
-    }
+      setIsDragging(false);
+      setIsResizing(null);
+    };
 
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-    }
-  }, [isDragging, isResizing, cropArea, containerBounds, dragOffset, onCropChange])
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, isResizing, cropArea, containerBounds, dragOffset, onCropChange]);
 
   // Calculate crop area in original coordinates
   const originalCropArea = React.useMemo(() => {
-    if (!cropArea) return null
+    if (!cropArea) return null;
     return {
       x: Math.round(cropArea.x / scaleFactor),
       y: Math.round(cropArea.y / scaleFactor),
       width: Math.round(cropArea.width / scaleFactor),
-      height: Math.round(cropArea.height / scaleFactor)
-    }
-  }, [cropArea, scaleFactor])
+      height: Math.round(cropArea.height / scaleFactor),
+    };
+  }, [cropArea, scaleFactor]);
 
   // Handle preset crop ratios
-  const applyCropRatio = React.useCallback((ratio: number) => {
-    if (!containerBounds) return
+  const applyCropRatio = React.useCallback(
+    (ratio: number) => {
+      if (!containerBounds) return;
 
-    const maxWidth = containerBounds.width * 0.8
-    const maxHeight = containerBounds.height * 0.8
-    
-    let width, height
-    if (ratio > 1) {
-      // Landscape
-      width = maxWidth
-      height = maxWidth / ratio
-    } else {
-      // Portrait or square
-      height = maxHeight
-      width = maxHeight * ratio
-    }
+      const maxWidth = containerBounds.width * 0.8;
+      const maxHeight = containerBounds.height * 0.8;
 
-    const x = (containerBounds.width - width) / 2
-    const y = (containerBounds.height - height) / 2
+      let width, height;
+      if (ratio > 1) {
+        // Landscape
+        width = maxWidth;
+        height = maxWidth / ratio;
+      } else {
+        // Portrait or square
+        height = maxHeight;
+        width = maxHeight * ratio;
+      }
 
-    onCropChange({ x, y, width, height })
-  }, [containerBounds, onCropChange])
+      const x = (containerBounds.width - width) / 2;
+      const y = (containerBounds.height - height) / 2;
+
+      onCropChange({ x, y, width, height });
+    },
+    [containerBounds, onCropChange]
+  );
 
   const handleReset = React.useCallback(() => {
-    onCropChange(null)
-  }, [onCropChange])
+    onCropChange(null);
+  }, [onCropChange]);
 
   const handleSetDefault = React.useCallback(() => {
-    onCropChange(DEFAULT_CROP_AREA)
-  }, [onCropChange])
+    onCropChange(DEFAULT_CROP_AREA);
+  }, [onCropChange]);
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn('space-y-4', className)}>
       {/* Crop Area Display */}
       <div
         ref={containerRef}
@@ -242,18 +265,18 @@ export const CropTool: React.FC<CropToolProps> = ({
           <>
             {/* Overlay masks */}
             <div className="absolute inset-0 bg-black/60 pointer-events-none" />
-            
+
             {/* Crop area */}
             <div
               className={cn(
-                "absolute border-2 border-primary bg-transparent cursor-move",
-                isDragging && "cursor-grabbing"
+                'absolute border-2 border-primary bg-transparent cursor-move',
+                isDragging && 'cursor-grabbing'
               )}
               style={{
                 left: cropArea.x,
                 top: cropArea.y,
                 width: cropArea.width,
-                height: cropArea.height
+                height: cropArea.height,
               }}
               onMouseDown={handleMouseDown}
             >
@@ -318,7 +341,7 @@ export const CropTool: React.FC<CropToolProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => applyCropRatio(16/9)}
+            onClick={() => applyCropRatio(16 / 9)}
             disabled={disabled}
             className="h-7 px-2 text-xs"
           >
@@ -327,7 +350,7 @@ export const CropTool: React.FC<CropToolProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => applyCropRatio(4/3)}
+            onClick={() => applyCropRatio(4 / 3)}
             disabled={disabled}
             className="h-7 px-2 text-xs"
           >
@@ -345,7 +368,7 @@ export const CropTool: React.FC<CropToolProps> = ({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => applyCropRatio(9/16)}
+            onClick={() => applyCropRatio(9 / 16)}
             disabled={disabled}
             className="h-7 px-2 text-xs"
           >
@@ -366,7 +389,7 @@ export const CropTool: React.FC<CropToolProps> = ({
               Start Cropping
             </Button>
           )}
-          
+
           {cropArea && (
             <Button
               variant="outline"
@@ -387,16 +410,22 @@ export const CropTool: React.FC<CropToolProps> = ({
           <h4 className="text-sm font-medium text-muted-foreground mb-2">Crop Information</h4>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Position</div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                Position
+              </div>
               <div className="font-mono">
-                X: {originalCropArea.x}px<br />
+                X: {originalCropArea.x}px
+                <br />
                 Y: {originalCropArea.y}px
               </div>
             </div>
             <div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Dimensions</div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                Dimensions
+              </div>
               <div className="font-mono">
-                W: {originalCropArea.width}px<br />
+                W: {originalCropArea.width}px
+                <br />
                 H: {originalCropArea.height}px
               </div>
             </div>
@@ -407,5 +436,5 @@ export const CropTool: React.FC<CropToolProps> = ({
         </div>
       )}
     </div>
-  )
-}
+  );
+};

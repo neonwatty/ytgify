@@ -21,14 +21,11 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
   startTime,
   endTime,
   currentVideoTime,
-  currentPreviewTime: externalPreviewTime,
   isPlaying = false,
   onPlayStateChange,
-  onSeek,
-  showTimeControls = false,
   overlays = [],
   width = 480,
-  height = 270
+  height = 270,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
@@ -36,47 +33,50 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
   const isLoopingRef = useRef(false);
   const savedVideoStateRef = useRef<{ currentTime: number; paused: boolean } | null>(null);
   const lastFrameTimeRef = useRef<number>(0);
-  
+
   // Draw text overlays on canvas
-  const drawTextOverlays = useCallback((ctx: CanvasRenderingContext2D) => {
-    if (!overlays || overlays.length === 0) return;
-    
-    overlays.forEach(overlay => {
-      ctx.save();
-      
-      // Set text properties
-      ctx.font = `${overlay.fontSize}px ${overlay.fontFamily}`;
-      ctx.fillStyle = overlay.color;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      
-      // Calculate position
-      const x = (overlay.position.x / 100) * width;
-      const y = (overlay.position.y / 100) * height;
-      
-      // Draw text with optional stroke
-      if (overlay.strokeColor && overlay.strokeWidth) {
-        ctx.strokeStyle = overlay.strokeColor;
-        ctx.lineWidth = overlay.strokeWidth;
-        ctx.strokeText(overlay.text, x, y);
-      }
-      
-      ctx.fillText(overlay.text, x, y);
-      ctx.restore();
-    });
-  }, [overlays, width, height]);
+  const drawTextOverlays = useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      if (!overlays || overlays.length === 0) return;
+
+      overlays.forEach((overlay) => {
+        ctx.save();
+
+        // Set text properties
+        ctx.font = `${overlay.fontSize}px ${overlay.fontFamily}`;
+        ctx.fillStyle = overlay.color;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Calculate position
+        const x = (overlay.position.x / 100) * width;
+        const y = (overlay.position.y / 100) * height;
+
+        // Draw text with optional stroke
+        if (overlay.strokeColor && overlay.strokeWidth) {
+          ctx.strokeStyle = overlay.strokeColor;
+          ctx.lineWidth = overlay.strokeWidth;
+          ctx.strokeText(overlay.text, x, y);
+        }
+
+        ctx.fillText(overlay.text, x, y);
+        ctx.restore();
+      });
+    },
+    [overlays, width, height]
+  );
 
   // Draw current frame to canvas
   const drawFrame = useCallback(() => {
     if (!canvasRef.current || !videoElement) return;
-    
+
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
-    
+
     try {
       // Draw directly from the main video element
       ctx.drawImage(videoElement, 0, 0, width, height);
-      
+
       // Draw text overlays on top
       drawTextOverlays(ctx);
     } catch (error) {
@@ -85,44 +85,47 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
   }, [videoElement, width, height, drawTextOverlays]);
 
   // Seek video to specific time and draw frame
-  const seekAndDraw = useCallback(async (time: number) => {
-    return new Promise<void>((resolve) => {
-      if (!videoElement) {
-        resolve();
-        return;
-      }
+  const seekAndDraw = useCallback(
+    async (time: number) => {
+      return new Promise<void>((resolve) => {
+        if (!videoElement) {
+          resolve();
+          return;
+        }
 
-      const onSeeked = () => {
-        videoElement.removeEventListener('seeked', onSeeked);
-        drawFrame();
-        resolve();
-      };
-
-      videoElement.addEventListener('seeked', onSeeked);
-
-      // Save current state before seeking
-      if (!savedVideoStateRef.current) {
-        savedVideoStateRef.current = {
-          currentTime: videoElement.currentTime,
-          paused: videoElement.paused
+        const onSeeked = () => {
+          videoElement.removeEventListener('seeked', onSeeked);
+          drawFrame();
+          resolve();
         };
-      }
 
-      // Pause video if playing to prevent conflicts
-      if (!videoElement.paused) {
-        videoElement.pause();
-      }
+        videoElement.addEventListener('seeked', onSeeked);
 
-      videoElement.currentTime = time;
+        // Save current state before seeking
+        if (!savedVideoStateRef.current) {
+          savedVideoStateRef.current = {
+            currentTime: videoElement.currentTime,
+            paused: videoElement.paused,
+          };
+        }
 
-      // Timeout fallback
-      setTimeout(() => {
-        videoElement.removeEventListener('seeked', onSeeked);
-        drawFrame();
-        resolve();
-      }, 500);
-    });
-  }, [videoElement, drawFrame]);
+        // Pause video if playing to prevent conflicts
+        if (!videoElement.paused) {
+          videoElement.pause();
+        }
+
+        videoElement.currentTime = time;
+
+        // Timeout fallback
+        setTimeout(() => {
+          videoElement.removeEventListener('seeked', onSeeked);
+          drawFrame();
+          resolve();
+        }, 500);
+      });
+    },
+    [videoElement, drawFrame]
+  );
 
   // Handle range playback - memoized without dependencies that change
   const playRange = useCallback(() => {
@@ -137,7 +140,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
     if (!savedVideoStateRef.current) {
       savedVideoStateRef.current = {
         currentTime: videoElement.currentTime,
-        paused: videoElement.paused
+        paused: videoElement.paused,
       };
     }
 
@@ -187,7 +190,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
 
     // Start the animation
     animate();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoElement, startTime, endTime]);
 
   // Stop playback and restore video state - stable reference
@@ -204,13 +207,12 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
     if (videoElement && savedVideoStateRef.current) {
       videoElement.currentTime = savedVideoStateRef.current.currentTime;
       if (!savedVideoStateRef.current.paused) {
-        videoElement.play().catch(err => {
+        videoElement.play().catch((err) => {
           console.error('[VideoPreview] Error restoring video playback:', err);
         });
       }
       savedVideoStateRef.current = null;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoElement]);
 
   // Handle play state changes
@@ -227,22 +229,23 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
         stopPlayback();
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying]);
 
   // Initial frame draw and sync with main video
   useEffect(() => {
     if (!isPlaying && videoElement) {
       // When not playing preview, show current video time if it's within selection
-      const timeToShow = currentVideoTime !== undefined &&
-                        currentVideoTime >= startTime &&
-                        currentVideoTime <= endTime
-                        ? currentVideoTime
-                        : startTime;
+      const timeToShow =
+        currentVideoTime !== undefined &&
+        currentVideoTime >= startTime &&
+        currentVideoTime <= endTime
+          ? currentVideoTime
+          : startTime;
       seekAndDraw(timeToShow);
       setCurrentPreviewTime(timeToShow);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startTime, endTime, currentVideoTime, isPlaying, videoElement]);
 
   // Draw initial frame
@@ -250,7 +253,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
     if (videoElement) {
       drawFrame();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoElement]);
 
   // Cleanup on unmount
@@ -268,7 +271,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
         }
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Format time for display
@@ -282,13 +285,8 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
   return (
     <div className="ytgif-video-preview">
       <div className="ytgif-preview-container">
-        <canvas 
-          ref={canvasRef}
-          width={width}
-          height={height}
-          className="ytgif-preview-canvas"
-        />
-        
+        <canvas ref={canvasRef} width={width} height={height} className="ytgif-preview-canvas" />
+
         {/* Playback overlay */}
         {!isPlaying && (
           <div className="ytgif-preview-overlay">
@@ -307,13 +305,13 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
             </button>
           </div>
         )}
-        
+
         {/* Time indicator */}
         <div className="ytgif-preview-time">
           {formatTime(currentPreviewTime)} / {formatTime(endTime)}
         </div>
       </div>
-      
+
       {/* Preview controls */}
       <div className="ytgif-preview-controls">
         <button
@@ -335,11 +333,9 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
             </svg>
           )}
         </button>
-        
-        <span className="ytgif-preview-duration">
-          {(endTime - startTime).toFixed(1)}s clip
-        </span>
-        
+
+        <span className="ytgif-preview-duration">{(endTime - startTime).toFixed(1)}s clip</span>
+
         <button
           className="ytgif-preview-control-btn"
           onClick={() => {
@@ -350,7 +346,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({
             }
             // Reset to start
             setCurrentPreviewTime(startTime);
-            seekAndDraw(startTime).catch(err => {
+            seekAndDraw(startTime).catch((err) => {
               console.error('[VideoPreview] Error resetting to start:', err);
             });
           }}
