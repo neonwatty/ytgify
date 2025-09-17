@@ -9,11 +9,17 @@ export interface TimelineOverlayWizardProps {
   videoElement?: HTMLVideoElement;
   onSelectionChange: (selection: TimelineSelection) => void;
   onClose: () => void;
-  onCreateGif: (selection: TimelineSelection, textOverlays?: TextOverlay[], resolution?: string) => void;
+  onCreateGif: (
+    selection: TimelineSelection,
+    textOverlays?: TextOverlay[],
+    resolution?: string
+  ) => void;
   onSeekTo?: (time: number) => void;
   isCreating?: boolean;
   processingStatus?: {
     stage: string;
+    stageNumber: number;
+    totalStages: number;
     progress: number;
     message: string;
   };
@@ -35,17 +41,22 @@ export const TimelineOverlayWizard: React.FC<TimelineOverlayWizardProps> = ({
   onSeekTo,
   isCreating = false,
   processingStatus,
-  gifData
+  gifData,
 }) => {
-  const handleSelectionChange = useCallback((newSelection: TimelineSelection) => {
-    onSelectionChange(newSelection);
-  }, [onSelectionChange]);
+  const handleSelectionChange = useCallback(
+    (newSelection: TimelineSelection) => {
+      onSelectionChange(newSelection);
+    },
+    [onSelectionChange]
+  );
 
-  const handleCreateGif = useCallback((finalSelection: TimelineSelection, textOverlays?: TextOverlay[], resolution?: string) => {
-
-    handleSelectionChange(finalSelection);
-    onCreateGif(finalSelection, textOverlays, resolution);
-  }, [handleSelectionChange, onCreateGif]);
+  const handleCreateGif = useCallback(
+    (finalSelection: TimelineSelection, textOverlays?: TextOverlay[], resolution?: string) => {
+      handleSelectionChange(finalSelection);
+      onCreateGif(finalSelection, textOverlays, resolution);
+    },
+    [handleSelectionChange, onCreateGif]
+  );
 
   return (
     <OverlayWizard

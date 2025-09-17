@@ -1482,3 +1482,145 @@
 .ytgif-resolution-btn--active .ytgif-resolution-desc {
   color: rgba(255, 255, 255, 0.8);
 }
+
+/* Stage-Based Progress Display */
+.ytgif-stage-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 20px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.ytgif-stage-header h3 {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 18px;
+  text-align: center;
+  margin: 0;
+  font-weight: 600;
+}
+
+.ytgif-stage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ytgif-stage-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.ytgif-stage-item.completed {
+  background: rgba(76, 175, 80, 0.1);
+  border-left: 3px solid #4caf50;
+}
+
+.ytgif-stage-item.current {
+  background: rgba(153, 102, 204, 0.15);
+  border-left: 3px solid #9966cc;
+  animation: pulse 2s infinite;
+}
+
+.ytgif-stage-item.pending {
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 3px solid rgba(255, 255, 255, 0.1);
+}
+
+@keyframes pulse {
+  0%, 100% { background: rgba(153, 102, 204, 0.15); }
+  50% { background: rgba(153, 102, 204, 0.25); }
+}
+
+.ytgif-stage-indicator {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.ytgif-stage-check {
+  color: #4caf50;
+}
+
+.ytgif-stage-active {
+  color: #9966cc;
+  animation: blink 1.5s infinite;
+}
+
+.ytgif-stage-pending {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+.ytgif-stage-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-grow: 1;
+}
+
+.ytgif-stage-icon {
+  font-size: 20px;
+}
+
+.ytgif-stage-name {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.ytgif-stage-item.pending .ytgif-stage-name {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.ytgif-current-message {
+  text-align: center;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ytgif-message-text {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.ytgif-loading-dots {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+
+.ytgif-dot {
+  color: #9966cc;
+  font-size: 16px;
+  animation: loadingDots 1.5s infinite;
+}
+
+.ytgif-dot:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.ytgif-dot:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+@keyframes loadingDots {
+  0%, 80%, 100% { opacity: 0.3; }
+  40% { opacity: 1; }
+}

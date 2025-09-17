@@ -14,11 +14,17 @@ interface OverlayWizardProps {
   videoElement?: HTMLVideoElement;
   onSelectionChange: (selection: TimelineSelection) => void;
   onClose: () => void;
-  onCreateGif: (selection: TimelineSelection, textOverlays?: TextOverlay[], resolution?: string) => void;
+  onCreateGif: (
+    selection: TimelineSelection,
+    textOverlays?: TextOverlay[],
+    resolution?: string
+  ) => void;
   onSeekTo?: (time: number) => void;
   isCreating?: boolean;
   processingStatus?: {
     stage: string;
+    stageNumber: number;
+    totalStages: number;
     progress: number;
     message: string;
   };
@@ -40,28 +46,21 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   onSeekTo,
   isCreating: _isCreating = false,
   processingStatus,
-  gifData
+  gifData,
 }) => {
   const navigation = useOverlayNavigation('welcome');
-  const {
-    currentScreen,
-    data,
-    goToScreen,
-    goBack,
-    setScreenData
-  } = navigation;
+  const { currentScreen, data, goToScreen, goBack, setScreenData } = navigation;
 
   // Initialize with video data
   useEffect(() => {
     setScreenData({
       videoDuration,
       currentTime,
-      videoTitle
+      videoTitle,
     });
   }, [videoDuration, currentTime, videoTitle, setScreenData]);
 
   const handleWelcomeContinue = React.useCallback(() => {
-
     // Set up default time range (10 seconds forward from current position)
     const startTime = currentTime;
     const endTime = Math.min(videoDuration, currentTime + 10);
@@ -69,40 +68,46 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     goToScreen('quick-capture');
   }, [goToScreen, currentTime, videoDuration, setScreenData]);
 
-  const handleConfirmQuickCapture = (startTime: number, endTime: number, frameRate?: number, resolution?: string) => {
-
+  const handleConfirmQuickCapture = (
+    startTime: number,
+    endTime: number,
+    frameRate?: number,
+    resolution?: string
+  ) => {
     const selection: TimelineSelection = {
       startTime,
       endTime,
-      duration: endTime - startTime
+      duration: endTime - startTime,
     };
     // Update the data state with the final selection, frame rate, and resolution
-    setScreenData({ startTime, endTime, frameRate: frameRate || 10, resolution: resolution || '480p' });
+    setScreenData({
+      startTime,
+      endTime,
+      frameRate: frameRate || 10,
+      resolution: resolution || '480p',
+    });
     onSelectionChange(selection);
     // Go to text overlay screen instead of processing
 
     goToScreen('text-overlay');
   };
 
-
   // Store GIF data when it's created and transition to success
   React.useEffect(() => {
     if (gifData && gifData.dataUrl) {
-
-      // Store the data 
+      // Store the data
       const newData = {
         gifDataUrl: gifData.dataUrl,
         gifSize: gifData.size,
-        gifMetadata: gifData.metadata
+        gifMetadata: gifData.metadata,
       };
-      
+
       setScreenData(newData);
 
       // Only transition if we're still on processing screen
       if (currentScreen === 'processing') {
         // Small delay to ensure state is updated
         setTimeout(() => {
-          
           goToScreen('success');
         }, 100);
       }
@@ -111,12 +116,11 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
 
   // Add handlers for text overlay screen
   const handleConfirmTextOverlay = (overlays: TextOverlay[]) => {
-
     setScreenData({ textOverlays: overlays });
     const selection: TimelineSelection = {
       startTime: data.startTime || 0,
       endTime: data.endTime || 10,
-      duration: (data.endTime || 10) - (data.startTime || 0)
+      duration: (data.endTime || 10) - (data.startTime || 0),
     };
 
     onCreateGif(selection, overlays, data.resolution);
@@ -127,7 +131,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     const selection: TimelineSelection = {
       startTime: data.startTime || 0,
       endTime: data.endTime || 10,
-      duration: (data.endTime || 10) - (data.startTime || 0)
+      duration: (data.endTime || 10) - (data.startTime || 0),
     };
     onCreateGif(selection, [], data.resolution);
     goToScreen('processing');
@@ -135,20 +139,19 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
 
   // Progress dots for navigation indicator
   const screens = ['welcome', 'capture', 'text', 'processing', 'success'];
-  const currentIndex = currentScreen === 'quick-capture'
-    ? 1
-    : currentScreen === 'text-overlay'
-    ? 2
-    : currentScreen === 'processing'
-    ? 3
-    : currentScreen === 'success'
-    ? 4
-    : screens.indexOf(currentScreen);
-  
+  const currentIndex =
+    currentScreen === 'quick-capture'
+      ? 1
+      : currentScreen === 'text-overlay'
+        ? 2
+        : currentScreen === 'processing'
+          ? 3
+          : currentScreen === 'success'
+            ? 4
+            : screens.indexOf(currentScreen);
+
   // Debug logging
-  React.useEffect(() => {
-    
-  }, [currentScreen]);
+  React.useEffect(() => {}, [currentScreen]);
 
   return (
     <div className="ytgif-overlay-wizard" role="dialog" aria-modal="true">
@@ -156,11 +159,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
         {/* Fixed header with progress indicator */}
         <div className="ytgif-wizard-header-container">
           {/* Close button */}
-          <button
-            className="ytgif-wizard-close"
-            onClick={onClose}
-            aria-label="Close wizard"
-          >
+          <button className="ytgif-wizard-close" onClick={onClose} aria-label="Close wizard">
             ×
           </button>
 
@@ -199,7 +198,6 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
             />
           )}
 
-
           {currentScreen === 'text-overlay' && (
             <TextOverlayScreenV2
               startTime={data.startTime || 0}
@@ -219,7 +217,6 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
               processingStatus={processingStatus}
               onComplete={() => {
                 // Don't transition here - wait for gifData to be available
-                
               }}
               onError={(error) => {
                 console.error('GIF creation error:', error);
@@ -230,24 +227,24 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
 
           {currentScreen === 'success' && (
             <SuccessScreen
-                onDownload={() => {
-                  // Handle download - this would trigger download from saved GIF
-                  if (data.gifDataUrl) {
-                    const link = document.createElement('a');
-                    link.download = `youtube-gif-${Date.now()}.gif`;
-                    link.href = data.gifDataUrl;
-                    link.click();
-                  }
-                }}
-                onBack={() => {
-                  // Go back to quick capture screen to create another GIF
-                  goToScreen('quick-capture');
-                }}
-                onClose={onClose}
-                gifSize={data.gifSize}
-                gifDataUrl={data.gifDataUrl}
-                gifMetadata={data.gifMetadata}
-              />
+              onDownload={() => {
+                // Handle download - this would trigger download from saved GIF
+                if (data.gifDataUrl) {
+                  const link = document.createElement('a');
+                  link.download = `youtube-gif-${Date.now()}.gif`;
+                  link.href = data.gifDataUrl;
+                  link.click();
+                }
+              }}
+              onBack={() => {
+                // Go back to quick capture screen to create another GIF
+                goToScreen('quick-capture');
+              }}
+              onClose={onClose}
+              gifSize={data.gifSize}
+              gifDataUrl={data.gifDataUrl}
+              gifMetadata={data.gifMetadata}
+            />
           )}
         </div>
       </div>
