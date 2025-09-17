@@ -1,5 +1,11 @@
 // Debug log to check if content script loads
 
+// Set webpack public path for dynamic imports in content script
+declare let __webpack_public_path__: string;
+if (typeof chrome !== 'undefined' && chrome.runtime) {
+  __webpack_public_path__ = chrome.runtime.getURL('/');
+}
+
 import './styles.css';
 import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
@@ -29,25 +35,23 @@ import { playerIntegration } from './player-integration';
 import { playerController } from './player-controller';
 import { TimelineOverlayWrapper } from './timeline-overlay-wrapper';
 import { TimelineOverlayWizard } from './timeline-overlay-wizard';
-import { EditorOverlayEnhanced } from './editor-overlay-enhanced';
 import { overlayStateManager } from './overlay-state';
 import { cleanupManager } from './cleanup-manager';
 import { initializeContentScriptFrameExtraction } from './frame-extractor';
 import { themeDetector, youtubeMatcher } from '@/themes';
+import { ResolutionScaler } from '@/processing/resolution-scaler';
+import { parseResolution } from '@/utils/resolution-parser';
 
 class YouTubeGifMaker {
   private gifButton: HTMLButtonElement | null = null;
   private timelineOverlay: HTMLDivElement | null = null;
   private timelineRoot: Root | null = null;
-  private editorRoot: Root | null = null;
-  private editorOverlay: HTMLDivElement | null = null;
   private isActive = false;
   private isCreatingGif = false;
   private currentSelection: TimelineSelection | null = null;
   private videoElement: HTMLVideoElement | null = null;
   private navigationUnsubscribe: (() => void) | null = null;
   private processingStatus: { stage: string; progress: number; message: string } | undefined = undefined;
-  private extractedFrames: ImageData[] | null = null;
   private isWizardMode = false;
   private wizardUpdateInterval: NodeJS.Timeout | null = null;
   private createdGifData: { dataUrl: string; size: number; metadata: Record<string, unknown> } | undefined = undefined;
@@ -940,71 +944,173 @@ class YouTubeGifMaker {
     this.updateTimelineOverlay();
     
     // Use default settings for wizard-initiated GIF creation
-    // Calculate default dimensions based on video aspect ratio
-    let scaledWidth = 640;
-    let scaledHeight = 360;
+    // Calculate default dimensions based on resolution
+    const resolutionDefaults: Record<string, { width: number; height: number }> = {
+      '144p': { width: 256, height: 144 },
+      '240p': { width: 426, height: 240 },
+      '360p': { width: 640, height: 360 },
+      '480p': { width: 854, height: 480 }
+    };
+
+    const requestedResolution = resolution || '480p';
+    const defaultDimensions = resolutionDefaults[requestedResolution] || resolutionDefaults['480p'];
+    let scaledWidth = defaultDimensions.width;
+    let scaledHeight = defaultDimensions.height;
+
+    this.log('info', '[Content] Processing resolution selection', {
+      resolution: requestedResolution,
+      defaultDimensions
+    });
 
     try {
-      // Try to use ResolutionScaler for intelligent scaling
-      const { ResolutionScaler } = await import('@/processing/resolution-scaler');
+      // Use ResolutionScaler for intelligent scaling
       const resolutionScaler = new ResolutionScaler();
-      const preset = resolutionScaler.getPresetByName(resolution || '480p');
+      const preset = resolutionScaler.getPresetByName(requestedResolution);
+
+      this.log('info', '[Content] Resolution preset found', {
+        resolution: requestedResolution,
+        preset: preset ? preset.name : 'none',
+        targetHeight: preset?.targetHeight
+      });
 
       if (preset && this.videoElement) {
         const videoWidth = this.videoElement.videoWidth;
         const videoHeight = this.videoElement.videoHeight;
 
-        // Check estimated memory usage
-        const pixelCount = videoWidth * videoHeight;
-        const estimatedMemoryMB = (pixelCount * 4 * 2) / (1024 * 1024); // RGBA * 2 canvases
+        // Validate video dimensions are available
+        if (!videoWidth || !videoHeight) {
+          this.log('warn', '[Content] Video dimensions not yet available', {
+            videoWidth,
+            videoHeight
+          });
+          // Keep default dimensions for the resolution
+        } else {
 
-        // Progressive degradation for memory constraints
-        let targetResolution = resolution || '480p';
-        if (estimatedMemoryMB > 1000) {
-          this.log('warn', '[Content] Very large video detected, forcing 360p', { estimatedMemoryMB });
-          targetResolution = '360p';
-        } else if (estimatedMemoryMB > 500) {
-          this.log('warn', '[Content] Large video detected, limiting to 480p', { estimatedMemoryMB });
-          targetResolution = '480p';
+          // Calculate scaled dimensions first
+          const scaledDimensions = resolutionScaler.calculateScaledDimensions(
+            videoWidth,
+            videoHeight,
+            preset
+          );
+
+          // Check estimated memory usage of TARGET dimensions, not original
+          const targetPixelCount = scaledDimensions.width * scaledDimensions.height;
+          const estimatedMemoryMB = (targetPixelCount * 4 * 2) / (1024 * 1024); // RGBA * 2 canvases
+
+          // Progressive degradation for memory constraints based on TARGET size
+          let finalPreset = preset;
+          if (estimatedMemoryMB > 100) { // Much lower threshold for target dimensions
+            this.log('warn', '[Content] Target resolution too large for memory, downgrading', {
+              estimatedMemoryMB,
+              targetDimensions: { width: scaledDimensions.width, height: scaledDimensions.height }
+            });
+            // Downgrade resolution if target is too large
+            if (!resolutionScaler.getPresetByName(requestedResolution)) {
+              finalPreset = resolutionScaler.getPresetByName('480p')!;
+            } else if (requestedResolution === '480p') {
+              finalPreset = resolutionScaler.getPresetByName('360p')!;
+            }
+            // Recalculate with downgraded preset
+            const downgradedDimensions = resolutionScaler.calculateScaledDimensions(
+              videoWidth,
+              videoHeight,
+              finalPreset
+            );
+            scaledWidth = downgradedDimensions.width;
+            scaledHeight = downgradedDimensions.height;
+          } else {
+            // Use the calculated dimensions
+            scaledWidth = scaledDimensions.width;
+            scaledHeight = scaledDimensions.height;
+          }
+
+          this.log('info', '[Content] Resolution scaling applied', {
+            original: { width: videoWidth, height: videoHeight },
+            scaled: { width: scaledWidth, height: scaledHeight },
+            preset: finalPreset.name,
+            requestedResolution,
+            estimatedMemoryMB
+          });
         }
-
-        const finalPreset = resolutionScaler.getPresetByName(targetResolution) || preset;
-        const scaledDimensions = resolutionScaler.calculateScaledDimensions(
-          videoWidth,
-          videoHeight,
-          finalPreset
-        );
-
-        scaledWidth = scaledDimensions.width;
-        scaledHeight = scaledDimensions.height;
-
-        this.log('info', '[Content] Resolution scaling applied', {
-          original: { width: videoWidth, height: videoHeight },
-          scaled: { width: scaledWidth, height: scaledHeight },
-          preset: finalPreset.name
+      } else {
+        this.log('warn', '[Content] Using default dimensions - preset or video element not available', {
+          hasPreset: !!preset,
+          hasVideoElement: !!this.videoElement,
+          usingDimensions: { width: scaledWidth, height: scaledHeight }
         });
       }
     } catch (error) {
       // Fallback to default dimensions if ResolutionScaler fails
-      this.log('error', '[Content] ResolutionScaler failed, using fallback dimensions', { error });
+      this.log('error', '[Content] ResolutionScaler failed, using fallback with resolution parser', {
+        error,
+        resolution: requestedResolution
+      });
 
-      // Calculate fallback dimensions based on video aspect ratio
-      const videoAspectRatio = this.videoElement!.videoWidth / this.videoElement!.videoHeight;
+      // Use the resolution parser as fallback
+      const dimensions = parseResolution(requestedResolution);
 
-      if (videoAspectRatio > 1) {
-        // Landscape video - limit width to 640
-        scaledWidth = 640;
-        scaledHeight = Math.round(640 / videoAspectRatio);
+      if (dimensions && this.videoElement) {
+        const videoWidth = this.videoElement.videoWidth;
+        const videoHeight = this.videoElement.videoHeight;
+
+        if (videoWidth && videoHeight) {
+          // Calculate dimensions maintaining aspect ratio
+          const videoAspectRatio = videoWidth / videoHeight;
+          const targetAspectRatio = dimensions.width / dimensions.height;
+
+          if (Math.abs(videoAspectRatio - targetAspectRatio) < 0.1) {
+            // Close enough, use target dimensions
+            scaledWidth = dimensions.width;
+            scaledHeight = dimensions.height;
+          } else if (videoAspectRatio > targetAspectRatio) {
+            // Video is wider - fit to width
+            scaledWidth = dimensions.width;
+            scaledHeight = Math.round(dimensions.width / videoAspectRatio);
+          } else {
+            // Video is taller - fit to height
+            scaledHeight = dimensions.height;
+            scaledWidth = Math.round(dimensions.height * videoAspectRatio);
+          }
+
+          this.log('info', '[Content] Fallback dimensions calculated', {
+            original: { width: videoWidth, height: videoHeight },
+            scaled: { width: scaledWidth, height: scaledHeight },
+            requestedResolution
+          });
+        } else {
+          // Video dimensions not available, use preset defaults
+          this.log('warn', '[Content] Video dimensions not available in fallback', {
+            usingDimensions: { width: scaledWidth, height: scaledHeight }
+          });
+        }
       } else {
-        // Portrait or square video - limit height to 640
-        scaledHeight = 640;
-        scaledWidth = Math.round(640 * videoAspectRatio);
+        // Last resort - dimensions already set from resolutionDefaults
+        this.log('warn', '[Content] Using preset default dimensions', {
+          dimensions: { width: scaledWidth, height: scaledHeight },
+          requestedResolution
+        });
       }
 
       // Ensure even dimensions
       scaledWidth = Math.floor(scaledWidth / 2) * 2;
       scaledHeight = Math.floor(scaledHeight / 2) * 2;
+
+      this.log('info', '[Content] Using fallback dimensions', {
+        scaledWidth,
+        scaledHeight,
+        resolution: resolution || '480p'
+      });
     }
+
+    // Final dimensions logging
+    this.log('info', '[Content] Final GIF dimensions determined', {
+      width: scaledWidth,
+      height: scaledHeight,
+      requestedResolution,
+      hasVideoElement: !!this.videoElement,
+      videoWidth: this.videoElement?.videoWidth,
+      videoHeight: this.videoElement?.videoHeight
+    });
 
     const defaultSettings = {
       frameRate: 15,
@@ -1012,138 +1118,14 @@ class YouTubeGifMaker {
       height: scaledHeight,
       quality: 'medium' as const
     };
-    
+
     // Process the GIF with text overlays if provided
     await this.processGifWithSettings(defaultSettings, textOverlays || []);
   }
 
 
-  private showEnhancedEditor() {
-    if (!this.videoElement || !this.currentSelection) return;
 
-    // Create editor overlay container
-    if (!this.editorOverlay) {
-      this.editorOverlay = document.createElement('div');
-      this.editorOverlay.className = 'ytgif-editor-overlay-container';
-      document.body.appendChild(this.editorOverlay);
-      this.editorRoot = createRoot(this.editorOverlay);
-    }
 
-    const videoUrl = window.location.href;
-    const videoDuration = this.videoElement.duration;
-    const currentTime = this.videoElement.currentTime;
-
-    // Render the enhanced editor
-    this.editorRoot?.render(
-      React.createElement(EditorOverlayEnhanced, {
-        videoUrl,
-        selection: this.currentSelection,
-        videoDuration,
-        currentTime,
-        frames: this.extractedFrames || undefined,
-        onClose: () => this.hideEnhancedEditor(),
-        onSave: async (settings, textOverlays) => {
-          this.hideEnhancedEditor();
-          await this.processGifWithSettings(settings, textOverlays);
-        },
-        onExport: async (settings, textOverlays) => {
-          this.hideEnhancedEditor();
-          await this.processGifWithSettings(settings, textOverlays, true);
-        },
-        onFramesRequest: async () => {
-          
-          // Extract frames for preview
-          if (this.videoElement && this.currentSelection) {
-            
-            try {
-              this.extractedFrames = await this.extractFramesForPreview();
-              
-              // Re-render with frames
-              this.showEnhancedEditor();
-            } catch (error) {
-              console.error('[Enhanced Editor] Frame extraction failed:', error);
-            }
-          } else {
-            console.warn('[Enhanced Editor] Missing video or selection');
-          }
-        }
-      })
-    );
-  }
-
-  private hideEnhancedEditor() {
-    if (this.editorRoot) {
-      this.editorRoot.unmount();
-      this.editorRoot = null;
-    }
-    
-    if (this.editorOverlay) {
-      this.editorOverlay.remove();
-      this.editorOverlay = null;
-    }
-
-    this.extractedFrames = null;
-  }
-
-  private async extractFramesForPreview(): Promise<ImageData[]> {
-    if (!this.videoElement || !this.currentSelection) return [];
-    
-    const { startTime, endTime } = this.currentSelection;
-    const originalTime = this.videoElement.currentTime;
-    const wasPlaying = !this.videoElement.paused;
-    
-    // Pause video during extraction
-    if (wasPlaying) {
-      this.videoElement.pause();
-    }
-    
-    const frameRate = 5; // Lower frame rate for faster extraction
-    const duration = endTime - startTime;
-    const frameCount = Math.min(15, Math.ceil(duration * frameRate)); // Max 15 frames for preview
-    const frames: ImageData[] = [];
-
-    for (let i = 0; i < frameCount; i++) {
-      const time = startTime + (i / frameCount) * duration;
-      this.videoElement.currentTime = time;
-      
-      // Wait for seek to complete with timeout
-      await new Promise<void>((resolve) => {
-        // eslint-disable-next-line prefer-const
-        let timeoutId: number | undefined;
-        const onSeeked = () => {
-          if (timeoutId) clearTimeout(timeoutId);
-          this.videoElement?.removeEventListener('seeked', onSeeked);
-          resolve();
-        };
-        
-        timeoutId = window.setTimeout(() => {
-          this.videoElement?.removeEventListener('seeked', onSeeked);
-          console.warn(`[Frame Extraction] Seek timeout at frame ${i}`);
-          resolve();
-        }, 1000);
-        
-        this.videoElement?.addEventListener('seeked', onSeeked);
-      });
-
-      // Capture frame
-      const canvas = document.createElement('canvas');
-      canvas.width = 640;
-      canvas.height = 360;
-      const ctx = canvas.getContext('2d');
-      if (ctx && this.videoElement) {
-        ctx.drawImage(this.videoElement, 0, 0, canvas.width, canvas.height);
-        frames.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
-      }
-    }
-
-    // Restore original video state
-    this.videoElement.currentTime = originalTime;
-    if (wasPlaying) {
-      this.videoElement.play();
-    }
-
-    return frames;
-  }
 
   private async processGifWithSettings(settings: Partial<GifSettings> & { frameRate?: number; width?: number; height?: number; quality?: string }, textOverlays: TextOverlay[] = [], download = false) {
 

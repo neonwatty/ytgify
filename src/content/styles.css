@@ -818,11 +818,6 @@ img.ytgif-button-icon {
   margin-left: 8px;
 }
 
-/* Import editor overlay styles */
-
-@import './editor-overlay.css';
-@import './editor-overlay-enhanced.css';
-
 /* Text Overlay Screen Styles */
 .ytgif-text-overlay-screen {
   padding: 1.5rem;

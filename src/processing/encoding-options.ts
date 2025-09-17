@@ -4,6 +4,7 @@
  */
 
 import { GifSettings } from '@/types';
+import { getResolutionDimensions } from '@/utils/resolution-parser';
 
 export interface GifEncodingOptions {
   // Core gif.js options
@@ -232,9 +233,7 @@ export class EncodingOptimizer {
     const baseOptions = { ...ENCODING_PRESETS[selectedPreset].options };
     
     // Parse resolution
-    const [width, height] = settings.resolution.includes('x') 
-      ? settings.resolution.split('x').map(n => parseInt(n.trim())) 
-      : [640, 480];
+    const [width, height] = getResolutionDimensions(settings.resolution, 640, 480);
     
     baseOptions.width = width;
     baseOptions.height = height;

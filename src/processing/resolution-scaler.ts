@@ -32,36 +32,36 @@ export interface ScalingOptions {
 
 export const RESOLUTION_PRESETS: ResolutionPreset[] = [
   {
-    name: 'original',
-    targetHeight: 0, // 0 means keep original
-    label: 'Original',
-    description: 'Keep original resolution',
-    qualityScore: 1.0,
-    fileSizeMultiplier: 4.0
-  },
-  {
-    name: '720p',
-    targetHeight: 720,
-    label: '720p HD',
-    description: 'High definition, good quality/size balance',
-    qualityScore: 0.8,
-    fileSizeMultiplier: 2.0
-  },
-  {
     name: '480p',
     targetHeight: 480,
-    label: '480p SD',
-    description: 'Standard definition, smaller file size',
+    label: '480p HD',
+    description: 'Best quality',
     qualityScore: 0.6,
     fileSizeMultiplier: 1.3
   },
   {
     name: '360p',
     targetHeight: 360,
-    label: '360p Low',
-    description: 'Low resolution, smallest file size',
+    label: '360p Compact',
+    description: 'Ideal for email',
     qualityScore: 0.4,
     fileSizeMultiplier: 1.0
+  },
+  {
+    name: '240p',
+    targetHeight: 240,
+    label: '240p Mini',
+    description: 'Quick to share',
+    qualityScore: 0.3,
+    fileSizeMultiplier: 0.5
+  },
+  {
+    name: '144p',
+    targetHeight: 144,
+    label: '144p Nano',
+    description: 'Perfect for chat',
+    qualityScore: 0.2,
+    fileSizeMultiplier: 0.3
   }
 ];
 
@@ -88,17 +88,6 @@ export class ResolutionScaler {
       throw new Error(`Invalid resolution preset: ${preset}`);
     }
 
-    // Keep original if preset is 'original'
-    if (resolutionPreset.targetHeight === 0) {
-      return {
-        width: originalWidth,
-        height: originalHeight,
-        scaleFactor: 1.0,
-        originalWidth,
-        originalHeight,
-        aspectRatio: originalWidth / originalHeight
-      };
-    }
 
     // Don't upscale - if original is smaller than target, keep original
     if (originalHeight <= resolutionPreset.targetHeight) {
@@ -155,8 +144,6 @@ export class ResolutionScaler {
     let minDiff = Infinity;
 
     for (const preset of RESOLUTION_PRESETS) {
-      // Skip original if we're trying to reduce file size
-      if (preset.name === 'original' && fileSizeRatio < 1) continue;
       
       const diff = Math.abs(preset.fileSizeMultiplier - fileSizeRatio);
       if (diff < minDiff) {
@@ -385,16 +372,16 @@ export class ResolutionScaler {
   ): ResolutionPreset {
     // For text content, maintain higher resolution
     if (contentType === 'text') {
-      return originalHeight > 720 
-        ? this.getPresetByName('720p')!
-        : this.getPresetByName('original')!;
+      return originalHeight > 480
+        ? this.getPresetByName('480p')!
+        : this.getPresetByName('360p')!;
     }
 
     // For animations, balance quality and size
     if (contentType === 'animation') {
       return originalHeight > 480
         ? this.getPresetByName('480p')!
-        : this.getPresetByName('original')!;
+        : this.getPresetByName('360p')!;
     }
 
     // For video content, can use lower resolutions
@@ -404,12 +391,12 @@ export class ResolutionScaler {
       }
       return originalHeight > 480
         ? this.getPresetByName('480p')!
-        : this.getPresetByName('original')!;
+        : this.getPresetByName('360p')!;
     }
 
     // Default mixed content handling
-    return originalHeight > 720
+    return originalHeight > 480
       ? this.getPresetByName('480p')!
-      : this.getPresetByName('original')!;
+      : this.getPresetByName('360p')!;
   }
 }

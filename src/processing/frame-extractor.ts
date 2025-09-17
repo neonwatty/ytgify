@@ -6,6 +6,7 @@
 import { GifSettings, TimelineSelection } from '@/types';
 import { performanceTracker } from '@/monitoring/performance-tracker';
 import { metricsCollector } from '@/monitoring/metrics-collector';
+import { parseResolution } from '@/utils/resolution-parser';
 
 export interface FrameExtractionConfig {
   startTime: number;
@@ -353,18 +354,23 @@ export class FrameExtractor {
     settings: GifSettings
   ): FrameExtractionConfig {
     // Parse resolution string to get dimensions
-    const [width, height] = settings.resolution.includes('x') ? 
-      settings.resolution.split('x').map(n => parseInt(n.trim())) : 
-      [640, 480]; // default fallback
-    
-    return {
+    const dimensions = parseResolution(settings.resolution);
+
+    // If original resolution is selected, don't set max dimensions
+    const config: FrameExtractionConfig = {
       startTime: selection.startTime,
       endTime: selection.endTime,
       frameRate: settings.frameRate,
-      quality: settings.quality,
-      maxWidth: width,
-      maxHeight: height
+      quality: settings.quality
     };
+
+    // Only set max dimensions if not original resolution
+    if (dimensions) {
+      config.maxWidth = dimensions.width;
+      config.maxHeight = dimensions.height;
+    }
+
+    return config;
   }
 
   /**

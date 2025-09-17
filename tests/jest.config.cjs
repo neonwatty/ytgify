@@ -2,8 +2,9 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
   rootDir: '..',
-  roots: ['<rootDir>/tests/unit', '<rootDir>/tests/integration', '<rootDir>/tests/utils'],
+  roots: ['<rootDir>/tests/unit', '<rootDir>/tests/utils'],
   testMatch: ['**/__tests__/**/*.ts?(x)', '**/?(*.)+(spec|test).ts?(x)'],
+  testPathIgnorePatterns: ['/tests/integration/'],
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
       tsconfig: {

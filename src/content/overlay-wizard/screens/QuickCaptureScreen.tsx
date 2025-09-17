@@ -33,7 +33,7 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
   }, [isPreviewPlaying]);
   const [previewTime, setPreviewTime] = useState(startTime);
   const [selectedFrameRate, setSelectedFrameRate] = useState(5); // Default to 5 fps
-  const [selectedResolution, setSelectedResolution] = useState('480p'); // Default to 480p for balance
+  const [selectedResolution, setSelectedResolution] = useState('240p'); // Default to 240p for mobile-friendly files
   
   const handleRangeChange = useCallback((newStart: number, newEnd: number) => {
     setStartTime(newStart);
@@ -107,25 +107,32 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
           </div>
           <div className="ytgif-resolution-options">
             <button
+              className={`ytgif-resolution-btn ${selectedResolution === '144p' ? 'ytgif-resolution-btn--active' : ''}`}
+              onClick={() => setSelectedResolution('144p')}
+            >
+              144p Nano
+              <span className="ytgif-resolution-desc">Perfect for chat</span>
+            </button>
+            <button
+              className={`ytgif-resolution-btn ${selectedResolution === '240p' ? 'ytgif-resolution-btn--active' : ''}`}
+              onClick={() => setSelectedResolution('240p')}
+            >
+              240p Mini
+              <span className="ytgif-resolution-desc">Quick to share</span>
+            </button>
+            <button
+              className={`ytgif-resolution-btn ${selectedResolution === '360p' ? 'ytgif-resolution-btn--active' : ''}`}
+              onClick={() => setSelectedResolution('360p')}
+            >
+              360p Compact
+              <span className="ytgif-resolution-desc">Ideal for email</span>
+            </button>
+            <button
               className={`ytgif-resolution-btn ${selectedResolution === '480p' ? 'ytgif-resolution-btn--active' : ''}`}
               onClick={() => setSelectedResolution('480p')}
             >
-              480p SD
-              <span className="ytgif-resolution-desc">Smaller file • Quick sharing</span>
-            </button>
-            <button
-              className={`ytgif-resolution-btn ${selectedResolution === '720p' ? 'ytgif-resolution-btn--active' : ''}`}
-              onClick={() => setSelectedResolution('720p')}
-            >
-              720p HD
-              <span className="ytgif-resolution-desc">Balanced • Good quality</span>
-            </button>
-            <button
-              className={`ytgif-resolution-btn ${selectedResolution === 'original' ? 'ytgif-resolution-btn--active' : ''}`}
-              onClick={() => setSelectedResolution('original')}
-            >
-              Original
-              <span className="ytgif-resolution-desc">Best quality • Larger file</span>
+              480p HD
+              <span className="ytgif-resolution-desc">Best quality</span>
             </button>
           </div>
         </div>
@@ -192,9 +199,10 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
             <span className="ytgif-info-label">Est. Size:</span>
             <span className="ytgif-info-value">~{(() => {
               const resolutionMultipliers: Record<string, number> = {
-                '480p': 1.0,
-                '720p': 2.0,
-                'original': 3.5
+                '144p': 0.3,
+                '240p': 0.5,
+                '360p': 0.7,
+                '480p': 1.0
               };
               const sizeEstimate = gifDuration * selectedFrameRate * 0.05 * resolutionMultipliers[selectedResolution];
               return sizeEstimate.toFixed(1);

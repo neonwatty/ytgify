@@ -13,9 +13,9 @@ describe('ResolutionScaler', () => {
       expect(RESOLUTION_PRESETS).toHaveLength(4);
     });
 
-    it('should include 360p, 480p, 720p, and original presets', () => {
+    it('should include 144p, 240p, 360p, and 480p presets', () => {
       const presetNames = RESOLUTION_PRESETS.map(p => p.name);
-      expect(presetNames).toEqual(['original', '720p', '480p', '360p']);
+      expect(presetNames).toEqual(['480p', '360p', '240p', '144p']);
     });
 
     it('should have correct target heights for each preset', () => {
@@ -25,10 +25,10 @@ describe('ResolutionScaler', () => {
       }, {} as Record<string, number>);
 
       expect(presets).toEqual({
-        'original': 0,
-        '720p': 720,
         '480p': 480,
-        '360p': 360
+        '360p': 360,
+        '240p': 240,
+        '144p': 144
       });
     });
 
@@ -39,20 +39,20 @@ describe('ResolutionScaler', () => {
       }, {} as Record<string, number>);
 
       expect(multipliers).toEqual({
-        'original': 4.0,
-        '720p': 2.0,
         '480p': 1.3,
-        '360p': 1.0
+        '360p': 1.0,
+        '240p': 0.5,
+        '144p': 0.3
       });
     });
   });
 
   describe('getPresetByName', () => {
     it('should return correct preset for valid names', () => {
-      expect(scaler.getPresetByName('480p')?.targetHeight).toBe(480);
-      expect(scaler.getPresetByName('720p')?.targetHeight).toBe(720);
-      expect(scaler.getPresetByName('original')?.targetHeight).toBe(0);
+      expect(scaler.getPresetByName('144p')?.targetHeight).toBe(144);
+      expect(scaler.getPresetByName('240p')?.targetHeight).toBe(240);
       expect(scaler.getPresetByName('360p')?.targetHeight).toBe(360);
+      expect(scaler.getPresetByName('480p')?.targetHeight).toBe(480);
     });
 
     it('should return undefined for invalid preset names', () => {
@@ -63,41 +63,6 @@ describe('ResolutionScaler', () => {
   });
 
   describe('calculateScaledDimensions', () => {
-    describe('with original preset', () => {
-      it('should return original dimensions unchanged', () => {
-        const preset = scaler.getPresetByName('original')!;
-        const result = scaler.calculateScaledDimensions(1920, 1080, preset);
-
-        expect(result).toEqual({
-          width: 1920,
-          height: 1080,
-          scaleFactor: 1.0,
-          originalWidth: 1920,
-          originalHeight: 1080,
-          aspectRatio: 1920 / 1080
-        });
-      });
-    });
-
-    describe('with 720p preset', () => {
-      it('should scale 1080p video to 720p correctly', () => {
-        const preset = scaler.getPresetByName('720p')!;
-        const result = scaler.calculateScaledDimensions(1920, 1080, preset);
-
-        expect(result.height).toBe(720);
-        expect(result.width).toBe(1280);
-        expect(result.scaleFactor).toBeCloseTo(720 / 1080);
-      });
-
-      it('should scale portrait video correctly', () => {
-        const preset = scaler.getPresetByName('720p')!;
-        const result = scaler.calculateScaledDimensions(1080, 1920, preset);
-
-        expect(result.height).toBe(720);
-        expect(result.width).toBe(404); // Should be even
-        expect(result.scaleFactor).toBeCloseTo(720 / 1920);
-      });
-    });
 
     describe('with 480p preset', () => {
       it('should scale 720p video to 480p correctly', () => {
@@ -119,6 +84,28 @@ describe('ResolutionScaler', () => {
       });
     });
 
+    describe('with 144p preset', () => {
+      it('should scale to 144p for ultra-low file size', () => {
+        const preset = scaler.getPresetByName('144p')!;
+        const result = scaler.calculateScaledDimensions(1920, 1080, preset);
+
+        expect(result.width).toBe(256);
+        expect(result.height).toBe(144);
+        expect(result.scaleFactor).toBeCloseTo(0.133, 2);
+      });
+    });
+
+    describe('with 240p preset', () => {
+      it('should scale to 240p for very low file size', () => {
+        const preset = scaler.getPresetByName('240p')!;
+        const result = scaler.calculateScaledDimensions(1920, 1080, preset);
+
+        expect(result.width).toBe(426);
+        expect(result.height).toBe(240);
+        expect(result.scaleFactor).toBeCloseTo(0.222, 2);
+      });
+    });
+
     describe('with 360p preset', () => {
       it('should scale to 360p for memory optimization', () => {
         const preset = scaler.getPresetByName('360p')!;
@@ -131,16 +118,6 @@ describe('ResolutionScaler', () => {
     });
 
     describe('no upscaling behavior', () => {
-      it('should not upscale video smaller than target resolution', () => {
-        const preset = scaler.getPresetByName('720p')!;
-        const result = scaler.calculateScaledDimensions(640, 480, preset);
-
-        // Should keep original dimensions
-        expect(result.width).toBe(640);
-        expect(result.height).toBe(480);
-        expect(result.scaleFactor).toBe(1.0);
-      });
-
       it('should not upscale 360p video to 480p', () => {
         const preset = scaler.getPresetByName('480p')!;
         const result = scaler.calculateScaledDimensions(640, 360, preset);
@@ -161,13 +138,6 @@ describe('ResolutionScaler', () => {
         expect(result.height % 2).toBe(0);
       });
 
-      it('should ensure height is even', () => {
-        const preset = scaler.getPresetByName('720p')!;
-        const result = scaler.calculateScaledDimensions(1921, 1081, preset);
-
-        expect(result.width % 2).toBe(0);
-        expect(result.height % 2).toBe(0);
-      });
     });
 
     describe('aspect ratio preservation', () => {
@@ -247,20 +217,20 @@ describe('ResolutionScaler', () => {
   });
 
   describe('getRecommendedPreset', () => {
-    it('should recommend 720p or original for text content', () => {
+    it('should recommend 480p or 360p for text content', () => {
       const preset = scaler.getRecommendedPreset(1920, 1080, 'text');
-      expect(preset.name).toBe('720p');
+      expect(preset.name).toBe('480p');
 
-      const presetSmall = scaler.getRecommendedPreset(640, 480, 'text');
-      expect(presetSmall.name).toBe('original');
+      const presetSmall = scaler.getRecommendedPreset(320, 240, 'text');
+      expect(presetSmall.name).toBe('360p');
     });
 
-    it('should recommend 480p or original for animation content', () => {
+    it('should recommend 480p or 360p for animation content', () => {
       const preset = scaler.getRecommendedPreset(1920, 1080, 'animation');
       expect(preset.name).toBe('480p');
 
       const presetSmall = scaler.getRecommendedPreset(320, 240, 'animation');
-      expect(presetSmall.name).toBe('original');
+      expect(presetSmall.name).toBe('360p');
     });
 
     it('should recommend lower resolution for video with size target', () => {
@@ -306,14 +276,10 @@ describe('ResolutionScaler', () => {
       expect(preset.fileSizeMultiplier).toBeLessThanOrEqual(1.3);
     });
 
-    it('should avoid original preset when reducing file size', () => {
-      const preset = scaler.getPresetForFileSize(1920, 1080, 2, 10);
-      expect(preset.name).not.toBe('original');
-    });
 
     it('should default to lowest preset for very small target', () => {
       const preset = scaler.getPresetForFileSize(1920, 1080, 0.5, 10);
-      expect(preset.name).toBe('360p');
+      expect(preset.name).toBe('144p');
     });
   });
 });

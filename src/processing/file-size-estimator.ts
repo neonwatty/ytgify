@@ -5,6 +5,7 @@
  */
 
 import { GifSettings, TimelineSelection } from '@/types';
+import { getResolutionDimensions } from '@/utils/resolution-parser';
 
 export interface FileSizeEstimate {
   estimatedBytes: number;
@@ -99,11 +100,9 @@ export class FileSizeEstimator {
   estimateFileSize(settings: GifSettings, contentType: 'static' | 'animated' | 'action' | 'cinematic' = 'animated'): number {
     const duration = settings.endTime - settings.startTime;
     const frameCount = Math.ceil(duration * settings.frameRate);
-    
+
     // Parse resolution
-    const [width, height] = settings.resolution.includes('x')
-      ? settings.resolution.split('x').map(n => parseInt(n.trim()))
-      : [640, 480];
+    const [width, height] = getResolutionDimensions(settings.resolution, 640, 480);
     
     const pixelCount = width * height;
     
@@ -144,10 +143,8 @@ export class FileSizeEstimator {
   ): FileSizeEstimate {
     const duration = settings.endTime - settings.startTime;
     const frameCount = Math.ceil(duration * settings.frameRate);
-    
-    const [width, height] = settings.resolution.includes('x')
-      ? settings.resolution.split('x').map(n => parseInt(n.trim()))
-      : [640, 480];
+
+    const [width, height] = getResolutionDimensions(settings.resolution, 640, 480);
     
     const pixelCount = width * height;
     const baseSize = frameCount * pixelCount * SIZE_CONSTANTS.BASE_BYTES_PER_PIXEL;
@@ -294,9 +291,7 @@ export class FileSizeEstimator {
     }
     
     // Suggest resolution reduction
-    const [width, height] = settings.resolution.includes('x')
-      ? settings.resolution.split('x').map(n => parseInt(n.trim()))
-      : [640, 480];
+    const [width, height] = getResolutionDimensions(settings.resolution, 640, 480);
     
     if (width > 480 || height > 360) {
       const newWidth = Math.floor(width * 0.8);
@@ -483,10 +478,8 @@ export class FileSizeEstimator {
     if (settings.frameRate > 20 && settings.quality === 'high') {
       warnings.push('High frame rate with high quality will significantly increase file size');
     }
-    
-    const [width, height] = settings.resolution.includes('x')
-      ? settings.resolution.split('x').map(n => parseInt(n.trim()))
-      : [640, 480];
+
+    const [width, height] = getResolutionDimensions(settings.resolution, 640, 480);
     
     if ((width > 1024 || height > 768) && duration > 5) {
       warnings.push('High resolution with long duration may exceed browser memory limits');

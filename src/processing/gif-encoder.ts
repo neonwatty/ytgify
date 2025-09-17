@@ -5,15 +5,16 @@
 
 import { GifSettings, GifData, TimelineSelection } from '@/types';
 import { ExtractedFrame, FrameExtractionResult } from './frame-extractor';
-import { 
-  GifEncodingOptions, 
-  GifFrameOptions, 
-  EncodingOptimizer, 
+import {
+  GifEncodingOptions,
+  GifFrameOptions,
+  EncodingOptimizer,
   EncodingProfiler,
-  GifQualityPreset 
+  GifQualityPreset
 } from './encoding-options';
 import { performanceTracker } from '@/monitoring/performance-tracker';
 import { metricsCollector } from '@/monitoring/metrics-collector';
+import { getResolutionDimensions } from '@/utils/resolution-parser';
 
 // gif.js type definitions (since @types/gif.js doesn't exist)
 interface GIFConstructor {
@@ -449,9 +450,7 @@ export class GifEncoder {
     };
 
     const recommended = optimizer.getRecommendedSettings?.(settings, preset) ?? {};
-    const [width, height] = settings.resolution.includes('x')
-      ? settings.resolution.split('x').map(num => parseInt(num.trim(), 10))
-      : [640, 480];
+    const [width, height] = getResolutionDimensions(settings.resolution, 640, 480);
 
     const qualityFromSettings =
       settings.quality === 'high' ? 5 : settings.quality === 'low' ? 20 : 10;
@@ -797,10 +796,8 @@ export function estimateEncodingParameters(
 } {
   const duration = settings.endTime - settings.startTime;
   const frameCount = Math.ceil(duration * settings.frameRate);
-  
-  const [width, height] = settings.resolution.includes('x') 
-    ? settings.resolution.split('x').map(n => parseInt(n.trim()))
-    : [640, 480];
+
+  const [width, height] = getResolutionDimensions(settings.resolution, 640, 480);
 
   // Get preset options for estimation
   const options = EncodingOptimizer.createOptionsFromSettings(settings, preset);

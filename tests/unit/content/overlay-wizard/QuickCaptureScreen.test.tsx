@@ -23,71 +23,70 @@ describe('QuickCaptureScreen', () => {
   });
 
   describe('Resolution Selection', () => {
-    it('should render all three resolution options', () => {
+    it('should render all four resolution options', () => {
       render(<QuickCaptureScreen {...defaultProps} />);
 
-      expect(screen.getByText('480p SD')).toBeTruthy();
-      expect(screen.getByText('720p HD')).toBeTruthy();
-      expect(screen.getByText('Original')).toBeTruthy();
+      expect(screen.getByText('144p Nano')).toBeTruthy();
+      expect(screen.getByText('240p Mini')).toBeTruthy();
+      expect(screen.getByText('360p Compact')).toBeTruthy();
+      expect(screen.getByText('480p HD')).toBeTruthy();
     });
 
     it('should display resolution descriptions', () => {
       render(<QuickCaptureScreen {...defaultProps} />);
 
-      expect(screen.getByText('Smaller file • Quick sharing')).toBeTruthy();
-      expect(screen.getByText('Balanced • Good quality')).toBeTruthy();
-      expect(screen.getByText('Best quality • Larger file')).toBeTruthy();
+      expect(screen.getByText('Perfect for chat')).toBeTruthy();
+      expect(screen.getByText('Quick to share')).toBeTruthy();
+      expect(screen.getByText('Ideal for email')).toBeTruthy();
+      expect(screen.getByText('Best quality')).toBeTruthy();
     });
 
-    it('should have 480p selected by default', () => {
+    it('should have 240p selected by default', () => {
       render(<QuickCaptureScreen {...defaultProps} />);
 
-      const button480p = screen.getByText('480p SD').closest('button');
-      expect(button480p?.className).toContain('ytgif-resolution-btn--active');
+      const button240p = screen.getByText('240p Mini').closest('button');
+      expect(button240p?.className).toContain('ytgif-resolution-btn--active');
 
-      const button720p = screen.getByText('720p HD').closest('button');
-      expect(button720p?.className).not.toContain('ytgif-resolution-btn--active');
-
-      const buttonOriginal = screen.getByText('Original').closest('button');
-      expect(buttonOriginal?.className).not.toContain('ytgif-resolution-btn--active');
-    });
-
-    it('should update selection when 720p is clicked', () => {
-      render(<QuickCaptureScreen {...defaultProps} />);
-
-      const button720p = screen.getByText('720p HD').closest('button')!;
-      fireEvent.click(button720p);
-
-      expect(button720p?.className).toContain('ytgif-resolution-btn--active');
-
-      const button480p = screen.getByText('480p SD').closest('button');
+      const button480p = screen.getByText('480p HD').closest('button');
       expect(button480p?.className).not.toContain('ytgif-resolution-btn--active');
     });
 
-    it('should update selection when Original is clicked', () => {
+    it('should update selection when 360p is clicked', () => {
       render(<QuickCaptureScreen {...defaultProps} />);
 
-      const buttonOriginal = screen.getByText('Original').closest('button')!;
-      fireEvent.click(buttonOriginal);
+      const button360p = screen.getByText('360p Compact').closest('button')!;
+      fireEvent.click(button360p);
 
-      expect(buttonOriginal?.className).toContain('ytgif-resolution-btn--active');
+      expect(button360p?.className).toContain('ytgif-resolution-btn--active');
 
-      const button480p = screen.getByText('480p SD').closest('button');
+      const button480p = screen.getByText('480p HD').closest('button');
+      expect(button480p?.className).not.toContain('ytgif-resolution-btn--active');
+    });
+
+    it('should update selection when 144p is clicked', () => {
+      render(<QuickCaptureScreen {...defaultProps} />);
+
+      const button144p = screen.getByText('144p Nano').closest('button')!;
+      fireEvent.click(button144p);
+
+      expect(button144p?.className).toContain('ytgif-resolution-btn--active');
+
+      const button480p = screen.getByText('480p HD').closest('button');
       expect(button480p?.className).not.toContain('ytgif-resolution-btn--active');
     });
 
     it('should only have one resolution selected at a time', () => {
       render(<QuickCaptureScreen {...defaultProps} />);
 
-      // Click 720p
-      fireEvent.click(screen.getByText('720p HD').closest('button')!);
+      // Click 360p
+      fireEvent.click(screen.getByText('360p Compact').closest('button')!);
       let activeButtons = screen
         .getAllByRole('button')
         .filter((btn) => btn.className.includes('ytgif-resolution-btn--active'));
       expect(activeButtons).toHaveLength(1);
 
-      // Click Original
-      fireEvent.click(screen.getByText('Original').closest('button')!);
+      // Click 240p
+      fireEvent.click(screen.getByText('240p Mini').closest('button')!);
       activeButtons = screen
         .getAllByRole('button')
         .filter((btn) => btn.className.includes('ytgif-resolution-btn--active'));
@@ -116,23 +115,23 @@ describe('QuickCaptureScreen', () => {
     it('should update file size estimate based on resolution', () => {
       render(<QuickCaptureScreen {...defaultProps} />);
 
-      // Default 480p with 5fps
+      // Default 240p with 5fps
       let sizeText = screen.getByText(/~.*MB/);
+      const size240p = parseFloat(sizeText.textContent?.match(/~(.*)MB/)?.[1] || '0');
+
+      // Click 360p
+      fireEvent.click(screen.getByText('360p Compact').closest('button')!);
+      sizeText = screen.getByText(/~.*MB/);
+      const size360p = parseFloat(sizeText.textContent?.match(/~(.*)MB/)?.[1] || '0');
+
+      // Click 480p
+      fireEvent.click(screen.getByText('480p HD').closest('button')!);
+      sizeText = screen.getByText(/~.*MB/);
       const size480p = parseFloat(sizeText.textContent?.match(/~(.*)MB/)?.[1] || '0');
 
-      // Click 720p
-      fireEvent.click(screen.getByText('720p HD').closest('button')!);
-      sizeText = screen.getByText(/~.*MB/);
-      const size720p = parseFloat(sizeText.textContent?.match(/~(.*)MB/)?.[1] || '0');
-
-      // Click Original
-      fireEvent.click(screen.getByText('Original').closest('button')!);
-      sizeText = screen.getByText(/~.*MB/);
-      const sizeOriginal = parseFloat(sizeText.textContent?.match(/~(.*)MB/)?.[1] || '0');
-
-      // Verify size relationship: 480p < 720p < Original
-      expect(size720p).toBeGreaterThan(size480p);
-      expect(sizeOriginal).toBeGreaterThan(size720p);
+      // Verify size relationship: 240p < 360p < 480p
+      expect(size360p).toBeGreaterThan(size240p);
+      expect(size480p).toBeGreaterThan(size360p);
     });
 
     it('should update file size estimate based on frame rate', () => {
@@ -181,19 +180,19 @@ describe('QuickCaptureScreen', () => {
       const confirmButton = screen.getByText(/Continue to Customize/);
       fireEvent.click(confirmButton);
 
-      expect(mockOnConfirm).toHaveBeenCalledWith(10, 20, 5, '480p');
+      expect(mockOnConfirm).toHaveBeenCalledWith(10, 20, 5, '240p');
     });
 
     it('should pass selected resolution when confirm is clicked', () => {
       render(<QuickCaptureScreen {...defaultProps} />);
 
-      // Select 720p
-      fireEvent.click(screen.getByText('720p HD').closest('button')!);
+      // Select 360p
+      fireEvent.click(screen.getByText('360p Compact').closest('button')!);
 
       const confirmButton = screen.getByText(/Continue to Customize/);
       fireEvent.click(confirmButton);
 
-      expect(mockOnConfirm).toHaveBeenCalledWith(10, 20, 5, '720p');
+      expect(mockOnConfirm).toHaveBeenCalledWith(10, 20, 5, '360p');
     });
 
     it('should pass selected frame rate when confirm is clicked', () => {
@@ -205,21 +204,21 @@ describe('QuickCaptureScreen', () => {
       const confirmButton = screen.getByText(/Continue to Customize/);
       fireEvent.click(confirmButton);
 
-      expect(mockOnConfirm).toHaveBeenCalledWith(10, 20, 15, '480p');
+      expect(mockOnConfirm).toHaveBeenCalledWith(10, 20, 15, '240p');
     });
 
     it('should pass all selected options when confirm is clicked', () => {
       render(<QuickCaptureScreen {...defaultProps} />);
 
-      // Select Original resolution
-      fireEvent.click(screen.getByText('Original').closest('button')!);
+      // Select 144p resolution
+      fireEvent.click(screen.getByText('144p Nano').closest('button')!);
       // Select 10fps
       fireEvent.click(screen.getByText('10 fps').closest('button')!);
 
       const confirmButton = screen.getByText(/Continue to Customize/);
       fireEvent.click(confirmButton);
 
-      expect(mockOnConfirm).toHaveBeenCalledWith(10, 20, 10, 'original');
+      expect(mockOnConfirm).toHaveBeenCalledWith(10, 20, 10, '144p');
     });
   });
 

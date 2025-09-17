@@ -15,7 +15,10 @@ module.exports = (env, argv) => {
     output: {
       path: path.resolve(__dirname, 'dist'),
       filename: '[name].js',
+      chunkFilename: '[name].chunk.js',
       clean: true,
+      // Set publicPath to extension URL for proper chunk loading
+      publicPath: '',
     },
     module: {
       rules: [
@@ -43,6 +46,7 @@ module.exports = (env, argv) => {
         '@/hooks': path.resolve(__dirname, 'src/hooks'),
         '@/types': path.resolve(__dirname, 'src/types'),
         '@/utils': path.resolve(__dirname, 'src/utils'),
+        '@/processing': path.resolve(__dirname, 'src/processing'),
       },
     },
     plugins: [
