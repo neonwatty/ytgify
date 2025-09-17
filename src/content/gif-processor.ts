@@ -318,8 +318,8 @@ export class ContentScriptGifProcessor {
 
       // Encode frames with progress callback
       const result = await encoder.encode(frameData, (progress) => {
-        
-        onProgress?.(progress.percent, progress.message);
+
+        onProgress?.(progress.percentage, progress.currentOperation || 'Encoding...');
       });
 
       logger.info('[ContentScriptGifProcessor] GIF encoding finished with gifenc', { 
