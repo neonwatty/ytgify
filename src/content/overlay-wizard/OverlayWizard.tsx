@@ -84,7 +84,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
       startTime,
       endTime,
       frameRate: frameRate || 10,
-      resolution: resolution || '480p',
+      resolution: resolution || '144p',
     });
     onSelectionChange(selection);
     // Go to text overlay screen instead of processing

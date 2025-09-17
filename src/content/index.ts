@@ -987,8 +987,8 @@ class YouTubeGifMaker {
       '480p': { width: 854, height: 480 },
     };
 
-    const requestedResolution = resolution || '480p';
-    const defaultDimensions = resolutionDefaults[requestedResolution] || resolutionDefaults['480p'];
+    const requestedResolution = resolution || '144p';
+    const defaultDimensions = resolutionDefaults[requestedResolution] || resolutionDefaults['144p'];
     let scaledWidth = defaultDimensions.width;
     let scaledHeight = defaultDimensions.height;
 
@@ -1044,6 +1044,10 @@ class YouTubeGifMaker {
               finalPreset = resolutionScaler.getPresetByName('480p')!;
             } else if (requestedResolution === '480p') {
               finalPreset = resolutionScaler.getPresetByName('360p')!;
+            } else if (requestedResolution === '360p') {
+              finalPreset = resolutionScaler.getPresetByName('240p')!;
+            } else if (requestedResolution === '240p') {
+              finalPreset = resolutionScaler.getPresetByName('144p')!;
             }
             // Recalculate with downgraded preset
             const downgradedDimensions = resolutionScaler.calculateScaledDimensions(
@@ -1141,7 +1145,7 @@ class YouTubeGifMaker {
       this.log('info', '[Content] Using fallback dimensions', {
         scaledWidth,
         scaledHeight,
-        resolution: resolution || '480p',
+        resolution: resolution || '144p',
       });
     }
 
@@ -1610,6 +1614,8 @@ class YouTubeGifMaker {
       finalizing: 4,
       COMPLETED: 4,
       completed: 4,
+      ERROR: 0,
+      error: 0,
     };
     return stageMap[stage] || 1;
   }

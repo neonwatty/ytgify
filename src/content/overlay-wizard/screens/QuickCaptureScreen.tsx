@@ -21,7 +21,7 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
   videoElement,
   onConfirm,
   onBack,
-  onSeekTo
+  onSeekTo,
 }) => {
   const [startTime, setStartTime] = useState(initialStartTime);
   const [endTime, setEndTime] = useState(initialEndTime);
@@ -33,21 +33,24 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
   }, [isPreviewPlaying]);
   const [previewTime, setPreviewTime] = useState(startTime);
   const [selectedFrameRate, setSelectedFrameRate] = useState(5); // Default to 5 fps
-  const [selectedResolution, setSelectedResolution] = useState('240p'); // Default to 240p for mobile-friendly files
-  
+  const [selectedResolution, setSelectedResolution] = useState('144p'); // Default to 144p for smallest file size
+
   const handleRangeChange = useCallback((newStart: number, newEnd: number) => {
     setStartTime(newStart);
     setEndTime(newEnd);
     setPreviewTime(newStart);
     setIsPreviewPlaying(false);
   }, []);
-  
-  const handleSeek = useCallback((time: number) => {
-    setPreviewTime(time);
-    if (onSeekTo) {
-      onSeekTo(time);
-    }
-  }, [onSeekTo]);
+
+  const handleSeek = useCallback(
+    (time: number) => {
+      setPreviewTime(time);
+      if (onSeekTo) {
+        onSeekTo(time);
+      }
+    },
+    [onSeekTo]
+  );
 
   const gifDuration = endTime - startTime;
 
@@ -56,7 +59,12 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
       <div className="ytgif-wizard-header">
         <button onClick={onBack} className="ytgif-back-button">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
         </button>
         <h2 className="ytgif-wizard-title">Select Your Perfect Moment</h2>
@@ -84,7 +92,7 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
             <p>Loading video element...</p>
           </div>
         )}
-        
+
         {/* Enhanced Timeline Scrubber */}
         <TimelineScrubber
           duration={duration}
@@ -100,8 +108,12 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
         <div className="ytgif-resolution-section">
           <div className="ytgif-resolution-label">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <span>Resolution</span>
           </div>
@@ -141,27 +153,31 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
         <div className="ytgif-frame-rate-section">
           <div className="ytgif-frame-rate-label">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
             </svg>
             <span>Frame Rate</span>
           </div>
           <div className="ytgif-frame-rate-options">
-            <button 
+            <button
               className={`ytgif-frame-rate-btn ${selectedFrameRate === 5 ? 'ytgif-frame-rate-btn--active' : ''}`}
               onClick={() => setSelectedFrameRate(5)}
             >
               5 fps
               <span className="ytgif-frame-rate-desc">Smaller file • Classic GIF feel</span>
             </button>
-            <button 
+            <button
               className={`ytgif-frame-rate-btn ${selectedFrameRate === 10 ? 'ytgif-frame-rate-btn--active' : ''}`}
               onClick={() => setSelectedFrameRate(10)}
             >
               10 fps
               <span className="ytgif-frame-rate-desc">Balanced • Recommended</span>
             </button>
-            <button 
+            <button
               className={`ytgif-frame-rate-btn ${selectedFrameRate === 15 ? 'ytgif-frame-rate-btn--active' : ''}`}
               onClick={() => setSelectedFrameRate(15)}
             >
@@ -175,17 +191,25 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
         <div className="ytgif-capture-info">
           <div className="ytgif-info-item">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <span className="ytgif-info-label">Duration:</span>
             <span className="ytgif-info-value">{gifDuration.toFixed(1)}s</span>
           </div>
-          
+
           <div className="ytgif-info-item">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                d="M7 4v16M17 4v16M3 8h4m10 0h4M3 16h4m10 0h4" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 4v16M17 4v16M3 8h4m10 0h4M3 16h4m10 0h4"
+              />
             </svg>
             <span className="ytgif-info-label">Frames:</span>
             <span className="ytgif-info-value">~{Math.round(gifDuration * selectedFrameRate)}</span>
@@ -193,20 +217,32 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
 
           <div className="ytgif-info-item">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
             </svg>
             <span className="ytgif-info-label">Est. Size:</span>
-            <span className="ytgif-info-value">~{(() => {
-              const resolutionMultipliers: Record<string, number> = {
-                '144p': 0.3,
-                '240p': 0.5,
-                '360p': 0.7,
-                '480p': 1.0
-              };
-              const sizeEstimate = gifDuration * selectedFrameRate * 0.05 * resolutionMultipliers[selectedResolution];
-              return sizeEstimate.toFixed(1);
-            })()}MB</span>
+            <span className="ytgif-info-value">
+              ~
+              {(() => {
+                const resolutionMultipliers: Record<string, number> = {
+                  '144p': 0.3,
+                  '240p': 0.5,
+                  '360p': 0.7,
+                  '480p': 1.0,
+                };
+                const sizeEstimate =
+                  gifDuration *
+                  selectedFrameRate *
+                  0.05 *
+                  resolutionMultipliers[selectedResolution];
+                return sizeEstimate.toFixed(1);
+              })()}
+              MB
+            </span>
           </div>
         </div>
 
@@ -215,8 +251,12 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
           <div className="ytgif-preview-fallback">
             <div className="ytgif-fallback-message">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                  d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                />
               </svg>
               <p>Video preview will appear here</p>
             </div>
@@ -225,13 +265,20 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
 
         {/* Action Buttons */}
         <div className="ytgif-wizard-actions">
-          <button className="ytgif-button-primary" onClick={() => {
-            // Pass the current selection, frame rate, and resolution
-            onConfirm(startTime, endTime, selectedFrameRate, selectedResolution);
-          }}>
+          <button
+            className="ytgif-button-primary"
+            onClick={() => {
+              // Pass the current selection, frame rate, and resolution
+              onConfirm(startTime, endTime, selectedFrameRate, selectedResolution);
+            }}
+          >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+              />
             </svg>
             Continue to Customize →
           </button>

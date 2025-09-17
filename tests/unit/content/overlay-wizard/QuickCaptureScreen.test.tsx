@@ -41,11 +41,11 @@ describe('QuickCaptureScreen', () => {
       expect(screen.getByText('Best quality')).toBeTruthy();
     });
 
-    it('should have 240p selected by default', () => {
+    it('should have 144p selected by default', () => {
       render(<QuickCaptureScreen {...defaultProps} />);
 
-      const button240p = screen.getByText('240p Mini').closest('button');
-      expect(button240p?.className).toContain('ytgif-resolution-btn--active');
+      const button144p = screen.getByText('144p Nano').closest('button');
+      expect(button144p?.className).toContain('ytgif-resolution-btn--active');
 
       const button480p = screen.getByText('480p HD').closest('button');
       expect(button480p?.className).not.toContain('ytgif-resolution-btn--active');
@@ -115,8 +115,13 @@ describe('QuickCaptureScreen', () => {
     it('should update file size estimate based on resolution', () => {
       render(<QuickCaptureScreen {...defaultProps} />);
 
-      // Default 240p with 5fps
+      // Default 144p with 5fps
       let sizeText = screen.getByText(/~.*MB/);
+      const size144p = parseFloat(sizeText.textContent?.match(/~(.*)MB/)?.[1] || '0');
+
+      // Click 240p
+      fireEvent.click(screen.getByText('240p Mini').closest('button')!);
+      sizeText = screen.getByText(/~.*MB/);
       const size240p = parseFloat(sizeText.textContent?.match(/~(.*)MB/)?.[1] || '0');
 
       // Click 360p
@@ -124,14 +129,9 @@ describe('QuickCaptureScreen', () => {
       sizeText = screen.getByText(/~.*MB/);
       const size360p = parseFloat(sizeText.textContent?.match(/~(.*)MB/)?.[1] || '0');
 
-      // Click 480p
-      fireEvent.click(screen.getByText('480p HD').closest('button')!);
-      sizeText = screen.getByText(/~.*MB/);
-      const size480p = parseFloat(sizeText.textContent?.match(/~(.*)MB/)?.[1] || '0');
-
-      // Verify size relationship: 240p < 360p < 480p
+      // Verify size relationship: 144p < 240p < 360p
+      expect(size240p).toBeGreaterThan(size144p);
       expect(size360p).toBeGreaterThan(size240p);
-      expect(size480p).toBeGreaterThan(size360p);
     });
 
     it('should update file size estimate based on frame rate', () => {
@@ -180,7 +180,7 @@ describe('QuickCaptureScreen', () => {
       const confirmButton = screen.getByText(/Continue to Customize/);
       fireEvent.click(confirmButton);
 
-      expect(mockOnConfirm).toHaveBeenCalledWith(10, 20, 5, '240p');
+      expect(mockOnConfirm).toHaveBeenCalledWith(10, 20, 5, '144p');
     });
 
     it('should pass selected resolution when confirm is clicked', () => {
@@ -204,7 +204,7 @@ describe('QuickCaptureScreen', () => {
       const confirmButton = screen.getByText(/Continue to Customize/);
       fireEvent.click(confirmButton);
 
-      expect(mockOnConfirm).toHaveBeenCalledWith(10, 20, 15, '240p');
+      expect(mockOnConfirm).toHaveBeenCalledWith(10, 20, 15, '144p');
     });
 
     it('should pass all selected options when confirm is clicked', () => {

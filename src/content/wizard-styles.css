@@ -1296,7 +1296,7 @@
 
 /* Processing Screen */
 .ytgif-processing-screen .ytgif-wizard-content {
-  padding: 40px;
+  padding: 20px 40px 40px 40px;
 }
 
 /* Frame Rate Section */
@@ -1532,6 +1532,11 @@
   border-left: 3px solid rgba(255, 255, 255, 0.1);
 }
 
+.ytgif-stage-item.error {
+  background: rgba(244, 67, 54, 0.1);
+  border-left: 3px solid #f44336;
+}
+
 @keyframes pulse {
   0%, 100% { background: rgba(153, 102, 204, 0.15); }
   50% { background: rgba(153, 102, 204, 0.25); }
@@ -1558,6 +1563,10 @@
 
 .ytgif-stage-pending {
   color: rgba(255, 255, 255, 0.3);
+}
+
+.ytgif-stage-error {
+  color: #f44336;
 }
 
 @keyframes blink {

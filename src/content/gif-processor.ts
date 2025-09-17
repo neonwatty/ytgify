@@ -134,7 +134,7 @@ export class ContentScriptGifProcessor {
 
     if (!this.currentStage) return;
 
-    // Cycle through messages every 500ms
+    // Cycle through messages every 3000ms
     this.messageTimer = setInterval(() => {
       if (!this.currentStage) return;
 
@@ -151,7 +151,7 @@ export class ContentScriptGifProcessor {
       };
 
       this.progressCallback?.(stageInfo);
-    }, 500);
+    }, 3000);
   }
 
   private stopMessageCycling() {
