@@ -69,6 +69,7 @@ export class MessageBus {
   private pendingRequests = new Map<string, PendingRequest>();
   private options: Required<MessageBusOptions>;
   private isInitialized = false;
+  private messageListener?: (message: unknown, sender: chrome.runtime.MessageSender, sendResponse: (response: unknown) => void) => boolean;
 
   private constructor(options: MessageBusOptions = {}) {
     this.options = {
@@ -88,18 +89,33 @@ export class MessageBus {
     return MessageBus.instance;
   }
 
+  // Testing helper to reset the singleton
+  public static resetInstance(): void {
+    if (MessageBus.instance) {
+      MessageBus.instance.cleanup();
+    }
+    MessageBus.instance = null as any;
+  }
+
   // Initialize the message bus
   public initialize(): void {
     if (this.isInitialized) {
       return;
     }
 
+    // Check if chrome runtime is available
+    if (typeof chrome === 'undefined' || !chrome?.runtime?.onMessage) {
+      this.log('warn', 'Chrome runtime not available, MessageBus running in limited mode');
+      this.isInitialized = true;
+      return;
+    }
+
     // Set up Chrome message listener
-    chrome.runtime.onMessage.addListener(
-      (message: unknown, sender: chrome.runtime.MessageSender, sendResponse: (response: unknown) => void) => {
-        return this.handleIncomingMessage(message, sender, sendResponse);
-      }
-    );
+    this.messageListener = (message: unknown, sender: chrome.runtime.MessageSender, sendResponse: (response: unknown) => void) => {
+      return this.handleIncomingMessage(message, sender, sendResponse);
+    };
+
+    chrome.runtime.onMessage.addListener(this.messageListener);
 
     this.isInitialized = true;
     this.log('info', 'MessageBus initialized');
@@ -112,6 +128,10 @@ export class MessageBus {
   ): Promise<TRes> {
     if (!this.isInitialized) {
       throw new Error('MessageBus not initialized. Call initialize() first.');
+    }
+
+    if (typeof chrome === 'undefined' || !chrome?.runtime) {
+      throw new Error('Chrome runtime not available');
     }
 
     if (this.options.validateMessages && !validateMessage(message)) {
@@ -144,9 +164,40 @@ export class MessageBus {
       try {
         // Send message
         if (target === 'background' || target === undefined) {
-          chrome.runtime.sendMessage(sanitizedMessage);
+          chrome.runtime.sendMessage(sanitizedMessage, (response) => {
+            if (chrome.runtime.lastError) {
+              // Handle error with retry logic
+              const pending = this.pendingRequests.get(message.requestId);
+              if (pending && pending.retryCount < this.options.maxRetries) {
+                pending.retryCount++;
+                this.log('debug', 'Retrying request', { type: message.type, retryCount: pending.retryCount });
+                // Retry after a short delay
+                setTimeout(() => {
+                  chrome.runtime.sendMessage(sanitizedMessage, (retryResponse) => {
+                    if (!chrome.runtime.lastError && retryResponse) {
+                      this.handleResponse(retryResponse as ResponseMessage);
+                    }
+                  });
+                }, 100 * pending.retryCount);
+              } else {
+                clearTimeout(timeout);
+                this.pendingRequests.delete(message.requestId);
+                reject(new Error(chrome.runtime.lastError.message));
+              }
+            } else if (response) {
+              this.handleResponse(response as ResponseMessage);
+            }
+          });
         } else if (typeof target === 'number') {
-          chrome.tabs.sendMessage(target, sanitizedMessage);
+          chrome.tabs.sendMessage(target, sanitizedMessage, (response) => {
+            if (chrome.runtime.lastError) {
+              clearTimeout(timeout);
+              this.pendingRequests.delete(message.requestId);
+              reject(new Error(chrome.runtime.lastError.message));
+            } else if (response) {
+              this.handleResponse(response as ResponseMessage);
+            }
+          });
         } else {
           throw new Error('Invalid target for message sending');
         }
@@ -165,6 +216,11 @@ export class MessageBus {
   ): void {
     if (!this.isInitialized) {
       throw new Error('MessageBus not initialized. Call initialize() first.');
+    }
+
+    if (typeof chrome === 'undefined' || !chrome?.runtime) {
+      this.log('warn', 'Chrome runtime not available, cannot send event');
+      return;
     }
 
     const sanitizedEvent = this.options.validateMessages 
@@ -264,6 +320,77 @@ export class MessageBus {
     return listenerId;
   }
 
+  // Generic on method for compatibility
+  public on(messageType: string, handler: MessageHandler): () => void {
+    const listenerId = generateMessageId();
+    const listeners = this.handlers.get(messageType) || [];
+
+    listeners.push({
+      id: listenerId,
+      handler,
+      options: {}
+    });
+
+    this.handlers.set(messageType, listeners);
+
+    // Return unregister function
+    return () => this.removeHandler(messageType, listenerId);
+  }
+
+  // Once method for single-use handlers
+  public once(messageType: string, handler: MessageHandler): () => void {
+    const listenerId = generateMessageId();
+
+    const wrappedHandler: MessageHandler = async (message, sender) => {
+      const result = await handler(message, sender);
+      this.removeHandler(messageType, listenerId);
+      return result;
+    };
+
+    const listeners = this.handlers.get(messageType) || [];
+    listeners.push({
+      id: listenerId,
+      handler: wrappedHandler,
+      options: { once: true }
+    });
+
+    this.handlers.set(messageType, listeners);
+
+    return () => this.removeHandler(messageType, listenerId);
+  }
+
+  // Broadcast method for sending events
+  public broadcast(event: EventMessage): void {
+    if (typeof chrome === 'undefined' || !chrome?.runtime) {
+      this.log('warn', 'Chrome runtime not available, cannot broadcast');
+      return;
+    }
+    this.sendEvent(event, 'broadcast');
+  }
+
+  // Emit local event (triggers handlers directly without sending through Chrome runtime)
+  public async emit(event: EventMessage): Promise<void> {
+    const listeners = this.handlers.get(event.type);
+    if (!listeners || listeners.length === 0) {
+      return;
+    }
+
+    // Execute all event handlers
+    await Promise.all(
+      listeners.map(async (listener) => {
+        try {
+          await listener.handler(event, undefined);
+          // Remove handler if it's a one-time listener
+          if (listener.options?.once) {
+            this.removeHandler(event.type, listener.id);
+          }
+        } catch (error) {
+          this.log('error', 'Local event handler error', { messageType: event.type, error });
+        }
+      })
+    );
+  }
+
   // Remove a handler
   public removeHandler(messageType: string, handlerId: string): boolean {
     const listeners = this.handlers.get(messageType);
@@ -277,7 +404,7 @@ export class MessageBus {
     }
 
     listeners.splice(index, 1);
-    
+
     if (listeners.length === 0) {
       this.handlers.delete(messageType);
     }
@@ -424,6 +551,11 @@ export class MessageBus {
 
   // Clean up resources
   public cleanup(): void {
+    // Remove Chrome message listener
+    if (this.messageListener && typeof chrome !== 'undefined' && chrome?.runtime?.onMessage) {
+      chrome.runtime.onMessage.removeListener(this.messageListener);
+    }
+
     // Clear all timeouts for pending requests
     this.pendingRequests.forEach(pending => {
       if (pending.timeout) {
@@ -434,8 +566,15 @@ export class MessageBus {
     this.pendingRequests.clear();
     this.handlers.clear();
     this.isInitialized = false;
-    
+
     this.log('info', 'MessageBus cleaned up');
+  }
+
+  // Alias for cleanup for compatibility
+  public destroy(): void {
+    this.cleanup();
+    // Reset singleton instance for testing
+    MessageBus.instance = null as any;
   }
 
   // Internal logging

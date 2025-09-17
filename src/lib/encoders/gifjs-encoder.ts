@@ -91,7 +91,7 @@ export class GifJsEncoder extends AbstractEncoder {
 
     this.isEncoding = true;
     this.progressCallback = onProgress;
-    this.abortController = abortSignal ? new AbortController() : null;
+    this.abortController = null;
     this.startTime = performance.now();
     this.frameCount = frames.length;
 
@@ -104,7 +104,7 @@ export class GifJsEncoder extends AbstractEncoder {
     this.ctx = ctx;
 
     try {
-      return await this.performEncoding(frames, options);
+      return await this.performEncoding(frames, options, abortSignal);
     } finally {
       this.cleanup();
     }
@@ -112,7 +112,8 @@ export class GifJsEncoder extends AbstractEncoder {
 
   private async performEncoding(
     frames: FrameData[],
-    options: EncodingOptions
+    options: EncodingOptions,
+    abortSignal?: AbortSignal
   ): Promise<EncodingResult> {
     this.reportProgress('preparing', 0, 'Initializing gif.js');
 
@@ -138,7 +139,7 @@ export class GifJsEncoder extends AbstractEncoder {
     });
 
     // Set up event handlers
-    this.setupEventHandlers();
+    this.setupEventHandlers(abortSignal);
 
     this.reportProgress('preparing', 10, 'Adding frames');
 
@@ -147,8 +148,8 @@ export class GifJsEncoder extends AbstractEncoder {
 
     // Add frames to gif.js
     for (let i = 0; i < frames.length; i++) {
-      if (this.abortController?.signal.aborted) {
-        throw new Error('Encoding cancelled');
+      if (abortSignal?.aborted) {
+        throw new Error('Encoding aborted');
       }
 
       const frame = frames[i];
@@ -208,7 +209,7 @@ export class GifJsEncoder extends AbstractEncoder {
     };
   }
 
-  private setupEventHandlers(): void {
+  private setupEventHandlers(abortSignal?: AbortSignal): void {
     if (!this.gifInstance) return;
 
     this.gifInstance.on('start', () => {
@@ -225,8 +226,8 @@ export class GifJsEncoder extends AbstractEncoder {
     });
 
     // Monitor for abort signal
-    if (this.abortController) {
-      this.abortController.signal.addEventListener('abort', () => {
+    if (abortSignal) {
+      abortSignal.addEventListener('abort', () => {
         if (this.gifInstance && this.gifInstance.running) {
           this.gifInstance.abort();
         }

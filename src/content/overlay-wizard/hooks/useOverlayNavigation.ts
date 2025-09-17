@@ -1,14 +1,13 @@
 import { useState, useCallback } from 'react';
 import { TextOverlay } from '@/types';
 
-export type OverlayScreenType = 
+export type OverlayScreenType =
   | 'welcome'
-  | 'action-select' 
   | 'quick-capture'
-  | 'custom-range'
   | 'text-overlay'
   | 'processing'
-  | 'success';
+  | 'success'
+  | 'feedback';
 
 interface ScreenData {
   startTime?: number;
@@ -32,25 +31,28 @@ interface UseOverlayNavigationReturn {
 }
 
 export function useOverlayNavigation(
-  initialScreen: OverlayScreenType = 'welcome'
+  initialScreen: OverlayScreenType = 'quick-capture'
 ): UseOverlayNavigationReturn {
   const [currentScreen, setCurrentScreen] = useState<OverlayScreenType>(initialScreen);
   const [previousScreen, setPreviousScreen] = useState<OverlayScreenType | null>(null);
   const [screenHistory, setScreenHistory] = useState<OverlayScreenType[]>([initialScreen]);
   const [data, setData] = useState<ScreenData>({});
 
-  const goToScreen = useCallback((screen: OverlayScreenType) => {
-    setPreviousScreen(currentScreen);
-    setCurrentScreen(screen);
-    setScreenHistory(prev => [...prev, screen]);
-  }, [currentScreen]);
+  const goToScreen = useCallback(
+    (screen: OverlayScreenType) => {
+      setPreviousScreen(currentScreen);
+      setCurrentScreen(screen);
+      setScreenHistory((prev) => [...prev, screen]);
+    },
+    [currentScreen]
+  );
 
   const goBack = useCallback(() => {
     if (screenHistory.length > 1) {
       const newHistory = [...screenHistory];
       newHistory.pop(); // Remove current screen
       const prevScreen = newHistory[newHistory.length - 1];
-      
+
       setPreviousScreen(newHistory.length > 1 ? newHistory[newHistory.length - 2] : null);
       setCurrentScreen(prevScreen);
       setScreenHistory(newHistory);
@@ -58,7 +60,7 @@ export function useOverlayNavigation(
   }, [screenHistory]);
 
   const setScreenData = useCallback((newData: Partial<ScreenData>) => {
-    setData(prev => ({ ...prev, ...newData }));
+    setData((prev) => ({ ...prev, ...newData }));
   }, []);
 
   const resetNavigation = useCallback(() => {
@@ -77,6 +79,6 @@ export function useOverlayNavigation(
     goToScreen,
     goBack,
     setScreenData,
-    resetNavigation
+    resetNavigation,
   };
 }

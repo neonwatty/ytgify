@@ -1,0 +1,107 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="timeGlow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <radialGradient id="timeGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#FFFFFF" stop-opacity="0.3"/>
+      <stop offset="100%" style="stop-color:#000000" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="captureGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#CC0099"/>
+      <stop offset="50%" style="stop-color:#FF6600"/>
+      <stop offset="100%" style="stop-color:#33AA66"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Dark background -->
+  <circle cx="64" cy="64" r="58" fill="#0F0F0F"/>
+
+  <!-- Time flow spiral -->
+  <g filter="url(#timeGlow)" opacity="0.6">
+    <path d="M 64 20 Q 90 35, 100 64 Q 90 93, 64 108 Q 38 93, 28 64 Q 38 35, 64 20"
+          stroke="#666666" stroke-width="2" fill="none" stroke-dasharray="4,2"/>
+    <path d="M 64 30 Q 80 40, 85 64 Q 80 88, 64 98 Q 48 88, 43 64 Q 48 40, 64 30"
+          stroke="#888888" stroke-width="2" fill="none" stroke-dasharray="3,2"/>
+    <path d="M 64 40 Q 72 45, 75 64 Q 72 83, 64 88 Q 56 83, 53 64 Q 56 45, 64 40"
+          stroke="#AAAAAA" stroke-width="2" fill="none" stroke-dasharray="2,1"/>
+  </g>
+
+  <!-- Capture mechanism (center) -->
+  <g transform="translate(64, 64)" filter="url(#timeGlow)">
+    <!-- Outer capture ring -->
+    <circle cx="0" cy="0" r="20" fill="none" stroke="#CC0099" stroke-width="4"/>
+    <circle cx="0" cy="0" r="20" fill="url(#timeGrad)"/>
+
+    <!-- Inner mechanism -->
+    <circle cx="0" cy="0" r="12" fill="none" stroke="#FF6600" stroke-width="3"/>
+    <circle cx="0" cy="0" r="6" fill="#33AA66"/>
+
+    <!-- Capture segments -->
+    <g>
+      <path d="M -15 -15 A 21 21 0 0 1 15 -15" stroke="#CC0099" stroke-width="3" fill="none"/>
+      <path d="M 15 -15 A 21 21 0 0 1 15 15" stroke="#FF6600" stroke-width="3" fill="none"/>
+      <path d="M 15 15 A 21 21 0 0 1 -15 15" stroke="#33AA66" stroke-width="3" fill="none"/>
+      <path d="M -15 15 A 21 21 0 0 1 -15 -15" stroke="#0099CC" stroke-width="3" fill="none"/>
+    </g>
+  </g>
+
+  <!-- Time particles being captured -->
+  <g filter="url(#timeGlow)">
+    <!-- Particles flowing in -->
+    <circle cx="25" cy="45" r="3" fill="#CC0099" opacity="0.8"/>
+    <circle cx="35" cy="30" r="2" fill="#CC0099" opacity="0.6"/>
+    <circle cx="45" cy="25" r="1.5" fill="#CC0099" opacity="0.4"/>
+
+    <circle cx="103" cy="45" r="3" fill="#FF6600" opacity="0.8"/>
+    <circle cx="95" cy="35" r="2" fill="#FF6600" opacity="0.6"/>
+    <circle cx="85" cy="28" r="1.5" fill="#FF6600" opacity="0.4"/>
+
+    <circle cx="103" cy="83" r="3" fill="#33AA66" opacity="0.8"/>
+    <circle cx="95" cy="93" r="2" fill="#33AA66" opacity="0.6"/>
+    <circle cx="85" cy="100" r="1.5" fill="#33AA66" opacity="0.4"/>
+
+    <circle cx="25" cy="83" r="3" fill="#0099CC" opacity="0.8"/>
+    <circle cx="35" cy="98" r="2" fill="#0099CC" opacity="0.6"/>
+    <circle cx="45" cy="103" r="1.5" fill="#0099CC" opacity="0.4"/>
+  </g>
+
+  <!-- Captured moment indicators -->
+  <g filter="url(#timeGlow)">
+    <!-- Top captured segment -->
+    <g transform="translate(64, 35)">
+      <rect x="-4" y="-2" width="8" height="4" fill="#CC0099" rx="1"/>
+      <rect x="-3" y="-1" width="6" height="2" fill="white" opacity="0.5" rx="0.5"/>
+    </g>
+
+    <!-- Right captured segment -->
+    <g transform="translate(93, 64)">
+      <rect x="-4" y="-2" width="8" height="4" fill="#FF6600" rx="1"/>
+      <rect x="-3" y="-1" width="6" height="2" fill="white" opacity="0.5" rx="0.5"/>
+    </g>
+
+    <!-- Bottom captured segment -->
+    <g transform="translate(64, 93)">
+      <rect x="-4" y="-2" width="8" height="4" fill="#33AA66" rx="1"/>
+      <rect x="-3" y="-1" width="6" height="2" fill="white" opacity="0.5" rx="0.5"/>
+    </g>
+
+    <!-- Left captured segment -->
+    <g transform="translate(35, 64)">
+      <rect x="-4" y="-2" width="8" height="4" fill="#0099CC" rx="1"/>
+      <rect x="-3" y="-1" width="6" height="2" fill="white" opacity="0.5" rx="0.5"/>
+    </g>
+  </g>
+
+  <!-- Motion trails -->
+  <g opacity="0.3">
+    <path d="M 20 40 Q 40 50, 60 60" stroke="url(#captureGrad)" stroke-width="1" fill="none"/>
+    <path d="M 108 40 Q 88 50, 68 60" stroke="url(#captureGrad)" stroke-width="1" fill="none"/>
+    <path d="M 108 88 Q 88 78, 68 68" stroke="url(#captureGrad)" stroke-width="1" fill="none"/>
+    <path d="M 20 88 Q 40 78, 60 68" stroke="url(#captureGrad)" stroke-width="1" fill="none"/>
+  </g>
+</svg>

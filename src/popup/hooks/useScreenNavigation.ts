@@ -1,10 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
 
-export type ScreenType = 
+export type ScreenType =
   | 'welcome'
   | 'action-select'
   | 'quick-capture'
-  | 'custom-range'
   | 'processing'
   | 'success';
 

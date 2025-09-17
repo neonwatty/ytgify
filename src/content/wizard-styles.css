@@ -18,11 +18,14 @@
   position: relative;
   width: 90%;
   max-width: 600px;
+  max-height: 90vh; /* Limit height to 90% of viewport */
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   overflow: hidden;
   animation: slideUp 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes slideUp {
@@ -30,10 +33,23 @@
   to { transform: translateY(0); opacity: 1; }
 }
 
+/* Header Container */
+.ytgif-wizard-header-container {
+  position: relative;
+  padding: 16px 40px;
+  background: linear-gradient(to bottom, #2d2d2d 0%, rgba(45, 45, 45, 0.8) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  z-index: 20;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Close Button */
 .ytgif-wizard-close {
   position: absolute;
-  top: 16px;
+  top: 14px;
   right: 16px;
   width: 32px;
   height: 32px;
@@ -57,13 +73,9 @@
 
 /* Progress Indicator */
 .ytgif-wizard-progress {
-  position: absolute;
-  top: 24px;
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
   gap: 8px;
-  z-index: 10;
+  z-index: 5;
 }
 
 .ytgif-progress-dot {
@@ -74,20 +86,64 @@
   transition: all 0.3s ease;
 }
 
-.ytgif-progress-dot.active {
+.ytgif-progress-dot:nth-child(1).active {
   background: #ff0000;
+  transform: scale(1.3);
+}
+
+.ytgif-progress-dot:nth-child(2).active {
+  background: #ff0066;
+  transform: scale(1.3);
+}
+
+.ytgif-progress-dot:nth-child(3).active {
+  background: #cc3399;
+  transform: scale(1.3);
+}
+
+.ytgif-progress-dot:nth-child(4).active {
+  background: #9966cc;
+  transform: scale(1.3);
+}
+
+.ytgif-progress-dot:nth-child(5).active {
+  background: #764ba2;
   transform: scale(1.3);
 }
 
 /* Wizard Screens */
 .ytgif-wizard-screens {
   position: relative;
-  min-height: 400px;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0; /* Allow shrinking for flexbox */
+}
+
+/* Custom Scrollbar for Wizard Screens */
+.ytgif-wizard-screens::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ytgif-wizard-screens::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.ytgif-wizard-screens::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.ytgif-wizard-screens::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .ytgif-wizard-screen {
-  padding: 60px 40px 40px;
+  padding: 20px 40px 40px;
   animation: screenFadeIn 0.3s ease;
+  min-height: 100%;
+  box-sizing: border-box;
 }
 
 @keyframes screenFadeIn {
@@ -100,9 +156,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 32px;
-  padding: 0 40px;
-  padding-top: 60px;
+  padding: 20px 40px;
+  background: linear-gradient(to bottom, #2d2d2d 0%, transparent 100%);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  min-height: 60px;
 }
 
 .ytgif-back-button {
@@ -132,10 +191,27 @@
   text-align: center;
 }
 
+.ytgif-wizard-tagline {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  font-weight: 400;
+  margin: 8px 0 0 0;
+  text-align: center;
+}
+
+.ytgif-wizard-helper {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: 400;
+  margin: 0 0 16px 0;
+  text-align: center;
+}
+
 /* Wizard Content */
 .ytgif-wizard-content {
   color: white;
   text-align: center;
+  padding-bottom: 20px; /* Space for sticky buttons */
 }
 
 /* Welcome Screen */
@@ -148,6 +224,16 @@
 
 .ytgif-logo-container {
   margin-bottom: 16px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.ytgif-logo-svg {
+  width: 80px;
+  height: 80px;
+  filter: drop-shadow(0 4px 20px rgba(255, 0, 102, 0.25));
 }
 
 .ytgif-logo {
@@ -238,6 +324,15 @@
   box-shadow: 0 4px 20px rgba(255, 0, 0, 0.2);
 }
 
+/* Screen 1: Capture Screens - #ff0000 theme */
+.ytgif-quick-capture-screen .ytgif-button-primary {
+  background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+}
+
+.ytgif-quick-capture-screen .ytgif-button-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(255, 0, 0, 0.3);
+}
+
 .ytgif-card-icon {
   margin-bottom: 16px;
   color: #ff0000;
@@ -299,6 +394,11 @@
   transition: stroke-dasharray 0.3s ease;
 }
 
+/* Screen 3: Processing - #cc3399 theme */
+.ytgif-processing-screen .ytgif-progress-circle-fill {
+  stroke: #cc3399;
+}
+
 .ytgif-progress-circle-text {
   position: absolute;
   top: 50%;
@@ -333,6 +433,11 @@
   background: linear-gradient(90deg, #ff0033, #ff4444);
   border-radius: 4px;
   transition: width 0.3s ease;
+}
+
+/* Screen 3: Processing progress bar */
+.ytgif-processing-screen .ytgif-progress-fill {
+  background: linear-gradient(90deg, #cc3399, #aa2277);
 }
 
 .ytgif-stage-info {
@@ -428,6 +533,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: auto;
+  z-index: 1;
   background: rgba(0, 0, 0, 0.3);
   cursor: pointer;
 }
@@ -441,6 +548,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: auto;
+  z-index: 2;
   cursor: pointer;
   transition: transform 0.2s, background 0.2s;
 }
@@ -448,6 +557,15 @@
 .ytgif-preview-play-button:hover {
   background: #ff0033;
   transform: scale(1.1);
+}
+
+/* Screen 1: Capture preview play button */
+.ytgif-quick-capture-screen .ytgif-preview-play-button {
+  background: rgba(255, 0, 0, 0.9);
+}
+
+.ytgif-quick-capture-screen .ytgif-preview-play-button:hover {
+  background: #ff0000;
 }
 
 .ytgif-preview-time {
@@ -492,6 +610,12 @@
   border-color: #ff0033;
 }
 
+/* Screen 1: Capture preview control buttons */
+.ytgif-quick-capture-screen .ytgif-preview-control-btn.playing {
+  background: rgba(255, 0, 0, 0.3);
+  border-color: #ff0000;
+}
+
 .ytgif-preview-duration {
   color: rgba(255, 255, 255, 0.7);
   font-size: 14px;
@@ -504,100 +628,112 @@
   position: relative;
 }
 
+/* Timeline Container - Similar to duration slider */
+.ytgif-timeline-container {
+  margin-bottom: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.ytgif-timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.ytgif-timeline-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+}
+
+.ytgif-timeline-value {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  background: rgba(255, 0, 0, 0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* Screen 1: Capture timeline customization */
+.ytgif-quick-capture-screen .ytgif-timeline-value {
+  background: rgba(255, 0, 0, 0.2);
+}
+
 .ytgif-timeline-track {
   position: relative;
-  height: 48px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
   cursor: pointer;
-  margin-bottom: 8px;
+  margin-bottom: 20px;
+  margin-top: 12px;
 }
 
 .ytgif-timeline-background {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 2px;
+  display: none; /* No longer needed */
 }
 
 .ytgif-timeline-selection {
   position: absolute;
   top: 0;
   bottom: 0;
-  background: rgba(255, 0, 51, 0.3);
-  border: 1px solid #ff0033;
-  border-radius: 4px;
-  cursor: move;
+  background: #ff0033;
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+/* Screen 1: Capture timeline selection */
+.ytgif-quick-capture-screen .ytgif-timeline-selection {
+  background: #ff0000;
 }
 
 .ytgif-timeline-handle {
   position: absolute;
   top: 50%;
-  transform: translateY(-50%);
-  width: 12px;
-  height: 24px;
-  background: #ff0033;
-  border-radius: 3px;
-  cursor: ew-resize;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.ytgif-timeline-handle.ytgif-handle-start {
-  left: -6px;
-}
-
-.ytgif-timeline-handle.ytgif-handle-end {
-  right: -6px;
-}
-
-.ytgif-handle-grip {
-  width: 2px;
-  height: 10px;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 1px;
-}
-
-.ytgif-selection-duration {
-  display: none; /* Hide the duration label in the selection */
-}
-
-.ytgif-timeline-current {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 4px;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
   background: #ff0000;
-  pointer-events: none;
-  transition: all 0.3s ease;
-  box-shadow: 0 0 4px rgba(255, 0, 0, 0.3);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s;
+  z-index: 2;
 }
 
-.ytgif-timeline-current-in-range {
-  background: #ff0000 !important;
-  box-shadow: 0 0 6px rgba(255, 0, 0, 0.5);
-  width: 4px;
+/* Screen 1: Capture timeline handle */
+.ytgif-quick-capture-screen .ytgif-timeline-handle {
+  background: #ff0000;
 }
 
-.ytgif-timeline-current-out-range {
-  background: #ff0000 !important;
-  box-shadow: 0 0 6px rgba(255, 0, 0, 0.5);
-  width: 4px;
+.ytgif-timeline-handle:hover {
+  transform: translate(-50%, -50%) scale(1.2);
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
 }
+
+.ytgif-timeline-handle:active {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+/* Screen 1: Capture timeline handle hover */
+.ytgif-quick-capture-screen .ytgif-timeline-handle:hover {
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+}
+
+/* Selection duration label removed - no longer needed with single handle */
+/* Current time indicator removed - single handle design doesn't need it */
 
 .ytgif-timeline-preview-head {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: -6px;
+  bottom: -6px;
   width: 2px;
   background: #ffff00;
   pointer-events: none;
   box-shadow: 0 0 4px rgba(255, 255, 0, 0.5);
+  z-index: 1;
 }
 
 .ytgif-timeline-tooltip {
@@ -629,41 +765,184 @@
   font-weight: bold;
 }
 
-.ytgif-duration-presets {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
+/* Screen 1: Capture label selection */
+.ytgif-quick-capture-screen .ytgif-label-selection {
+  background: rgba(255, 0, 0, 0.2);
+  color: #ff0000;
+}
+
+.ytgif-duration-slider {
   margin-top: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
 }
 
-.ytgif-preset-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+.ytgif-slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.ytgif-slider-label {
   color: rgba(255, 255, 255, 0.8);
-  padding: 6px 12px;
-  border-radius: 4px;
   font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
 }
 
-.ytgif-preset-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+.ytgif-slider-value {
   color: #fff;
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.ytgif-preset-btn.ytgif-preset-btn--active {
-  background: rgba(255, 0, 0, 0.2) !important;
-  color: #fff;
-  border-color: #ff0000;
+  font-size: 14px;
   font-weight: 600;
+  background: rgba(255, 0, 0, 0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
-.ytgif-preset-btn.ytgif-preset-btn--active:hover {
-  background: rgba(255, 0, 0, 0.25) !important;
-  border-color: #ff0000;
+.ytgif-slider-input {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+  transition: background 0.2s;
+}
+
+.ytgif-slider-input:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.ytgif-slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ff0000;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.ytgif-slider-input::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+}
+
+.ytgif-slider-input::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ff0000;
+  cursor: pointer;
+  transition: transform 0.2s;
+  border: none;
+}
+
+.ytgif-slider-input::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+}
+
+.ytgif-slider-input:focus {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.ytgif-slider-input:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.3);
+}
+
+.ytgif-slider-input:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.3);
+}
+
+.ytgif-slider-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ytgif-slider-input:disabled::-webkit-slider-thumb {
+  cursor: not-allowed;
+}
+
+.ytgif-slider-input:disabled::-moz-range-thumb {
+  cursor: not-allowed;
+}
+
+.ytgif-slider-disabled-message {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* Slider container for positioning marks */
+.ytgif-slider-container {
+  position: relative;
+  padding-bottom: 20px;
+}
+
+/* Hash marks container */
+.ytgif-slider-marks {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  right: 0;
+  height: 30px;
+  pointer-events: none;
+}
+
+/* Individual mark */
+.ytgif-slider-mark {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Mark vertical line */
+.ytgif-slider-mark-line {
+  width: 1px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.3);
+  margin-bottom: 4px;
+}
+
+/* Mark label */
+.ytgif-slider-mark-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+}
+
+/* Screen 1: Capture slider customization */
+.ytgif-quick-capture-screen .ytgif-slider-value {
+  background: rgba(255, 0, 0, 0.2);
+}
+
+.ytgif-quick-capture-screen .ytgif-slider-input::-webkit-slider-thumb {
+  background: #ff0000;
+}
+
+.ytgif-quick-capture-screen .ytgif-slider-input::-moz-range-thumb {
+  background: #ff0000;
+}
+
+.ytgif-quick-capture-screen .ytgif-slider-input::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+}
+
+.ytgif-quick-capture-screen .ytgif-slider-input::-moz-range-thumb:hover {
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+}
+
+.ytgif-quick-capture-screen .ytgif-slider-input:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.3);
+}
+
+.ytgif-quick-capture-screen .ytgif-slider-input:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.3);
 }
 
 /* Preview Fallback */
@@ -720,6 +999,20 @@
   margin-bottom: 12px;
 }
 
+/* Screen 3: Processing loading spinner */
+.ytgif-processing-screen .ytgif-loading-spinner {
+  border-top: 3px solid #cc3399;
+}
+
+/* Screen 4: Success - #9966cc theme */
+.ytgif-success-screen .ytgif-button-primary {
+  background: linear-gradient(135deg, #9966cc 0%, #7744aa 100%);
+}
+
+.ytgif-success-screen .ytgif-button-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(153, 102, 204, 0.3);
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
@@ -774,47 +1067,13 @@
   margin-bottom: 32px;
 }
 
-.ytgif-timeline-track {
-  position: relative;
-  height: 60px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  overflow: hidden;
-  margin-bottom: 8px;
-}
+/* Duplicate timeline styles removed - defined earlier in the file */
 
 .ytgif-timeline-interactive {
   cursor: pointer;
 }
 
-.ytgif-timeline-selection {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  background: rgba(255, 0, 0, 0.3);
-  border: 2px solid #ff0000;
-  border-radius: 4px;
-  cursor: move;
-}
-
-.ytgif-selection-handle {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 12px;
-  height: 30px;
-  background: #ff0000;
-  border-radius: 3px;
-  cursor: ew-resize;
-}
-
-.ytgif-handle-start {
-  left: -6px;
-}
-
-.ytgif-handle-end {
-  right: -6px;
-}
+/* Legacy handle styles removed - using single handle now */
 
 .ytgif-timeline-cursor {
   position: absolute;
@@ -933,6 +1192,11 @@
   background: rgba(255, 255, 255, 0.15);
 }
 
+/* Screen 1: Capture time input focus */
+.ytgif-quick-capture-screen .ytgif-time-input:focus {
+  border-color: #ff0000;
+}
+
 .ytgif-duration-display {
   display: flex;
   flex-direction: column;
@@ -943,6 +1207,11 @@
 .ytgif-duration-value {
   font-size: 24px;
   font-weight: bold;
+  color: #ff0000;
+}
+
+/* Screen 1: Capture duration value */
+.ytgif-quick-capture-screen .ytgif-duration-value {
   color: #ff0000;
 }
 
@@ -981,7 +1250,12 @@
   display: flex;
   justify-content: center;
   gap: 16px;
-  margin-top: 32px;
+  padding: 20px 40px;
+  background: linear-gradient(to top, #1a1a1a 0%, transparent 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
 }
 
 .ytgif-button-primary,
@@ -1026,7 +1300,7 @@
 
 /* Processing Screen */
 .ytgif-processing-screen .ytgif-wizard-content {
-  padding: 40px;
+  padding: 20px 40px 40px 40px;
 }
 
 /* Frame Rate Section */
@@ -1049,6 +1323,11 @@
 }
 
 .ytgif-frame-rate-label svg {
+  color: #ff0000;
+}
+
+/* Screen 1: Capture frame rate icon */
+.ytgif-quick-capture-screen .ytgif-frame-rate-label svg {
   color: #ff0000;
 }
 
@@ -1091,6 +1370,25 @@
   background: rgba(255, 0, 0, 0.25);
 }
 
+/* Screen 1: Capture frame rate buttons */
+.ytgif-quick-capture-screen .ytgif-frame-rate-btn--active {
+  background: rgba(255, 0, 0, 0.2);
+  border-color: #ff0000;
+}
+
+.ytgif-quick-capture-screen .ytgif-frame-rate-btn--active:hover {
+  background: rgba(255, 0, 0, 0.25);
+}
+
+/* Screen 2: Text Overlay - #ff0066 theme */
+.ytgif-text-overlay-screen .ytgif-button-primary {
+  background: linear-gradient(135deg, #ff0066 0%, #dd0055 100%);
+}
+
+.ytgif-text-overlay-screen .ytgif-button-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(255, 0, 102, 0.3);
+}
+
 .ytgif-frame-rate-desc {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.6);
@@ -1099,4 +1397,328 @@
 
 .ytgif-frame-rate-btn--active .ytgif-frame-rate-desc {
   color: rgba(255, 255, 255, 0.8);
+}
+
+/* Resolution Section */
+.ytgif-resolution-section {
+  margin: 20px 0 10px 0;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ytgif-resolution-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+}
+
+.ytgif-resolution-label svg {
+  color: #ff0000;
+}
+
+/* Screen 1: Capture resolution icon */
+.ytgif-quick-capture-screen .ytgif-resolution-label svg {
+  color: #ff0000;
+}
+
+.ytgif-resolution-options {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.ytgif-resolution-btn {
+  flex: 1;
+  padding: 12px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.ytgif-resolution-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.ytgif-resolution-btn--active {
+  background: rgba(255, 0, 0, 0.2);
+  border-color: #ff0000;
+  color: white;
+}
+
+.ytgif-resolution-btn--active:hover {
+  background: rgba(255, 0, 0, 0.25);
+}
+
+/* Screen 1: Capture resolution buttons */
+.ytgif-quick-capture-screen .ytgif-resolution-btn--active {
+  background: rgba(255, 0, 0, 0.2);
+  border-color: #ff0000;
+}
+
+.ytgif-quick-capture-screen .ytgif-resolution-btn--active:hover {
+  background: rgba(255, 0, 0, 0.25);
+}
+
+.ytgif-resolution-desc {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: normal;
+}
+
+.ytgif-resolution-btn--active .ytgif-resolution-desc {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Stage-Based Progress Display */
+.ytgif-stage-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 20px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.ytgif-stage-header h3 {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 18px;
+  text-align: center;
+  margin: 0;
+  font-weight: 600;
+}
+
+.ytgif-stage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ytgif-stage-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.ytgif-stage-item.completed {
+  background: rgba(76, 175, 80, 0.1);
+  border-left: 3px solid #4caf50;
+}
+
+.ytgif-stage-item.current {
+  background: rgba(204, 51, 153, 0.15);
+  border-left: 3px solid #cc3399;
+  animation: pulse 2s infinite;
+}
+
+.ytgif-stage-item.pending {
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 3px solid rgba(255, 255, 255, 0.1);
+}
+
+.ytgif-stage-item.error {
+  background: rgba(244, 67, 54, 0.1);
+  border-left: 3px solid #f44336;
+}
+
+@keyframes pulse {
+  0%, 100% { background: rgba(204, 51, 153, 0.15); }
+  50% { background: rgba(204, 51, 153, 0.25); }
+}
+
+.ytgif-stage-indicator {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.ytgif-stage-check {
+  color: #4caf50;
+}
+
+.ytgif-stage-active {
+  color: #cc3399;
+  animation: blink 1.5s infinite;
+}
+
+.ytgif-stage-pending {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.ytgif-stage-error {
+  color: #f44336;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+.ytgif-stage-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-grow: 1;
+}
+
+.ytgif-stage-icon {
+  font-size: 20px;
+}
+
+.ytgif-stage-name {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.ytgif-stage-item.pending .ytgif-stage-name {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.ytgif-current-message {
+  text-align: center;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ytgif-message-text {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.ytgif-loading-dots {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+
+.ytgif-dot {
+  color: #cc3399;
+  font-size: 16px;
+  animation: loadingDots 1.5s infinite;
+}
+
+.ytgif-dot:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.ytgif-dot:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+@keyframes loadingDots {
+  0%, 80%, 100% { opacity: 0.3; }
+  40% { opacity: 1; }
+}
+
+/* Screen 5: Feedback - #764ba2 theme */
+.ytgif-feedback-screen .ytgif-button-primary {
+  background: linear-gradient(135deg, #764ba2 0%, #5a3980 100%);
+}
+
+.ytgif-feedback-screen .ytgif-button-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(118, 75, 162, 0.3);
+}
+
+.ytgif-feedback-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: center;
+  max-width: 400px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.ytgif-feedback-description {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.ytgif-feedback-option {
+  width: 100%;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.ytgif-feedback-option h3 {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.ytgif-feedback-option p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin: 0 0 16px 0;
+  line-height: 1.4;
+}
+
+.ytgif-feedback-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: rgba(118, 75, 162, 0.1);
+  border: 1px solid rgba(118, 75, 162, 0.3);
+  border-radius: 8px;
+  color: #764ba2;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.ytgif-feedback-link:hover {
+  background: rgba(118, 75, 162, 0.2);
+  border-color: #764ba2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(118, 75, 162, 0.2);
+  color: white;
+}
+
+.ytgif-feedback-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+  justify-content: center;
+}
+
+.ytgif-success-feedback-action {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
 }

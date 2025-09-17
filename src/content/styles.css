@@ -129,196 +129,6 @@
   @apply opacity-100;
 }
 
-/* GIF Preview Modal Styles */
-.ytgif-preview-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999999;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.ytgif-preview-modal--visible {
-  opacity: 1;
-}
-
-.ytgif-preview-modal__content {
-  background: #1a1a1a;
-  border-radius: 12px;
-  padding: 24px;
-  max-width: 600px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  position: relative;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-}
-
-.ytgif-preview-modal__close {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: #fff;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  font-size: 18px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.ytgif-preview-modal__close:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.ytgif-preview-modal__header {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.ytgif-preview-modal__header h3 {
-  color: #fff;
-  font-size: 20px;
-  margin: 0;
-}
-
-.ytgif-preview-modal__image-container {
-  position: relative;
-  margin-bottom: 16px;
-  background: #000;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.ytgif-preview-modal__image,
-.ytgif-preview-modal__canvas {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.ytgif-preview-modal__controls {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.ytgif-preview-modal__play-button {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  font-size: 18px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-}
-
-.ytgif-preview-modal__play-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.ytgif-preview-modal__frame-indicator {
-  color: #fff;
-  font-size: 12px;
-  white-space: nowrap;
-}
-
-.ytgif-preview-modal__scrubber {
-  flex: 1;
-  -webkit-appearance: none;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 2px;
-  outline: none;
-}
-
-.ytgif-preview-modal__scrubber::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 12px;
-  height: 12px;
-  background: #ff0000;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.ytgif-preview-modal__scrubber::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
-  background: #ff0000;
-  border-radius: 50%;
-  cursor: pointer;
-  border: none;
-}
-
-.ytgif-preview-modal__metadata {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  color: #888;
-  font-size: 12px;
-  margin-bottom: 16px;
-}
-
-.ytgif-preview-modal__actions {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-}
-
-.ytgif-preview-modal__button {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.ytgif-preview-modal__button--primary {
-  background: #ff0000;
-  color: #fff;
-}
-
-.ytgif-preview-modal__button--primary:hover {
-  background: #cc0000;
-}
-
-.ytgif-preview-modal__button--secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-}
-
-.ytgif-preview-modal__button--secondary:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.ytgif-preview-modal__button-icon {
-  font-size: 16px;
-}
-
 .ytgif-button.active svg path {
   fill: #ff0000;
 }
@@ -417,19 +227,7 @@ body[theater] .ytgif-timeline-overlay,
   margin-bottom: 12px;
 }
 
-.ytgif-timeline-track {
-  position: relative;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  margin-bottom: 8px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.ytgif-timeline-track:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
+/* Timeline track styles removed - now defined in wizard-styles.css */
 
 .ytgif-timeline-progress {
   position: absolute;
@@ -449,50 +247,9 @@ body[theater] .ytgif-timeline-overlay,
   height: 16px;
 }
 
-.ytgif-timeline-handle {
-  position: absolute;
-  width: 12px;
-  height: 16px;
-  background: #ff0000;
-  border: 2px solid white;
-  border-radius: 2px;
-  cursor: grab;
-  transform: translateX(-50%);
-  transition: all 0.2s ease;
-  z-index: 10;
-}
+/* Timeline handle styles removed - now defined in wizard-styles.css */
 
-.ytgif-timeline-handle:hover {
-  background: #ff3333;
-  box-shadow: 0 2px 8px rgba(255, 0, 0, 0.3);
-  transform: translateX(-50%) scale(1.1);
-}
-
-.ytgif-timeline-handle:active,
-.ytgif-timeline-handle[data-dragging="true"] {
-  cursor: grabbing;
-  background: #cc0000;
-  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.5);
-  transform: translateX(-50%) scale(1.2);
-}
-
-.ytgif-timeline-start {
-  left: 20%;
-}
-
-.ytgif-timeline-end {
-  left: 60%;
-}
-
-.ytgif-timeline-selection {
-  position: absolute;
-  top: 4px;
-  left: 20%;
-  right: 40%;
-  height: 8px;
-  background: rgba(255, 0, 0, 0.3);
-  border-radius: 4px;
-}
+/* Timeline selection styles removed - now defined in wizard-styles.css */
 
 .ytgif-timeline-info {
   text-align: center;
@@ -581,9 +338,9 @@ body[theater] .ytgif-timeline-overlay,
   color: white;
   cursor: pointer;
   display: inline-block;
-  font-size: 1.2rem;
-  height: 48px;
-  line-height: 48px;
+  font-size: 1rem;
+  height: 28px;
+  line-height: 28px;
   margin: 0;
   outline: none;
   overflow: hidden;
@@ -592,7 +349,7 @@ body[theater] .ytgif-timeline-overlay,
   text-decoration: none;
   transition: opacity 0.1s cubic-bezier(0.4, 0.0, 1, 1);
   user-select: none;
-  width: 48px;
+  width: 28px;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -624,6 +381,16 @@ body[theater] .ytgif-timeline-overlay,
   display: block;
   width: 100%;
   height: 100%;
+  object-fit: contain;
+  padding: 2px;
+  transition: opacity 0.2s, filter 0.2s;
+}
+
+/* Logo icon specific styles */
+img.ytgif-button-icon {
+  width: 18px;
+  height: 18px;
+  padding: 2px;
 }
 
 /* Responsive design for different player sizes */
@@ -633,70 +400,70 @@ body[theater] .ytgif-timeline-overlay,
 
 /* Small player adjustments (< 480px width) */
 .ytgif-player-button.ytgif-small-player {
-  width: 40px;
-  height: 40px;
-  line-height: 40px;
-  font-size: 1rem;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  font-size: 0.9rem;
 }
 
 .ytgif-small-player .ytgif-button-icon {
-  transform: scale(0.8);
+  transform: scale(0.85);
 }
 
 /* Medium player adjustments (480px - 854px width) */
 .ytgif-player-button.ytgif-medium-player {
-  width: 44px;
-  height: 44px;
-  line-height: 44px;
-  font-size: 1.1rem;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  font-size: 1rem;
 }
 
 .ytgif-medium-player .ytgif-button-icon {
-  transform: scale(0.9);
+  transform: scale(1);
 }
 
 /* Large player adjustments (> 854px width) */
 .ytgif-player-button.ytgif-large-player {
-  width: 48px;
-  height: 48px;
-  line-height: 48px;
-  font-size: 1.2rem;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  font-size: 1rem;
 }
 
 /* Compact mode adjustments */
 .ytgif-player-button.ytgif-compact-mode {
-  width: 36px;
-  height: 36px;
-  line-height: 36px;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
   margin: 0 2px;
 }
 
 .ytgif-compact-mode .ytgif-button-icon {
-  transform: scale(0.75);
+  transform: scale(0.8);
 }
 
 /* Theater mode adjustments */
 .ytgif-player-button.ytgif-theater-mode {
-  width: 52px;
-  height: 52px;
-  line-height: 52px;
-  font-size: 1.3rem;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  font-size: 1.1rem;
 }
 
 .ytgif-theater-mode .ytgif-button-icon {
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 /* Fullscreen mode adjustments */
 .ytgif-player-button.ytgif-fullscreen-mode {
-  width: 56px;
-  height: 56px;
-  line-height: 56px;
-  font-size: 1.4rem;
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+  font-size: 1.1rem;
 }
 
 .ytgif-fullscreen-mode .ytgif-button-icon {
-  transform: scale(1.2);
+  transform: scale(1.1);
 }
 
 /* Theme-specific adjustments */
@@ -747,15 +514,15 @@ body[theater] .ytgif-timeline-overlay,
 /* Touch device optimizations */
 @media (pointer: coarse) {
   .ytgif-button {
-    min-width: 44px;
-    min-height: 44px;
+    min-width: 28px;
+    min-height: 28px;
   }
-  
+
   .ytgif-player-button.ytgif-small-player {
-    min-width: 44px;
-    min-height: 44px;
-    width: 44px;
-    height: 44px;
+    min-width: 28px;
+    min-height: 28px;
+    width: 28px;
+    height: 28px;
   }
 }
 
@@ -797,15 +564,7 @@ body[theater] .ytgif-timeline-overlay,
 }
 
 /* Enhanced selection visualization */
-.ytgif-timeline-selection {
-  background: linear-gradient(90deg, 
-    rgba(255, 0, 0, 0.2) 0%, 
-    rgba(255, 0, 0, 0.4) 50%, 
-    rgba(255, 0, 0, 0.2) 100%
-  );
-  border: 1px solid rgba(255, 0, 0, 0.6);
-  border-radius: 4px;
-}
+/* Duplicate timeline selection styles removed - defined in wizard-styles.css */
 
 /* Tooltip styles */
 .ytgif-tooltip {
@@ -1059,303 +818,6 @@ body[theater] .ytgif-timeline-overlay,
   margin-left: 8px;
 }
 
-/* Import editor overlay styles */
-
-/* Unified Timeline-Editor Interface Styles */
-.ytgif-unified-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  z-index: 999999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  box-sizing: border-box;
-}
-
-.ytgif-unified-container {
-  background: #1a1a1a;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 1100px;
-  height: calc(100vh - 60px);
-  max-height: 650px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  box-sizing: border-box;
-}
-
-.ytgif-unified-header {
-  padding: 12px 20px;
-  border-bottom: 1px solid #333;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-shrink: 0;
-  min-height: 0;
-}
-
-.ytgif-unified-header h2 {
-  margin: 0;
-  color: #fff;
-  font-size: 18px;
-}
-
-.ytgif-unified-close {
-  background: transparent;
-  border: none;
-  color: #999;
-  font-size: 24px;
-  cursor: pointer;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s;
-}
-
-.ytgif-unified-close:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-}
-
-.ytgif-unified-timeline-section {
-  padding: 12px 20px;
-  border-bottom: 1px solid #333;
-  flex-shrink: 0;
-  min-height: 0;
-  max-height: 120px;
-  overflow-y: auto;
-}
-
-.ytgif-unified-body {
-  flex: 1 1 auto;
-  display: flex;
-  overflow: hidden;
-  min-height: 0; /* Important for flex children scrolling */
-}
-
-.ytgif-unified-preview {
-  flex: 1;
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: #0f0f0f;
-  min-width: 0; /* Prevent flex item from overflowing */
-}
-
-.ytgif-unified-settings {
-  width: 380px;
-  max-width: 40%;
-  padding: 15px;
-  overflow-y: auto;
-  border-left: 1px solid #333;
-  max-height: 100%;
-}
-
-.ytgif-unified-footer {
-  padding: 12px 20px;
-  border-top: 1px solid #333;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-shrink: 0;
-  min-height: 0;
-}
-
-/* Progress Bar Styles */
-.ytgif-unified-progress-container {
-  padding: 10px 20px;
-  border-top: 1px solid #333;
-  background: rgba(0, 0, 0, 0.3);
-  flex-shrink: 0;
-}
-
-.ytgif-unified-progress-bar {
-  height: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 8px;
-}
-
-.ytgif-unified-progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #4ade80, #22c55e);
-  border-radius: 4px;
-  transition: width 0.3s ease;
-  box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
-}
-
-.ytgif-unified-progress-text {
-  color: #9ca3af;
-  font-size: 12px;
-  text-align: center;
-}
-
-/* Settings Controls */
-.ytgif-unified-control-group {
-  margin-bottom: 20px;
-}
-
-.ytgif-unified-label {
-  color: #9ca3af;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  margin-bottom: 8px;
-  display: block;
-}
-
-.ytgif-unified-button-group {
-  display: flex;
-  gap: 8px;
-}
-
-.ytgif-unified-format-btn,
-.ytgif-unified-quality-btn,
-.ytgif-unified-resolution-btn,
-.ytgif-unified-fps-btn {
-  flex: 1;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #9ca3af;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 12px;
-}
-
-.ytgif-unified-format-btn:hover,
-.ytgif-unified-quality-btn:hover,
-.ytgif-unified-resolution-btn:hover,
-.ytgif-unified-fps-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-}
-
-.ytgif-unified-format-btn.active,
-.ytgif-unified-quality-btn.active,
-.ytgif-unified-resolution-btn.active,
-.ytgif-unified-fps-btn.active {
-  background: #4ade80;
-  color: #000;
-  border-color: #4ade80;
-}
-
-.ytgif-unified-slider {
-  width: 100%;
-  margin: 8px 0;
-}
-
-/* Action Buttons */
-.ytgif-unified-btn {
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-}
-
-.ytgif-unified-btn-cancel {
-  background: rgba(255, 255, 255, 0.1);
-  color: #9ca3af;
-}
-
-.ytgif-unified-btn-cancel:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-}
-
-.ytgif-unified-btn-save {
-  background: #3b82f6;
-  color: #fff;
-}
-
-.ytgif-unified-btn-save:hover {
-  background: #2563eb;
-}
-
-.ytgif-unified-btn-create {
-  background: #4ade80;
-  color: #000;
-  font-weight: 700;
-  min-width: 120px;
-}
-
-.ytgif-unified-btn-create:hover {
-  background: #22c55e;
-}
-
-.ytgif-unified-btn-export {
-  background: #60a5fa;
-  color: #fff;
-}
-
-.ytgif-unified-btn-export:hover {
-  background: #3b82f6;
-}
-
-.ytgif-unified-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Canvas and Preview */
-.ytgif-unified-canvas {
-  max-width: 90%;
-  max-height: 300px;
-  width: auto;
-  height: auto;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  object-fit: contain;
-}
-
-.ytgif-unified-preview-placeholder {
-  width: 90%;
-  max-width: 450px;
-  height: 250px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #6b7280;
-}
-
-.ytgif-unified-extracting {
-  color: #60a5fa;
-  font-size: 14px;
-}
-
-.ytgif-unified-duration {
-  color: #4ade80;
-  font-weight: 600;
-}
-
-.ytgif-unified-size-estimate {
-  color: #9ca3af;
-  font-size: 12px;
-}
-@import './editor-overlay.css';
-@import './editor-overlay-enhanced.css';
-@import './timeline-editor-unified.css';
-
 /* Text Overlay Screen Styles */
 .ytgif-text-overlay-screen {
   padding: 1.5rem;
@@ -1539,6 +1001,28 @@ body[theater] .ytgif-timeline-overlay,
   background: rgba(255, 255, 255, 0.15);
 }
 
+/* Screen 3: Text overlay input focus */
+.ytgif-text-overlay-screen .ytgif-text-input:focus {
+  border-color: #cc3399;
+  box-shadow: 0 0 0 3px rgba(204, 51, 153, 0.1);
+}
+
+/* Screen 3: Text overlay advanced toggle */
+.ytgif-text-overlay-screen .ytgif-advanced-toggle {
+  border-color: rgba(204, 51, 153, 0.2);
+}
+
+.ytgif-text-overlay-screen .ytgif-advanced-toggle:hover {
+  background: rgba(204, 51, 153, 0.08);
+  border-color: rgba(204, 51, 153, 0.3);
+}
+
+.ytgif-text-overlay-screen .ytgif-advanced-toggle span:first-child {
+  background: #cc3399;
+  color: black;
+  font-weight: bold;
+}
+
 .ytgif-text-input::placeholder {
   color: rgba(255, 255, 255, 0.5);
 }
@@ -1656,6 +1140,41 @@ body[theater] .ytgif-timeline-overlay,
 .ytgif-range-input {
   width: 100%;
   margin-top: 0.5rem;
+}
+
+/* Screen 3: Text overlay range input */
+.ytgif-text-overlay-screen .ytgif-range-input {
+  accent-color: #cc3399;
+}
+
+.ytgif-text-overlay-screen .ytgif-range-input::-webkit-slider-thumb {
+  background: #cc3399;
+  border: 2px solid #cc3399;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.ytgif-text-overlay-screen .ytgif-range-input::-moz-range-thumb {
+  background: #cc3399;
+  border: 2px solid #cc3399;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.ytgif-text-overlay-screen .ytgif-range-input::-webkit-slider-runnable-track {
+  background: linear-gradient(to right, #cc3399 0%, #cc3399 var(--value), rgba(255, 255, 255, 0.2) var(--value));
+}
+
+.ytgif-text-overlay-screen .ytgif-range-input::-moz-range-track {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.ytgif-text-overlay-screen .ytgif-range-input::-moz-range-progress {
+  background: #cc3399;
 }
 
 .ytgif-range-value {

@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { TimelineSelection, TextOverlay, GifMetadata } from '@/types';
+import { TimelineSelection, TextOverlay } from '@/types';
 import OverlayWizard from './overlay-wizard/OverlayWizard';
 
 export interface TimelineOverlayWizardProps {
@@ -9,18 +9,24 @@ export interface TimelineOverlayWizardProps {
   videoElement?: HTMLVideoElement;
   onSelectionChange: (selection: TimelineSelection) => void;
   onClose: () => void;
-  onCreateGif: (selection: TimelineSelection, textOverlays?: TextOverlay[]) => void;
+  onCreateGif: (
+    selection: TimelineSelection,
+    textOverlays?: TextOverlay[],
+    resolution?: string
+  ) => void;
   onSeekTo?: (time: number) => void;
   isCreating?: boolean;
   processingStatus?: {
     stage: string;
+    stageNumber: number;
+    totalStages: number;
     progress: number;
     message: string;
   };
   gifData?: {
     dataUrl: string;
     size: number;
-    metadata: GifMetadata;
+    metadata: Record<string, unknown>;
   };
 }
 
@@ -35,17 +41,22 @@ export const TimelineOverlayWizard: React.FC<TimelineOverlayWizardProps> = ({
   onSeekTo,
   isCreating = false,
   processingStatus,
-  gifData
+  gifData,
 }) => {
-  const handleSelectionChange = useCallback((newSelection: TimelineSelection) => {
-    onSelectionChange(newSelection);
-  }, [onSelectionChange]);
+  const handleSelectionChange = useCallback(
+    (newSelection: TimelineSelection) => {
+      onSelectionChange(newSelection);
+    },
+    [onSelectionChange]
+  );
 
-  const handleCreateGif = useCallback((finalSelection: TimelineSelection, textOverlays?: TextOverlay[]) => {
-    
-    handleSelectionChange(finalSelection);
-    onCreateGif(finalSelection, textOverlays);
-  }, [handleSelectionChange, onCreateGif]);
+  const handleCreateGif = useCallback(
+    (finalSelection: TimelineSelection, textOverlays?: TextOverlay[], resolution?: string) => {
+      handleSelectionChange(finalSelection);
+      onCreateGif(finalSelection, textOverlays, resolution);
+    },
+    [handleSelectionChange, onCreateGif]
+  );
 
   return (
     <OverlayWizard

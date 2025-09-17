@@ -33,28 +33,33 @@ export async function extractFramesSimple(
   try {
     logger.info('[SimpleFrameExtractor] Starting simplified frame extraction');
     
-    // Calculate dimensions - reduced for message size limits
+    // Calculate dimensions - use reasonable defaults while maintaining aspect ratio
     const aspectRatio = videoElement.videoWidth / videoElement.videoHeight;
-    const maxWidth = Math.min(options.maxWidth || 320, 320); // Max 320px width
-    const maxHeight = Math.min(options.maxHeight || 240, 240); // Max 240px height
+    const maxWidth = options.maxWidth || 640; // Default 640px width
+    const maxHeight = options.maxHeight || 360; // Default 360px height
     
     let width = videoElement.videoWidth;
     let height = videoElement.videoHeight;
-    
+
     // Apply quality scaling
-    const qualityScale = options.quality === 'low' ? 0.5 : 
+    const qualityScale = options.quality === 'low' ? 0.5 :
                         options.quality === 'medium' ? 0.75 : 1.0;
-    
-    width = Math.min(maxWidth, width * qualityScale);
-    height = Math.min(maxHeight, height * qualityScale);
-    
-    // Maintain aspect ratio
-    if (width / height > aspectRatio) {
-      width = height * aspectRatio;
-    } else {
+
+    // Scale based on quality first
+    width = width * qualityScale;
+    height = height * qualityScale;
+
+    // Then apply max constraints while maintaining aspect ratio
+    if (width > maxWidth) {
+      width = maxWidth;
       height = width / aspectRatio;
     }
-    
+    if (height > maxHeight) {
+      height = maxHeight;
+      width = height * aspectRatio;
+    }
+
+    // Ensure even dimensions for video encoding
     width = Math.floor(width / 2) * 2;
     height = Math.floor(height / 2) * 2;
     

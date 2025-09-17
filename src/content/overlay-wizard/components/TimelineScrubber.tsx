@@ -24,43 +24,31 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
   maxDuration = 30
 }) => {
   const timelineRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState<'start' | 'end' | 'range' | null>(null);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
-  const [activePreset, setActivePreset] = useState<'3s' | '5s' | '10s' | null>(null);
+  const [durationSliderValue, setDurationSliderValue] = useState(endTime - startTime);
   
-  const dragStartRef = useRef<{ x: number; startTime: number; endTime: number }>({
+  const dragStartRef = useRef<{ x: number; startTime: number }>({
     x: 0,
-    startTime: 0,
-    endTime: 0
+    startTime: 0
   });
 
-  // Check if current selection matches a preset
-  const detectActivePreset = useCallback(() => {
-    const duration = endTime - startTime;
-    const tolerance = 0.1; // 100ms tolerance
-    
-    // Check for 3s preset
-    if (Math.abs(duration - 3) < tolerance) {
-      return '3s';
-    }
-    // Check for 5s preset
-    if (Math.abs(duration - 5) < tolerance) {
-      return '5s';
-    }
-    // Check for 10s preset
-    if (Math.abs(duration - 10) < tolerance) {
-      return '10s';
-    }
-    
-    return null;
-  }, [startTime, endTime, currentTime]);
-
-  // Update active preset when selection changes
+  // Update slider value when handles are dragged
   useEffect(() => {
-    const preset = detectActivePreset();
-    setActivePreset(preset);
-  }, [detectActivePreset]);
+    setDurationSliderValue(endTime - startTime);
+  }, [startTime, endTime]);
+
+  // Handle slider change
+  const handleDurationSliderChange = (value: number) => {
+    const newValue = parseFloat(value.toFixed(1));
+    const maxEnd = Math.min(startTime + newValue, duration);
+    onRangeChange(startTime, maxEnd);
+    setDurationSliderValue(newValue);
+  };
+
+  // Calculate slider constraints
+  const maxSliderValue = Math.min(20, duration - startTime);
 
   // Convert time to pixel position
   const timeToPosition = useCallback((time: number): number => {
@@ -77,97 +65,88 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
     return (relativeX / rect.width) * duration;
   }, [duration]);
 
-  // Handle mouse down on timeline elements
-  const handleMouseDown = useCallback((e: React.MouseEvent, type: 'start' | 'end' | 'range') => {
+  // Handle mouse down on handle
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    setIsDragging(type);
+
+    setIsDragging(true);
     dragStartRef.current = {
       x: e.clientX,
-      startTime,
-      endTime
+      startTime
     };
-  }, [startTime, endTime]);
+  }, [startTime]);
 
-  // Handle timeline click (set selection center)
+  // Handle timeline click (move handle to position)
   const handleTimelineClick = useCallback((e: React.MouseEvent) => {
     if (isDragging) return;
-    
+
     const clickTime = positionToTime(e.clientX);
     const currentDuration = endTime - startTime;
-    const halfDuration = currentDuration / 2;
-    
-    let newStart = clickTime - halfDuration;
-    let newEnd = clickTime + halfDuration;
-    
-    // Clamp to timeline bounds
-    if (newStart < 0) {
-      newStart = 0;
-      newEnd = Math.min(currentDuration, duration);
-    } else if (newEnd > duration) {
+
+    // Calculate new start and end based on click position
+    let newStart = clickTime;
+    let newEnd = Math.min(clickTime + currentDuration, duration);
+
+    // If we hit the end of the video, adjust both start and end
+    if (newEnd >= duration) {
       newEnd = duration;
       newStart = Math.max(0, duration - currentDuration);
     }
-    
+
     onRangeChange(newStart, newEnd);
-    
+
     // Also seek to this position if callback provided
     if (onSeek) {
       onSeek(clickTime);
     }
   }, [isDragging, positionToTime, startTime, endTime, duration, onRangeChange, onSeek]);
 
-  // Handle mouse move during drag
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isDragging) {
-      // Update hover position
-      if (timelineRef.current) {
-        const rect = timelineRef.current.getBoundingClientRect();
-        if (e.clientX >= rect.left && e.clientX <= rect.right) {
-          setHoverTime(positionToTime(e.clientX));
-          setShowTooltip(true);
-        } else {
-          setShowTooltip(false);
-        }
-      }
-      return;
+  // Handle mouse enter on timeline
+  const handleTimelineMouseEnter = useCallback(() => {
+    setShowTooltip(true);
+  }, []);
+
+  // Handle mouse leave on timeline
+  const handleTimelineMouseLeave = useCallback(() => {
+    setShowTooltip(false);
+    setHoverTime(null);
+  }, []);
+
+  // Handle mouse move on timeline (local to timeline element)
+  const handleTimelineMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging && timelineRef.current) {
+      const hoverTimeValue = positionToTime(e.clientX);
+      setHoverTime(hoverTimeValue);
     }
-    
+  }, [isDragging, positionToTime]);
+
+  // Handle mouse move during drag (global document listener)
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging) return;
+
     const deltaX = e.clientX - dragStartRef.current.x;
     const deltaTime = (deltaX / timelineRef.current!.offsetWidth) * duration;
-    
-    let newStart = dragStartRef.current.startTime;
-    let newEnd = dragStartRef.current.endTime;
-    
-    if (isDragging === 'start') {
-      newStart = Math.max(0, Math.min(dragStartRef.current.startTime + deltaTime, newEnd - minDuration));
-    } else if (isDragging === 'end') {
-      newEnd = Math.min(duration, Math.max(dragStartRef.current.endTime + deltaTime, newStart + minDuration));
-    } else if (isDragging === 'range') {
-      const rangeDuration = dragStartRef.current.endTime - dragStartRef.current.startTime;
-      newStart = Math.max(0, Math.min(dragStartRef.current.startTime + deltaTime, duration - rangeDuration));
-      newEnd = newStart + rangeDuration;
+
+    const currentDuration = endTime - startTime;
+    let newStart = Math.max(0, Math.min(dragStartRef.current.startTime + deltaTime, duration - currentDuration));
+    let newEnd = Math.min(newStart + currentDuration, duration);
+
+    // If we hit the end of the video, clamp both values
+    if (newEnd >= duration) {
+      newEnd = duration;
+      newStart = Math.max(0, duration - currentDuration);
     }
-    
-    // Enforce max duration
-    if (newEnd - newStart > maxDuration) {
-      if (isDragging === 'start') {
-        newStart = newEnd - maxDuration;
-      } else if (isDragging === 'end') {
-        newEnd = newStart + maxDuration;
-      }
-    }
-    
+
     onRangeChange(newStart, newEnd);
-  }, [isDragging, positionToTime, duration, minDuration, maxDuration, onRangeChange]);
+  }, [isDragging, duration, startTime, endTime, onRangeChange]);
 
   // Handle mouse up
   const handleMouseUp = useCallback(() => {
-    setIsDragging(null);
+    setIsDragging(false);
   }, []);
 
-  // Add/remove event listeners
+  // Add/remove event listeners for dragging only
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
@@ -175,12 +154,6 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
-      };
-    } else {
-      // Add hover listener even when not dragging
-      document.addEventListener('mousemove', handleMouseMove);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
       };
     }
   }, [isDragging, handleMouseMove, handleMouseUp]);
@@ -201,118 +174,130 @@ export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
 
   return (
     <div className="ytgif-timeline-scrubber">
-      <div 
-        ref={timelineRef}
-        className="ytgif-timeline-track"
-        onClick={handleTimelineClick}
-      >
-        {/* Background track */}
-        <div className="ytgif-timeline-background" />
-        
-        {/* Selection range */}
-        <div 
-          className="ytgif-timeline-selection"
-          style={{
-            left: `${startPercent}%`,
-            width: `${widthPercent}%`
-          }}
-          onMouseDown={(e) => handleMouseDown(e, 'range')}
+      {/* Timeline Selection Container */}
+      <div className="ytgif-timeline-container">
+        <div className="ytgif-timeline-header">
+          <span className="ytgif-timeline-label">Timeline Selection</span>
+        </div>
+
+        <div
+          ref={timelineRef}
+          className="ytgif-timeline-track"
+          onClick={handleTimelineClick}
+          onMouseEnter={handleTimelineMouseEnter}
+          onMouseLeave={handleTimelineMouseLeave}
+          onMouseMove={handleTimelineMouseMove}
         >
-          {/* Start handle */}
-          <div 
-            className="ytgif-timeline-handle ytgif-handle-start"
-            onMouseDown={(e) => handleMouseDown(e, 'start')}
+          {/* Background track */}
+          <div className="ytgif-timeline-background" />
+
+          {/* Selection range - visual only, not draggable */}
+          <div
+            className="ytgif-timeline-selection"
+            style={{
+              left: `${startPercent}%`,
+              width: `${widthPercent}%`
+            }}
+          />
+
+          {/* Single handle at start position */}
+          <div
+            className="ytgif-timeline-handle"
+            style={{ left: `${startPercent}%` }}
+            onMouseDown={handleMouseDown}
             title={formatTime(startTime)}
-          >
-            <div className="ytgif-handle-grip" />
-          </div>
-          
-          {/* End handle */}
-          <div 
-            className="ytgif-timeline-handle ytgif-handle-end"
-            onMouseDown={(e) => handleMouseDown(e, 'end')}
-            title={formatTime(endTime)}
-          >
-            <div className="ytgif-handle-grip" />
-          </div>
-          
-          {/* Duration label */}
-          <div className="ytgif-selection-duration">
-            {(endTime - startTime).toFixed(1)}s
+          />
+
+          {/* Preview playhead (when playing preview) */}
+          {previewPercent !== null && (
+            <div
+              className="ytgif-timeline-preview-head"
+              style={{ left: `${previewPercent}%` }}
+            />
+          )}
+
+          {/* Hover tooltip */}
+          {showTooltip && hoverTime !== null && (
+            <div
+              className="ytgif-timeline-tooltip"
+              style={{ left: `${(hoverTime / duration) * 100}%` }}
+            >
+              {formatTime(hoverTime)}
+            </div>
+          )}
+        </div>
+
+        {/* Time labels */}
+        <div className="ytgif-timeline-labels">
+          <span className="ytgif-label-start">{formatTime(0)}</span>
+          <span className="ytgif-label-selection">
+            {formatTime(startTime)} - {formatTime(endTime)}
+          </span>
+          <span className="ytgif-label-end">{formatTime(duration)}</span>
+        </div>
+      </div>
+      
+      {/* Duration slider */}
+      <div className="ytgif-duration-slider">
+        <div className="ytgif-slider-header">
+          <span className="ytgif-slider-label">Clip Duration</span>
+          <span className="ytgif-slider-value">{durationSliderValue.toFixed(1)}s</span>
+        </div>
+        <div className="ytgif-slider-container">
+          <input
+            type="range"
+            className="ytgif-slider-input"
+            min="1"
+            max={maxSliderValue}
+            step="0.1"
+            value={durationSliderValue}
+            onChange={(e) => handleDurationSliderChange(parseFloat(e.target.value))}
+            aria-label="GIF duration"
+            aria-valuemin={1}
+            aria-valuemax={maxSliderValue}
+            aria-valuenow={durationSliderValue}
+            disabled={duration < 1}
+          />
+          {/* Hash marks */}
+          <div className="ytgif-slider-marks">
+            {[1, 5, 10, 15, 20].map((mark) => {
+              // Only show marks that are within the slider range
+              if (mark > maxSliderValue) return null;
+
+              // Calculate position as percentage
+              // The slider goes from min (1) to max (maxSliderValue)
+              const sliderMin = 1;
+              const sliderRange = maxSliderValue - sliderMin;
+              const markOffset = mark - sliderMin;
+              let position = (markOffset / sliderRange) * 100;
+
+              // Apply specific adjustments based on observed offsets
+              // 5s mark needs to move right by about 1%
+              // 15s mark needs to move left by about 0.5%
+              if (mark === 5) {
+                position += 1.0; // Move 5s mark right
+              } else if (mark === 15) {
+                position -= 0.5; // Move 15s mark left
+              }
+
+              return (
+                <div
+                  key={mark}
+                  className="ytgif-slider-mark"
+                  style={{ left: `${position}%` }}
+                >
+                  <div className="ytgif-slider-mark-line" />
+                  <div className="ytgif-slider-mark-label">{mark}s</div>
+                </div>
+              );
+            })}
           </div>
         </div>
-        
-        {/* Current video time indicator */}
-        <div 
-          className={`ytgif-timeline-current ${
-            currentTime >= startTime && currentTime <= endTime 
-              ? 'ytgif-timeline-current-in-range' 
-              : 'ytgif-timeline-current-out-range'
-          }`}
-          style={{ left: `${currentPercent}%` }}
-          title={`Current video time: ${formatTime(currentTime)}`}
-        />
-        
-        {/* Preview playhead (when playing preview) */}
-        {previewPercent !== null && (
-          <div 
-            className="ytgif-timeline-preview-head"
-            style={{ left: `${previewPercent}%` }}
-          />
-        )}
-        
-        {/* Hover tooltip */}
-        {showTooltip && hoverTime !== null && (
-          <div 
-            className="ytgif-timeline-tooltip"
-            style={{ left: `${(hoverTime / duration) * 100}%` }}
-          >
-            {formatTime(hoverTime)}
+        {duration < 1 && (
+          <div className="ytgif-slider-disabled-message">
+            Video too short for GIF creation
           </div>
         )}
-      </div>
-      
-      {/* Time labels */}
-      <div className="ytgif-timeline-labels">
-        <span className="ytgif-label-start">{formatTime(0)}</span>
-        <span className="ytgif-label-selection">
-          {formatTime(startTime)} - {formatTime(endTime)}
-        </span>
-        <span className="ytgif-label-end">{formatTime(duration)}</span>
-      </div>
-      
-      {/* Quick duration presets */}
-      <div className="ytgif-duration-presets">
-        <button 
-          className={`ytgif-preset-btn ${activePreset === '3s' ? 'ytgif-preset-btn--active' : ''}`}
-          onClick={() => {
-            const newEnd = Math.min(duration, startTime + 3);
-            onRangeChange(startTime, newEnd);
-            setActivePreset('3s');
-          }}
-        >
-          3s
-        </button>
-        <button 
-          className={`ytgif-preset-btn ${activePreset === '5s' ? 'ytgif-preset-btn--active' : ''}`}
-          onClick={() => {
-            const newEnd = Math.min(duration, startTime + 5);
-            onRangeChange(startTime, newEnd);
-            setActivePreset('5s');
-          }}
-        >
-          5s
-        </button>
-        <button 
-          className={`ytgif-preset-btn ${activePreset === '10s' ? 'ytgif-preset-btn--active' : ''}`}
-          onClick={() => {
-            const newEnd = Math.min(duration, startTime + 10);
-            onRangeChange(startTime, newEnd);
-            setActivePreset('10s');
-          }}
-        >
-          10s
-        </button>
       </div>
     </div>
   );

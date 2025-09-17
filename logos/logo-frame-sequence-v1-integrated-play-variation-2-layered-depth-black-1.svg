@@ -1,0 +1,99 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="frameGlow">
+      <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Dark background -->
+  <circle cx="64" cy="64" r="52" fill="#111111"/>
+
+  <!-- Frame sequence with perspective and rhythm - BACK TO FRONT ORDER - BLACK BACKGROUNDS -->
+  <g filter="url(#frameGlow)">
+    <!-- Frame 5 (farthest) - rendered first -->
+    <g transform="translate(64, 64) translate(-32, -24) scale(0.4) rotate(-20)">
+      <!-- Solid background to block anything behind it -->
+      <rect x="-19" y="-13" width="38" height="26" rx="3" fill="#111111"/>
+      <rect x="-18" y="-12" width="36" height="24" rx="3" fill="none" stroke="#33CCFF" stroke-width="3"/>
+      <rect x="-15" y="-9" width="30" height="18" rx="2" fill="#000000"/>
+      <path d="M -1 -1 L 1.5 0 L -1 1 Z" fill="#33CCFF"/>
+    </g>
+
+    <!-- Mirrored Frame 5 -->
+    <g transform="translate(64, 64) translate(32, 24) scale(0.4) rotate(20)">
+      <!-- Solid background to block anything behind it -->
+      <rect x="-19" y="-13" width="38" height="26" rx="3" fill="#111111"/>
+      <rect x="-18" y="-12" width="36" height="24" rx="3" fill="none" stroke="#FF9900" stroke-width="3"/>
+      <rect x="-15" y="-9" width="30" height="18" rx="2" fill="#000000"/>
+      <path d="M -1 -1 L 1.5 0 L -1 1 Z" fill="#FF9900"/>
+    </g>
+
+    <!-- Frame 4 (even further) - rendered next -->
+    <g transform="translate(64, 64) translate(-24, -18) scale(0.55) rotate(-15)">
+      <!-- Solid background to block anything behind it -->
+      <rect x="-20" y="-14" width="40" height="28" rx="3" fill="#111111"/>
+      <rect x="-18" y="-12" width="36" height="24" rx="3" fill="none" stroke="#66CC33" stroke-width="3"/>
+      <rect x="-15" y="-9" width="30" height="18" rx="2" fill="#000000"/>
+      <path d="M -1.5 -1.5 L 2 0 L -1.5 1.5 Z" fill="#66CC33"/>
+    </g>
+
+    <!-- Mirrored Frame 4 -->
+    <g transform="translate(64, 64) translate(24, 18) scale(0.55) rotate(15)">
+      <!-- Solid background to block anything behind it -->
+      <rect x="-20" y="-14" width="40" height="28" rx="3" fill="#111111"/>
+      <rect x="-18" y="-12" width="36" height="24" rx="3" fill="none" stroke="#00CCAA" stroke-width="3"/>
+      <rect x="-15" y="-9" width="30" height="18" rx="2" fill="#000000"/>
+      <path d="M -1.5 -1.5 L 2 0 L -1.5 1.5 Z" fill="#00CCAA"/>
+    </g>
+
+    <!-- Frame 3 (further back) - rendered next -->
+    <g transform="translate(64, 64) translate(-16, -12) scale(0.7) rotate(-10)">
+      <!-- Solid background to block anything behind it -->
+      <rect x="-21" y="-15" width="42" height="30" rx="3" fill="#111111"/>
+      <rect x="-18" y="-12" width="36" height="24" rx="3" fill="none" stroke="#FFCC00" stroke-width="3"/>
+      <rect x="-15" y="-9" width="30" height="18" rx="2" fill="#000000"/>
+      <path d="M -2 -2 L 3 0 L -2 2 Z" fill="#FFCC00"/>
+    </g>
+
+    <!-- Mirrored Frame 3 -->
+    <g transform="translate(64, 64) translate(16, 12) scale(0.7) rotate(10)">
+      <!-- Solid background to block anything behind it -->
+      <rect x="-21" y="-15" width="42" height="30" rx="3" fill="#111111"/>
+      <rect x="-18" y="-12" width="36" height="24" rx="3" fill="none" stroke="#FF3399" stroke-width="3"/>
+      <rect x="-15" y="-9" width="30" height="18" rx="2" fill="#000000"/>
+      <path d="M -2 -2 L 3 0 L -2 2 Z" fill="#FF3399"/>
+    </g>
+
+    <!-- Frame 2 (slightly back) - rendered next -->
+    <g transform="translate(64, 64) translate(-8, -6) scale(0.85) rotate(-5)">
+      <!-- Solid background to block anything behind it -->
+      <rect x="-22" y="-16" width="44" height="32" rx="3" fill="#111111"/>
+      <rect x="-18" y="-12" width="36" height="24" rx="3" fill="none" stroke="#FF6633" stroke-width="3"/>
+      <rect x="-15" y="-9" width="30" height="18" rx="2" fill="#000000"/>
+      <path d="M -3 -3 L 4 0 L -3 3 Z" fill="#FF6633"/>
+    </g>
+
+    <!-- Mirrored Frame 2 -->
+    <g transform="translate(64, 64) translate(8, 6) scale(0.85) rotate(5)">
+      <!-- Solid background to block anything behind it -->
+      <rect x="-22" y="-16" width="44" height="32" rx="3" fill="#111111"/>
+      <rect x="-18" y="-12" width="36" height="24" rx="3" fill="none" stroke="#9966FF" stroke-width="3"/>
+      <rect x="-15" y="-9" width="30" height="18" rx="2" fill="#000000"/>
+      <path d="M -3 -3 L 4 0 L -3 3 Z" fill="#9966FF"/>
+    </g>
+
+    <!-- Frame 1 (closest, largest) - SOLID BLOCKING CENTER FRAME - rendered last -->
+    <g transform="translate(64, 64) scale(1.0)">
+      <!-- Solid background to completely block overlapping frames -->
+      <rect x="-19" y="-13" width="38" height="26" rx="3" fill="#111111"/>
+      <!-- Main frame -->
+      <rect x="-18" y="-12" width="36" height="24" rx="3" fill="none" stroke="#FF3366" stroke-width="3"/>
+      <rect x="-15" y="-9" width="30" height="18" rx="2" fill="#000000"/>
+      <path d="M -4 -4 L 6 0 L -4 4 Z" fill="#FF3366"/>
+    </g>
+  </g>
+</svg>

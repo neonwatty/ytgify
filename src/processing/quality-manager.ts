@@ -7,6 +7,7 @@
 import { GifSettings, TimelineSelection } from '@/types';
 import { EncodingOptimizer, GifEncodingOptions } from './encoding-options';
 import { FileSizeEstimator } from './file-size-estimator';
+import { getResolutionDimensions } from '@/utils/resolution-parser';
 
 export interface QualityControlSettings {
   frameRate: number; // 5-30 fps
@@ -381,9 +382,7 @@ export class QualityManager {
     const qualityProfile = this.getQualityProfile(settings.quality);
     const baseTimePerFrame = 50; // 50ms base per frame
     
-    const [width, height] = settings.resolution.includes('x')
-      ? settings.resolution.split('x').map(n => parseInt(n.trim()))
-      : [640, 480];
+    const [width, height] = getResolutionDimensions(settings.resolution, 640, 480);
     
     // Resolution complexity factor
     const pixelCount = width * height;

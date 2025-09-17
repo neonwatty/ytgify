@@ -6,13 +6,13 @@ const PopupApp: React.FC = () => {
   const [isShortsPage, setIsShortsPage] = React.useState(false);
   const [videoTitle, setVideoTitle] = React.useState<string>('');
   const [isLoading, setIsLoading] = React.useState(false);
-  const [showButton, setShowButton] = React.useState(true);
+  const [showButton, setShowButton] = React.useState(false);
 
   // Load button visibility setting
   React.useEffect(() => {
     chrome.storage.sync.get(['buttonVisibility'], (result) => {
-      // Default to true if not set
-      setShowButton(result.buttonVisibility !== false);
+      // Default to false if not set
+      setShowButton(result.buttonVisibility === true);
     });
   }, []);
 
@@ -105,9 +105,12 @@ const PopupApp: React.FC = () => {
       {/* Simple Header */}
       <div className="popup-header">
         <div className="popup-logo-container">
-          <div className="popup-logo">
-            <span className="logo-text">G</span>
-          </div>
+          <img
+            src="icons/icon.svg"
+            alt="YTGify Logo"
+            className="popup-logo-svg"
+            style={{ width: '48px', height: '48px' }}
+          />
           <div>
             <h1 className="popup-logo-title">YouTube GIF Maker</h1>
             <p className="popup-logo-subtitle">Create GIFs instantly</p>

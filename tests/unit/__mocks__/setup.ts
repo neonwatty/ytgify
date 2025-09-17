@@ -10,6 +10,11 @@
 
 import '@testing-library/jest-dom';
 import { chromeMock } from './chrome-mocks';
+import { TextDecoder, TextEncoder } from 'util';
+
+// Add TextEncoder/TextDecoder polyfills for jsdom
+(global as any).TextEncoder = TextEncoder;
+(global as any).TextDecoder = TextDecoder;
 
 // Set up Chrome extension API mocks globally
 (global as any).chrome = chromeMock;
@@ -59,10 +64,12 @@ Object.defineProperty(window, 'close', {
 });
 
 // Mock URL and Blob for file handling tests
-global.URL = {
-  createObjectURL: jest.fn(() => 'mock-blob-url'),
-  revokeObjectURL: jest.fn(),
-} as any;
+// Import URL from Node.js for proper URL parsing
+import { URL } from 'url';
+global.URL = URL as any;
+// Add the mock methods for object URLs
+(global.URL as any).createObjectURL = jest.fn(() => 'mock-blob-url');
+(global.URL as any).revokeObjectURL = jest.fn();
 
 global.Blob = class MockBlob {
   constructor(public parts: BlobPart[], public options: BlobPropertyBag = {}) {}
@@ -243,7 +250,7 @@ beforeEach(() => {
   localStorageMock.getItem.mockClear();
   localStorageMock.setItem.mockClear();
   localStorageMock.removeItem.mockClear();
-  
+
   // Reset console spies
   jest.clearAllMocks();
 });
@@ -253,6 +260,31 @@ afterEach(() => {
   console.log = originalConsole.log;
   console.warn = originalConsole.warn;
   console.error = originalConsole.error;
+
+  // Reset Chrome mock state to prevent test interference
+  const { resetChromeMocks } = require('./chrome-mocks');
+  resetChromeMocks(chromeMock);
+
+  // Reset singleton instances to prevent shared state
+  try {
+    // Reset ContentScriptFrameExtractor singleton
+    const { ContentScriptFrameExtractor } = require('@/content/frame-extractor');
+    if (ContentScriptFrameExtractor?.resetInstance) {
+      ContentScriptFrameExtractor.resetInstance();
+    }
+  } catch (error) {
+    // Ignore import errors in case module doesn't exist in some tests
+  }
+
+  // Reset DOM mock state
+  // Clear any jest mock function state on global DOM mocks
+  if (HTMLCanvasElement.prototype.getContext && jest.isMockFunction(HTMLCanvasElement.prototype.getContext)) {
+    (HTMLCanvasElement.prototype.getContext as jest.MockedFunction<any>).mockClear();
+  }
+  if (HTMLVideoElement.prototype.play && jest.isMockFunction(HTMLVideoElement.prototype.play)) {
+    (HTMLVideoElement.prototype.play as jest.MockedFunction<any>).mockClear();
+    (HTMLVideoElement.prototype.pause as jest.MockedFunction<any>).mockClear();
+  }
 });
 
 // Export testing utilities for use in test files

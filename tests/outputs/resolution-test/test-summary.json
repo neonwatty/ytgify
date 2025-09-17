@@ -1,0 +1,91 @@
+{
+  "testDate": "2025-09-17T00:12:05.856Z",
+  "testType": "Resolution Verification (Simulated)",
+  "resolutionPresets": [
+    {
+      "name": "360p",
+      "expectedWidth": 640,
+      "expectedHeight": 360
+    },
+    {
+      "name": "480p",
+      "expectedWidth": 852,
+      "expectedHeight": 480
+    },
+    {
+      "name": "720p",
+      "expectedWidth": 1280,
+      "expectedHeight": 720
+    },
+    {
+      "name": "original",
+      "expectedWidth": 1920,
+      "expectedHeight": 1080
+    }
+  ],
+  "totalFiles": 8,
+  "files": [
+    {
+      "filename": "rickroll-360p-simulated.gif",
+      "resolution": "360p",
+      "sizeBytes": 20,
+      "sizeKB": 0,
+      "created": "2025-09-17T00:12:05.795Z"
+    },
+    {
+      "filename": "rickroll-360p-test.gif",
+      "resolution": "360p",
+      "sizeBytes": 1000,
+      "sizeKB": 1,
+      "created": "2025-09-17T00:12:05.825Z"
+    },
+    {
+      "filename": "rickroll-480p-simulated.gif",
+      "resolution": "480p",
+      "sizeBytes": 20,
+      "sizeKB": 0,
+      "created": "2025-09-17T00:12:05.795Z"
+    },
+    {
+      "filename": "rickroll-480p-test.gif",
+      "resolution": "480p",
+      "sizeBytes": 1775,
+      "sizeKB": 1.7,
+      "created": "2025-09-17T00:12:05.826Z"
+    },
+    {
+      "filename": "rickroll-720p-simulated.gif",
+      "resolution": "720p",
+      "sizeBytes": 20,
+      "sizeKB": 0,
+      "created": "2025-09-17T00:12:05.795Z"
+    },
+    {
+      "filename": "rickroll-720p-test.gif",
+      "resolution": "720p",
+      "sizeBytes": 4000,
+      "sizeKB": 3.9,
+      "created": "2025-09-17T00:12:05.826Z"
+    },
+    {
+      "filename": "rickroll-original-simulated.gif",
+      "resolution": "original",
+      "sizeBytes": 20,
+      "sizeKB": 0,
+      "created": "2025-09-17T00:12:05.795Z"
+    },
+    {
+      "filename": "rickroll-original-test.gif",
+      "resolution": "original",
+      "sizeBytes": 9000,
+      "sizeKB": 8.8,
+      "created": "2025-09-17T00:12:05.826Z"
+    }
+  ],
+  "expectedDimensions": {
+    "360p": "640 × 360",
+    "480p": "852 × 480",
+    "720p": "1280 × 720",
+    "original": "1920 × 1080"
+  }
+}

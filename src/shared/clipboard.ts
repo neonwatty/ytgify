@@ -144,7 +144,7 @@ export class ClipboardService {
         readPermission = await navigator.permissions.query({ 
           name: 'clipboard-read' as PermissionName
         });
-      } catch (error) {
+      } catch {
         // Ignore - clipboard-read might not be supported
         logger.debug('Clipboard read permission check not supported');
       }

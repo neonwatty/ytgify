@@ -48,7 +48,7 @@ const TextOverlayScreen: React.FC<TextOverlayScreenProps> = ({
   return (
     <div className="ytgif-wizard-screen ytgif-text-overlay-screen">
       <div className="ytgif-wizard-header">
-        <h2 className="ytgif-wizard-title">Add Text to Your GIF</h2>
+        <h2 className="ytgif-wizard-title">Add Text</h2>
         <p className="ytgif-wizard-subtitle">
           Add text overlays to enhance your GIF. Drag to position, customize appearance, and add animations.
         </p>

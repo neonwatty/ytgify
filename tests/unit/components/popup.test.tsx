@@ -214,7 +214,7 @@ describe('PopupApp Component', () => {
       }, { timeout: 2000 });
     });
 
-    test('handles undefined/null storage values by defaulting to true', async () => {
+    test('handles undefined/null storage values by defaulting to false', async () => {
       // Mock storage returning undefined for buttonVisibility
       (global as any).chrome.storage.sync.get.mockImplementation(
         jest.fn((keys, callback) => {
@@ -231,7 +231,7 @@ describe('PopupApp Component', () => {
       });
 
       const checkbox = screen.getByRole('checkbox');
-      expect(checkbox).toBeChecked(); // Should default to true when undefined
+      expect(checkbox).not.toBeChecked(); // Should default to false when undefined
     });
 
     // Note: Storage error handling test removed because the current implementation

@@ -86,9 +86,9 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        // Calculate the midpoint of the selected range
-        const midTime = startTime + (endTime - startTime) / 2;
-        
+        // Use the start time for consistency with QuickCaptureScreen
+        const frameTime = startTime;
+
         // Store original time to restore later
         const originalTime = videoElement.currentTime;
         
@@ -112,14 +112,14 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
             videoElement.currentTime = originalTime;
           }, 100);
         };
-        
-        // Seek to the midpoint and capture
+
+        // Seek to the frame time and capture
         const performCapture = () => {
-          videoElement.currentTime = midTime;
-          
+          videoElement.currentTime = frameTime;
+
           // Use requestAnimationFrame to ensure the frame is rendered
           const checkAndCapture = () => {
-            if (Math.abs(videoElement.currentTime - midTime) < 0.1) {
+            if (Math.abs(videoElement.currentTime - frameTime) < 0.1) {
               // We're close enough to the target time
               requestAnimationFrame(() => {
                 captureFrame();
@@ -144,7 +144,7 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
     <div className="ytgif-wizard-screen ytgif-text-overlay-screen">
       {/* Hidden canvas for frame capture */}
       <canvas ref={canvasRef} style={{ display: 'none' }} />
-      
+
       {/* Standard wizard header */}
       <div className="ytgif-wizard-header">
         {onBack && (
@@ -154,11 +154,13 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
             </svg>
           </button>
         )}
-        <h2 className="ytgif-wizard-title">Add Text to Your GIF</h2>
+        <h2 className="ytgif-wizard-title">Make It Memorable</h2>
         <div style={{ width: '20px' }}></div>
       </div>
 
       <div className="ytgif-wizard-content">
+        {/* Helper text */}
+        <p className="ytgif-wizard-helper">Add captions, reactions, or context to your GIF</p>
         {/* Video Preview with Real Frame Background */}
         <div className="ytgif-video-preview-section">
           <div className="ytgif-video-preview-frame">
@@ -242,7 +244,7 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
               <input
                 type="text"
                 className="ytgif-text-input"
-                placeholder="Enter top text (optional)..."
+                placeholder="Add your caption here..."
                 value={topText}
                 onChange={(e) => setTopText(e.target.value)}
                 maxLength={50}
@@ -303,7 +305,7 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
               <input
                 type="text"
                 className="ytgif-text-input"
-                placeholder="Enter bottom text (optional)..."
+                placeholder="Perfect for reactions or context..."
                 value={bottomText}
                 onChange={(e) => setBottomText(e.target.value)}
                 maxLength={50}
@@ -362,7 +364,7 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
             onClick={onSkip}
             type="button"
           >
-            Skip Text
+            Skip This Step
           </button>
           
           <button 
@@ -374,7 +376,7 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
                 d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
-            {hasText ? 'Add Text & Create GIF' : 'Continue Without Text'}
+            {hasText ? 'Apply Text & Continue' : 'Create GIF Without Text'}
           </button>
         </div>
     </div>

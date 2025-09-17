@@ -169,7 +169,7 @@ export class Logger {
           console.error(prefix, message, ...args);
           break;
       }
-    } catch (error) {
+    } catch {
       // Silently ignore logging errors
     }
   }
@@ -246,7 +246,7 @@ class SharedLogger {
     try {
       const result = await chrome.storage.sync.get(['analyticsEnabled']);
       this.isAnalyticsEnabled = result.analyticsEnabled ?? false;
-    } catch (error) {
+    } catch {
       this.isAnalyticsEnabled = false;
     }
   }

@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TimelineOverlay, TimelineOverlayProps } from './timeline-overlay';
 
-interface TimelineOverlayWrapperProps extends TimelineOverlayProps {
-  // Extension of existing props
-}
+type TimelineOverlayWrapperProps = TimelineOverlayProps;
 
 export const TimelineOverlayWrapper: React.FC<TimelineOverlayWrapperProps> = (props) => {
   const [processingStatus, setProcessingStatus] = useState(props.processingStatus);
