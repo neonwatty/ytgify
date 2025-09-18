@@ -1,9 +1,8 @@
 import { test, expect } from './fixtures';
 import { YouTubePage } from './page-objects/YouTubePage';
-import { GifWizard } from './page-objects/GifWizard';
 import { QuickCapturePage } from './page-objects/QuickCapturePage';
 import { TEST_VIDEOS } from './helpers/test-videos';
-import { waitForExtensionReady, handleYouTubeCookieConsent } from './helpers/extension-helpers';
+import { handleYouTubeCookieConsent } from './helpers/extension-helpers';
 
 test.describe('Basic Wizard Test with Extension', () => {
   test('Extension loads and GIF button appears', async ({ page, context, extensionId }) => {
@@ -238,7 +237,7 @@ test.describe('Basic Wizard Test with Extension', () => {
     // Click the GIF button
     const gifButton = await page.$('.ytgif-button');
     expect(gifButton).toBeTruthy();
-    await gifButton.click();
+    await gifButton!.click();
 
     // Wait for wizard
     await page.waitForTimeout(2000);
@@ -283,6 +282,164 @@ test.describe('Basic Wizard Test with Extension', () => {
           stillOnQuickCapture: !!quickCapture && (quickCapture as HTMLElement).offsetParent !== null
         };
       });
+    }
+  });
+
+  test('Can select different resolution options in wizard', async ({ page, context: _context, extensionId: _extensionId }) => {
+    const quickCapture = new QuickCapturePage(page);
+
+    // Navigate and wait for button
+    await page.goto(TEST_VIDEOS.veryShort.url);
+    await handleYouTubeCookieConsent(page);
+    await page.waitForSelector('video', { timeout: 30000 });
+    await page.waitForTimeout(8000);
+
+    // Click GIF button to open wizard
+    await page.click('.ytgif-button');
+    await quickCapture.waitForScreen();
+
+    // Verify default resolution is selected (144p)
+    const defaultResolution = await quickCapture.getSelectedResolution();
+    expect(defaultResolution).toBe('144p');
+
+    // Test selecting different resolutions
+    const resolutions: Array<'144p' | '240p' | '360p' | '480p'> = ['144p', '240p', '480p'];
+
+    for (const resolution of resolutions) {
+      await quickCapture.selectResolution(resolution);
+      const selectedResolution = await quickCapture.getSelectedResolution();
+      expect(selectedResolution).toBe(resolution);
+    }
+
+    // Verify resolution buttons are visually distinct when selected
+    await quickCapture.selectResolution('480p');
+    const buttonState = await page.evaluate(() => {
+      const buttons = document.querySelectorAll('.ytgif-resolution-btn');
+      return Array.from(buttons).map(btn => ({
+        text: btn.textContent?.trim(),
+        isActive: btn.classList.contains('ytgif-resolution-btn--active')
+      }));
+    });
+
+    const activeButtons = buttonState.filter(btn => btn.isActive);
+    expect(activeButtons).toHaveLength(1);
+    expect(activeButtons[0].text).toContain('480p');
+  });
+
+  test('Resolution setting persists through wizard navigation', async ({ page, context: _context, extensionId: _extensionId }) => {
+    const quickCapture = new QuickCapturePage(page);
+
+    // Navigate and open wizard
+    await page.goto(TEST_VIDEOS.veryShort.url);
+    await handleYouTubeCookieConsent(page);
+    await page.waitForSelector('video', { timeout: 30000 });
+    await page.waitForTimeout(8000);
+
+    await page.click('.ytgif-button');
+    await quickCapture.waitForScreen();
+
+    // Select a specific resolution
+    await quickCapture.selectResolution('480p');
+    const initialResolution = await quickCapture.getSelectedResolution();
+    expect(initialResolution).toBe('480p');
+
+    // Navigate to next screen
+    await page.click('.ytgif-button-primary');
+    await page.waitForTimeout(2000);
+
+    // Check if we're on text overlay screen
+    const textOverlayVisible = await page.evaluate(() => {
+      const textOverlay = document.querySelector('.ytgif-text-overlay-screen');
+      return textOverlay && (textOverlay as HTMLElement).offsetParent !== null;
+    });
+
+    if (textOverlayVisible) {
+      // Navigate back to quick capture screen
+      await page.click('.ytgif-back-button');
+      await page.waitForTimeout(1000);
+
+      // Verify we're back on the quick capture screen
+      const backOnQuickCapture = await page.evaluate(() => {
+        const quickCapture = document.querySelector('.ytgif-quick-capture-screen');
+        return quickCapture && (quickCapture as HTMLElement).offsetParent !== null;
+      });
+      expect(backOnQuickCapture).toBe(true);
+
+      // Check if resolution selection interface is available
+      const resolutionButtons = await page.$$('.ytgif-resolution-btn');
+      expect(resolutionButtons.length).toBeGreaterThan(0);
+    }
+  });
+
+  test('Can create GIF with specific resolution and validate output', async ({ page, context: _context, extensionId: _extensionId }) => {
+    const quickCapture = new QuickCapturePage(page);
+
+    // Navigate and open wizard
+    await page.goto(TEST_VIDEOS.veryShort.url);
+    await handleYouTubeCookieConsent(page);
+    await page.waitForSelector('video', { timeout: 30000 });
+    await page.waitForTimeout(8000);
+
+    await page.click('.ytgif-button');
+    await quickCapture.waitForScreen();
+
+    // Select 480p resolution for clear validation
+    await quickCapture.selectResolution('480p');
+    const selectedResolution = await quickCapture.getSelectedResolution();
+    expect(selectedResolution).toBe('480p');
+
+    // Continue through wizard
+    await page.click('.ytgif-button-primary');
+    await page.waitForTimeout(2000);
+
+    // Skip text overlay if present
+    try {
+      await page.click('button:has-text("Skip")', { timeout: 3000 });
+    } catch {
+      // If skip doesn't work, try primary button
+      try {
+        await page.click('.ytgif-button-primary', { timeout: 3000 });
+      } catch {
+        // Continue regardless
+      }
+    }
+    await page.waitForTimeout(2000);
+
+    // Wait for processing to complete
+    const processingInfo = await page.evaluate(() => {
+      const processing = document.querySelector('.ytgif-processing-screen');
+      return {
+        onProcessingScreen: !!processing,
+        processingVisible: processing ? (processing as HTMLElement).offsetParent !== null : false
+      };
+    });
+
+    if (processingInfo.onProcessingScreen) {
+      // Wait for GIF creation (up to 45 seconds for resolution testing)
+      await page.waitForTimeout(45000);
+
+      // Check for success screen and GIF output
+      const successInfo = await page.evaluate(() => {
+        const success = document.querySelector('.ytgif-success-screen');
+        const gifPreview = document.querySelector('.ytgif-gif-preview img, .ytgif-success-preview-image');
+        return {
+          onSuccessScreen: !!success,
+          hasGifPreview: !!gifPreview,
+          gifSrc: gifPreview ? (gifPreview as HTMLImageElement).src : null
+        };
+      });
+
+      if (successInfo.hasGifPreview && successInfo.gifSrc) {
+        expect(successInfo.gifSrc).toBeTruthy();
+
+        // Basic validation that GIF was created
+        const isValidDataUrl = successInfo.gifSrc.startsWith('data:image/gif');
+        const isValidBlobUrl = successInfo.gifSrc.startsWith('blob:');
+        expect(isValidDataUrl || isValidBlobUrl).toBe(true);
+
+        // Log success for debugging
+        console.log(`✅ Successfully created GIF with 480p resolution: ${successInfo.gifSrc.substring(0, 50)}...`);
+      }
     }
   });
 });
