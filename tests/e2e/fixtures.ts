@@ -14,15 +14,15 @@ export const test = base.extend<{
     const pathToExtension = path.join(__dirname, '..', '..', 'dist');
     const userDataDir = path.join(__dirname, '..', 'test-user-data-' + Date.now());
 
-    // Check if --headed flag was passed or CI environment
+    // Check if --headed flag was passed
     const isHeaded = process.argv.includes('--headed');
     const isCI = process.env.CI === 'true';
 
-    // IMPORTANT: Chrome extensions require GUI mode to function properly
-    // Headless Chrome does not support extensions in the traditional headless mode
-    // For CI/headless environments, use Xvfb (virtual framebuffer) on Linux
+    // Extensions work in headless mode when using the 'chromium' channel
+    // Headed mode can be forced with --headed flag for debugging
     const context = await chromium.launchPersistentContext(userDataDir, {
-      headless: false, // Extensions always require non-headless mode
+      channel: 'chromium', // Required for extensions to work in headless mode
+      headless: !isHeaded, // Run headless by default, headed with --headed flag
       args: [
         `--disable-extensions-except=${pathToExtension}`,
         `--load-extension=${pathToExtension}`,
@@ -30,8 +30,6 @@ export const test = base.extend<{
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-blink-features=AutomationControlled',
-        // Minimize window for "headless-like" behavior when not explicitly headed
-        ...(!isHeaded && !isCI ? ['--window-position=-2400,-2400', '--window-size=1,1'] : []),
       ],
       viewport: { width: 1280, height: 720 },
     });

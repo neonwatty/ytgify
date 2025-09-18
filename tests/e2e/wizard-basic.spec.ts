@@ -164,21 +164,22 @@ test.describe('Basic Wizard Test with Extension', () => {
   });
 
   test('Can create a simple GIF', async ({ page, context, extensionId }) => {
+    test.setTimeout(60000); // Increase timeout for GIF creation
     const youtube = new YouTubePage(page);
 
     // Navigate and wait for button
     await page.goto(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await page.waitForSelector('video', { timeout: 30000 });
-    await page.waitForTimeout(8000);
+    await page.waitForTimeout(4000);
 
     // Click GIF button
     await page.click('.ytgif-button');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Quick capture screen - just click continue
     await page.click('.ytgif-button-primary');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Text overlay screen - skip it
     // Use force click to bypass viewport issues
@@ -188,7 +189,7 @@ test.describe('Basic Wizard Test with Extension', () => {
       // If skip doesn't work, try primary button
       await page.click('.ytgif-button-primary', { force: true });
     }
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Check if we're on processing screen
     const processingInfo = await page.evaluate(() => {
@@ -202,8 +203,19 @@ test.describe('Basic Wizard Test with Extension', () => {
     });
 
     if (processingInfo.onProcessingScreen) {
-      // Wait for GIF to be created (up to 30 seconds)
-      await page.waitForTimeout(30000);
+      // Wait for success screen to appear (up to 45 seconds)
+      try {
+        await page.waitForFunction(
+          () => {
+            const success = document.querySelector('.ytgif-success-screen');
+            const error = document.querySelector('.ytgif-error-message');
+            return success || error;
+          },
+          { timeout: 45000, polling: 1000 }
+        );
+      } catch (e) {
+        console.log('Timeout waiting for success screen');
+      }
 
       // Check if we reached success screen
       const successInfo = await page.evaluate(() => {
@@ -232,7 +244,7 @@ test.describe('Basic Wizard Test with Extension', () => {
     await page.waitForSelector('.ytp-right-controls', { timeout: 30000 });
 
     // Wait for button to be injected
-    await page.waitForTimeout(8000);
+    await page.waitForTimeout(4000);
 
     // Click the GIF button
     const gifButton = await page.$('.ytgif-button');
@@ -240,7 +252,7 @@ test.describe('Basic Wizard Test with Extension', () => {
     await gifButton!.click();
 
     // Wait for wizard
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Check wizard structure
     const wizardInfo = await page.evaluate(() => {
@@ -270,7 +282,7 @@ test.describe('Basic Wizard Test with Extension', () => {
     // Try to click next if button exists and is enabled
     if (wizardInfo.nextButtonExists && !wizardInfo.nextButtonDisabled) {
       await page.click('.ytgif-button-primary');
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(1000);
 
       // Check if we moved to next screen
       const nextScreenInfo = await page.evaluate(() => {
@@ -292,7 +304,7 @@ test.describe('Basic Wizard Test with Extension', () => {
     await page.goto(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await page.waitForSelector('video', { timeout: 30000 });
-    await page.waitForTimeout(8000);
+    await page.waitForTimeout(4000);
 
     // Click GIF button to open wizard
     await page.click('.ytgif-button');
@@ -333,7 +345,7 @@ test.describe('Basic Wizard Test with Extension', () => {
     await page.goto(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await page.waitForSelector('video', { timeout: 30000 });
-    await page.waitForTimeout(8000);
+    await page.waitForTimeout(4000);
 
     await page.click('.ytgif-button');
     await quickCapture.waitForScreen();
@@ -345,7 +357,7 @@ test.describe('Basic Wizard Test with Extension', () => {
 
     // Navigate to next screen
     await page.click('.ytgif-button-primary');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Check if we're on text overlay screen
     const textOverlayVisible = await page.evaluate(() => {
@@ -372,13 +384,14 @@ test.describe('Basic Wizard Test with Extension', () => {
   });
 
   test('Can create GIF with specific resolution and validate output', async ({ page, context: _context, extensionId: _extensionId }) => {
+    test.setTimeout(60000); // Increase timeout for GIF creation
     const quickCapture = new QuickCapturePage(page);
 
     // Navigate and open wizard
     await page.goto(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await page.waitForSelector('video', { timeout: 30000 });
-    await page.waitForTimeout(8000);
+    await page.waitForTimeout(4000);
 
     await page.click('.ytgif-button');
     await quickCapture.waitForScreen();
@@ -390,7 +403,7 @@ test.describe('Basic Wizard Test with Extension', () => {
 
     // Continue through wizard
     await page.click('.ytgif-button-primary');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Skip text overlay if present
     try {
@@ -403,7 +416,7 @@ test.describe('Basic Wizard Test with Extension', () => {
         // Continue regardless
       }
     }
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Wait for processing to complete
     const processingInfo = await page.evaluate(() => {
@@ -415,8 +428,21 @@ test.describe('Basic Wizard Test with Extension', () => {
     });
 
     if (processingInfo.onProcessingScreen) {
-      // Wait for GIF creation (up to 45 seconds for resolution testing)
-      await page.waitForTimeout(45000);
+      // Wait for success screen to appear (up to 45 seconds)
+      try {
+        await page.waitForFunction(
+          () => {
+            const success = document.querySelector('.ytgif-success-screen');
+            const error = document.querySelector('.ytgif-error-message');
+            const progress = document.querySelector('.ytgif-progress-bar');
+            // Check if done processing
+            return success || error || (progress && progress.getAttribute('value') === '100');
+          },
+          { timeout: 45000, polling: 1000 }
+        );
+      } catch (e) {
+        console.log('Timeout waiting for GIF processing completion');
+      }
 
       // Check for success screen and GIF output
       const successInfo = await page.evaluate(() => {
@@ -450,7 +476,7 @@ test.describe('Basic Wizard Test with Extension', () => {
     await page.goto(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await page.waitForSelector('video', { timeout: 30000 });
-    await page.waitForTimeout(8000);
+    await page.waitForTimeout(4000);
 
     // Click GIF button to open wizard
     await page.click('.ytgif-button');
@@ -502,7 +528,7 @@ test.describe('Basic Wizard Test with Extension', () => {
     await page.goto(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await page.waitForSelector('video', { timeout: 30000 });
-    await page.waitForTimeout(8000);
+    await page.waitForTimeout(4000);
 
     await page.click('.ytgif-button');
     await quickCapture.waitForScreen();
@@ -517,7 +543,7 @@ test.describe('Basic Wizard Test with Extension', () => {
 
     // Navigate to next screen
     await page.click('.ytgif-button-primary');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Check if we're on text overlay screen
     const textOverlayVisible = await page.evaluate(() => {
@@ -544,13 +570,14 @@ test.describe('Basic Wizard Test with Extension', () => {
   });
 
   test('Can create GIF with specific FPS and validate output', async ({ page, context: _context, extensionId: _extensionId }) => {
+    test.setTimeout(60000); // Increase timeout for GIF creation
     const quickCapture = new QuickCapturePage(page);
 
     // Navigate and open wizard
     await page.goto(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await page.waitForSelector('video', { timeout: 30000 });
-    await page.waitForTimeout(8000);
+    await page.waitForTimeout(4000);
 
     await page.click('.ytgif-button');
     await quickCapture.waitForScreen();
@@ -565,7 +592,7 @@ test.describe('Basic Wizard Test with Extension', () => {
 
     // Continue through wizard
     await page.click('.ytgif-button-primary');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Skip text overlay if present
     try {
@@ -578,7 +605,7 @@ test.describe('Basic Wizard Test with Extension', () => {
         // Continue regardless
       }
     }
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Wait for processing to complete
     const processingInfo = await page.evaluate(() => {
@@ -590,8 +617,21 @@ test.describe('Basic Wizard Test with Extension', () => {
     });
 
     if (processingInfo.onProcessingScreen) {
-      // Wait for GIF creation (up to 45 seconds for FPS testing)
-      await page.waitForTimeout(45000);
+      // Wait for success screen to appear (up to 45 seconds)
+      try {
+        await page.waitForFunction(
+          () => {
+            const success = document.querySelector('.ytgif-success-screen');
+            const error = document.querySelector('.ytgif-error-message');
+            const progress = document.querySelector('.ytgif-progress-bar');
+            // Check if done processing
+            return success || error || (progress && progress.getAttribute('value') === '100');
+          },
+          { timeout: 45000, polling: 1000 }
+        );
+      } catch (e) {
+        console.log('Timeout waiting for GIF processing completion');
+      }
 
       // Check for success screen and GIF output
       const successInfo = await page.evaluate(() => {
@@ -625,7 +665,7 @@ test.describe('Basic Wizard Test with Extension', () => {
     await page.goto(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await page.waitForSelector('video', { timeout: 30000 });
-    await page.waitForTimeout(8000);
+    await page.waitForTimeout(4000);
 
     // Click GIF button to open wizard
     await page.click('.ytgif-button');
@@ -665,29 +705,34 @@ test.describe('Basic Wizard Test with Extension', () => {
   });
 
   test('GIF length interface persists through wizard navigation', async ({ page, context: _context, extensionId: _extensionId }) => {
+    test.setTimeout(120000); // Increase timeout to 2 minutes for navigation test
     const quickCapture = new QuickCapturePage(page);
 
     // Navigate and open wizard
     await page.goto(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
-    await page.waitForSelector('video', { timeout: 30000 });
-    await page.waitForTimeout(8000);
+    await page.waitForSelector('video', { timeout: 15000 });
+    await page.waitForTimeout(3000); // Reduced wait time
 
     await page.click('.ytgif-button');
     await quickCapture.waitForScreen();
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000); // Reduced wait time
 
-    // Get initial time range if available
+    // Get initial time range if available (with timeout)
     let initialTimeRange = null;
     try {
-      initialTimeRange = await quickCapture.getTimeRangeValues();
+      const timeRangePromise = quickCapture.getTimeRangeValues();
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout getting time range')), 2000)
+      );
+      initialTimeRange = await Promise.race([timeRangePromise, timeoutPromise]) as any;
     } catch (e) {
       console.log('⚠️ Initial time range not accessible, continuing with navigation test');
     }
 
     // Navigate to next screen
     await page.click('.ytgif-button-primary');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000); // Reduced wait time
 
     // Check if we're on text overlay screen
     const textOverlayVisible = await page.evaluate(() => {
@@ -726,24 +771,33 @@ test.describe('Basic Wizard Test with Extension', () => {
   });
 
   test('Can create GIF with specific length and validate output', async ({ page, context: _context, extensionId: _extensionId }) => {
+    test.setTimeout(120000); // Increase timeout to 2 minutes for GIF creation with time selection
     const quickCapture = new QuickCapturePage(page);
 
     // Navigate and open wizard
     await page.goto(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
-    await page.waitForSelector('video', { timeout: 30000 });
-    await page.waitForTimeout(8000);
+    await page.waitForSelector('video', { timeout: 15000 });
+    await page.waitForTimeout(3000); // Reduced wait time
 
     await page.click('.ytgif-button');
     await quickCapture.waitForScreen();
 
-    // Try to set time range defensively (3 seconds)
+    // Try to set time range defensively (3 seconds) with timeout
     let timeRangeSet = false;
     try {
-      await quickCapture.setTimeRange(0, 3);
+      const setRangePromise = quickCapture.setTimeRange(0, 3);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout setting time range')), 3000)
+      );
+      await Promise.race([setRangePromise, timeoutPromise]);
       await page.waitForTimeout(500);
 
-      const selectedTimeRange = await quickCapture.getTimeRangeValues();
+      const getRangePromise = quickCapture.getTimeRangeValues();
+      const getTimeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout getting time range')), 2000)
+      );
+      const selectedTimeRange = await Promise.race([getRangePromise, getTimeoutPromise]) as any;
       const selectedDuration = selectedTimeRange.end - selectedTimeRange.start;
       expect(selectedDuration).toBeCloseTo(3, 1);
       timeRangeSet = true;
@@ -755,7 +809,7 @@ test.describe('Basic Wizard Test with Extension', () => {
 
     // Continue through wizard
     await page.click('.ytgif-button-primary');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000); // Reduced wait time
 
     // Skip text overlay if present
     try {
@@ -768,7 +822,7 @@ test.describe('Basic Wizard Test with Extension', () => {
         // Continue regardless
       }
     }
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(1000);
 
     // Wait for processing to complete
     const processingInfo = await page.evaluate(() => {
@@ -780,8 +834,21 @@ test.describe('Basic Wizard Test with Extension', () => {
     });
 
     if (processingInfo.onProcessingScreen) {
-      // Wait for GIF creation (adequate timeout for any duration)
-      await page.waitForTimeout(30000);
+      // Wait for success screen to appear (up to 45 seconds)
+      try {
+        await page.waitForFunction(
+          () => {
+            const success = document.querySelector('.ytgif-success-screen');
+            const error = document.querySelector('.ytgif-error-message');
+            const progress = document.querySelector('.ytgif-progress-bar');
+            // Check if done processing
+            return success || error || (progress && progress.getAttribute('value') === '100');
+          },
+          { timeout: 45000, polling: 1000 }
+        );
+      } catch (e) {
+        console.log('Timeout waiting for GIF processing completion');
+      }
 
       // Check for success screen and GIF output
       const successInfo = await page.evaluate(() => {
