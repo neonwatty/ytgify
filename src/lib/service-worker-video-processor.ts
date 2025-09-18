@@ -13,7 +13,7 @@ export interface ServiceWorkerVideoProcessingOptions {
   maxHeight?: number;
 }
 
-export interface ServiceWorkerFrameExtractionResult {
+interface ServiceWorkerFrameExtractionResult {
   frames: ImageData[];
   metadata: {
     totalFrames: number;

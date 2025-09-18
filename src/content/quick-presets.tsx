@@ -8,7 +8,7 @@ import {
   PresetCalculationResult 
 } from './preset-calculator';
 
-export interface QuickPresetsProps {
+interface QuickPresetsProps {
   videoDuration: number;
   currentTime: number;
   onPresetSelect: (selection: TimelineSelection, presetInfo: { duration: PresetDuration; confidence: number }) => void;
@@ -227,7 +227,7 @@ export const QuickPresets: React.FC<QuickPresetsProps> = ({
 };
 
 // CSS-in-JS styles (to be added to the main CSS file)
-export const quickPresetsStyles = `
+const quickPresetsStyles = `
 .ytgif-quick-presets {
   background: rgba(0, 0, 0, 0.85);
   border-radius: 8px;

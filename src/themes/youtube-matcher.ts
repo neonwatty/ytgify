@@ -1,6 +1,6 @@
 import { ThemeInfo, themeDetector } from './theme-detector';
 
-export interface YouTubeThemeMapping {
+interface YouTubeThemeMapping {
   background: string;
   surface: string;
   primaryText: string;

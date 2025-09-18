@@ -1,14 +1,14 @@
 import { ExtensionError, createError } from '../lib/errors';
 import { sharedLogger } from './logger';
 
-export interface ErrorRecoveryStrategy {
+interface ErrorRecoveryStrategy {
   maxRetries?: number;
   delayMs?: number;
   exponentialBackoff?: boolean;
   fallbackAction?: () => void | Promise<void>;
 }
 
-export interface UserFeedback {
+interface UserFeedback {
   type: 'error' | 'warning' | 'info' | 'success';
   title: string;
   message: string;
@@ -433,14 +433,14 @@ ${diagnostics}
 
 export const sharedErrorHandler = SharedErrorHandler.getInstance();
 
-export function withErrorBoundary<T extends unknown[], R>(
+function withErrorBoundary<T extends unknown[], R>(
   operation: (...args: T) => Promise<R>,
   strategy?: ErrorRecoveryStrategy
 ): (...args: T) => Promise<R> {
   return sharedErrorHandler.wrapWithErrorBoundary(operation, strategy);
 }
 
-export function errorBoundaryDecorator(strategy?: ErrorRecoveryStrategy) {
+function errorBoundaryDecorator(strategy?: ErrorRecoveryStrategy) {
   return function (target: unknown, propertyName: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 

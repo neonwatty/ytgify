@@ -4,7 +4,7 @@
  * and handling common aspect ratio formats (16:9, 4:3, etc.)
  */
 
-export interface AspectRatio {
+interface AspectRatio {
   width: number;
   height: number;
   ratio: number;
@@ -12,7 +12,7 @@ export interface AspectRatio {
   isCommon: boolean;
 }
 
-export interface DimensionConstraints {
+interface DimensionConstraints {
   minWidth?: number;
   maxWidth?: number;
   minHeight?: number;
@@ -20,7 +20,7 @@ export interface DimensionConstraints {
   multipleOf?: number; // Ensure dimensions are multiples of this value
 }
 
-export interface CropRegion {
+interface CropRegion {
   x: number;
   y: number;
   width: number;
@@ -30,7 +30,7 @@ export interface CropRegion {
 /**
  * Common aspect ratios for video content
  */
-export const COMMON_ASPECT_RATIOS: AspectRatio[] = [
+const COMMON_ASPECT_RATIOS: AspectRatio[] = [
   { width: 16, height: 9, ratio: 16/9, label: '16:9 (Widescreen)', isCommon: true },
   { width: 4, height: 3, ratio: 4/3, label: '4:3 (Standard)', isCommon: true },
   { width: 21, height: 9, ratio: 21/9, label: '21:9 (Ultrawide)', isCommon: true },

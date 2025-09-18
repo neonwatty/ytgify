@@ -12,7 +12,7 @@ export interface YouTubePageState {
   isShorts: boolean;
 }
 
-export type YouTubePageType = 'watch' | 'channel' | 'search' | 'home' | 'shorts' | 'playlist' | 'unknown';
+type YouTubePageType = 'watch' | 'channel' | 'search' | 'home' | 'shorts' | 'playlist' | 'unknown';
 
 export interface YouTubeNavigationEvent {
   fromState: YouTubePageState;
@@ -21,7 +21,7 @@ export interface YouTubeNavigationEvent {
   navigationType: 'spa' | 'full' | 'initial';
 }
 
-export type NavigationCallback = (event: YouTubeNavigationEvent) => void;
+type NavigationCallback = (event: YouTubeNavigationEvent) => void;
 
 export class YouTubeDetector {
   private static instance: YouTubeDetector;

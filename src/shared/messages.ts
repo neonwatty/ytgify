@@ -25,7 +25,7 @@ export interface BaseResponse extends BaseMessage {
 }
 
 // Message routing information
-export interface MessageContext {
+interface MessageContext {
   sender: 'content' | 'background' | 'popup';
   target: 'content' | 'background' | 'popup' | 'broadcast';
   priority: 'low' | 'normal' | 'high';
@@ -33,13 +33,13 @@ export interface MessageContext {
 }
 
 // Enhanced message wrapper
-export interface ExtensionMessage<T = unknown> extends BaseMessage {
+interface ExtensionMessage<T = unknown> extends BaseMessage {
   context?: MessageContext;
   data?: T;
 }
 
 // Request/Response Pattern Messages
-export interface ExtractFramesRequest extends BaseRequest {
+interface ExtractFramesRequest extends BaseRequest {
   type: 'EXTRACT_FRAMES_REQUEST';
   data: {
     videoElement: {
@@ -58,7 +58,7 @@ export interface ExtractFramesRequest extends BaseRequest {
   };
 }
 
-export interface ExtractFramesResponse extends BaseResponse {
+interface ExtractFramesResponse extends BaseResponse {
   type: 'EXTRACT_FRAMES_RESPONSE';
   data?: {
     frames: ImageData[];
@@ -67,7 +67,7 @@ export interface ExtractFramesResponse extends BaseResponse {
   };
 }
 
-export interface EncodeGifRequest extends BaseRequest {
+interface EncodeGifRequest extends BaseRequest {
   type: 'ENCODE_GIF_REQUEST';
   data: {
     frames: ImageData[];
@@ -83,7 +83,7 @@ export interface EncodeGifRequest extends BaseRequest {
   };
 }
 
-export interface EncodeGifResponse extends BaseResponse {
+interface EncodeGifResponse extends BaseResponse {
   type: 'ENCODE_GIF_RESPONSE';
   data?: {
     gifBlob: Blob;
@@ -98,7 +98,7 @@ export interface EncodeGifResponse extends BaseResponse {
   };
 }
 
-export interface GetVideoStateRequest extends BaseRequest {
+interface GetVideoStateRequest extends BaseRequest {
   type: 'GET_VIDEO_STATE_REQUEST';
   data?: {
     includeMetadata?: boolean;
@@ -106,7 +106,7 @@ export interface GetVideoStateRequest extends BaseRequest {
   };
 }
 
-export interface GetVideoStateResponse extends BaseResponse {
+interface GetVideoStateResponse extends BaseResponse {
   type: 'GET_VIDEO_STATE_RESPONSE';
   data?: {
     isPlaying: boolean;
@@ -123,7 +123,7 @@ export interface GetVideoStateResponse extends BaseResponse {
 }
 
 // Event Broadcasting Messages (no response expected)
-export interface ShowTimelineEvent extends ExtensionMessage {
+interface ShowTimelineEvent extends ExtensionMessage {
   type: 'SHOW_TIMELINE_EVENT';
   data: {
     videoDuration: number;
@@ -132,16 +132,16 @@ export interface ShowTimelineEvent extends ExtensionMessage {
   };
 }
 
-export interface HideTimelineEvent extends ExtensionMessage {
+interface HideTimelineEvent extends ExtensionMessage {
   type: 'HIDE_TIMELINE_EVENT';
 }
 
-export interface TimelineSelectionUpdate extends ExtensionMessage {
+interface TimelineSelectionUpdate extends ExtensionMessage {
   type: 'TIMELINE_SELECTION_UPDATE';
   data: TimelineSelection;
 }
 
-export interface OpenEditorEvent extends ExtensionMessage {
+interface OpenEditorEvent extends ExtensionMessage {
   type: 'OPEN_EDITOR_EVENT';
   data: {
     videoUrl: string;
@@ -150,7 +150,7 @@ export interface OpenEditorEvent extends ExtensionMessage {
   };
 }
 
-export interface JobProgressUpdate extends ExtensionMessage {
+interface JobProgressUpdate extends ExtensionMessage {
   type: 'JOB_PROGRESS_UPDATE';
   data: {
     jobId: string;
@@ -162,7 +162,7 @@ export interface JobProgressUpdate extends ExtensionMessage {
 }
 
 // Logging and Debugging Messages
-export interface LogMessage extends ExtensionMessage {
+interface LogMessage extends ExtensionMessage {
   type: 'LOG_MESSAGE';
   data: {
     level: 'debug' | 'info' | 'warn' | 'error';
@@ -173,14 +173,14 @@ export interface LogMessage extends ExtensionMessage {
 }
 
 // Job Management Messages
-export interface GetJobStatusRequest extends BaseRequest {
+interface GetJobStatusRequest extends BaseRequest {
   type: 'GET_JOB_STATUS_REQUEST';
   data: {
     jobId: string;
   };
 }
 
-export interface GetJobStatusResponse extends BaseResponse {
+interface GetJobStatusResponse extends BaseResponse {
   type: 'GET_JOB_STATUS_RESPONSE';
   data?: {
     jobId: string;
@@ -193,7 +193,7 @@ export interface GetJobStatusResponse extends BaseResponse {
   };
 }
 
-export interface CancelJobRequest extends BaseRequest {
+interface CancelJobRequest extends BaseRequest {
   type: 'CANCEL_JOB_REQUEST';
   data: {
     jobId: string;
@@ -201,7 +201,7 @@ export interface CancelJobRequest extends BaseRequest {
   };
 }
 
-export interface CancelJobResponse extends BaseResponse {
+interface CancelJobResponse extends BaseResponse {
   type: 'CANCEL_JOB_RESPONSE';
   data?: {
     jobId: string;
@@ -210,7 +210,7 @@ export interface CancelJobResponse extends BaseResponse {
 }
 
 // Storage Operations
-export interface SaveGifRequest extends BaseRequest {
+interface SaveGifRequest extends BaseRequest {
   type: 'SAVE_GIF_REQUEST';
   data: {
     gifData: GifData;
@@ -218,7 +218,7 @@ export interface SaveGifRequest extends BaseRequest {
   };
 }
 
-export interface SaveGifResponse extends BaseResponse {
+interface SaveGifResponse extends BaseResponse {
   type: 'SAVE_GIF_RESPONSE';
   data?: {
     gifId: string;
@@ -226,7 +226,7 @@ export interface SaveGifResponse extends BaseResponse {
   };
 }
 
-export interface GetGifLibraryRequest extends BaseRequest {
+interface GetGifLibraryRequest extends BaseRequest {
   type: 'GET_GIF_LIBRARY_REQUEST';
   data?: {
     limit?: number;
@@ -237,7 +237,7 @@ export interface GetGifLibraryRequest extends BaseRequest {
   };
 }
 
-export interface GetGifLibraryResponse extends BaseResponse {
+interface GetGifLibraryResponse extends BaseResponse {
   type: 'GET_GIF_LIBRARY_RESPONSE';
   data?: {
     gifs: GifData[];
@@ -289,36 +289,36 @@ export function isEvent(message: BaseMessage): message is EventMessage {
 }
 
 // Specific type guards
-export function isExtractFramesRequest(message: BaseMessage): message is ExtractFramesRequest {
+function isExtractFramesRequest(message: BaseMessage): message is ExtractFramesRequest {
   return message.type === 'EXTRACT_FRAMES_REQUEST';
 }
 
-export function isEncodeGifRequest(message: BaseMessage): message is EncodeGifRequest {
+function isEncodeGifRequest(message: BaseMessage): message is EncodeGifRequest {
   return message.type === 'ENCODE_GIF_REQUEST';
 }
 
-export function isGetVideoStateRequest(message: BaseMessage): message is GetVideoStateRequest {
+function isGetVideoStateRequest(message: BaseMessage): message is GetVideoStateRequest {
   return message.type === 'GET_VIDEO_STATE_REQUEST';
 }
 
-export function isShowTimelineEvent(message: BaseMessage): message is ShowTimelineEvent {
+function isShowTimelineEvent(message: BaseMessage): message is ShowTimelineEvent {
   return message.type === 'SHOW_TIMELINE_EVENT';
 }
 
-export function isTimelineSelectionUpdate(message: BaseMessage): message is TimelineSelectionUpdate {
+function isTimelineSelectionUpdate(message: BaseMessage): message is TimelineSelectionUpdate {
   return message.type === 'TIMELINE_SELECTION_UPDATE';
 }
 
-export function isJobProgressUpdate(message: BaseMessage): message is JobProgressUpdate {
+function isJobProgressUpdate(message: BaseMessage): message is JobProgressUpdate {
   return message.type === 'JOB_PROGRESS_UPDATE';
 }
 
-export function isLogMessage(message: BaseMessage): message is LogMessage {
+function isLogMessage(message: BaseMessage): message is LogMessage {
   return message.type === 'LOG_MESSAGE';
 }
 
 // Response Helper Functions
-export function createSuccessResponse<TReq extends BaseRequest, TRes extends BaseResponse>(
+function createSuccessResponse<TReq extends BaseRequest, TRes extends BaseResponse>(
   request: TReq,
   responseType: TRes['type'],
   data?: unknown
@@ -357,11 +357,11 @@ export function generateMessageId(): string {
   return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-export function generateRequestId(): string {
+function generateRequestId(): string {
   return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-export function createBaseMessage<T extends BaseMessage>(
+function createBaseMessage<T extends BaseMessage>(
   type: T['type'],
   data?: unknown,
   context?: MessageContext
@@ -375,7 +375,7 @@ export function createBaseMessage<T extends BaseMessage>(
   } as unknown as T;
 }
 
-export function createRequest<T extends BaseRequest>(
+function createRequest<T extends BaseRequest>(
   type: T['type'],
   data: unknown,
   context?: MessageContext

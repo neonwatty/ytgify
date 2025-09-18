@@ -4,12 +4,12 @@ export {
   GifSettings,
   TextOverlay,
   TimelineSelection,
-  UserPreferences
+  
 } from './storage';
 
 // Re-export all message types for Chrome extension communication
 export {
-  BaseMessage,
+  
   ExtractFramesRequest,
   ExtractFramesResponse,
   EncodeGifRequest,
@@ -18,17 +18,17 @@ export {
   GetVideoStateResponse,
   ShowTimelineRequest,
   HideTimelineRequest,
-  ShowWizardDirectRequest,
+  
   TimelineSelectionUpdate,
-  OpenEditorRequest,
+  
   LogMessage,
   ErrorResponse,
   SuccessResponse,
   DownloadGifRequest,
   GetJobStatusRequest,
-  GetJobStatusResponse,
-  CancelJobRequest,
-  CancelJobResponse,
+  
+  
+  
   JobProgressUpdate,
   RequestVideoDataForGif,
   VideoDataResponse,
@@ -39,12 +39,12 @@ export {
   isExtractFramesRequest,
   isEncodeGifRequest,
   isGetVideoStateRequest,
-  isShowTimelineRequest,
-  isHideTimelineRequest,
+  
+  
   isTimelineSelectionUpdate,
-  isOpenEditorRequest,
+  
   isLogMessage,
   isDownloadGifRequest,
   isGetJobStatusRequest,
-  createResponse
+  
 } from './messages';

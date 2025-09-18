@@ -1,11 +1,10 @@
 // Content Script GIF Processor - Handles complete GIF creation in content script
 import { logger } from '@/lib/logger';
 import { createError } from '@/lib/errors';
-import { SimpleEncoderFactory } from '@/lib/encoders/simple-encoder-factory';
-import { FrameData, EncoderOptions } from '@/lib/encoders/base-encoder';
+import { encodeFrames, FrameData as EncoderFrameData, EncodingOptions } from '@/lib/encoders';
 import { TextOverlay } from '@/types';
 
-export interface GifProcessingOptions {
+interface GifProcessingOptions {
   startTime: number;
   endTime: number;
   frameRate?: number;
@@ -15,7 +14,7 @@ export interface GifProcessingOptions {
   textOverlays?: TextOverlay[];
 }
 
-export interface GifProcessingResult {
+interface GifProcessingResult {
   blob: Blob;
   metadata: {
     fileSize: number;
@@ -243,6 +242,7 @@ export class ContentScriptGifProcessor {
     options: GifProcessingOptions
   ): Promise<HTMLCanvasElement[]> {
     const { startTime, endTime, frameRate = 5, width = 480, height = 270 } = options;
+    console.log('[gif-processor] captureFrames - frameRate from options:', options.frameRate, 'using:', frameRate);
     const duration = endTime - startTime;
     // Calculate proper frame count based on duration and frame rate
     const rawFrameCount = Math.ceil(duration * frameRate);
@@ -383,23 +383,11 @@ export class ContentScriptGifProcessor {
     options: GifProcessingOptions
   ): Promise<Blob> {
     const { frameRate = 10, quality = 'medium' } = options;
+    console.log('[gif-processor] encodeGif - frameRate from options:', options.frameRate, 'using:', frameRate);
 
     try {
-      // Create encoder options
-      const encoderOptions: EncoderOptions = {
-        width: frames[0].width,
-        height: frames[0].height,
-        quality: quality,
-        frameRate: frameRate,
-        loop: 0, // Loop forever
-        debug: true, // Enable debug logging
-      };
-
-      // Create GIF encoder using factory
-      const encoder = SimpleEncoderFactory.createEncoder('gifenc', encoderOptions);
-
       // Convert canvas frames to encoder format
-      const frameData: FrameData[] = frames.map((canvas, index) => {
+      const frameData: EncoderFrameData[] = frames.map((canvas, index) => {
         const ctx = canvas.getContext('2d');
         if (!ctx) {
           throw new Error(`Failed to get context for frame ${index + 1}`);
@@ -440,20 +428,37 @@ export class ContentScriptGifProcessor {
         }
 
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        // Convert to EncoderFrameData format
         return {
-          data: imageData,
-          width: canvas.width,
-          height: canvas.height,
+          imageData: imageData,
+          timestamp: index * (1000 / frameRate),
+          delay: Math.round(1000 / frameRate)
         };
       });
 
-      // Encode frames (stage handling is done at higher level)
-      const result = await encoder.encode(frameData);
+      // Create encoding options
+      const encodingOptions: EncodingOptions = {
+        width: frames[0].width,
+        height: frames[0].height,
+        quality: quality,
+        frameRate: frameRate,
+        loop: true
+      };
 
-      logger.info('[ContentScriptGifProcessor] GIF encoding finished with gifenc', {
-        size: result.size,
-        frameCount: result.frameCount,
-        duration: result.duration,
+      // Encode frames using the main encoder system
+      const result = await encodeFrames(
+        frameData,
+        encodingOptions,
+        {
+          encoder: 'auto', // Let the system choose the best encoder
+          format: 'gif'
+        }
+      );
+
+      logger.info('[ContentScriptGifProcessor] GIF encoding finished', {
+        size: result.blob.size,
+        metadata: result.metadata
       });
 
       return result.blob;

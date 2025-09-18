@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { TextOverlay } from '@/types';
 
-export type OverlayScreenType =
+type OverlayScreenType =
   | 'welcome'
   | 'quick-capture'
   | 'text-overlay'

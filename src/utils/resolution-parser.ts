@@ -2,7 +2,7 @@
  * Utility for parsing resolution values from UI to dimensions
  */
 
-export interface ResolutionDimensions {
+interface ResolutionDimensions {
   width: number;
   height: number;
 }

@@ -3,7 +3,7 @@ import { BaseEncoder, EncoderOptions } from './base-encoder';
 // import { GifencEncoderSimple } from './gifenc-encoder-simple';
 import { logger } from '@/lib/logger';
 
-export type EncoderType = 'gifenc' | 'auto';
+type EncoderType = 'gifenc' | 'auto';
 
 export class SimpleEncoderFactory {
   /**

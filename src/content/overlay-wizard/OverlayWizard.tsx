@@ -17,7 +17,8 @@ interface OverlayWizardProps {
   onCreateGif: (
     selection: TimelineSelection,
     textOverlays?: TextOverlay[],
-    resolution?: string
+    resolution?: string,
+    frameRate?: number
   ) => void;
   onSeekTo?: (time: number) => void;
   isCreating?: boolean;
@@ -75,6 +76,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     frameRate?: number,
     resolution?: string
   ) => {
+    console.log('[OverlayWizard] handleConfirmQuickCapture - frameRate:', frameRate);
     const selection: TimelineSelection = {
       startTime,
       endTime,
@@ -84,7 +86,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     setScreenData({
       startTime,
       endTime,
-      frameRate: frameRate || 10,
+      frameRate: frameRate || 5,
       resolution: resolution || '144p',
     });
     onSelectionChange(selection);
@@ -124,7 +126,8 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
       duration: (data.endTime || 10) - (data.startTime || 0),
     };
 
-    onCreateGif(selection, overlays, data.resolution);
+    console.log('[OverlayWizard] handleCreateGif - frameRate:', data.frameRate);
+    onCreateGif(selection, overlays, data.resolution, data.frameRate);
     goToScreen('processing');
   };
 
@@ -134,7 +137,14 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
       endTime: data.endTime || 10,
       duration: (data.endTime || 10) - (data.startTime || 0),
     };
-    onCreateGif(selection, [], data.resolution);
+    console.log('[OverlayWizard] handleSkipTextOverlay - frameRate:', data.frameRate);
+    console.log('[OverlayWizard] Calling onCreateGif with params:', {
+      selection,
+      textOverlays: [],
+      resolution: data.resolution,
+      frameRate: data.frameRate
+    });
+    onCreateGif(selection, [], data.resolution, data.frameRate);
     goToScreen('processing');
   };
 

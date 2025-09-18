@@ -6,20 +6,20 @@
 import { logger } from '@/lib/logger';
 import { GifData } from '@/types';
 
-export interface ShareOptions {
+interface ShareOptions {
   title?: string;
   text?: string;
   url?: string;
   files?: File[];
 }
 
-export interface ShareResult {
+interface ShareResult {
   success: boolean;
   error?: string;
   shared?: boolean;
 }
 
-export interface ShareTarget {
+interface ShareTarget {
   id: string;
   name: string;
   description: string;
@@ -27,7 +27,7 @@ export interface ShareTarget {
   supported: boolean;
 }
 
-export class SharingService {
+class SharingService {
   /**
    * Check if the Web Share API is supported
    */
@@ -278,4 +278,4 @@ export class SharingService {
 }
 
 // Export for convenience
-export const sharing = SharingService;
+const sharing = SharingService;

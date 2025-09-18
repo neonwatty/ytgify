@@ -12,7 +12,7 @@ interface TimelineScrubberProps {
   maxDuration?: number;
 }
 
-export const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
+const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
   duration,
   startTime,
   endTime,

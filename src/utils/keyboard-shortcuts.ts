@@ -6,7 +6,7 @@
  * with YouTube's native shortcuts.
  */
 
-export interface KeyboardShortcut {
+interface KeyboardShortcut {
   key: string;
   modifiers?: {
     ctrl?: boolean;
@@ -18,7 +18,7 @@ export interface KeyboardShortcut {
   action: string;
 }
 
-export interface ShortcutConfig {
+interface ShortcutConfig {
   // Basic navigation shortcuts
   preview: KeyboardShortcut;
   save: KeyboardShortcut;
@@ -31,7 +31,7 @@ export interface ShortcutConfig {
   resetSelection: KeyboardShortcut;
 }
 
-export interface ShortcutHandler {
+interface ShortcutHandler {
   action: string;
   handler: (event: KeyboardEvent) => void | Promise<void>;
   priority?: number; // Higher priority handlers are called first
@@ -39,7 +39,7 @@ export interface ShortcutHandler {
 }
 
 // Default shortcut configuration
-export const DEFAULT_SHORTCUTS: ShortcutConfig = {
+const DEFAULT_SHORTCUTS: ShortcutConfig = {
   preview: {
     key: 'Space',
     description: 'Toggle preview',
@@ -412,10 +412,10 @@ export class KeyboardShortcutManager {
 }
 
 // Export a default instance for the content script
-export const keyboardShortcuts = new KeyboardShortcutManager('content');
+const keyboardShortcuts = new KeyboardShortcutManager('content');
 
 // Utility functions for shortcut display
-export function formatShortcut(shortcut: KeyboardShortcut): string {
+function formatShortcut(shortcut: KeyboardShortcut): string {
   const parts: string[] = [];
   
   if (shortcut.modifiers?.ctrl) parts.push('Ctrl');
@@ -428,7 +428,7 @@ export function formatShortcut(shortcut: KeyboardShortcut): string {
   return parts.join(' + ');
 }
 
-export function parseShortcutString(shortcutString: string): Partial<KeyboardShortcut> {
+function parseShortcutString(shortcutString: string): Partial<KeyboardShortcut> {
   if (!shortcutString || shortcutString.trim() === '') {
     return {};
   }

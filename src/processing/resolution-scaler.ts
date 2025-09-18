@@ -6,7 +6,7 @@
 
 import { AspectRatioCalculator } from './aspect-ratio';
 
-export interface ResolutionPreset {
+interface ResolutionPreset {
   name: string;
   targetHeight: number;
   label: string;
@@ -15,7 +15,7 @@ export interface ResolutionPreset {
   fileSizeMultiplier: number; // relative to 360p baseline
 }
 
-export interface ScaledDimensions {
+interface ScaledDimensions {
   width: number;
   height: number;
   scaleFactor: number;
@@ -24,7 +24,7 @@ export interface ScaledDimensions {
   aspectRatio: number;
 }
 
-export interface ScalingOptions {
+interface ScalingOptions {
   preserveDetails: boolean;
   algorithm: 'bilinear' | 'bicubic' | 'lanczos';
   sharpening: number; // 0-1, post-scaling sharpening

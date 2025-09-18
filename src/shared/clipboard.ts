@@ -5,12 +5,12 @@
 
 import { logger } from '@/lib/logger';
 
-export interface ClipboardResult {
+interface ClipboardResult {
   success: boolean;
   error?: string;
 }
 
-export class ClipboardService {
+class ClipboardService {
   /**
    * Check if clipboard API is supported
    */

@@ -10,7 +10,7 @@ export interface PreviewLoopState {
   loopInterval: NodeJS.Timeout | null;
 }
 
-export type PreviewLoopCallback = (state: PreviewLoopState) => void;
+type PreviewLoopCallback = (state: PreviewLoopState) => void;
 
 export class VideoPreviewLoop {
   private static instance: VideoPreviewLoop;

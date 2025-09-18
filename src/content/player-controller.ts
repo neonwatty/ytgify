@@ -4,7 +4,7 @@ import { playerIntegration, PlayerSizeInfo } from './player-integration';
 import { previewLoop, PreviewLoopState } from './preview-loop';
 import { TimelineSelection } from '@/types';
 
-export interface PlayerControllerState {
+interface PlayerControllerState {
   isPreviewActive: boolean;
   playerReady: boolean;
   playerSize: PlayerSizeInfo | null;
@@ -17,7 +17,7 @@ export interface PlayerControllerState {
   } | null;
 }
 
-export type PlayerControllerCallback = (state: PlayerControllerState) => void;
+type PlayerControllerCallback = (state: PlayerControllerState) => void;
 
 export class PlayerController {
   private static instance: PlayerController;

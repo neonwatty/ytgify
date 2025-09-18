@@ -61,7 +61,7 @@ export interface GifEncodingProgress {
   memoryUsage?: number;
 }
 
-export interface GifEncodingResult {
+interface GifEncodingResult {
   blob: Blob;
   metadata: {
     width: number;
@@ -734,7 +734,7 @@ export class GifEncoder {
 /**
  * Convenience function for encoding GIFs with default settings
  */
-export async function encodeGif(
+async function encodeGif(
   frames: ExtractedFrame[] | FrameExtractionResult,
   settings: GifSettings,
   options?: {
@@ -755,7 +755,7 @@ export async function encodeGif(
 /**
  * Create GIF data object from encoding result and metadata
  */
-export function createGifData(
+function createGifData(
   result: GifEncodingResult,
   selection: TimelineSelection,
   title: string,
@@ -784,7 +784,7 @@ export function createGifData(
 /**
  * Estimate encoding parameters for performance planning
  */
-export function estimateEncodingParameters(
+function estimateEncodingParameters(
   settings: GifSettings,
   preset: GifQualityPreset = 'balanced'
 ): {

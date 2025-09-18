@@ -26,7 +26,7 @@ export interface PerformanceSnapshot {
   };
 }
 
-export type PerformanceListener = (snapshot: PerformanceSnapshot) => void;
+type PerformanceListener = (snapshot: PerformanceSnapshot) => void;
 
 export class PerformanceTracker {
   private static instance: PerformanceTracker;

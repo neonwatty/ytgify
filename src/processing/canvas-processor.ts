@@ -7,7 +7,7 @@
 import { ExtractedFrame } from './frame-extractor';
 import { ImageFilters } from './image-filters';
 
-export interface ProcessingConfig {
+interface ProcessingConfig {
   // Resizing options
   targetWidth?: number;
   targetHeight?: number;
@@ -32,7 +32,7 @@ export interface ProcessingConfig {
   enableFiltering?: boolean;
 }
 
-export interface ProcessedFrame {
+interface ProcessedFrame {
   imageData: ImageData;
   timestamp: number;
   frameIndex: number;
@@ -41,7 +41,7 @@ export interface ProcessedFrame {
   processingTime: number;
 }
 
-export interface ProcessingProgress {
+interface ProcessingProgress {
   framesProcessed: number;
   totalFrames: number;
   currentFrameIndex: number;
@@ -49,7 +49,7 @@ export interface ProcessingProgress {
   elapsedTime: number;
 }
 
-export interface ProcessingResult {
+interface ProcessingResult {
   frames: ProcessedFrame[];
   metadata: {
     totalFrames: number;
@@ -502,7 +502,7 @@ export class CanvasProcessor {
 /**
  * Convenience function for processing extracted frames
  */
-export async function processExtractedFrames(
+async function processExtractedFrames(
   frames: ExtractedFrame[],
   config: ProcessingConfig,
   onProgress?: (progress: ProcessingProgress) => void

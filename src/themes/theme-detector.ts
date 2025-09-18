@@ -11,7 +11,7 @@ export interface ThemeInfo {
   };
 }
 
-export type ThemeChangeCallback = (themeInfo: ThemeInfo) => void;
+type ThemeChangeCallback = (themeInfo: ThemeInfo) => void;
 
 export class ThemeDetector {
   private static instance: ThemeDetector;

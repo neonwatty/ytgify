@@ -74,7 +74,7 @@ interface AdvancedSlidersProps {
   disabled?: boolean
 }
 
-export const AdvancedSliders: React.FC<AdvancedSlidersProps> = ({
+const AdvancedSliders: React.FC<AdvancedSlidersProps> = ({
   settings,
   onSettingsChange,
   className,
@@ -165,7 +165,7 @@ interface QuickPresetsProps {
   disabled?: boolean
 }
 
-export const QuickPresets: React.FC<QuickPresetsProps> = ({
+const QuickPresets: React.FC<QuickPresetsProps> = ({
   onApplyPreset,
   className,
   disabled = false

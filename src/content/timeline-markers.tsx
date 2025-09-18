@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { TimelineSelection } from '@/types';
 
-export interface TimelineMarkersProps {
+interface TimelineMarkersProps {
   videoDuration: number;
   currentTime: number;
   selection: TimelineSelection;

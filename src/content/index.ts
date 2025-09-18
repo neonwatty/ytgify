@@ -710,9 +710,11 @@ class YouTubeGifMaker {
           onCreateGif: (
             selection: TimelineSelection,
             textOverlays?: TextOverlay[],
-            resolution?: string
+            resolution?: string,
+            frameRate?: number
           ) => {
-            this.handleCreateGif(selection, textOverlays, resolution);
+            console.log('[Wizard callback] Called with frameRate:', frameRate);
+            this.handleCreateGif(selection, textOverlays, resolution, frameRate);
           },
           onSeekTo: this.handleSeekTo.bind(this),
           isCreating: this.isCreatingGif,
@@ -761,6 +763,7 @@ class YouTubeGifMaker {
     const videoState = this.getCurrentVideoState();
     if (!videoState) return;
 
+    console.log('[updateTimelineOverlay] isWizardMode:', this.isWizardMode);
     // Check if we're in wizard mode
     if (this.isWizardMode) {
       // Get video title
@@ -782,9 +785,11 @@ class YouTubeGifMaker {
           onCreateGif: (
             selection: TimelineSelection,
             textOverlays?: TextOverlay[],
-            resolution?: string
+            resolution?: string,
+            frameRate?: number
           ) => {
-            this.handleCreateGif(selection, textOverlays, resolution);
+            console.log('[Wizard callback] Called with frameRate:', frameRate);
+            this.handleCreateGif(selection, textOverlays, resolution, frameRate);
           },
           onSeekTo: this.handleSeekTo.bind(this),
           isCreating: this.isCreatingGif,
@@ -801,6 +806,7 @@ class YouTubeGifMaker {
           onSelectionChange: this.handleSelectionChange.bind(this),
           onClose: this.deactivateGifMode.bind(this),
           onCreateGif: () => {
+            console.log('[Old timeline callback] Called - NO frameRate support!');
             // Old timeline mode doesn't support resolution
             if (this.currentSelection) {
               this.handleCreateGif(this.currentSelection);
@@ -934,8 +940,10 @@ class YouTubeGifMaker {
   private async handleCreateGif(
     selection?: TimelineSelection,
     textOverlays?: TextOverlay[],
-    resolution?: string
+    resolution?: string,
+    frameRate?: number
   ) {
+    console.log('[handleCreateGif] Called with frameRate:', frameRate);
     // Use provided selection or fall back to current selection
     const gifSelection = selection || this.currentSelection;
 
@@ -1159,8 +1167,9 @@ class YouTubeGifMaker {
       videoHeight: this.videoElement?.videoHeight,
     });
 
+    console.log('[handleCreateGif] Using frameRate:', frameRate || 5);
     const defaultSettings = {
-      frameRate: 15,
+      frameRate: frameRate || 5,  // Use provided frameRate or default to 5
       width: scaledWidth,
       height: scaledHeight,
       quality: 'medium' as const,

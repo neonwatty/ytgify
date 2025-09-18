@@ -22,7 +22,7 @@ export interface TimelineOverlayProps {
   };
 }
 
-export interface TimelineOverlayState {
+interface TimelineOverlayState {
   isTheaterMode: boolean;
   isFullscreen: boolean;
   isCompact: boolean;

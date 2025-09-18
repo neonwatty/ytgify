@@ -17,7 +17,7 @@ export interface EncoderOptions {
   debug?: boolean;
 }
 
-export interface EncoderResult {
+interface EncoderResult {
   blob: Blob;
   size?: number;
   frameCount?: number;
@@ -32,14 +32,14 @@ export interface EncoderResult {
   };
 }
 
-export interface EncoderProgress {
+interface EncoderProgress {
   percent: number;
   message: string;
   currentFrame?: number;
   totalFrames?: number;
 }
 
-export type ProgressCallback = (progress: EncoderProgress) => void;
+type ProgressCallback = (progress: EncoderProgress) => void;
 
 // Abstract base class for GIF encoders
 export abstract class BaseEncoder {

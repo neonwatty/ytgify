@@ -1,6 +1,6 @@
 import { UserPreferences } from '@/types/storage';
 
-export interface ExtensionRuntimeState {
+interface ExtensionRuntimeState {
   isYouTubePage: boolean;
   currentVideoId?: string;
   currentVideoTitle?: string;
@@ -14,15 +14,15 @@ export interface ExtensionRuntimeState {
   };
 }
 
-export interface StateChangeEvent<T = unknown> {
+interface StateChangeEvent<T = unknown> {
   type: string;
   data: T;
   timestamp: number;
 }
 
-export type StateListener<T = unknown> = (event: StateChangeEvent<T>) => void;
+type StateListener<T = unknown> = (event: StateChangeEvent<T>) => void;
 
-export class ExtensionStateManager {
+class ExtensionStateManager {
   private runtimeState: ExtensionRuntimeState;
   private listeners: Map<string, StateListener[]> = new Map();
   private readonly STATE_KEY = 'extensionRuntimeState';

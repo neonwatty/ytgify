@@ -1,6 +1,6 @@
 import React from 'react';
 
-export interface YouTubeButtonProps {
+interface YouTubeButtonProps {
   isActive: boolean;
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   disabled?: boolean;
@@ -8,12 +8,12 @@ export interface YouTubeButtonProps {
   'aria-label'?: string;
 }
 
-export interface YouTubeButtonState {
+interface YouTubeButtonState {
   isHovered: boolean;
   isPressed: boolean;
 }
 
-export class YouTubeButton extends React.Component<YouTubeButtonProps, YouTubeButtonState> {
+class YouTubeButton extends React.Component<YouTubeButtonProps, YouTubeButtonState> {
   constructor(props: YouTubeButtonProps) {
     super(props);
     this.state = {

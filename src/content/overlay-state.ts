@@ -2,9 +2,9 @@ import { Root } from 'react-dom/client';
 import { TimelineSelection } from '@/types';
 import { extensionStateManager } from '@/shared/state-manager';
 
-export type OverlayMode = 'timeline' | 'editor' | 'preview' | 'inactive';
+type OverlayMode = 'timeline' | 'editor' | 'preview' | 'inactive';
 
-export interface OverlayState {
+interface OverlayState {
   mode: OverlayMode;
   isVisible: boolean;
   isCreatingGif: boolean;
@@ -28,16 +28,16 @@ interface OverlayElements {
   root: Root | null;
 }
 
-export interface OverlayStateChangeEvent {
+interface OverlayStateChangeEvent {
   type: string;
   oldState: OverlayState;
   newState: OverlayState;
   timestamp: number;
 }
 
-export type OverlayStateListener = (event: OverlayStateChangeEvent) => void;
+type OverlayStateListener = (event: OverlayStateChangeEvent) => void;
 
-export class OverlayStateManager {
+class OverlayStateManager {
   private state: OverlayState;
   private elements: OverlayElements;
   private listeners: Map<string, OverlayStateListener[]> = new Map();
