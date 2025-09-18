@@ -398,7 +398,7 @@ export class ContentScriptGifProcessor {
           options.textOverlays.forEach((overlay) => {
             ctx.save();
 
-            // Set font properties
+            // Use font size directly - it's already resolution-appropriate from TextOverlayScreenV2
             ctx.font = `${overlay.fontSize}px ${overlay.fontFamily}`;
             ctx.fillStyle = overlay.color;
             ctx.textAlign = 'center';
@@ -408,15 +408,18 @@ export class ContentScriptGifProcessor {
             const x = (overlay.position.x / 100) * canvas.width;
             const y = (overlay.position.y / 100) * canvas.height;
 
+            // Use stroke width directly
+            const strokeWidth = overlay.strokeWidth || 2;
+
             // Add text stroke for better visibility
             if (overlay.strokeColor) {
               ctx.strokeStyle = overlay.strokeColor;
-              ctx.lineWidth = overlay.strokeWidth || 2;
+              ctx.lineWidth = strokeWidth;
               ctx.strokeText(overlay.text, x, y);
             } else {
               // Default black stroke for better visibility
               ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
-              ctx.lineWidth = 2;
+              ctx.lineWidth = strokeWidth;
               ctx.strokeText(overlay.text, x, y);
             }
 

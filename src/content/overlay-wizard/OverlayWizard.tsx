@@ -209,6 +209,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
               videoDuration={videoDuration}
               videoElement={videoElement}
               textOverlays={data.textOverlays}
+              resolution={data.resolution || '144p'}
               onConfirm={handleConfirmTextOverlay}
               onSkip={handleSkipTextOverlay}
               onBack={goBack}

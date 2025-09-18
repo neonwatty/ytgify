@@ -7,6 +7,7 @@ interface TextOverlayScreenProps {
   videoDuration: number;
   videoElement?: HTMLVideoElement;
   textOverlays?: TextOverlay[];
+  resolution?: string;
   onConfirm: (overlays: TextOverlay[]) => void;
   onSkip: () => void;
   onBack?: () => void;
@@ -17,18 +18,50 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
   startTime,
   endTime,
   videoElement,
+  resolution = '144p',
   onConfirm,
   onSkip,
   onBack,
 }) => {
+  // Get font size range based on resolution
+  const getFontSizeRange = () => {
+    switch (resolution) {
+      case '144p':
+        return { min: 16, max: 48, default: 24 };
+      case '240p':
+        return { min: 20, max: 56, default: 28 };
+      case '360p':
+        return { min: 24, max: 64, default: 32 };
+      case '480p':
+        return { min: 28, max: 72, default: 36 };
+      default:
+        return { min: 16, max: 48, default: 24 };
+    }
+  };
+
+  const fontSizeRange = getFontSizeRange();
+
+  // Get target GIF dimensions based on resolution
+  const getGifDimensions = () => {
+    const resolutionMap: Record<string, { width: number; height: number }> = {
+      '144p': { width: 256, height: 144 },
+      '240p': { width: 426, height: 240 },
+      '360p': { width: 640, height: 360 },
+      '480p': { width: 854, height: 480 },
+    };
+    return resolutionMap[resolution] || resolutionMap['144p'];
+  };
+
+  const gifDimensions = getGifDimensions();
+
   // Top text state
   const [topText, setTopText] = useState('');
-  const [topFontSize, setTopFontSize] = useState(32);
+  const [topFontSize, setTopFontSize] = useState(fontSizeRange.default);
   const [topTextColor, setTopTextColor] = useState('#FFFFFF');
 
   // Bottom text state
   const [bottomText, setBottomText] = useState('');
-  const [bottomFontSize, setBottomFontSize] = useState(32);
+  const [bottomFontSize, setBottomFontSize] = useState(fontSizeRange.default);
   const [bottomTextColor, setBottomTextColor] = useState('#FFFFFF');
 
   const [showTopAdvanced, setShowTopAdvanced] = useState(false);
@@ -88,14 +121,15 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
         // Store original time to restore later
         const originalTime = videoElement.currentTime;
 
-        // Set canvas size to match video
-        canvas.width = videoElement.videoWidth || 640;
-        canvas.height = videoElement.videoHeight || 360;
+        // Set canvas size to match target GIF dimensions
+        canvas.width = gifDimensions.width;
+        canvas.height = gifDimensions.height;
 
-        // Function to capture the frame
+        // Function to capture the frame at GIF resolution
         const captureFrame = () => {
           try {
-            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            // Draw video scaled to GIF dimensions
+            ctx.drawImage(videoElement, 0, 0, gifDimensions.width, gifDimensions.height);
             const frameUrl = canvas.toDataURL('image/jpeg', 0.9);
             setVideoFrameUrl(frameUrl);
           } catch (error) {
@@ -133,7 +167,7 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
         performCapture();
       }
     }
-  }, [videoElement, startTime, endTime]);
+  }, [videoElement, startTime, endTime, gifDimensions.width, gifDimensions.height]);
 
   return (
     <div className="ytgif-wizard-screen ytgif-text-overlay-screen">
@@ -157,6 +191,9 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
         <h2 className="ytgif-wizard-title">Make It Memorable</h2>
         <div style={{ width: '20px' }}></div>
       </div>
+      <p className="ytgif-wizard-subtitle" style={{ marginTop: '-8px', marginBottom: '16px' }}>
+        Resolution: {resolution} • Font sizes adjusted for optimal display
+      </p>
 
       <div className="ytgif-wizard-content">
         {/* Helper text */}
@@ -164,19 +201,26 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
         {/* Video Preview with Real Frame Background */}
         <div className="ytgif-video-preview-section">
           <div className="ytgif-video-preview-frame">
+            <p style={{ fontSize: '12px', color: '#999', marginBottom: '8px' }}>
+              Preview at {resolution} ({gifDimensions.width}×{gifDimensions.height}px)
+            </p>
             {videoFrameUrl ? (
               <div
                 className="ytgif-frame-preview"
                 style={{
                   backgroundImage: `url(${videoFrameUrl})`,
-                  backgroundSize: 'contain',
+                  backgroundSize: 'cover',
                   backgroundRepeat: 'no-repeat',
                   backgroundPosition: 'center',
                   width: '100%',
-                  height: '300px',
+                  maxWidth: `${gifDimensions.width}px`,
+                  height: `${(gifDimensions.height / gifDimensions.width) * 100}%`,
+                  maxHeight: '300px',
+                  aspectRatio: `${gifDimensions.width} / ${gifDimensions.height}`,
                   position: 'relative',
                   borderRadius: '8px',
                   backgroundColor: '#000',
+                  margin: '0 auto',
                 }}
               >
                 {topText.trim() && (
@@ -187,7 +231,8 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
                       left: '50%',
                       top: '20%',
                       transform: 'translate(-50%, -50%)',
-                      fontSize: `${Math.max(16, topFontSize * 0.6)}px`,
+                      // Use actual font size that will be rendered in the GIF
+                      fontSize: `${topFontSize}px`,
                       color: topTextColor,
                       fontWeight: 'bold',
                       textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
@@ -208,7 +253,8 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
                       left: '50%',
                       bottom: '20%',
                       transform: 'translate(-50%, 50%)',
-                      fontSize: `${Math.max(16, bottomFontSize * 0.6)}px`,
+                      // Use actual font size that will be rendered in the GIF
+                      fontSize: `${bottomFontSize}px`,
                       color: bottomTextColor,
                       fontWeight: 'bold',
                       textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
@@ -277,8 +323,8 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
                     <label className="ytgif-control-label">Size</label>
                     <input
                       type="range"
-                      min="16"
-                      max="64"
+                      min={fontSizeRange.min}
+                      max={fontSizeRange.max}
                       value={topFontSize}
                       onChange={(e) => setTopFontSize(Number(e.target.value))}
                       className="ytgif-range-input"
@@ -337,8 +383,8 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
                     <label className="ytgif-control-label">Size</label>
                     <input
                       type="range"
-                      min="16"
-                      max="64"
+                      min={fontSizeRange.min}
+                      max={fontSizeRange.max}
                       value={bottomFontSize}
                       onChange={(e) => setBottomFontSize(Number(e.target.value))}
                       className="ytgif-range-input"
