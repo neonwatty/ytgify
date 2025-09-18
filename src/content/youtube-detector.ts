@@ -49,6 +49,37 @@ export class YouTubeDetector {
     return { ...this.currentState };
   }
 
+  // Force refresh the current state (useful after video loads)
+  public refreshState(): void {
+    const newState = this.detectCurrentState();
+    if (this.hasStateChanged(this.currentState, newState)) {
+      const oldState = this.currentState;
+      this.currentState = newState;
+
+      logger.info('[YouTubeDetector] State refreshed', {
+        oldState,
+        newState,
+        hasVideo: newState.hasVideo
+      });
+
+      // Notify callbacks about state change
+      const navigationEvent: YouTubeNavigationEvent = {
+        fromState: oldState,
+        toState: newState,
+        timestamp: new Date(),
+        navigationType: 'initial' // Use 'initial' as the type for refresh
+      };
+
+      this.navigationCallbacks.forEach(callback => {
+        try {
+          callback(navigationEvent);
+        } catch (error) {
+          logger.error('[YouTubeDetector] Error in refresh callback', { error });
+        }
+      });
+    }
+  }
+
   // Register navigation callback
   public onNavigation(callback: NavigationCallback): () => void {
     this.navigationCallbacks.add(callback);
@@ -143,20 +174,45 @@ export class YouTubeDetector {
   // Check if page has video element
   private hasVideoElement(): boolean {
     const video = document.querySelector('video');
-    return video !== null && video.src !== '';
+    if (!video) return false;
+
+    // Check if video has any valid source (blob URLs, src, or currentSrc)
+    const hasSource = !!(video.src || video.currentSrc);
+    // Also check if video has duration (indicates it's loaded)
+    const hasDuration = !isNaN(video.duration) && video.duration > 0;
+
+    return hasSource || hasDuration;
   }
 
   // Check if video is live stream
   private isLiveStream(): boolean {
-    // Look for live indicators
-    const liveIndicators = [
-      '.ytp-live',
-      '.ytp-live-badge',
-      '[data-is-live="true"]',
-      '.live-badge'
+    // Check for live badge that's actually visible (not just present in DOM)
+    const liveBadge = document.querySelector('.ytp-live-badge') as HTMLElement;
+    if (liveBadge) {
+      // Check if the badge is visible and contains live-related text
+      const isVisible = liveBadge.offsetParent !== null &&
+                       (window.getComputedStyle(liveBadge).display !== 'none');
+      const hasLiveText = liveBadge.textContent?.toLowerCase().includes('live');
+      if (isVisible && hasLiveText) return true;
+    }
+
+    // Check for other strong indicators
+    const strongIndicators = [
+      '.ytp-live', // Active live player class
+      '[data-is-live="true"]', // Explicit live attribute
+      '.live-badge:not(.ytp-live-badge)' // Other live badges
     ];
 
-    return liveIndicators.some(selector => document.querySelector(selector) !== null);
+    // Also check if the video element itself indicates it's live
+    const video = document.querySelector('video') as HTMLVideoElement;
+    if (video && video.duration === Infinity) {
+      return true; // Live streams often have infinite duration
+    }
+
+    return strongIndicators.some(selector => {
+      const element = document.querySelector(selector) as HTMLElement;
+      return element && element.offsetParent !== null;
+    });
   }
 
   // Detect current page state
@@ -391,7 +447,10 @@ export class YouTubeDetector {
 
   // Check if video element is ready for use
   public isVideoReady(video: HTMLVideoElement): boolean {
-    return video.src !== '' && 
+    // Check for any valid source (including blob URLs)
+    const hasSource = !!(video.src || video.currentSrc);
+
+    return hasSource &&
            video.readyState >= HTMLMediaElement.HAVE_METADATA &&
            video.duration > 0 &&
            !isNaN(video.duration);

@@ -439,6 +439,9 @@ class YouTubeGifMaker {
     this.videoElement = await youTubeDetector.waitForVideoElement(10000);
 
     if (this.videoElement) {
+      // Refresh state now that video is loaded
+      youTubeDetector.refreshState();
+
       this.log('debug', '[Content] Found video element', {
         duration: this.videoElement.duration,
         currentTime: this.videoElement.currentTime,
@@ -446,6 +449,17 @@ class YouTubeGifMaker {
         src: this.videoElement.src || this.videoElement.currentSrc,
         readyState: this.videoElement.readyState,
       });
+
+      // Try injecting the button now that video is ready
+      if (!this.gifButton && youTubeDetector.canCreateGif()) {
+        const injected = playerIntegration.injectButton((event) => {
+          event.preventDefault();
+          this.handleGifButtonClick();
+        });
+        if (injected) {
+          this.log('info', '[Content] Button injected after video ready');
+        }
+      }
     } else {
       this.log('warn', '[Content] No video element found after 10s timeout', {
         url: window.location.href,
