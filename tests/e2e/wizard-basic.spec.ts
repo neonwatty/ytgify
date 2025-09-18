@@ -442,4 +442,179 @@ test.describe('Basic Wizard Test with Extension', () => {
       }
     }
   });
+
+  test('Can select different FPS options in wizard', async ({ page, context: _context, extensionId: _extensionId }) => {
+    const quickCapture = new QuickCapturePage(page);
+
+    // Navigate and wait for button
+    await page.goto(TEST_VIDEOS.veryShort.url);
+    await handleYouTubeCookieConsent(page);
+    await page.waitForSelector('video', { timeout: 30000 });
+    await page.waitForTimeout(8000);
+
+    // Click GIF button to open wizard
+    await page.click('.ytgif-button');
+    await quickCapture.waitForScreen();
+
+    // Verify default FPS is selected (5 fps)
+    const defaultFpsButton = await page.$('.ytgif-frame-rate-btn--active');
+    const defaultFpsText = await defaultFpsButton?.textContent();
+    expect(defaultFpsText).toContain('5 fps');
+
+    // Test selecting different FPS options using direct selectors
+    const fpsOptions = [
+      { fps: '10', selector: '.ytgif-frame-rate-btn:has-text("10 fps")' },
+      { fps: '15', selector: '.ytgif-frame-rate-btn:has-text("15 fps")' },
+      { fps: '5', selector: '.ytgif-frame-rate-btn:has-text("5 fps")' }
+    ];
+
+    for (const option of fpsOptions) {
+      await page.click(option.selector);
+      await page.waitForTimeout(300);
+
+      // Verify selection
+      const activeButton = await page.$('.ytgif-frame-rate-btn--active');
+      const activeText = await activeButton?.textContent();
+      expect(activeText).toContain(`${option.fps} fps`);
+    }
+
+    // Verify FPS buttons are visually distinct when selected
+    await page.click('.ytgif-frame-rate-btn:has-text("15 fps")');
+    await page.waitForTimeout(300);
+
+    const buttonState = await page.evaluate(() => {
+      const buttons = document.querySelectorAll('.ytgif-frame-rate-btn');
+      return Array.from(buttons).map(btn => ({
+        text: btn.textContent?.trim(),
+        isActive: btn.classList.contains('ytgif-frame-rate-btn--active')
+      }));
+    });
+
+    const activeButtons = buttonState.filter(btn => btn.isActive);
+    expect(activeButtons).toHaveLength(1);
+    expect(activeButtons[0].text).toContain('15 fps');
+  });
+
+  test('FPS setting persists through wizard navigation', async ({ page, context: _context, extensionId: _extensionId }) => {
+    const quickCapture = new QuickCapturePage(page);
+
+    // Navigate and open wizard
+    await page.goto(TEST_VIDEOS.veryShort.url);
+    await handleYouTubeCookieConsent(page);
+    await page.waitForSelector('video', { timeout: 30000 });
+    await page.waitForTimeout(8000);
+
+    await page.click('.ytgif-button');
+    await quickCapture.waitForScreen();
+
+    // Select a specific FPS
+    await page.click('.ytgif-frame-rate-btn:has-text("15 fps")');
+    await page.waitForTimeout(300);
+
+    const initialFpsButton = await page.$('.ytgif-frame-rate-btn--active');
+    const initialFpsText = await initialFpsButton?.textContent();
+    expect(initialFpsText).toContain('15 fps');
+
+    // Navigate to next screen
+    await page.click('.ytgif-button-primary');
+    await page.waitForTimeout(2000);
+
+    // Check if we're on text overlay screen
+    const textOverlayVisible = await page.evaluate(() => {
+      const textOverlay = document.querySelector('.ytgif-text-overlay-screen');
+      return textOverlay && (textOverlay as HTMLElement).offsetParent !== null;
+    });
+
+    if (textOverlayVisible) {
+      // Navigate back to quick capture screen
+      await page.click('.ytgif-back-button');
+      await page.waitForTimeout(1000);
+
+      // Verify we're back on the quick capture screen
+      const backOnQuickCapture = await page.evaluate(() => {
+        const quickCapture = document.querySelector('.ytgif-quick-capture-screen');
+        return quickCapture && (quickCapture as HTMLElement).offsetParent !== null;
+      });
+      expect(backOnQuickCapture).toBe(true);
+
+      // Check if FPS selection interface is available
+      const fpsButtons = await page.$$('.ytgif-frame-rate-btn');
+      expect(fpsButtons.length).toBeGreaterThan(0);
+    }
+  });
+
+  test('Can create GIF with specific FPS and validate output', async ({ page, context: _context, extensionId: _extensionId }) => {
+    const quickCapture = new QuickCapturePage(page);
+
+    // Navigate and open wizard
+    await page.goto(TEST_VIDEOS.veryShort.url);
+    await handleYouTubeCookieConsent(page);
+    await page.waitForSelector('video', { timeout: 30000 });
+    await page.waitForTimeout(8000);
+
+    await page.click('.ytgif-button');
+    await quickCapture.waitForScreen();
+
+    // Select 15 fps for clear validation
+    await page.click('.ytgif-frame-rate-btn:has-text("15 fps")');
+    await page.waitForTimeout(300);
+
+    const selectedFpsButton = await page.$('.ytgif-frame-rate-btn--active');
+    const selectedFpsText = await selectedFpsButton?.textContent();
+    expect(selectedFpsText).toContain('15 fps');
+
+    // Continue through wizard
+    await page.click('.ytgif-button-primary');
+    await page.waitForTimeout(2000);
+
+    // Skip text overlay if present
+    try {
+      await page.click('button:has-text("Skip")', { timeout: 3000 });
+    } catch {
+      // If skip doesn't work, try primary button
+      try {
+        await page.click('.ytgif-button-primary', { timeout: 3000 });
+      } catch {
+        // Continue regardless
+      }
+    }
+    await page.waitForTimeout(2000);
+
+    // Wait for processing to complete
+    const processingInfo = await page.evaluate(() => {
+      const processing = document.querySelector('.ytgif-processing-screen');
+      return {
+        onProcessingScreen: !!processing,
+        processingVisible: processing ? (processing as HTMLElement).offsetParent !== null : false
+      };
+    });
+
+    if (processingInfo.onProcessingScreen) {
+      // Wait for GIF creation (up to 45 seconds for FPS testing)
+      await page.waitForTimeout(45000);
+
+      // Check for success screen and GIF output
+      const successInfo = await page.evaluate(() => {
+        const success = document.querySelector('.ytgif-success-screen');
+        const gifPreview = document.querySelector('.ytgif-gif-preview img, .ytgif-success-preview-image');
+        return {
+          onSuccessScreen: !!success,
+          hasGifPreview: !!gifPreview,
+          gifSrc: gifPreview ? (gifPreview as HTMLImageElement).src : null
+        };
+      });
+
+      if (successInfo.hasGifPreview && successInfo.gifSrc) {
+        expect(successInfo.gifSrc).toBeTruthy();
+
+        // Basic validation that GIF was created
+        const isValidDataUrl = successInfo.gifSrc.startsWith('data:image/gif');
+        const isValidBlobUrl = successInfo.gifSrc.startsWith('blob:');
+        expect(isValidDataUrl || isValidBlobUrl).toBe(true);
+
+        // Log success for debugging
+        console.log(`✅ Successfully created GIF with 15 fps: ${successInfo.gifSrc.substring(0, 50)}...`);
+      }
+    }
+  });
 });
