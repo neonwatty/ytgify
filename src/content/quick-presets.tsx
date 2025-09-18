@@ -227,7 +227,7 @@ export const QuickPresets: React.FC<QuickPresetsProps> = ({
 };
 
 // CSS-in-JS styles (to be added to the main CSS file)
-const quickPresetsStyles = `
+const _quickPresetsStyles = `
 .ytgif-quick-presets {
   background: rgba(0, 0, 0, 0.85);
   border-radius: 8px;

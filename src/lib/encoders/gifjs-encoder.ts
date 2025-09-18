@@ -29,8 +29,8 @@ interface GIFJsInstance {
   on(event: 'workerReady', callback: (worker: Worker) => void): void;
 
   running: boolean;
-  frames: any[];
-  options: any;
+  frames: Array<{ frame: ImageData | CanvasRenderingContext2D | HTMLImageElement | HTMLCanvasElement; delay?: number; copy?: boolean; transparent?: number | string; dispose?: number }>;
+  options: Record<string, unknown>;
 }
 
 // Use existing global GIF type from processing/gif-encoder.ts
@@ -124,7 +124,7 @@ export class GifJsEncoder extends AbstractEncoder {
         : '/gif.worker.js';
 
     // Initialize gif.js instance (cast to our interface)
-    this.gifInstance = new (window as any).GIF({
+    this.gifInstance = new ((window as unknown as { GIF: new (options: Record<string, unknown>) => GIFJsInstance }).GIF)({
       width: options.width,
       height: options.height,
       quality: quality,

@@ -4,12 +4,12 @@
  * Optimized for performance with Uint8ClampedArray operations
  */
 
-interface FilterOptions {
+interface _FilterOptions {
   intensity?: number; // 0-100 for most filters
   preserveAlpha?: boolean;
 }
 
-interface ColorMatrix {
+interface _ColorMatrix {
   matrix: number[]; // 4x4 color transformation matrix
 }
 
@@ -442,26 +442,26 @@ export class ImageFilters {
  */
 const imageFilters = new ImageFilters();
 
-function adjustImageBrightness(imageData: ImageData, brightness: number): ImageData {
+function _adjustImageBrightness(imageData: ImageData, brightness: number): ImageData {
   return imageFilters.adjustBrightness(imageData, brightness);
 }
 
-function adjustImageContrast(imageData: ImageData, contrast: number): ImageData {
+function _adjustImageContrast(imageData: ImageData, contrast: number): ImageData {
   return imageFilters.adjustContrast(imageData, contrast);
 }
 
-function adjustImageSaturation(imageData: ImageData, saturation: number): ImageData {
+function _adjustImageSaturation(imageData: ImageData, saturation: number): ImageData {
   return imageFilters.adjustSaturation(imageData, saturation);
 }
 
-function convertToGrayscale(imageData: ImageData): ImageData {
+function _convertToGrayscale(imageData: ImageData): ImageData {
   return imageFilters.toGrayscale(imageData);
 }
 
 /**
  * Batch apply multiple filters efficiently
  */
-function applyFilterChain(
+function _applyFilterChain(
   imageData: ImageData,
   filters: Array<{ type: string; value: number }>
 ): ImageData {

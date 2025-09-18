@@ -433,14 +433,14 @@ ${diagnostics}
 
 export const sharedErrorHandler = SharedErrorHandler.getInstance();
 
-function withErrorBoundary<T extends unknown[], R>(
+function _withErrorBoundary<T extends unknown[], R>(
   operation: (...args: T) => Promise<R>,
   strategy?: ErrorRecoveryStrategy
 ): (...args: T) => Promise<R> {
   return sharedErrorHandler.wrapWithErrorBoundary(operation, strategy);
 }
 
-function errorBoundaryDecorator(strategy?: ErrorRecoveryStrategy) {
+function _errorBoundaryDecorator(strategy?: ErrorRecoveryStrategy) {
   return function (target: unknown, propertyName: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 

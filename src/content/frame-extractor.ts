@@ -47,7 +47,7 @@ export class ContentScriptFrameExtractor {
   }
 
   public static resetInstance(): void {
-    ContentScriptFrameExtractor.instance = undefined as any;
+    ContentScriptFrameExtractor.instance = undefined as unknown as ContentScriptFrameExtractor;
   }
 
   // Initialize message handling from background script

@@ -412,10 +412,10 @@ export class KeyboardShortcutManager {
 }
 
 // Export a default instance for the content script
-const keyboardShortcuts = new KeyboardShortcutManager('content');
+const _keyboardShortcuts = new KeyboardShortcutManager('content');
 
 // Utility functions for shortcut display
-function formatShortcut(shortcut: KeyboardShortcut): string {
+function _formatShortcut(shortcut: KeyboardShortcut): string {
   const parts: string[] = [];
   
   if (shortcut.modifiers?.ctrl) parts.push('Ctrl');
@@ -428,7 +428,7 @@ function formatShortcut(shortcut: KeyboardShortcut): string {
   return parts.join(' + ');
 }
 
-function parseShortcutString(shortcutString: string): Partial<KeyboardShortcut> {
+function _parseShortcutString(shortcutString: string): Partial<KeyboardShortcut> {
   if (!shortcutString || shortcutString.trim() === '') {
     return {};
   }

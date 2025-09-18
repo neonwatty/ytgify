@@ -259,4 +259,4 @@ class PreferencesManager {
 }
 
 // Singleton instance
-const preferencesManager = new PreferencesManager();
+const _preferencesManager = new PreferencesManager();

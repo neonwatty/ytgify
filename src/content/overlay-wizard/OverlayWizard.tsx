@@ -102,7 +102,12 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
       const newData = {
         gifDataUrl: gifData.dataUrl,
         gifSize: gifData.size,
-        gifMetadata: gifData.metadata,
+        gifMetadata: gifData.metadata as {
+          width: number;
+          height: number;
+          duration: number;
+          frameCount?: number;
+        } | undefined,
       };
 
       setScreenData(newData);

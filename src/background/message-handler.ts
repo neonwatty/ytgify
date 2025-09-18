@@ -63,7 +63,7 @@ export class BackgroundMessageHandler {
   public static resetInstance(): void {
     if (BackgroundMessageHandler.instance) {
       BackgroundMessageHandler.instance.cleanup();
-      BackgroundMessageHandler.instance = undefined as any;
+      BackgroundMessageHandler.instance = undefined as unknown as BackgroundMessageHandler;
     }
   }
 

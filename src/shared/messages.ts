@@ -289,36 +289,36 @@ export function isEvent(message: BaseMessage): message is EventMessage {
 }
 
 // Specific type guards
-function isExtractFramesRequest(message: BaseMessage): message is ExtractFramesRequest {
+function _isExtractFramesRequest(message: BaseMessage): message is ExtractFramesRequest {
   return message.type === 'EXTRACT_FRAMES_REQUEST';
 }
 
-function isEncodeGifRequest(message: BaseMessage): message is EncodeGifRequest {
+function _isEncodeGifRequest(message: BaseMessage): message is EncodeGifRequest {
   return message.type === 'ENCODE_GIF_REQUEST';
 }
 
-function isGetVideoStateRequest(message: BaseMessage): message is GetVideoStateRequest {
+function _isGetVideoStateRequest(message: BaseMessage): message is GetVideoStateRequest {
   return message.type === 'GET_VIDEO_STATE_REQUEST';
 }
 
-function isShowTimelineEvent(message: BaseMessage): message is ShowTimelineEvent {
+function _isShowTimelineEvent(message: BaseMessage): message is ShowTimelineEvent {
   return message.type === 'SHOW_TIMELINE_EVENT';
 }
 
-function isTimelineSelectionUpdate(message: BaseMessage): message is TimelineSelectionUpdate {
+function _isTimelineSelectionUpdate(message: BaseMessage): message is TimelineSelectionUpdate {
   return message.type === 'TIMELINE_SELECTION_UPDATE';
 }
 
-function isJobProgressUpdate(message: BaseMessage): message is JobProgressUpdate {
+function _isJobProgressUpdate(message: BaseMessage): message is JobProgressUpdate {
   return message.type === 'JOB_PROGRESS_UPDATE';
 }
 
-function isLogMessage(message: BaseMessage): message is LogMessage {
+function _isLogMessage(message: BaseMessage): message is LogMessage {
   return message.type === 'LOG_MESSAGE';
 }
 
 // Response Helper Functions
-function createSuccessResponse<TReq extends BaseRequest, TRes extends BaseResponse>(
+function _createSuccessResponse<TReq extends BaseRequest, TRes extends BaseResponse>(
   request: TReq,
   responseType: TRes['type'],
   data?: unknown
@@ -361,7 +361,7 @@ function generateRequestId(): string {
   return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-function createBaseMessage<T extends BaseMessage>(
+function _createBaseMessage<T extends BaseMessage>(
   type: T['type'],
   data?: unknown,
   context?: MessageContext
@@ -375,7 +375,7 @@ function createBaseMessage<T extends BaseMessage>(
   } as unknown as T;
 }
 
-function createRequest<T extends BaseRequest>(
+function _createRequest<T extends BaseRequest>(
   type: T['type'],
   data: unknown,
   context?: MessageContext

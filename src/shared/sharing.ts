@@ -278,4 +278,4 @@ class SharingService {
 }
 
 // Export for convenience
-const sharing = SharingService;
+const _sharing = SharingService;

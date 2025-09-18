@@ -15,7 +15,17 @@ interface ScreenData {
   videoDuration?: number;
   currentTime?: number;
   textOverlays?: TextOverlay[];
-  [key: string]: any;
+  resolution?: string;
+  frameRate?: number;
+  gifSize?: number;
+  gifDataUrl?: string;
+  gifMetadata?: {
+    width: number;
+    height: number;
+    duration: number;
+    frameCount?: number;
+  };
+  [key: string]: unknown;
 }
 
 interface UseOverlayNavigationReturn {

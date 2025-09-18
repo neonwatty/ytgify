@@ -400,7 +400,7 @@ class FrameExtractor {
 /**
  * Convenience function for extracting frames from video elements
  */
-async function extractVideoFrames(
+async function _extractVideoFrames(
   videoElement: HTMLVideoElement,
   config: FrameExtractionConfig,
   onProgress?: (progress: FrameExtractionProgress) => void

@@ -94,7 +94,7 @@ export class MessageBus {
     if (MessageBus.instance) {
       MessageBus.instance.cleanup();
     }
-    MessageBus.instance = null as any;
+    MessageBus.instance = null as unknown as MessageBus;
   }
 
   // Initialize the message bus
@@ -574,7 +574,7 @@ export class MessageBus {
   public destroy(): void {
     this.cleanup();
     // Reset singleton instance for testing
-    MessageBus.instance = null as any;
+    MessageBus.instance = null as unknown as MessageBus;
   }
 
   // Internal logging
@@ -595,21 +595,21 @@ export function initializeMessageBus(options?: MessageBusOptions): MessageBus {
   return bus;
 }
 
-function sendRequest<TReq extends RequestMessage, TRes extends ResponseMessage>(
+function _sendRequest<TReq extends RequestMessage, TRes extends ResponseMessage>(
   message: TReq,
   target?: number | 'background'
 ): Promise<TRes> {
   return messageBus.sendRequest<TReq, TRes>(message, target);
 }
 
-function sendEvent<T extends EventMessage>(
+function _sendEvent<T extends EventMessage>(
   event: T,
   target?: number | 'background' | 'broadcast'
 ): void {
   return messageBus.sendEvent(event, target);
 }
 
-function onRequest<TReq extends RequestMessage, TRes extends ResponseMessage>(
+function _onRequest<TReq extends RequestMessage, TRes extends ResponseMessage>(
   messageType: TReq['type'],
   handler: RequestHandler<TReq, TRes>,
   options?: { priority?: number }
@@ -617,7 +617,7 @@ function onRequest<TReq extends RequestMessage, TRes extends ResponseMessage>(
   return messageBus.onRequest(messageType, handler, options);
 }
 
-function onEvent<T extends EventMessage>(
+function _onEvent<T extends EventMessage>(
   messageType: T['type'],
   handler: EventHandler<T>,
   options?: { once?: boolean; priority?: number }

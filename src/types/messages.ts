@@ -340,11 +340,11 @@ export function isGetVideoStateRequest(message: BaseMessage): message is GetVide
   return message.type === 'GET_VIDEO_STATE';
 }
 
-function isShowTimelineRequest(message: BaseMessage): message is ShowTimelineRequest {
+function _isShowTimelineRequest(message: BaseMessage): message is ShowTimelineRequest {
   return message.type === 'SHOW_TIMELINE';
 }
 
-function isHideTimelineRequest(message: BaseMessage): message is HideTimelineRequest {
+function _isHideTimelineRequest(message: BaseMessage): message is HideTimelineRequest {
   return message.type === 'HIDE_TIMELINE';
 }
 
@@ -352,7 +352,7 @@ export function isTimelineSelectionUpdate(message: BaseMessage): message is Time
   return message.type === 'TIMELINE_SELECTION_UPDATE';
 }
 
-function isOpenEditorRequest(message: BaseMessage): message is OpenEditorRequest {
+function _isOpenEditorRequest(message: BaseMessage): message is OpenEditorRequest {
   return message.type === 'OPEN_EDITOR';
 }
 
@@ -369,7 +369,7 @@ export function isGetJobStatusRequest(message: BaseMessage): message is GetJobSt
 }
 
 // Response helper function
-function createResponse<T extends ExtensionMessage>(
+function _createResponse<T extends ExtensionMessage>(
   originalMessage: BaseMessage,
   responseType: T['type'],
   success: boolean,

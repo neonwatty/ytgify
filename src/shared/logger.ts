@@ -395,7 +395,7 @@ class SharedLogger {
 
 export const sharedLogger = SharedLogger.getInstance();
 
-function withPerformanceTracking<T extends unknown[], R>(
+function _withPerformanceTracking<T extends unknown[], R>(
   name: string,
   fn: (...args: T) => R | Promise<R>
 ): (...args: T) => R | Promise<R> {
@@ -413,7 +413,7 @@ function withPerformanceTracking<T extends unknown[], R>(
   };
 }
 
-function performanceDecorator(name?: string) {
+function _performanceDecorator(name?: string) {
   return function (target: unknown, propertyName: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
     const metricName = name || `${target?.constructor?.name || 'Unknown'}.${propertyName}`;

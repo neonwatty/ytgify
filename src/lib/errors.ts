@@ -280,7 +280,7 @@ export function createError(
 }
 
 // Decorator for automatic error handling
-function handleErrors(
+function _handleErrors(
   target: unknown,
   propertyName: string,
   descriptor: PropertyDescriptor

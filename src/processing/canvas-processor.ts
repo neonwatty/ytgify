@@ -502,7 +502,7 @@ export class CanvasProcessor {
 /**
  * Convenience function for processing extracted frames
  */
-async function processExtractedFrames(
+async function _processExtractedFrames(
   frames: ExtractedFrame[],
   config: ProcessingConfig,
   onProgress?: (progress: ProcessingProgress) => void
