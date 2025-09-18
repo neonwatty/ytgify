@@ -64,7 +64,6 @@ test.describe('GIF Wizard - Complete Flow Tests', () => {
 
     // Check if wizard opened
     const wizardVisible = await page.locator('.ytgif-overlay-wizard').isVisible();
-    console.log('Wizard visible:', wizardVisible);
 
     // Check what screens are present
     const screens = await page.evaluate(() => {
@@ -83,7 +82,6 @@ test.describe('GIF Wizard - Complete Flow Tests', () => {
         }))
       };
     });
-    console.log('Screens present:', screens);
 
     await wizard.waitForWizardReady();
 
@@ -108,7 +106,6 @@ test.describe('GIF Wizard - Complete Flow Tests', () => {
         allScreenClasses: Array.from(screens).map(s => s.className)
       };
     });
-    console.log('Current screen after clicking next:', currentScreen);
 
     // Step 2: Text Overlay
     await textOverlay.waitForScreen();
@@ -134,7 +131,6 @@ test.describe('GIF Wizard - Complete Flow Tests', () => {
         primaryButtonText: document.querySelector('.ytgif-button-primary')?.textContent?.trim()
       };
     });
-    console.log('Text overlay elements:', JSON.stringify(textOverlayElements, null, 2));
 
     // For now, just skip text overlay since buttons might be off-screen
     // First, try to scroll the wizard container to see the buttons
@@ -150,20 +146,18 @@ test.describe('GIF Wizard - Complete Flow Tests', () => {
       // Try to find and click skip button
       const skipButton = await page.$('button:has-text("Skip")');
       if (skipButton) {
-        console.log('Clicking skip button');
         await skipButton.scrollIntoViewIfNeeded();
         await skipButton.click();
       } else {
         // If no skip, try the primary button
         const primaryButton = await page.$('.ytgif-button-primary');
         if (primaryButton) {
-          console.log('Clicking primary button to continue');
           await primaryButton.scrollIntoViewIfNeeded();
           await primaryButton.click();
         }
       }
     } catch (error) {
-      console.log('Error clicking button:', error);
+      // Button click error, continue
     }
 
     await page.waitForTimeout(2000);
@@ -174,7 +168,6 @@ test.describe('GIF Wizard - Complete Flow Tests', () => {
     // Monitor progress
     let maxProgress = 0;
     await processing.monitorProgress((progress, stage) => {
-      console.log(`Processing: ${progress}% - ${stage}`);
       maxProgress = Math.max(maxProgress, progress);
     });
 

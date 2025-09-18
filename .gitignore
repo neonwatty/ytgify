@@ -92,6 +92,9 @@ coverage/
 
 # Testing
 .jest/
+tests/test-user-data-*
+tests/test-results/
+test-results/
 
 # Chrome Extension specific
 *.pem

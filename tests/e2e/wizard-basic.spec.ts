@@ -7,16 +7,8 @@ import { waitForExtensionReady, handleYouTubeCookieConsent } from './helpers/ext
 
 test.describe('Basic Wizard Test with Extension', () => {
   test('Extension loads and GIF button appears', async ({ page, context, extensionId }) => {
-    console.log('Extension ID:', extensionId);
     expect(extensionId).toBeTruthy();
 
-    // Set up console log listener before navigating
-    page.on('console', msg => {
-      const text = msg.text();
-      if (text.includes('ytgif') || text.includes('GIF') || text.includes('[Content]') || text.includes('button')) {
-        console.log('Page console:', text);
-      }
-    });
 
     const youtube = new YouTubePage(page);
 
@@ -28,18 +20,15 @@ test.describe('Basic Wizard Test with Extension', () => {
 
     // Wait for video to be ready
     await page.waitForSelector('video', { timeout: 30000 });
-    console.log('Video element found');
 
     // Wait for player controls to be ready
     await page.waitForSelector('.ytp-right-controls', { timeout: 30000 });
-    console.log('Player controls found');
 
     // Check if content script executed by injecting a test
     const contentScriptActive = await page.evaluate(() => {
       // Check if any extension-specific globals or elements exist
       return !!(window as any).ytgifExtension || document.querySelector('[class*="ytgif"]');
     });
-    console.log('Content script active:', contentScriptActive);
 
     // Check video element properties
     const videoInfo = await page.evaluate(() => {
@@ -56,7 +45,6 @@ test.describe('Basic Wizard Test with Extension', () => {
         pageType: window.location.pathname.startsWith('/watch') ? 'watch' : 'other'
       };
     });
-    console.log('Video info:', videoInfo);
 
     // Wait for content script to detect video and refresh state
     await page.waitForTimeout(3000);
@@ -105,14 +93,12 @@ test.describe('Basic Wizard Test with Extension', () => {
         shouldInjectButton: hasVideo && isWatchPage && !isLive
       };
     });
-    console.log('State after refresh:', stateAfterRefresh);
 
     // Wait a bit more for button injection
     await page.waitForTimeout(5000);
 
     // Check for service workers (extension loaded)
     const serviceWorkers = context.serviceWorkers();
-    console.log('Service workers:', serviceWorkers.length);
     expect(serviceWorkers.length).toBeGreaterThan(0);
 
     // Try to find GIF button with various selectors
@@ -129,7 +115,6 @@ test.describe('Basic Wizard Test with Extension', () => {
       try {
         gifButton = await page.$(selector);
         if (gifButton) {
-          console.log(`Found GIF button with selector: ${selector}`);
           break;
         }
       } catch {
@@ -146,11 +131,6 @@ test.describe('Basic Wizard Test with Extension', () => {
           className: b.className
         }))
       );
-      console.log('All buttons in player controls:', JSON.stringify(buttons, null, 2));
-
-      // Also check if content script added any elements
-      const extensionElements = await page.$$('[class*="ytgif"]');
-      console.log('Extension elements found:', extensionElements.length);
 
       // Take screenshot for debugging
       await page.screenshot({
@@ -181,7 +161,6 @@ test.describe('Basic Wizard Test with Extension', () => {
       return video ? video.duration : 0;
     });
 
-    console.log('Video duration:', duration);
     expect(duration).toBeGreaterThan(0);
   });
 
@@ -206,15 +185,9 @@ test.describe('Basic Wizard Test with Extension', () => {
     // Use force click to bypass viewport issues
     try {
       await page.click('button:has-text("Skip")', { force: true });
-      console.log('Clicked skip button');
     } catch (e) {
       // If skip doesn't work, try primary button
-      try {
-        await page.click('.ytgif-button-primary', { force: true });
-        console.log('Clicked primary button');
-      } catch (e2) {
-        console.log('Could not click any button to proceed');
-      }
+      await page.click('.ytgif-button-primary', { force: true });
     }
     await page.waitForTimeout(2000);
 
@@ -228,8 +201,6 @@ test.describe('Basic Wizard Test with Extension', () => {
         processingVisible: processing ? (processing as HTMLElement).offsetParent !== null : false
       };
     });
-
-    console.log('Processing screen:', processingInfo);
 
     if (processingInfo.onProcessingScreen) {
       // Wait for GIF to be created (up to 30 seconds)
@@ -246,10 +217,7 @@ test.describe('Basic Wizard Test with Extension', () => {
         };
       });
 
-      console.log('Success screen:', successInfo);
-
       if (successInfo.hasGifPreview && successInfo.gifSrc) {
-        console.log('🎉 GIF created successfully!');
         expect(successInfo.gifSrc).toBeTruthy();
       }
     }
@@ -297,8 +265,6 @@ test.describe('Basic Wizard Test with Extension', () => {
       };
     });
 
-    console.log('Wizard info:', JSON.stringify(wizardInfo, null, 2));
-
     expect(wizardInfo.wizardExists).toBe(true);
     expect(wizardInfo.quickCaptureExists).toBe(true);
 
@@ -317,8 +283,6 @@ test.describe('Basic Wizard Test with Extension', () => {
           stillOnQuickCapture: !!quickCapture && (quickCapture as HTMLElement).offsetParent !== null
         };
       });
-
-      console.log('After clicking next:', nextScreenInfo);
     }
   });
 });
