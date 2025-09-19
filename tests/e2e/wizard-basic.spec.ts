@@ -20,8 +20,20 @@ test.describe('Basic Wizard Test with Extension', () => {
     // Wait for video to be ready
     await page.waitForSelector('video', { timeout: 30000 });
 
-    // Wait for player controls to be ready
-    await page.waitForSelector('.ytp-right-controls', { timeout: 30000 });
+    // Hover over video player to ensure controls are visible (needed in headless mode)
+    await page.hover('video');
+
+    // Also try clicking the video to ensure it's focused
+    await page.click('video', { force: true });
+
+    // Wait a moment for controls to appear
+    await page.waitForTimeout(1000);
+
+    // Wait for player controls to be ready - they might be hidden initially
+    await page.waitForSelector('.ytp-right-controls', {
+      state: 'attached', // First wait for element to exist in DOM
+      timeout: 30000
+    });
 
     // Check if content script executed by injecting a test
     const contentScriptActive = await page.evaluate(() => {
