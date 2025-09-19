@@ -19,7 +19,8 @@
     "test:e2e:headed": "playwright test --config tests/playwright.config.ts --headed",
     "test:e2e:ui": "playwright test --config tests/playwright.config.ts --ui",
     "test:all": "npm run test && npm run test:e2e",
-    "test:benchmarks": "jest --config tests/jest.config.cjs src/lib/encoders/encoder-benchmarks.test.ts --timeout=120000 --verbose"
+    "test:benchmarks": "jest --config tests/jest.config.cjs src/lib/encoders/encoder-benchmarks.test.ts --timeout=120000 --verbose",
+    "validate:pre-push": "npm run build && npm run typecheck && npm test && npm run test:e2e -- tests/e2e/wizard-basic.spec.ts"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",

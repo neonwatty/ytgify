@@ -1,15 +1,9 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-echo "🚨 Running mandatory pre-commit validation..."
-echo "⚠️  This will take 3-5 minutes to ensure code quality"
-echo ""
+echo "🚀 Running pre-push checks..."
 
-# Run linting on staged files
-echo "📝 Running ESLint on staged files..."
-npx lint-staged
-
-# Build the extension
+# Ensure extension is built before running E2E tests
 echo "🔨 Building extension..."
 npm run build
 
@@ -31,10 +25,9 @@ echo "🧪 Running unit tests..."
 npm test
 
 # Run E2E tests (mandatory - no bypass allowed)
-echo ""
 echo "🎭 Running E2E tests (wizard-basic.spec.ts)..."
-echo "⚠️  This ensures extension works on real YouTube pages"
-echo "📍 Tests require Chrome browser and internet connection"
+echo "⚠️  This may take a few minutes and requires Chrome browser"
+echo "📍 Testing extension functionality on real YouTube pages"
 
 npm run test:e2e -- tests/e2e/wizard-basic.spec.ts
 
@@ -48,10 +41,10 @@ if [ $? -ne 0 ]; then
   echo "   • Run 'npm run test:e2e:headed -- tests/e2e/wizard-basic.spec.ts' to see what's happening"
   echo "   • Run 'npm run test:e2e:debug -- tests/e2e/wizard-basic.spec.ts' for detailed debugging"
   echo ""
-  echo "🚫 Commit blocked - wizard-basic E2E tests must pass before committing"
+  echo "🚫 Push blocked - wizard-basic E2E tests must pass before pushing"
   exit 1
 fi
 
 echo ""
-echo "✅ All pre-commit checks passed!"
-echo "🎉 Your commit is ready - all tests verified"
+echo "✅ All pre-push checks passed!"
+echo "🎉 Ready to push to remote repository"
