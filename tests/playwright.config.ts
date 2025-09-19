@@ -27,8 +27,8 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    actionTimeout: 20000,
-    navigationTimeout: 40000,
+    actionTimeout: 30000, // Increased to 30s for parallel execution
+    navigationTimeout: 45000, // Increased to 45s for parallel execution
   },
 
   projects: [

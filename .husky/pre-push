@@ -2,6 +2,10 @@
 
 echo "🚀 Running pre-push checks..."
 
+# Run linting
+echo "📝 Running ESLint..."
+npm run lint
+
 # Ensure extension is built before running E2E tests
 echo "🔨 Building extension..."
 npm run build
@@ -24,11 +28,12 @@ echo "🧪 Running unit tests..."
 npm test
 
 # Run E2E tests (mandatory - no bypass allowed)
-echo "🎭 Running E2E tests (wizard-basic.spec.ts)..."
+echo "🎭 Running E2E tests (wizard-basic.spec.ts with 3 parallel workers)..."
 echo "⚠️  This may take a few minutes and requires Chrome browser"
 echo "📍 Testing extension functionality on real YouTube pages"
+echo "🚀 Running with 3 workers for faster execution"
 
-npm run test:e2e -- tests/e2e/wizard-basic.spec.ts
+npm run test:e2e:fast
 
 if [ $? -ne 0 ]; then
   echo ""

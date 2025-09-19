@@ -47,6 +47,7 @@ ast-grep --pattern 'chrome.storage.$METHOD.$ACTION($$$)' --lang ts
 For more complex patterns and rules, see [ast-grep documentation](https://ast-grep.github.io/reference/cli.html).
 
 ### Development
+
 ```bash
 npm run dev              # Start webpack in watch mode for development
 npm run build            # Build production-ready extension in dist/
@@ -54,19 +55,34 @@ npm run clean            # Remove dist directory
 ```
 
 ### Code Quality
+
 ```bash
 npm run lint             # Run ESLint on src/**/*.{ts,tsx}
 npm run typecheck        # Run TypeScript type checking (tsc --noEmit)
 ```
 
 ### Testing
+
 ```bash
 npm test                 # Run all tests
 npm test:watch           # Run tests in watch mode
 npm test -- path/to/test # Run a specific test file
+npm run validate:pre-push # Run full validation pipeline (same as Git hooks)
 ```
 
+### Quality Validation
+
+**Important Context**: This project uses mandatory Git hooks instead of GitHub Actions for E2E testing because:
+
+- Chrome extensions interacting with YouTube videos cannot be reliably tested in CI environments
+- YouTube blocks/rate-limits GitHub Actions IPs
+- Video playback requires real browser environments with proper codecs
+- Extension loading in headless Chrome has limitations
+
+All commits and pushes automatically run the full validation suite locally where tests can properly interact with YouTube.
+
 ### Loading Extension in Chrome
+
 1. Build the extension: `npm run build`
 2. Open Chrome and go to `chrome://extensions/`
 3. Enable "Developer mode"
@@ -108,6 +124,7 @@ YouTube Page → Content Script → Background Worker → Processing
 ### Key Data Structures
 
 All GIF-related types are defined in `src/types/index.ts`:
+
 - `GifData`: Complete GIF with blob data and metadata
 - `GifSettings`: User-configurable encoding parameters
 - `TimelineSelection`: Video segment selection data
@@ -116,6 +133,7 @@ All GIF-related types are defined in `src/types/index.ts`:
 ### Build Configuration
 
 The project uses Webpack with multiple entry points configured in `webpack.config.js`:
+
 - Separate bundles for background, content, and popup
 - CSS extraction with PostCSS/Tailwind processing
 - Automatic manifest and icon copying
@@ -130,20 +148,25 @@ The project uses Webpack with multiple entry points configured in `webpack.confi
 ## Critical Implementation Details
 
 ### YouTube Player Integration
+
 The content script uses MutationObserver to detect YouTube's dynamic player loading and injects the GIF button into `.ytp-right-controls`. The button must be styled to match YouTube's native controls.
 
 ### Cross-Component Communication
+
 All communication between content script and background worker uses Chrome's message passing API with typed message objects. Frame extraction and GIF encoding are handled asynchronously in the background worker.
 
 ### Webpack Path Resolution
+
 The project uses TypeScript path aliases that must match between `tsconfig.json` and `webpack.config.js`. The tsconfig must NOT have `noEmit: true` for webpack builds to work.
 
 ### React Component Library
+
 The extension uses Radix UI components (via shadcn/ui pattern) with Tailwind CSS. Components should follow the shadcn pattern of composition with class variance authority for styling variants.
 
 ## Product Requirements Context
 
 The extension implements a GIF creation workflow integrated directly into YouTube's player:
+
 1. User clicks GIF button in player controls
 2. Timeline overlay appears for segment selection
 3. Editor panel opens with live preview

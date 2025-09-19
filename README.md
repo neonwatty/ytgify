@@ -24,16 +24,19 @@ https://github.com/user-attachments/assets/dea017db-ec8d-41f7-9e9c-a1048cf5ae4c
 ### Installation
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
 2. Build the extension:
+
 ```bash
 npm run build
 ```
 
 For development with hot reload:
+
 ```bash
 npm run dev
 ```
@@ -69,6 +72,35 @@ npm run dev
 - `npm run test` - Run tests
 - `npm run lint` - Run ESLint
 - `npm run typecheck` - Run TypeScript type checking
+- `npm run validate:pre-push` - Run full validation suite (same as Git hooks)
+
+## Quality Assurance
+
+This project enforces strict quality standards through automated Git hooks that run **locally** on every commit.
+
+### Why Local Testing?
+
+Testing Chrome extensions that interact with YouTube videos is extremely challenging in CI/CD environments like GitHub Actions due to:
+
+- YouTube blocking/rate-limiting CI server IPs
+- Regional content restrictions and cookie consent variations
+- Chrome extension loading issues in headless environments
+- Video playback requiring real browser environments
+
+Therefore, we use **mandatory pre-commit and pre-push hooks** to ensure all tests run in a real, local development environment where they can reliably interact with YouTube.
+
+### What Runs Automatically:
+
+- **Every commit** runs: linting, build, type checking, unit tests, and E2E tests
+- **Every push** runs the same validation as a safety net
+- **No bypassing**: All tests must pass before code enters the repository
+- **Expected time**: 3-5 minutes per commit (due to comprehensive E2E testing)
+
+To manually run the full validation suite:
+
+```bash
+npm run validate:pre-push
+```
 
 ## Technology Stack
 

@@ -20,8 +20,27 @@ test.describe('Basic Wizard Test with Extension', () => {
     // Wait for video to be ready
     await page.waitForSelector('video', { timeout: 30000 });
 
+    // Try to dismiss any overlays or ensure focus is on video area
+    try {
+      // Click somewhere on the page to dismiss search if it's active
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(500);
+    } catch {
+      // Ignore if escape doesn't work
+    }
+
     // Hover over video player to ensure controls are visible (needed in headless mode)
-    await page.hover('video');
+    try {
+      await page.hover('video', { timeout: 5000 });
+    } catch {
+      // If hover fails, try alternative approach
+      await page.evaluate(() => {
+        const video = document.querySelector('video') as HTMLVideoElement;
+        if (video) {
+          video.dispatchEvent(new MouseEvent('mouseenter'));
+        }
+      });
+    }
 
     // Also try clicking the video to ensure it's focused
     await page.click('video', { force: true });
