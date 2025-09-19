@@ -42,8 +42,14 @@ export const test = base.extend<{
     // Get extension ID from background service worker
     let extensionId = '';
 
-    // Wait for service worker to be ready
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Wait for service worker to be ready with exponential backoff
+    let retries = 0;
+    const maxRetries = 3;
+    while (retries < maxRetries) {
+      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retries)));
+      if (context.serviceWorkers().length > 0) break;
+      retries++;
+    }
 
     const serviceWorkers = context.serviceWorkers();
     if (serviceWorkers.length > 0) {

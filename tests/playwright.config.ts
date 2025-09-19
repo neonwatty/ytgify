@@ -27,8 +27,8 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    actionTimeout: 15000,
-    navigationTimeout: 30000,
+    actionTimeout: 20000,
+    navigationTimeout: 40000,
   },
 
   projects: [
@@ -59,9 +59,9 @@ export default defineConfig({
   ],
 
   // Timeout configurations
-  timeout: 60000, // 1 minute per test
+  timeout: 90000, // 1.5 minutes per test
   expect: {
-    timeout: 10000, // 10 seconds for assertions
+    timeout: 15000, // 15 seconds for assertions
   },
 
   // Output folder for test artifacts

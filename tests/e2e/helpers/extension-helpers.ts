@@ -150,6 +150,89 @@ export async function validateGifFile(filePath: string): Promise<{
 }
 
 /**
+ * Wait for element with smart polling and exponential backoff
+ */
+export async function waitForElementSmart(
+  page: Page,
+  selector: string,
+  options: {
+    timeout?: number;
+    initialDelay?: number;
+    maxRetries?: number;
+  } = {}
+): Promise<boolean> {
+  const { timeout = 30000, initialDelay = 500, maxRetries = 5 } = options;
+  const startTime = Date.now();
+  let retries = 0;
+
+  while (Date.now() - startTime < timeout && retries < maxRetries) {
+    try {
+      const element = await page.$(selector);
+      if (element) {
+        const isVisible = await element.isVisible();
+        if (isVisible) return true;
+      }
+    } catch {
+      // Continue retrying
+    }
+
+    const delay = initialDelay * Math.pow(1.5, retries);
+    await page.waitForTimeout(Math.min(delay, 5000));
+    retries++;
+  }
+
+  return false;
+}
+
+/**
+ * Wait for condition with polling
+ */
+export async function waitForCondition(
+  page: Page,
+  condition: () => Promise<boolean>,
+  options: {
+    timeout?: number;
+    pollInterval?: number;
+  } = {}
+): Promise<boolean> {
+  const { timeout = 30000, pollInterval = 500 } = options;
+  const startTime = Date.now();
+
+  while (Date.now() - startTime < timeout) {
+    try {
+      const result = await condition();
+      if (result) return true;
+    } catch {
+      // Continue polling
+    }
+    await page.waitForTimeout(pollInterval);
+  }
+
+  return false;
+}
+
+/**
+ * Wait for GIF button with retry logic
+ */
+export async function waitForGifButton(
+  page: Page,
+  timeout: number = 30000
+): Promise<boolean> {
+  const selectors = [
+    '.ytgif-button',
+    '[aria-label*="GIF"]',
+    '.ytp-right-controls button.ytgif-button'
+  ];
+
+  for (const selector of selectors) {
+    const found = await waitForElementSmart(page, selector, { timeout: timeout / 3 });
+    if (found) return true;
+  }
+
+  return false;
+}
+
+/**
  * Clean up test artifacts older than specified days
  */
 export async function cleanupOldArtifacts(daysOld: number = 7): Promise<void> {
