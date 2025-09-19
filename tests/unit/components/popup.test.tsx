@@ -141,7 +141,7 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText('Show GIF button in player')).toBeInTheDocument();
+        expect(screen.getByText('Pin YTGify button to YouTube player')).toBeInTheDocument();
       });
 
       const checkbox = screen.getByRole('checkbox');
@@ -161,7 +161,7 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText('Show GIF button in player')).toBeInTheDocument();
+        expect(screen.getByText('Pin YTGify button to YouTube player')).toBeInTheDocument();
       });
 
       const checkbox = screen.getByRole('checkbox');
@@ -189,7 +189,7 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText('Show GIF button in player')).toBeInTheDocument();
+        expect(screen.getByText('Pin YTGify button to YouTube player')).toBeInTheDocument();
       });
 
       // Toggle the setting off
@@ -227,7 +227,7 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText('Show GIF button in player')).toBeInTheDocument();
+        expect(screen.getByText('Pin YTGify button to YouTube player')).toBeInTheDocument();
       });
 
       const checkbox = screen.getByRole('checkbox');
@@ -256,7 +256,7 @@ describe('PopupApp Component', () => {
       expect(screen.getByRole('button', { name: /open youtube/i })).toBeInTheDocument();
 
       // Verify YouTube-specific functionality is not shown
-      expect(screen.queryByText('Ready to Create GIF')).not.toBeInTheDocument();
+      expect(screen.queryByText('Capture GIF moments from:')).not.toBeInTheDocument();
       expect(screen.queryByText('YouTube Shorts Detected')).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /create gif/i })).not.toBeInTheDocument();
     });
@@ -319,7 +319,7 @@ describe('PopupApp Component', () => {
 
       await waitFor(() => {
         // Use container to avoid multiple elements issues
-        expect(container).toHaveTextContent('Ready to Create GIF');
+        expect(container).toHaveTextContent('Capture GIF moments from:');
       });
 
       // Verify video title is extracted and displayed (removing "- YouTube" suffix)
@@ -357,7 +357,7 @@ describe('PopupApp Component', () => {
         const { container, unmount } = render(<PopupApp />);
 
         await waitFor(() => {
-          expect(container).toHaveTextContent('Ready to Create GIF');
+          expect(container).toHaveTextContent('Capture GIF moments from:');
         });
 
         unmount();
@@ -393,7 +393,7 @@ describe('PopupApp Component', () => {
     test('renders popup container', async () => {
       render(<PopupApp />);
       await waitFor(() => {
-        expect(screen.getByText('YouTube GIF Maker')).toBeInTheDocument();
+        expect(screen.getByText('YTGify')).toBeInTheDocument();
       });
     });
   });
@@ -518,7 +518,7 @@ describe('PopupApp Component', () => {
 
       // Should still render basic elements even with error
       await waitFor(() => {
-        expect(screen.getByText('YouTube GIF Maker')).toBeInTheDocument();
+        expect(screen.getByText('YTGify')).toBeInTheDocument();
       });
 
       // Verify error was logged
