@@ -58,7 +58,7 @@ npm run dev
 2. Full extension build
 3. TypeScript type checking
 4. Unit tests
-5. E2E tests (wizard-basic.spec.ts)
+5. E2E tests (wizard-basic.spec.ts with 3 parallel workers)
 
 **Why Local Testing?** Testing Chrome extensions that interact with YouTube videos cannot be reliably done in GitHub Actions due to:
 
@@ -67,7 +67,7 @@ npm run dev
 - Chrome extension loading issues in headless mode
 - Regional content and cookie consent variations
 
-**Commit times**: Expect 3-5 minutes per commit due to comprehensive testing in your local environment where tests can reliably interact with YouTube.
+**Commit times**: Expect ~1 minute per commit with parallel E2E testing. All validation happens at commit time - pushing is instant with no additional checks.
 
 To test what will run on commit:
 

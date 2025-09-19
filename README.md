@@ -87,14 +87,14 @@ Testing Chrome extensions that interact with YouTube videos is extremely challen
 - Chrome extension loading issues in headless environments
 - Video playback requiring real browser environments
 
-Therefore, we use **mandatory pre-commit and pre-push hooks** to ensure all tests run in a real, local development environment where they can reliably interact with YouTube.
+Therefore, we use **mandatory pre-commit hooks** to ensure all tests run in a real, local development environment where they can reliably interact with YouTube.
 
 ### What Runs Automatically:
 
 - **Every commit** runs: linting, build, type checking, unit tests, and E2E tests
-- **Every push** runs the same validation as a safety net
 - **No bypassing**: All tests must pass before code enters the repository
 - **Expected time**: 3-5 minutes per commit (due to comprehensive E2E testing)
+- **Pushing is instant**: No additional validation on push
 
 To manually run the full validation suite:
 
