@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
 
 echo "🚨 Running mandatory pre-commit validation..."
 echo "⚠️  This will take 3-5 minutes to ensure code quality"
