@@ -69,7 +69,7 @@ const FeedbackScreen: React.FC<FeedbackScreenProps> = ({ onBack, onClose }) => {
 
         {/* Action Buttons */}
         <div className="ytgif-feedback-actions">
-          <button className="ytgif-button-secondary" onClick={onBack}>
+          <button className="ytgif-button-secondary" onClick={() => onBack && onBack()}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path
                 strokeLinecap="round"
@@ -81,7 +81,7 @@ const FeedbackScreen: React.FC<FeedbackScreenProps> = ({ onBack, onClose }) => {
             Back
           </button>
 
-          <button className="ytgif-button-primary" onClick={onClose}>
+          <button className="ytgif-button-primary" onClick={() => onClose && onClose()}>
             Done
           </button>
         </div>
