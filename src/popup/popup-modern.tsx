@@ -96,12 +96,6 @@ const PopupApp: React.FC = () => {
   // Main minimal launcher view
   return (
     <div className="popup-modern" style={{ width: '360px' }}>
-      {/* Subtle Background */}
-      <div className="popup-bg-animation">
-        <div className="gradient-orb gradient-orb-1"></div>
-        <div className="gradient-orb gradient-orb-2"></div>
-      </div>
-
       {/* Simple Header */}
       <div className="popup-header">
         <div className="popup-logo-container">
@@ -112,8 +106,8 @@ const PopupApp: React.FC = () => {
             style={{ width: '48px', height: '48px' }}
           />
           <div>
-            <h1 className="popup-logo-title">YouTube GIF Maker</h1>
-            <p className="popup-logo-subtitle">Create GIFs instantly</p>
+            <h1 className="popup-logo-title">YTGify</h1>
+            <p className="popup-logo-subtitle">GIF your favorite YouTube moments</p>
           </div>
         </div>
       </div>
@@ -122,7 +116,7 @@ const PopupApp: React.FC = () => {
       <div className="popup-settings">
         <div className="settings-item">
           <label className="settings-label">
-            <span className="settings-text">Show GIF button in player</span>
+            <span className="settings-text">Pin YTGify button to YouTube player</span>
             <div className="toggle-switch">
               <input
                 type="checkbox"
@@ -177,7 +171,7 @@ const PopupApp: React.FC = () => {
         ) : isYouTubePage ? (
           <div className="popup-ready-state">
             <div className="status-text">
-              <p className="status-title">Ready to Create GIF</p>
+              <p className="status-title">Capture GIF moments from:</p>
               {videoTitle && (
                 <p className="video-title">
                   {videoTitle}

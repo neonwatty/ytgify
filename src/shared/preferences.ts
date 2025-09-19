@@ -1,16 +1,16 @@
 import { UserPreferences } from '@/types/storage';
 import { extensionStateManager } from './state-manager';
 
-export interface PreferenceChangeEvent {
+interface PreferenceChangeEvent {
   key: keyof UserPreferences;
   oldValue: unknown;
   newValue: unknown;
   timestamp: number;
 }
 
-export type PreferenceChangeListener = (event: PreferenceChangeEvent) => void;
+type PreferenceChangeListener = (event: PreferenceChangeEvent) => void;
 
-export class PreferencesManager {
+class PreferencesManager {
   private changeListeners: PreferenceChangeListener[] = [];
   private initialized = false;
   private cache: UserPreferences | null = null;
@@ -259,4 +259,4 @@ export class PreferencesManager {
 }
 
 // Singleton instance
-export const preferencesManager = new PreferencesManager();
+const _preferencesManager = new PreferencesManager();

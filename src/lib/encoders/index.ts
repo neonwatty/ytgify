@@ -75,7 +75,7 @@ export async function getEncoderRecommendations(): Promise<{
     name: string;
     type: EncoderType;
     available: boolean;
-    characteristics: any;
+    characteristics: Record<string, unknown>;
   }>;
   recommended: {
     encoder: EncoderType;

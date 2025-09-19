@@ -1,19 +1,19 @@
+// Unused React component - kept for potential future use
+/*
 import React from 'react';
-
-export interface YouTubeButtonProps {
+interface YouTubeButtonProps {
   isActive: boolean;
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   disabled?: boolean;
   className?: string;
   'aria-label'?: string;
 }
-
-export interface YouTubeButtonState {
+interface YouTubeButtonState {
   isHovered: boolean;
   isPressed: boolean;
 }
 
-export class YouTubeButton extends React.Component<YouTubeButtonProps, YouTubeButtonState> {
+class YouTubeButton extends React.Component<YouTubeButtonProps, YouTubeButtonState> {
   constructor(props: YouTubeButtonProps) {
     super(props);
     this.state = {
@@ -89,6 +89,7 @@ export class YouTubeButton extends React.Component<YouTubeButtonProps, YouTubeBu
     );
   }
 }
+*/
 
 // Utility function to create button element without React
 export function createNativeYouTubeButton(props: {

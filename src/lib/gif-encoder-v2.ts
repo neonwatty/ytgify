@@ -277,10 +277,7 @@ export async function encodeGif(
 }
 
 // Export encoder selection utilities for advanced use
-export { 
-  getEncoderRecommendations,
-  type EncoderType 
-} from './encoders';
+;
 
 /**
  * Get performance benchmarks for available encoders

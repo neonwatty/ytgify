@@ -4,16 +4,16 @@
  * Optimized for performance with Uint8ClampedArray operations
  */
 
-export interface FilterOptions {
+interface _FilterOptions {
   intensity?: number; // 0-100 for most filters
   preserveAlpha?: boolean;
 }
 
-export interface ColorMatrix {
+interface _ColorMatrix {
   matrix: number[]; // 4x4 color transformation matrix
 }
 
-export interface HSLAdjustment {
+interface HSLAdjustment {
   hue?: number;        // -180 to 180
   saturation?: number; // -100 to 100  
   lightness?: number;  // -100 to 100
@@ -440,28 +440,28 @@ export class ImageFilters {
 /**
  * Convenience functions for common filter operations
  */
-export const imageFilters = new ImageFilters();
+const imageFilters = new ImageFilters();
 
-export function adjustImageBrightness(imageData: ImageData, brightness: number): ImageData {
+function _adjustImageBrightness(imageData: ImageData, brightness: number): ImageData {
   return imageFilters.adjustBrightness(imageData, brightness);
 }
 
-export function adjustImageContrast(imageData: ImageData, contrast: number): ImageData {
+function _adjustImageContrast(imageData: ImageData, contrast: number): ImageData {
   return imageFilters.adjustContrast(imageData, contrast);
 }
 
-export function adjustImageSaturation(imageData: ImageData, saturation: number): ImageData {
+function _adjustImageSaturation(imageData: ImageData, saturation: number): ImageData {
   return imageFilters.adjustSaturation(imageData, saturation);
 }
 
-export function convertToGrayscale(imageData: ImageData): ImageData {
+function _convertToGrayscale(imageData: ImageData): ImageData {
   return imageFilters.toGrayscale(imageData);
 }
 
 /**
  * Batch apply multiple filters efficiently
  */
-export function applyFilterChain(
+function _applyFilterChain(
   imageData: ImageData,
   filters: Array<{ type: string; value: number }>
 ): ImageData {

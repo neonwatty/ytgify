@@ -25,35 +25,35 @@ export class ExtensionError extends Error {
   }
 }
 
-export class VideoProcessingError extends ExtensionError {
+class VideoProcessingError extends ExtensionError {
   constructor(message: string, context?: Record<string, unknown>) {
     super(message, 'VIDEO_PROCESSING_ERROR', context);
     this.name = 'VideoProcessingError';
   }
 }
 
-export class GifCreationError extends ExtensionError {
+class GifCreationError extends ExtensionError {
   constructor(message: string, context?: Record<string, unknown>) {
     super(message, 'GIF_CREATION_ERROR', context);
     this.name = 'GifCreationError';
   }
 }
 
-export class StorageError extends ExtensionError {
+class StorageError extends ExtensionError {
   constructor(message: string, context?: Record<string, unknown>) {
     super(message, 'STORAGE_ERROR', context);
     this.name = 'StorageError';
   }
 }
 
-export class MessagePassingError extends ExtensionError {
+class MessagePassingError extends ExtensionError {
   constructor(message: string, context?: Record<string, unknown>) {
     super(message, 'MESSAGE_PASSING_ERROR', context);
     this.name = 'MessagePassingError';
   }
 }
 
-export class YouTubeIntegrationError extends ExtensionError {
+class YouTubeIntegrationError extends ExtensionError {
   constructor(message: string, context?: Record<string, unknown>) {
     super(message, 'YOUTUBE_INTEGRATION_ERROR', context);
     this.name = 'YouTubeIntegrationError';
@@ -280,7 +280,7 @@ export function createError(
 }
 
 // Decorator for automatic error handling
-export function handleErrors(
+function _handleErrors(
   target: unknown,
   propertyName: string,
   descriptor: PropertyDescriptor

@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { TimelineSelection, TextOverlay } from '@/types';
 import OverlayWizard from './overlay-wizard/OverlayWizard';
 
-export interface TimelineOverlayWizardProps {
+interface TimelineOverlayWizardProps {
   videoDuration: number;
   currentTime: number;
   videoTitle?: string;
@@ -12,7 +12,8 @@ export interface TimelineOverlayWizardProps {
   onCreateGif: (
     selection: TimelineSelection,
     textOverlays?: TextOverlay[],
-    resolution?: string
+    resolution?: string,
+    frameRate?: number
   ) => void;
   onSeekTo?: (time: number) => void;
   isCreating?: boolean;
@@ -51,9 +52,9 @@ export const TimelineOverlayWizard: React.FC<TimelineOverlayWizardProps> = ({
   );
 
   const handleCreateGif = useCallback(
-    (finalSelection: TimelineSelection, textOverlays?: TextOverlay[], resolution?: string) => {
+    (finalSelection: TimelineSelection, textOverlays?: TextOverlay[], resolution?: string, frameRate?: number) => {
       handleSelectionChange(finalSelection);
-      onCreateGif(finalSelection, textOverlays, resolution);
+      onCreateGif(finalSelection, textOverlays, resolution, frameRate);
     },
     [handleSelectionChange, onCreateGif]
   );
@@ -75,4 +76,3 @@ export const TimelineOverlayWizard: React.FC<TimelineOverlayWizardProps> = ({
   );
 };
 
-export default TimelineOverlayWizard;

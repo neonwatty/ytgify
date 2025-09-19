@@ -1,0 +1,50 @@
+{
+  "$schema": "https://unpkg.com/knip@3/schema.json",
+  "entry": [
+    "scripts/*.js"
+  ],
+  "ignore": [
+    "dist/**",
+    "node_modules/**",
+    "coverage/**",
+    "*.config.{js,cjs,mjs,ts}",
+    "**/*.test.{ts,tsx,js,jsx}",
+    "**/*.spec.{ts,tsx,js,jsx}",
+    "tests/**",
+    "scripts/generate-*.js",
+    "scripts/prepare-store-screenshots.js",
+    "scripts/remove-debug-logs.js"
+  ],
+  "ignoreDependencies": [
+    "archiver",
+    "autoprefixer"
+  ],
+  "webpack": {
+    "config": "webpack.config.cjs"
+  },
+  "jest": {
+    "config": "tests/jest.config.cjs"
+  },
+  "playwright": false,
+  "typescript": {
+    "config": "tsconfig.json"
+  },
+  "eslint": {
+    "config": "eslint.config.js"
+  },
+  "postcss": {
+    "config": "postcss.config.js"
+  },
+  "tailwind": {
+    "config": "tailwind.config.js"
+  },
+  "rules": {
+    "files": "error",
+    "dependencies": "error",
+    "devDependencies": "error",
+    "unlisted": "error",
+    "exports": "error",
+    "types": "error",
+    "duplicates": "error"
+  }
+}

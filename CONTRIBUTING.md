@@ -13,17 +13,20 @@ Thank you for your interest in contributing to the YouTube GIF Maker Chrome Exte
 ### Setup
 
 1. Fork and clone the repository:
+
 ```bash
 git clone https://github.com/[your-username]/ytgiphy.git
 cd ytgiphy
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Start development mode:
+
 ```bash
 npm run dev
 ```
@@ -45,6 +48,32 @@ npm run dev
 - `npm test` - Run unit tests
 - `npm run test:coverage` - Run tests with coverage report
 - `npm run test:watch` - Run tests in watch mode
+- `npm run validate:pre-push` - Run full validation suite (same as Git hooks)
+
+### Automated Quality Checks
+
+⚠️ **Important**: This project uses Git hooks to ensure code quality. Every commit will automatically run:
+
+1. ESLint on staged files
+2. Full extension build
+3. TypeScript type checking
+4. Unit tests
+5. E2E tests (wizard-basic.spec.ts with 3 parallel workers)
+
+**Why Local Testing?** Testing Chrome extensions that interact with YouTube videos cannot be reliably done in GitHub Actions due to:
+
+- YouTube blocking CI server IPs
+- Video playback requiring real browser environments
+- Chrome extension loading issues in headless mode
+- Regional content and cookie consent variations
+
+**Commit times**: Expect ~1 minute per commit with parallel E2E testing. All validation happens at commit time - pushing is instant with no additional checks.
+
+To test what will run on commit:
+
+```bash
+npm run validate:pre-push
+```
 
 ### Code Style
 
@@ -69,19 +98,14 @@ Test files should be placed in `tests/unit/` following the same structure as `sr
 ### Before Creating a PR
 
 1. **Create a feature branch**:
+
 ```bash
 git checkout -b feature/your-feature-name
 ```
 
 2. **Make your changes** following our coding standards
 
-3. **Run all checks locally**:
-```bash
-npm run lint
-npm run typecheck
-npm test
-npm run build
-```
+3. **Commits are automatically validated** - our Git hooks ensure all tests pass before any commit succeeds
 
 4. **Write meaningful commit messages**:
    - Use present tense ("Add feature" not "Added feature")
@@ -98,6 +122,7 @@ npm run build
 ### PR Requirements
 
 All PRs must:
+
 - ✅ Pass all CI checks (linting, tests, type checking, build)
 - ✅ Maintain or improve code coverage (minimum 60%)
 - ✅ Include tests for new functionality
@@ -145,6 +170,7 @@ src/
 ### Filing an Issue
 
 Include:
+
 - Clear description of the problem
 - Steps to reproduce
 - Expected vs actual behavior
@@ -164,6 +190,7 @@ We welcome feature suggestions! Please:
 ## 🔒 Security
 
 For security vulnerabilities, please email directly instead of creating a public issue. Include:
+
 - Description of the vulnerability
 - Steps to reproduce
 - Potential impact
@@ -178,6 +205,7 @@ For security vulnerabilities, please email directly instead of creating a public
 ## ❓ Questions?
 
 Feel free to:
+
 - Open a discussion in GitHub Discussions
 - Ask in existing issues
 - Reach out to maintainers

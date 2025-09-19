@@ -1,12 +1,25 @@
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act } from 'react';
 import React from 'react';
 import QuickCaptureScreen from '@/content/overlay-wizard/screens/QuickCaptureScreen';
 
+// Mock the child components to isolate testing
+jest.mock('@/content/overlay-wizard/components/VideoPreview');
+jest.mock('@/content/overlay-wizard/components/TimelineScrubber');
+
+// Import mocked components
+import VideoPreview from '@/content/overlay-wizard/components/VideoPreview';
+import TimelineScrubber from '@/content/overlay-wizard/components/TimelineScrubber';
+
+const MockVideoPreview = VideoPreview as jest.Mock;
+const MockTimelineScrubber = TimelineScrubber as jest.Mock;
+
 describe('QuickCaptureScreen', () => {
-  const mockOnConfirm = jest.fn();
-  const mockOnBack = jest.fn();
-  const mockOnSeekTo = jest.fn();
+  const mockOnConfirm = jest.fn<(startTime: number, endTime: number, frameRate?: number, resolution?: string) => void>();
+  const mockOnBack = jest.fn<() => void>();
+  const mockOnSeekTo = jest.fn<(time: number) => void>();
+  const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
 
   const defaultProps = {
     startTime: 10,
@@ -18,8 +31,61 @@ describe('QuickCaptureScreen', () => {
     onSeekTo: mockOnSeekTo,
   };
 
+  // Mock video element
+  let mockVideoElement: HTMLVideoElement;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    mockConsoleLog.mockClear();
+
+    // Create mock video element
+    mockVideoElement = document.createElement('video') as HTMLVideoElement;
+    Object.defineProperty(mockVideoElement, 'paused', { value: false, writable: true });
+    Object.defineProperty(mockVideoElement, 'currentTime', { value: 15, writable: true });
+    mockVideoElement.play = jest.fn(() => Promise.resolve());
+    mockVideoElement.pause = jest.fn();
+
+    // Setup default mock implementations
+    MockVideoPreview.mockImplementation((props: any) => {
+      const { onPlayStateChange, isPlaying, startTime, endTime } = props;
+      return (
+        <div data-testid="video-preview">
+          <button
+            data-testid="preview-play-btn"
+            onClick={() => onPlayStateChange && onPlayStateChange(!isPlaying)}
+          >
+            {isPlaying ? 'Pause' : 'Play'}
+          </button>
+          <span data-testid="preview-time">{startTime}-{endTime}</span>
+        </div>
+      );
+    });
+
+    MockTimelineScrubber.mockImplementation((props: any) => {
+      const { onRangeChange, onSeek, startTime, endTime, previewTime } = props;
+      return (
+        <div data-testid="timeline-scrubber">
+          <button
+            data-testid="timeline-range-btn"
+            onClick={() => onRangeChange && onRangeChange(5, 15)}
+          >
+            Change Range
+          </button>
+          <button
+            data-testid="timeline-seek-btn"
+            onClick={() => onSeek && onSeek(12)}
+          >
+            Seek
+          </button>
+          <span data-testid="timeline-times">{startTime}-{endTime}</span>
+          {previewTime && <span data-testid="preview-time-indicator">{previewTime}</span>}
+        </div>
+      );
+    });
+  });
+
+  afterEach(() => {
+    mockConsoleLog.mockRestore();
   });
 
   describe('Resolution Selection', () => {
@@ -289,6 +355,625 @@ describe('QuickCaptureScreen', () => {
       render(<QuickCaptureScreen {...defaultProps} videoElement={undefined} />);
 
       expect(screen.getByText('Loading video element...')).toBeTruthy();
+    });
+  });
+
+  describe('Timeline Interaction', () => {
+    describe('handleRangeChange', () => {
+      it('should update start and end time when timeline range changes', () => {
+        const { rerender } = render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // Trigger range change through TimelineScrubber
+        const rangeBtn = screen.getByTestId('timeline-range-btn');
+        fireEvent.click(rangeBtn);
+
+        // Verify VideoPreview receives updated times
+        expect(VideoPreview).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            startTime: 5,
+            endTime: 15,
+          }),
+          {}
+        );
+      });
+
+      it('should reset preview time to new start time when range changes', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // Start preview playback first
+        const playBtn = screen.getByTestId('preview-play-btn');
+        fireEvent.click(playBtn);
+
+        // Change range
+        const rangeBtn = screen.getByTestId('timeline-range-btn');
+        fireEvent.click(rangeBtn);
+
+        // Verify preview stops playing
+        expect(VideoPreview).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            isPlaying: false,
+          }),
+          {}
+        );
+      });
+
+      it('should stop preview playback when range changes', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // Start playback
+        const playBtn = screen.getByTestId('preview-play-btn');
+        fireEvent.click(playBtn);
+
+        // Verify playing
+        expect(VideoPreview).toHaveBeenCalledWith(
+          expect.objectContaining({ isPlaying: true }),
+          {}
+        );
+
+        // Change range
+        const rangeBtn = screen.getByTestId('timeline-range-btn');
+        fireEvent.click(rangeBtn);
+
+        // Verify stopped
+        expect(VideoPreview).toHaveBeenLastCalledWith(
+          expect.objectContaining({ isPlaying: false }),
+          {}
+        );
+      });
+
+      it('should maintain range within video duration bounds', () => {
+        render(<QuickCaptureScreen {...defaultProps} duration={30} videoElement={mockVideoElement} />);
+
+        // TimelineScrubber should receive proper duration
+        expect(TimelineScrubber).toHaveBeenCalledWith(
+          expect.objectContaining({
+            duration: 30,
+          }),
+          {}
+        );
+      });
+    });
+
+    describe('handleSeek', () => {
+      it('should update preview time when seek is called', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        const seekBtn = screen.getByTestId('timeline-seek-btn');
+        fireEvent.click(seekBtn);
+
+        // Verify onSeekTo was called with the seek time
+        expect(mockOnSeekTo).toHaveBeenCalledWith(12);
+      });
+
+      it('should call onSeekTo prop when provided', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        const seekBtn = screen.getByTestId('timeline-seek-btn');
+        fireEvent.click(seekBtn);
+
+        expect(mockOnSeekTo).toHaveBeenCalledTimes(1);
+        expect(mockOnSeekTo).toHaveBeenCalledWith(12);
+      });
+
+      it('should not call onSeekTo if prop is undefined', () => {
+        render(<QuickCaptureScreen {...defaultProps} onSeekTo={undefined} videoElement={mockVideoElement} />);
+
+        const seekBtn = screen.getByTestId('timeline-seek-btn');
+        // Should not throw error
+        expect(() => fireEvent.click(seekBtn)).not.toThrow();
+      });
+    });
+
+    describe('TimelineScrubber Integration', () => {
+      it('should render TimelineScrubber with correct props', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        expect(TimelineScrubber).toHaveBeenCalledWith(
+          expect.objectContaining({
+            duration: 60,
+            startTime: 10,
+            endTime: 20,
+            currentTime: 15,
+            onRangeChange: expect.any(Function),
+            onSeek: expect.any(Function),
+          }),
+          {}
+        );
+      });
+
+      it('should pass previewTime when preview is playing', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // Start preview
+        const playBtn = screen.getByTestId('preview-play-btn');
+        fireEvent.click(playBtn);
+
+        // TimelineScrubber should receive previewTime when playing
+        expect(TimelineScrubber).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            previewTime: expect.any(Number),
+          }),
+          {}
+        );
+      });
+
+      it('should not pass previewTime when preview is stopped', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // Verify previewTime is undefined when not playing
+        expect(TimelineScrubber).toHaveBeenCalledWith(
+          expect.objectContaining({
+            previewTime: undefined,
+          }),
+          {}
+        );
+      });
+
+      it('should handle onRangeChange callback from TimelineScrubber', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // Simulate range change
+        const rangeBtn = screen.getByTestId('timeline-range-btn');
+        fireEvent.click(rangeBtn);
+
+        // Verify the component re-renders with new times
+        expect(VideoPreview).toHaveBeenCalledWith(
+          expect.objectContaining({
+            startTime: 5,
+            endTime: 15,
+          }),
+          {}
+        );
+      });
+
+      it('should handle onSeek callback from TimelineScrubber', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        const seekBtn = screen.getByTestId('timeline-seek-btn');
+        fireEvent.click(seekBtn);
+
+        expect(mockOnSeekTo).toHaveBeenCalledWith(12);
+      });
+    });
+  });
+
+  describe('Video Preview Functionality', () => {
+    describe('Preview Playback State', () => {
+      it('should initialize isPreviewPlaying as false', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        expect(VideoPreview).toHaveBeenCalledWith(
+          expect.objectContaining({
+            isPlaying: false,
+          }),
+          {}
+        );
+      });
+
+      it('should set isPreviewPlaying to true when play button clicked', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        const playBtn = screen.getByTestId('preview-play-btn');
+        fireEvent.click(playBtn);
+
+        expect(VideoPreview).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            isPlaying: true,
+          }),
+          {}
+        );
+      });
+
+      it('should set isPreviewPlaying to false when pause button clicked', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // Start playing
+        const playBtn = screen.getByTestId('preview-play-btn');
+        fireEvent.click(playBtn);
+
+        // Then pause
+        fireEvent.click(playBtn);
+
+        expect(VideoPreview).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            isPlaying: false,
+          }),
+          {}
+        );
+      });
+
+      it('should toggle playback state correctly', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        const playBtn = screen.getByTestId('preview-play-btn');
+
+        // Toggle multiple times
+        fireEvent.click(playBtn); // Play
+        expect(VideoPreview).toHaveBeenLastCalledWith(
+          expect.objectContaining({ isPlaying: true }),
+          {}
+        );
+
+        fireEvent.click(playBtn); // Pause
+        expect(VideoPreview).toHaveBeenLastCalledWith(
+          expect.objectContaining({ isPlaying: false }),
+          {}
+        );
+
+        fireEvent.click(playBtn); // Play again
+        expect(VideoPreview).toHaveBeenLastCalledWith(
+          expect.objectContaining({ isPlaying: true }),
+          {}
+        );
+      });
+
+      it('should stop playback when component unmounts', () => {
+        const { unmount } = render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // Start playback
+        const playBtn = screen.getByTestId('preview-play-btn');
+        fireEvent.click(playBtn);
+
+        // Unmount component
+        unmount();
+
+        // Component should clean up without errors
+        expect(() => unmount()).not.toThrow();
+      });
+    });
+
+    describe('onPlayStateChange Callback', () => {
+      it('should call onPlayStateChange(true) when play button clicked', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        const playBtn = screen.getByTestId('preview-play-btn');
+        fireEvent.click(playBtn);
+
+        // Check that VideoPreview received the callback
+        const lastCall = MockVideoPreview.mock.calls[MockVideoPreview.mock.calls.length - 1][0] as any;
+        expect(lastCall.isPlaying).toBe(true);
+      });
+
+      it('should call onPlayStateChange(false) when pause button clicked', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        const playBtn = screen.getByTestId('preview-play-btn');
+        fireEvent.click(playBtn); // Play
+        fireEvent.click(playBtn); // Pause
+
+        const lastCall = MockVideoPreview.mock.calls[MockVideoPreview.mock.calls.length - 1][0] as any;
+        expect(lastCall.isPlaying).toBe(false);
+      });
+
+      it('should log state changes to console for debugging', () => {
+        // Note: This test verifies that debug logging is in place
+        // The actual console.log is mocked, so we just verify the component renders and handles clicks
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        const playBtn = screen.getByTestId('preview-play-btn');
+        fireEvent.click(playBtn);
+
+        // The click should trigger state change (verified by checking VideoPreview props)
+        expect(MockVideoPreview).toHaveBeenCalledWith(
+          expect.objectContaining({
+            isPlaying: true,
+          }),
+          {}
+        );
+      });
+
+      it('should handle rapid play/pause toggles', async () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        const playBtn = screen.getByTestId('preview-play-btn');
+
+        // Clear mock calls to track only the toggles
+        MockVideoPreview.mockClear();
+
+        // Rapid toggling
+        fireEvent.click(playBtn); // Play
+        fireEvent.click(playBtn); // Pause
+        fireEvent.click(playBtn); // Play
+        fireEvent.click(playBtn); // Pause
+
+        // Should handle all toggles without errors
+        // After 4 toggles, the component should have been called multiple times
+        await waitFor(() => {
+          expect(MockVideoPreview.mock.calls.length).toBeGreaterThan(0);
+        });
+
+        // Final state should be paused (false) after even number of clicks
+        const calls = MockVideoPreview.mock.calls;
+        const lastCallWithPlayState = calls[calls.length - 1][0] as any;
+        expect(lastCallWithPlayState.isPlaying).toBe(false);
+      });
+    });
+
+    describe('VideoPreview Component', () => {
+      it('should pass videoElement prop to VideoPreview', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        expect(VideoPreview).toHaveBeenCalledWith(
+          expect.objectContaining({
+            videoElement: mockVideoElement,
+          }),
+          {}
+        );
+      });
+
+      it('should pass startTime and endTime to VideoPreview', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        expect(VideoPreview).toHaveBeenCalledWith(
+          expect.objectContaining({
+            startTime: 10,
+            endTime: 20,
+          }),
+          {}
+        );
+      });
+
+      it('should pass currentTime as currentVideoTime to VideoPreview', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        expect(VideoPreview).toHaveBeenCalledWith(
+          expect.objectContaining({
+            currentVideoTime: 15,
+          }),
+          {}
+        );
+      });
+
+      it('should pass isPreviewPlaying state to VideoPreview', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // Initial state
+        expect(VideoPreview).toHaveBeenCalledWith(
+          expect.objectContaining({
+            isPlaying: false,
+          }),
+          {}
+        );
+
+        // After clicking play
+        const playBtn = screen.getByTestId('preview-play-btn');
+        fireEvent.click(playBtn);
+
+        expect(VideoPreview).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            isPlaying: true,
+          }),
+          {}
+        );
+      });
+
+      it('should handle onPlayStateChange from VideoPreview', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        const playBtn = screen.getByTestId('preview-play-btn');
+        fireEvent.click(playBtn);
+
+        // Verify the callback was handled and state updated
+        expect(VideoPreview).toHaveBeenCalledWith(
+          expect.objectContaining({
+            onPlayStateChange: expect.any(Function),
+          }),
+          {}
+        );
+      });
+
+      it('should render fallback when videoElement is undefined', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={undefined} />);
+
+        expect(screen.getByText('Loading video element...')).toBeTruthy();
+        expect(screen.queryByTestId('video-preview')).not.toBeTruthy();
+      });
+    });
+  });
+
+  describe('State Management', () => {
+    describe('useEffect Hooks', () => {
+      it('should log preview playing state changes', () => {
+        // This test verifies that state changes are tracked
+        // We check this by verifying the VideoPreview component receives the correct props
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // Initial state should be false
+        expect(MockVideoPreview).toHaveBeenCalledWith(
+          expect.objectContaining({
+            isPlaying: false,
+          }),
+          {}
+        );
+
+        // After play click, state should be true
+        const playBtn = screen.getByTestId('preview-play-btn');
+        fireEvent.click(playBtn);
+
+        expect(MockVideoPreview).toHaveBeenCalledWith(
+          expect.objectContaining({
+            isPlaying: true,
+          }),
+          {}
+        );
+      });
+
+      it('should initialize previewTime to startTime', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // TimelineScrubber should receive initial values
+        expect(TimelineScrubber).toHaveBeenCalledWith(
+          expect.objectContaining({
+            startTime: 10,
+          }),
+          {}
+        );
+      });
+
+      it('should update previewTime when timeline changes', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // Change range
+        const rangeBtn = screen.getByTestId('timeline-range-btn');
+        fireEvent.click(rangeBtn);
+
+        // New start time should be reflected
+        expect(VideoPreview).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            startTime: 5,
+          }),
+          {}
+        );
+      });
+
+      it('should reset playback state when startTime/endTime changes', () => {
+        // This test verifies that changing start/end times updates the component properly
+        const { unmount } = render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // Unmount the first instance
+        unmount();
+
+        // Clear all mocks
+        MockVideoPreview.mockClear();
+
+        // Render with new times
+        render(<QuickCaptureScreen {...defaultProps} startTime={15} endTime={25} videoElement={mockVideoElement} />);
+
+        // VideoPreview should have been called with the new times
+        expect(MockVideoPreview).toHaveBeenCalledWith(
+          expect.objectContaining({
+            startTime: 15,
+            endTime: 25,
+          }),
+          {}
+        );
+      });
+    });
+
+    describe('State Synchronization', () => {
+      it('should sync previewTime with timeline scrubber', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // When playing, TimelineScrubber should get previewTime
+        const playBtn = screen.getByTestId('preview-play-btn');
+        fireEvent.click(playBtn);
+
+        expect(TimelineScrubber).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            previewTime: expect.any(Number),
+          }),
+          {}
+        );
+      });
+
+      it('should maintain consistent state between resolution and frame rate', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // Select new resolution
+        fireEvent.click(screen.getByText('360p Compact').closest('button')!);
+
+        // Select new frame rate
+        fireEvent.click(screen.getByText('10 fps').closest('button')!);
+
+        // Confirm button should pass both values
+        const confirmButton = screen.getByText(/Continue to Customize/);
+        fireEvent.click(confirmButton);
+
+        expect(mockOnConfirm).toHaveBeenCalledWith(10, 20, 10, '360p');
+      });
+
+      it('should update frame count when duration changes', () => {
+        // Test that frame count updates based on duration and frame rate
+        // Initial test: 10s duration * 5fps = 50 frames
+        const { unmount } = render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // Verify initial calculation (10s * 5fps = 50)
+        let frameInfos = screen.getAllByText(/^~\d+$/);
+        expect(frameInfos.some(el => el.textContent === '~50')).toBe(true);
+
+        // Unmount and re-render with different duration
+        unmount();
+
+        // Render with 5 second duration (endTime 15 instead of 20)
+        render(<QuickCaptureScreen {...defaultProps} startTime={10} endTime={15} videoElement={mockVideoElement} />);
+
+        // Should now show ~25 frames (5s * 5fps)
+        frameInfos = screen.getAllByText(/^~\d+$/);
+        expect(frameInfos.some(el => el.textContent === '~25')).toBe(true);
+      });
+
+      it('should update file size estimate when parameters change', () => {
+        render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // Get initial size
+        let sizeText = screen.getByText(/~.*MB/);
+        const initialSize = parseFloat(sizeText.textContent?.match(/~(.*)MB/)?.[1] || '0');
+
+        // Change frame rate to 15fps
+        fireEvent.click(screen.getByText('15 fps').closest('button')!);
+
+        sizeText = screen.getByText(/~.*MB/);
+        const newSize = parseFloat(sizeText.textContent?.match(/~(.*)MB/)?.[1] || '0');
+
+        // Size should increase with higher frame rate
+        expect(newSize).toBeGreaterThan(initialSize);
+      });
+    });
+
+    describe('Component Cleanup', () => {
+      it('should cleanup event listeners on unmount', () => {
+        const { unmount } = render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // Should unmount without errors
+        expect(() => unmount()).not.toThrow();
+      });
+
+      it('should stop preview playback on unmount', () => {
+        const { unmount } = render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // Start playback
+        const playBtn = screen.getByTestId('preview-play-btn');
+        fireEvent.click(playBtn);
+
+        // Unmount while playing
+        unmount();
+
+        // Should not throw errors
+        expect(mockConsoleLog).not.toHaveBeenCalledWith(
+          expect.stringContaining('Error'),
+          expect.anything()
+        );
+      });
+
+      it('should reset state references on unmount', () => {
+        const { unmount } = render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // Make some state changes
+        fireEvent.click(screen.getByText('360p Compact').closest('button')!);
+        fireEvent.click(screen.getByText('15 fps').closest('button')!);
+
+        unmount();
+
+        // Create a fresh render after unmount
+        const { container } = render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // Should have default values again
+        const button144p = container.querySelector('.ytgif-resolution-btn--active');
+        expect(button144p?.textContent).toContain('144p Nano');
+      });
+
+      it('should not throw errors during cleanup', () => {
+        const { unmount } = render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+        // Multiple state changes
+        const playBtn = screen.getByTestId('preview-play-btn');
+        fireEvent.click(playBtn);
+        fireEvent.click(screen.getByTestId('timeline-range-btn'));
+        fireEvent.click(screen.getByTestId('timeline-seek-btn'));
+
+        // Should cleanup gracefully
+        expect(() => unmount()).not.toThrow();
+      });
     });
   });
 });

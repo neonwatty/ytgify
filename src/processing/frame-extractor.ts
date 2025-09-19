@@ -8,7 +8,7 @@ import { performanceTracker } from '@/monitoring/performance-tracker';
 import { metricsCollector } from '@/monitoring/metrics-collector';
 import { parseResolution } from '@/utils/resolution-parser';
 
-export interface FrameExtractionConfig {
+interface FrameExtractionConfig {
   startTime: number;
   endTime: number;
   frameRate: number;
@@ -34,14 +34,14 @@ export interface FrameExtractionResult {
   };
 }
 
-export interface FrameExtractionProgress {
+interface FrameExtractionProgress {
   framesExtracted: number;
   totalFrames: number;
   currentTimestamp: number;
   elapsedTime: number;
 }
 
-export class FrameExtractor {
+class FrameExtractor {
   private decoder: VideoDecoder | null = null;
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -400,7 +400,7 @@ export class FrameExtractor {
 /**
  * Convenience function for extracting frames from video elements
  */
-export async function extractVideoFrames(
+async function _extractVideoFrames(
   videoElement: HTMLVideoElement,
   config: FrameExtractionConfig,
   onProgress?: (progress: FrameExtractionProgress) => void

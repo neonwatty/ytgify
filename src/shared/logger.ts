@@ -1,6 +1,6 @@
 import { logger as libLogger, LogLevel as LibLogLevel, LogEntry } from '../lib/logger';
 
-export enum LogLevel {
+enum LogLevel {
   DEBUG = 0,
   INFO = 1,
   WARN = 2,
@@ -8,14 +8,14 @@ export enum LogLevel {
   NONE = 4
 }
 
-export interface PerformanceMetric {
+interface PerformanceMetric {
   name: string;
   duration: number;
   timestamp: Date;
   context?: Record<string, unknown>;
 }
 
-export interface AnalyticsEvent {
+interface AnalyticsEvent {
   eventName: string;
   properties?: Record<string, unknown>;
   timestamp: Date;
@@ -395,7 +395,7 @@ class SharedLogger {
 
 export const sharedLogger = SharedLogger.getInstance();
 
-export function withPerformanceTracking<T extends unknown[], R>(
+function _withPerformanceTracking<T extends unknown[], R>(
   name: string,
   fn: (...args: T) => R | Promise<R>
 ): (...args: T) => R | Promise<R> {
@@ -413,7 +413,7 @@ export function withPerformanceTracking<T extends unknown[], R>(
   };
 }
 
-export function performanceDecorator(name?: string) {
+function _performanceDecorator(name?: string) {
   return function (target: unknown, propertyName: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
     const metricName = name || `${target?.constructor?.name || 'Unknown'}.${propertyName}`;

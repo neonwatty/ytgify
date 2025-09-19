@@ -61,7 +61,7 @@ export interface GifEncodingProgress {
   memoryUsage?: number;
 }
 
-export interface GifEncodingResult {
+interface GifEncodingResult {
   blob: Blob;
   metadata: {
     width: number;
@@ -167,7 +167,7 @@ export class GifEncoder {
     this.progressCallback = config.onProgress;
     this.abortController = new AbortController();
     this.startTime = performance.now();
-    const profiler = this.profiler as any;
+    const profiler = this.profiler;
 
     if (config.abortSignal) {
       if (config.abortSignal.aborted) {
@@ -365,8 +365,8 @@ export class GifEncoder {
       // Record memory usage after encoding
       if (typeof tracker.recordMemoryUsage === 'function') {
         await tracker.recordMemoryUsage();
-      } else if (typeof (performanceTracker as any).recordMemoryUsage === 'function') {
-        await (performanceTracker as any).recordMemoryUsage();
+      } else if (typeof (performanceTracker as typeof performanceTracker & { recordMemoryUsage?: () => Promise<void> }).recordMemoryUsage === 'function') {
+        await (performanceTracker as typeof performanceTracker & { recordMemoryUsage?: () => Promise<void> }).recordMemoryUsage?.();
       }
       this.abortSignalCleanup?.();
       this.abortSignalCleanup = undefined;
@@ -523,7 +523,7 @@ export class GifEncoder {
       settings.brightness !== 1 ||
       settings.contrast !== 1 ||
       Boolean(settings.textOverlays && settings.textOverlays.length > 0);
-    const profiler = this.profiler as any;
+    const profiler = this.profiler;
 
     for (let i = 0; i < frames.length; i++) {
       if (this.abortController?.signal.aborted) {
@@ -631,7 +631,7 @@ export class GifEncoder {
     config: GifEncodingConfig
   ): GifEncodingResult {
     const encodingTime = performance.now() - this.startTime;
-    const profiler = this.profiler as any;
+    const profiler = this.profiler;
     const performanceResult =
       profiler.finish?.(this.frameCount) ?? this.buildFallbackPerformance(encodingTime);
 
@@ -690,7 +690,7 @@ export class GifEncoder {
       memoryUsage: this.getCurrentMemoryUsage()
     });
 
-    (this.profiler as any).recordMemoryUsage?.();
+    (this.profiler as typeof this.profiler & { recordMemoryUsage?: () => void }).recordMemoryUsage?.();
   }
 
   private calculateCurrentProgress(): number {
@@ -734,7 +734,7 @@ export class GifEncoder {
 /**
  * Convenience function for encoding GIFs with default settings
  */
-export async function encodeGif(
+async function _encodeGif(
   frames: ExtractedFrame[] | FrameExtractionResult,
   settings: GifSettings,
   options?: {
@@ -755,7 +755,7 @@ export async function encodeGif(
 /**
  * Create GIF data object from encoding result and metadata
  */
-export function createGifData(
+function _createGifData(
   result: GifEncodingResult,
   selection: TimelineSelection,
   title: string,
@@ -784,7 +784,7 @@ export function createGifData(
 /**
  * Estimate encoding parameters for performance planning
  */
-export function estimateEncodingParameters(
+function _estimateEncodingParameters(
   settings: GifSettings,
   preset: GifQualityPreset = 'balanced'
 ): {

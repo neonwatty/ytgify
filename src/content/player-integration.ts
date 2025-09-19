@@ -11,7 +11,7 @@ export interface PlayerSizeInfo {
   isFullscreen: boolean;
 }
 
-export interface ButtonPositionConfig {
+interface ButtonPositionConfig {
   selector: string;
   position: 'before' | 'after' | 'prepend' | 'append';
   priority: number;
@@ -20,8 +20,8 @@ export interface ButtonPositionConfig {
   theme?: 'light' | 'dark' | 'auto';
 }
 
-export type ButtonStateChangeCallback = (isActive: boolean, playerInfo: PlayerSizeInfo) => void;
-export type PlayerSizeChangeCallback = (sizeInfo: PlayerSizeInfo) => void;
+type ButtonStateChangeCallback = (isActive: boolean, playerInfo: PlayerSizeInfo) => void;
+type PlayerSizeChangeCallback = (sizeInfo: PlayerSizeInfo) => void;
 
 export class YouTubePlayerIntegration {
   private static instance: YouTubePlayerIntegration;

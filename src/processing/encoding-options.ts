@@ -33,7 +33,7 @@ export interface GifFrameOptions {
   copy?: boolean;
 }
 
-export interface EncodingPreset {
+interface EncodingPreset {
   name: string;
   description: string;
   targetFileSize: string;
@@ -46,7 +46,7 @@ export type GifQualityPreset = 'high-quality' | 'balanced' | 'fast-encode' | 'sm
 /**
  * Predefined encoding presets optimized for different use cases
  */
-export const ENCODING_PRESETS: Record<GifQualityPreset, EncodingPreset> = {
+const ENCODING_PRESETS: Record<GifQualityPreset, EncodingPreset> = {
   'high-quality': {
     name: 'High Quality',
     description: 'Best quality, larger file size, slower encoding',
@@ -119,7 +119,7 @@ export const ENCODING_PRESETS: Record<GifQualityPreset, EncodingPreset> = {
 /**
  * Dynamic encoding options based on content characteristics
  */
-export interface ContentAnalysis {
+interface ContentAnalysis {
   frameCount: number;
   averageComplexity: number; // 0-1 scale based on edge detection/variance
   motionLevel: 'low' | 'medium' | 'high';

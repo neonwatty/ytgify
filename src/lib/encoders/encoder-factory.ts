@@ -363,7 +363,7 @@ export class EncoderFactory {
 
   private getCurrentMemoryUsage(): number | undefined {
     if ('memory' in performance) {
-      const memInfo = (performance as any).memory;
+      const memInfo = (performance as Performance & { memory?: { usedJSHeapSize?: number } }).memory;
       return memInfo?.usedJSHeapSize;
     }
     return undefined;

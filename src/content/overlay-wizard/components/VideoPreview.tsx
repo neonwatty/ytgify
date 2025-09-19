@@ -16,7 +16,7 @@ interface VideoPreviewProps {
   height?: number;
 }
 
-export const VideoPreview: React.FC<VideoPreviewProps> = ({
+const VideoPreview: React.FC<VideoPreviewProps> = ({
   videoElement,
   startTime,
   endTime,

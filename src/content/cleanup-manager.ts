@@ -1,23 +1,23 @@
 import { overlayStateManager } from './overlay-state';
 import { extensionStateManager } from '@/shared/state-manager';
 
-export interface CleanupTask {
+interface CleanupTask {
   id: string;
   name: string;
   priority: number; // Higher numbers = higher priority
   cleanup: () => Promise<void> | void;
 }
 
-export interface NavigationEvent {
+interface NavigationEvent {
   from: string;
   to: string;
   videoId?: string;
   timestamp: number;
 }
 
-export type CleanupListener = (event: NavigationEvent) => void;
+type CleanupListener = (event: NavigationEvent) => void;
 
-export class CleanupManager {
+class CleanupManager {
   private cleanupTasks: Map<string, CleanupTask> = new Map();
   private navigationListeners: CleanupListener[] = [];
   private isDestroyed = false;

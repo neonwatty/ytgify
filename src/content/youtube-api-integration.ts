@@ -23,7 +23,7 @@ declare global {
   }
 }
 
-export interface YouTubePlayerState {
+interface YouTubePlayerState {
   UNSTARTED: -1;
   ENDED: 0;
   PLAYING: 1;
@@ -32,7 +32,7 @@ export interface YouTubePlayerState {
   CUED: 5;
 }
 
-export interface YouTubePlayer {
+interface YouTubePlayer {
   playVideo(): void;
   pauseVideo(): void;
   seekTo(seconds: number, allowSeekAhead?: boolean): void;
@@ -49,8 +49,8 @@ export interface YouTubePlayer {
   destroy(): void;
 }
 
-export type PlayerStateChangeCallback = (state: number) => void;
-export type PlayerReadyCallback = (player: YouTubePlayer) => void;
+type PlayerStateChangeCallback = (state: number) => void;
+type PlayerReadyCallback = (player: YouTubePlayer) => void;
 
 export class YouTubeAPIIntegration {
   private static instance: YouTubeAPIIntegration;

@@ -2,7 +2,7 @@
  * Test utilities for aspect ratio testing
  */
 
-export interface MockVideoDimensions {
+interface MockVideoDimensions {
   width: number;
   height: number;
   description: string;
@@ -82,7 +82,7 @@ export function createMockVideoElement(width: number, height: number): HTMLVideo
 /**
  * Create a mock canvas context for testing
  */
-export function createMockCanvasContext(): CanvasRenderingContext2D {
+function createMockCanvasContext(): CanvasRenderingContext2D {
   return {
     drawImage: jest.fn(),
     getImageData: jest.fn().mockReturnValue({

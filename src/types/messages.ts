@@ -1,5 +1,5 @@
 // Chrome Extension Message Types and Interfaces
-export interface BaseMessage {
+interface BaseMessage {
   type: string;
   id?: string;
 }
@@ -107,7 +107,7 @@ export interface TimelineSelectionUpdate extends BaseMessage {
   };
 }
 
-export interface OpenEditorRequest extends BaseMessage {
+interface OpenEditorRequest extends BaseMessage {
   type: 'OPEN_EDITOR';
   data: {
     videoUrl: string;
@@ -156,7 +156,7 @@ export interface GetJobStatusRequest extends BaseMessage {
   };
 }
 
-export interface GetJobStatusResponse extends BaseMessage {
+interface GetJobStatusResponse extends BaseMessage {
   type: 'JOB_STATUS_RESPONSE';
   success: boolean;
   data?: {
@@ -170,14 +170,14 @@ export interface GetJobStatusResponse extends BaseMessage {
   error?: string;
 }
 
-export interface CancelJobRequest extends BaseMessage {
+interface CancelJobRequest extends BaseMessage {
   type: 'CANCEL_JOB';
   data: {
     jobId: string;
   };
 }
 
-export interface CancelJobResponse extends BaseMessage {
+interface CancelJobResponse extends BaseMessage {
   type: 'JOB_CANCEL_RESPONSE';
   success: boolean;
   data?: {
@@ -288,7 +288,7 @@ export interface SaveGifResponse extends BaseMessage {
 }
 
 // Direct wizard activation from extension icon
-export interface ShowWizardDirectRequest extends BaseMessage {
+interface ShowWizardDirectRequest extends BaseMessage {
   type: 'SHOW_WIZARD_DIRECT';
   data: {
     triggeredBy: string;
@@ -340,11 +340,11 @@ export function isGetVideoStateRequest(message: BaseMessage): message is GetVide
   return message.type === 'GET_VIDEO_STATE';
 }
 
-export function isShowTimelineRequest(message: BaseMessage): message is ShowTimelineRequest {
+function _isShowTimelineRequest(message: BaseMessage): message is ShowTimelineRequest {
   return message.type === 'SHOW_TIMELINE';
 }
 
-export function isHideTimelineRequest(message: BaseMessage): message is HideTimelineRequest {
+function _isHideTimelineRequest(message: BaseMessage): message is HideTimelineRequest {
   return message.type === 'HIDE_TIMELINE';
 }
 
@@ -352,7 +352,7 @@ export function isTimelineSelectionUpdate(message: BaseMessage): message is Time
   return message.type === 'TIMELINE_SELECTION_UPDATE';
 }
 
-export function isOpenEditorRequest(message: BaseMessage): message is OpenEditorRequest {
+function _isOpenEditorRequest(message: BaseMessage): message is OpenEditorRequest {
   return message.type === 'OPEN_EDITOR';
 }
 
@@ -369,7 +369,7 @@ export function isGetJobStatusRequest(message: BaseMessage): message is GetJobSt
 }
 
 // Response helper function
-export function createResponse<T extends ExtensionMessage>(
+function _createResponse<T extends ExtensionMessage>(
   originalMessage: BaseMessage,
   responseType: T['type'],
   success: boolean,

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { TextOverlay } from '@/types';
 
-export type OverlayScreenType =
+type OverlayScreenType =
   | 'welcome'
   | 'quick-capture'
   | 'text-overlay'
@@ -15,7 +15,17 @@ interface ScreenData {
   videoDuration?: number;
   currentTime?: number;
   textOverlays?: TextOverlay[];
-  [key: string]: any;
+  resolution?: string;
+  frameRate?: number;
+  gifSize?: number;
+  gifDataUrl?: string;
+  gifMetadata?: {
+    width: number;
+    height: number;
+    duration: number;
+    frameCount?: number;
+  };
+  [key: string]: unknown;
 }
 
 interface UseOverlayNavigationReturn {

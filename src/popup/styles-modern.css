@@ -24,11 +24,6 @@ body {
   flex-direction: column;
 }
 
-/* Background - removed animated orbs */
-.popup-bg-animation {
-  display: none;
-}
-
 /* Header */
 .popup-header {
   position: relative;
@@ -51,21 +46,6 @@ body {
   filter: drop-shadow(0 2px 8px rgba(255, 0, 102, 0.15));
 }
 
-.popup-logo {
-  width: 48px;
-  height: 48px;
-  background: #ff0000;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.logo-text {
-  font-size: 24px;
-  font-weight: bold;
-  color: white;
-}
 
 .popup-logo-title {
   font-size: 18px;
@@ -107,11 +87,6 @@ body {
   position: relative;
 }
 
-.success-icon {
-  background: #ff0000;
-  animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-
 .info-icon {
   background: rgba(52, 152, 219, 0.9);
   animation: fade-in 0.6s ease-out;
@@ -145,38 +120,6 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-/* Pulse Rings */
-.pulse-ring {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 0, 0, 0.5);
-  animation: pulse-expand 3s infinite ease-out;
-}
-
-.pulse-ring.delay-1 {
-  animation-delay: 1s;
-}
-
-.pulse-ring.delay-2 {
-  animation-delay: 2s;
-}
-
-@keyframes pulse-expand {
-  0% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(1.8);
-    opacity: 0;
   }
 }
 
@@ -286,14 +229,6 @@ body {
   left: 100%;
 }
 
-.arrow-icon {
-  transition: transform 0.3s ease;
-}
-
-.create-button:hover .arrow-icon {
-  transform: translateX(3px);
-}
-
 .button-spinner {
   width: 16px;
   height: 16px;
@@ -369,66 +304,7 @@ body {
   }
 }
 
-/* Removed footer navigation - no longer needed */
-
-
-/* Secondary Views Header */
-.popup-header-secondary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px;
-  background: rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.back-button {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  color: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.back-button:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.popup-title {
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.popup-content-secondary {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-}
-
-/* Scrollbar Styling */
-.popup-content-secondary::-webkit-scrollbar {
-  width: 6px;
-}
-
-.popup-content-secondary::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.popup-content-secondary::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-}
-
-.popup-content-secondary::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
+/* Removed footer navigation and secondary views - no longer needed */
 
 /* Settings Section */
 .popup-settings {

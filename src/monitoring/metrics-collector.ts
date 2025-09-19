@@ -1,6 +1,6 @@
 import { performanceTracker, PerformanceMetric, PerformanceSnapshot } from './performance-tracker';
 
-export interface CollectedMetrics {
+interface CollectedMetrics {
   sessionId: string;
   startTime: number;
   endTime: number;
@@ -13,7 +13,7 @@ export interface CollectedMetrics {
   systemInfo: SystemInfo;
 }
 
-export interface ErrorMetric {
+interface ErrorMetric {
   timestamp: number;
   type: string;
   message: string;
@@ -21,13 +21,13 @@ export interface ErrorMetric {
   context?: Record<string, unknown>;
 }
 
-export interface UserAction {
+interface UserAction {
   timestamp: number;
   action: string;
   details?: Record<string, unknown>;
 }
 
-export interface SystemInfo {
+interface SystemInfo {
   userAgent: string;
   platform: string;
   language: string;
@@ -36,7 +36,7 @@ export interface SystemInfo {
   deviceMemory?: number;
 }
 
-export interface PrivacySettings {
+interface PrivacySettings {
   collectAnalytics: boolean;
   collectErrors: boolean;
   collectPerformance: boolean;
