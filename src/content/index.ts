@@ -340,13 +340,13 @@ class YouTubeGifMaker {
       }
     });
 
-    // Register custom cleanup tasks for YouTubeGifMaker
+    // Register custom cleanup tasks for YTgify
     cleanupManager.registerCleanupTask({
-      id: 'youtube-gif-maker-cleanup',
-      name: 'YouTube GIF Maker Cleanup',
+      id: 'ytgify-cleanup',
+      name: 'YTgify Cleanup',
       priority: 95,
       cleanup: async () => {
-        this.log('debug', '[Content] Running YouTube GIF Maker cleanup');
+        this.log('debug', '[Content] Running YTgify cleanup');
 
         // Stop any preview that might be running
         if (playerController.isPreviewActive()) {
@@ -1183,7 +1183,7 @@ class YouTubeGifMaker {
 
     console.log('[handleCreateGif] Using frameRate:', frameRate || 5);
     const defaultSettings = {
-      frameRate: frameRate || 5,  // Use provided frameRate or default to 5
+      frameRate: frameRate || 5, // Use provided frameRate or default to 5
       width: scaledWidth,
       height: scaledHeight,
       quality: 'medium' as const,

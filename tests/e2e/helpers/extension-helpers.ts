@@ -161,7 +161,7 @@ export async function waitForElementSmart(
     maxRetries?: number;
   } = {}
 ): Promise<boolean> {
-  const { timeout = 30000, initialDelay = 500, maxRetries = 5 } = options;
+  const { timeout = 30000, initialDelay = 500, maxRetries = 8 } = options;
   const startTime = Date.now();
   let retries = 0;
 
@@ -224,8 +224,15 @@ export async function waitForGifButton(
     '.ytp-right-controls button.ytgif-button'
   ];
 
+  // Try each selector with a portion of the total timeout
+  const timePerSelector = Math.max(5000, timeout / selectors.length);
+
   for (const selector of selectors) {
-    const found = await waitForElementSmart(page, selector, { timeout: timeout / 3 });
+    const found = await waitForElementSmart(page, selector, {
+      timeout: timePerSelector,
+      initialDelay: 300,
+      maxRetries: 8
+    });
     if (found) return true;
   }
 

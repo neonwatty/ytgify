@@ -1,6 +1,6 @@
 # Test Directory Structure
 
-This directory contains all testing configurations and test files for the YouTube GIF Maker Chrome extension.
+This directory contains all testing configurations and test files for the YTgify Chrome extension.
 
 ## 📁 Directory Structure
 
@@ -30,6 +30,7 @@ tests/
 ## 🚀 How to Run Tests
 
 ### Unit Tests (Jest)
+
 ```bash
 # Run all unit tests
 npm test
@@ -46,6 +47,7 @@ npx jest tests/unit/components/popup.test.tsx
 ```
 
 ### End-to-End Tests (Playwright)
+
 ```bash
 # Run all E2E tests
 npm run test:e2e
@@ -61,6 +63,7 @@ npm run test:all
 ```
 
 ### Benchmarks
+
 ```bash
 # Run encoder benchmarks
 npm run test:benchmarks
@@ -69,6 +72,7 @@ npm run test:benchmarks
 ## 📋 Test Types & Organization
 
 ### 🔧 Unit Tests (`tests/unit/`)
+
 - **Purpose**: Test individual functions and components in isolation
 - **Framework**: Jest + React Testing Library
 - **Mocking**: Chrome APIs, browser globals, CSS imports
@@ -76,6 +80,7 @@ npm run test:benchmarks
 - **Coverage**: Components, utilities, services, mocks
 
 ### 🌐 E2E Tests (`tests/e2e/`)
+
 - **Purpose**: Test complete user workflows in real browser
 - **Framework**: Playwright
 - **Mocking**: None (tests real extension)
@@ -85,12 +90,14 @@ npm run test:benchmarks
 ## 🛠️ Adding New Tests
 
 ### Unit Tests
+
 1. Create test file in appropriate `tests/unit/XXX/` subdirectory
 2. Use `.test.ts(x)` naming convention
 3. Import mock utilities from `../__mocks__/`
 4. Add any new shared mocks to `__mocks__` directory
 
 ### E2E Tests
+
 1. Create test file in `tests/e2e/` directory
 2. Use `.spec.js` naming convention
 3. Extension will be automatically loaded from `dist/` folder
@@ -98,29 +105,36 @@ npm run test:benchmarks
 ## 🧪 Mock Utilities
 
 ### Chrome API Mocks (`chrome-mocks.ts`)
+
 Shared mocks for Chrome extension APIs:
+
 - Extension manifest and URLs
 - Chrome tabs, windows, storage APIs
 - Runtime messaging system
 - Background worker communications
 
 ### Setup Utilities (`setup.ts`)
+
 Global test environment configuration:
+
 - Browser API mocks (localStorage, Blob, Image, etc.)
 - Jest DOM matchers and utilities
 - React Testing Library setup
 
 ### Style Mocks (`styleMock.js`)
+
 Jest mocks for CSS module imports to prevent build errors during testing.
 
 ## ✅ Test Best Practices
 
 ### File Naming
+
 - Use suffixes: `.test.ts`, `.test.tsx`, `.spec.js`
 - Match implementation file names when possible
 - Group related tests in describe blocks
 
 ### Mock Strategy
+
 ```typescript
 // Import shared mocks
 import { chromeMock } from '../__mocks__/chrome-mocks';
@@ -133,6 +147,7 @@ jest.mock('../../../src/popup/styles-modern.css', () => ({}));
 ```
 
 ### Test Organization
+
 ```typescript
 describe('Feature Component', () => {
   beforeEach(() => {
@@ -158,11 +173,13 @@ describe('Feature Component', () => {
 ## 🔧 Configuration
 
 ### Jest (`jest.config.js`)
+
 - Scans `tests/unit/` for test files
 - Uses `tests/unit/__mocks__/setup.ts` for environment setup
 - Excludes config files and E2E tests from coverage
 
 ### Playwright (`playwright.e2e.config.js`)
+
 - Tests `tests/e2e/` directory
 - Automatic extension loading from `dist/` folder
 - Chromium-only for extension testing

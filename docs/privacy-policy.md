@@ -1,16 +1,17 @@
-# Privacy Policy for YouTube GIF Maker
+# Privacy Policy for YTgify
 
 **Last Updated: January 9, 2025**
 
 ## Introduction
 
-YouTube GIF Maker ("the Extension") is committed to protecting your privacy. This Privacy Policy explains how we handle information when you use our Chrome extension.
+YTgify ("the Extension") is committed to protecting your privacy. This Privacy Policy explains how we handle information when you use our Chrome extension.
 
 ## Information Collection and Use
 
 ### What We DON'T Collect
 
-The YouTube GIF Maker extension does **NOT**:
+The YTgify extension does **NOT**:
+
 - Collect personal information
 - Track user behavior or analytics
 - Send any data to external servers
@@ -32,12 +33,15 @@ All data remains on your device and is never transmitted elsewhere.
 ## Data Storage
 
 ### Local Storage Only
+
 - All GIFs and settings are stored locally using Chrome's storage API and IndexedDB
 - Data is only accessible by the Extension on your device
 - No cloud storage or external servers are used
 
 ### Data Deletion
+
 You can delete all stored data at any time by:
+
 1. Removing the Extension from Chrome
 2. Clearing the Extension's data through Chrome settings
 3. Using the Extension's built-in clear data option
@@ -58,6 +62,7 @@ These permissions are used solely for the Extension's core functionality and not
 ## YouTube Content
 
 The Extension:
+
 - Only accesses YouTube videos you explicitly choose to create GIFs from
 - Does not store YouTube URLs or video metadata beyond what's needed for GIF creation
 - Respects YouTube's Terms of Service
@@ -66,6 +71,7 @@ The Extension:
 ## Third-Party Services
 
 The Extension does **NOT** use any third-party services, including:
+
 - Analytics services
 - Advertising networks
 - Social media integrations
@@ -79,6 +85,7 @@ The Extension does not knowingly collect any information from children under 13.
 ## Data Security
 
 Since all data is stored locally on your device:
+
 - Data security depends on your device's security
 - We recommend keeping your device and Chrome browser updated
 - Use device-level security features (passwords, encryption) for additional protection
@@ -90,6 +97,7 @@ We may update this Privacy Policy from time to time. Any changes will be reflect
 ## Your Rights
 
 You have complete control over your data:
+
 - **Access**: All data is stored locally and accessible through the Extension
 - **Deletion**: Remove data at any time through Extension settings or by uninstalling
 - **Portability**: Export your GIFs at any time
@@ -98,17 +106,19 @@ You have complete control over your data:
 ## Open Source
 
 This Extension is open source. You can review our code at:
-https://github.com/neonwatty/ytgiphy
+https://github.com/neonwatty/ytgify
 
 ## Contact Information
 
 For privacy-related questions or concerns, please:
-- Open an issue on our GitHub repository: https://github.com/neonwatty/ytgiphy/issues
-- Email: [Contact email to be added]
+
+- Open an issue on our GitHub repository: https://github.com/neonwatty/ytgify/issues
+- Email: neonwatty@gmail.com
 
 ## Compliance
 
 This Extension complies with:
+
 - Chrome Web Store Developer Program Policies
 - General Data Protection Regulation (GDPR) - through non-collection of data
 - California Consumer Privacy Act (CCPA) - through non-collection of data
@@ -119,4 +129,4 @@ This Extension complies with:
 
 ---
 
-© 2025 YouTube GIF Maker. All rights reserved.
+© 2025 YTgify. All rights reserved.

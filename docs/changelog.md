@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to YouTube GIF Maker will be documented in this file.
+All notable changes to YTgify will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned Features
+
 - WebP format support for smaller file sizes
 - Direct social media sharing
 - Batch GIF creation
@@ -22,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🎉 Initial Release
 
 #### Added
+
 - **Core Features**
   - One-click GIF creation from YouTube videos
   - Visual timeline for precise clip selection
@@ -81,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - No analytics or tracking
 
 #### Technical Details
+
 - Built with TypeScript and React
 - Manifest V3 compliance
 - Chrome 88+ support
@@ -90,6 +93,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Development Milestones
 
 #### Pre-Release Development
+
 - 2024-12: Project initiated
 - 2025-01: Core functionality completed
 - 2025-01: Text overlay feature added
@@ -102,10 +106,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 2025-01: Documentation created
 
 ### Contributors
+
 - Development Team
 - Open Source Contributors (see GitHub)
 
 ### Acknowledgments
+
 - gif.js library for GIF encoding
 - React and TypeScript communities
 - Beta testers and early users
@@ -114,33 +120,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
-| Version | Date | Highlights |
-|---------|------|------------|
-| 1.0.0 | 2025-01-09 | Initial release with full feature set |
+| Version | Date       | Highlights                            |
+| ------- | ---------- | ------------------------------------- |
+| 1.0.0   | 2025-01-09 | Initial release with full feature set |
 
 ## Upgrade Guide
 
 ### From Development to 1.0.0
+
 If you were using a development version:
+
 1. Uninstall the development version
 2. Install from Chrome Web Store
 3. Your GIF library will be preserved
 4. Settings will be migrated automatically
 
 ## Breaking Changes
+
 None in initial release.
 
 ## Security Updates
+
 None required in initial release.
 
 ## Known Issues
+
 - Timeline scrubber may lag on very long videos (>2 hours)
 - Some live streams may not work during active streaming
 - Age-restricted videos are not supported (YouTube limitation)
 
 ## Reporting Issues
-Please report bugs and request features on our [GitHub Issues](https://github.com/neonwatty/ytgiphy/issues) page.
+
+Please report bugs and request features on our [GitHub Issues](https://github.com/neonwatty/ytgify/issues) page.
 
 ---
 
-*For more information, see the [User Guide](./user-guide.md) and [FAQ](./faq.md).*
+_For more information, see the [User Guide](./user-guide.md) and [FAQ](./faq.md)._

@@ -45,13 +45,13 @@ class SharedErrorHandler {
           source: 'global_error_handler',
           filename: event.filename,
           lineno: event.lineno,
-          colno: event.colno
+          colno: event.colno,
         });
       });
 
       window.addEventListener('unhandledrejection', (event) => {
         this.handleGlobalError(event.reason, {
-          source: 'unhandled_promise_rejection'
+          source: 'unhandled_promise_rejection',
         });
         event.preventDefault();
       });
@@ -76,16 +76,16 @@ class SharedErrorHandler {
   }
 
   public handleError(
-    error: unknown, 
+    error: unknown,
     context?: Record<string, unknown>,
     strategy?: ErrorRecoveryStrategy
   ): ExtensionError {
     const processedError = this.processError(error, context);
-    
+
     sharedLogger.error(processedError.message, {
       code: processedError.code,
       ...processedError.context,
-      ...context
+      ...context,
     });
 
     sharedLogger.trackError(processedError, context);
@@ -110,9 +110,10 @@ class SharedErrorHandler {
           });
         }
       } catch (fallbackError) {
-        sharedLogger.warn('Fallback action failed', { 
+        sharedLogger.warn('Fallback action failed', {
           originalError: processedError.message,
-          fallbackError: fallbackError instanceof Error ? fallbackError.message : String(fallbackError)
+          fallbackError:
+            fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
         });
       }
     }
@@ -123,11 +124,7 @@ class SharedErrorHandler {
   private processError(error: unknown, context?: Record<string, unknown>): ExtensionError {
     if (error instanceof ExtensionError) {
       if (context) {
-        return new ExtensionError(
-          error.message,
-          error.code,
-          { ...error.context, ...context }
-        );
+        return new ExtensionError(error.message, error.code, { ...error.context, ...context });
       }
       return error;
     }
@@ -136,23 +133,19 @@ class SharedErrorHandler {
       return createError('generic', error.message, {
         originalName: error.name,
         stack: error.stack,
-        ...context
+        ...context,
       });
     }
 
     const errorMessage = typeof error === 'string' ? error : 'Unknown error occurred';
     return createError('generic', errorMessage, {
       originalError: error,
-      ...context
+      ...context,
     });
   }
 
   private isCriticalError(error: ExtensionError): boolean {
-    const criticalCodes = [
-      'CHROME_API_ERROR',
-      'SERVICE_WORKER_ERROR',
-      'STORAGE_ERROR'
-    ];
+    const criticalCodes = ['CHROME_API_ERROR', 'SERVICE_WORKER_ERROR', 'STORAGE_ERROR'];
     return criticalCodes.includes(error.code) || error.message.toLowerCase().includes('critical');
   }
 
@@ -164,14 +157,14 @@ class SharedErrorHandler {
       actions: [
         {
           label: 'Report Issue',
-          action: () => this.openErrorReportDialog(error)
+          action: () => this.openErrorReportDialog(error),
         },
         {
           label: 'Restart Extension',
-          action: () => this.restartExtension()
-        }
+          action: () => this.restartExtension(),
+        },
       ],
-      persistent: true
+      persistent: true,
     });
 
     if (this.criticalErrorCount >= this.maxCriticalErrors) {
@@ -188,14 +181,14 @@ class SharedErrorHandler {
       actions: [
         {
           label: 'Reset Extension',
-          action: () => this.resetExtension()
+          action: () => this.resetExtension(),
         },
         {
           label: 'Disable Extension',
-          action: () => this.disableExtension()
-        }
+          action: () => this.disableExtension(),
+        },
       ],
-      persistent: true
+      persistent: true,
     });
   }
 
@@ -203,12 +196,7 @@ class SharedErrorHandler {
     operation: () => Promise<T>,
     strategy: ErrorRecoveryStrategy = {}
   ): Promise<T> {
-    const {
-      maxRetries = 3,
-      delayMs = 1000,
-      exponentialBackoff = true,
-      fallbackAction
-    } = strategy;
+    const { maxRetries = 3, delayMs = 1000, exponentialBackoff = true, fallbackAction } = strategy;
 
     let lastError: unknown;
 
@@ -217,30 +205,31 @@ class SharedErrorHandler {
         return await operation();
       } catch (error) {
         lastError = error;
-        
+
         if (attempt === maxRetries) {
           const processedError = this.handleError(error, {
             operation: 'recovery_operation',
             attempt,
-            maxRetries
+            maxRetries,
           });
-          
+
           if (fallbackAction) {
             await fallbackAction();
           }
-          
+
           throw processedError;
         }
 
-        const delay = exponentialBackoff 
-          ? delayMs * Math.pow(2, attempt)
-          : delayMs;
-        
-        sharedLogger.warn(`Operation failed, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries + 1})`, {
-          error: error instanceof Error ? error.message : String(error)
-        });
+        const delay = exponentialBackoff ? delayMs * Math.pow(2, attempt) : delayMs;
 
-        await new Promise(resolve => setTimeout(resolve, delay));
+        sharedLogger.warn(
+          `Operation failed, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries + 1})`,
+          {
+            error: error instanceof Error ? error.message : String(error),
+          }
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
 
@@ -255,10 +244,14 @@ class SharedErrorHandler {
       try {
         return await fn(...args);
       } catch (error) {
-        const processedError = this.handleError(error, {
-          functionName: fn.name,
-          arguments: args
-        }, strategy);
+        const processedError = this.handleError(
+          error,
+          {
+            functionName: fn.name,
+            arguments: args,
+          },
+          strategy
+        );
 
         if (strategy?.fallbackAction) {
           await strategy.fallbackAction();
@@ -278,12 +271,14 @@ class SharedErrorHandler {
 
   private broadcastUserFeedback(feedback: UserFeedback): void {
     if (typeof chrome !== 'undefined' && chrome.runtime) {
-      chrome.runtime.sendMessage({
-        type: 'USER_FEEDBACK',
-        data: feedback
-      }).catch(() => {
-        // Message might not be received if popup is closed
-      });
+      chrome.runtime
+        .sendMessage({
+          type: 'USER_FEEDBACK',
+          data: feedback,
+        })
+        .catch(() => {
+          // Message might not be received if popup is closed
+        });
     }
   }
 
@@ -302,15 +297,19 @@ class SharedErrorHandler {
   private handleGlobalError(error: unknown, context?: Record<string, unknown>): void {
     this.handleError(error, {
       ...context,
-      source: 'global_error_handler'
+      source: 'global_error_handler',
     });
   }
 
   private handleRemoteError(errorData: unknown): void {
     sharedLogger.warn('Received remote error report', { errorData });
-    
+
     if (typeof errorData === 'object' && errorData !== null) {
-      const error = createError('generic', 'Remote error reported', errorData as Record<string, unknown>);
+      const error = createError(
+        'generic',
+        'Remote error reported',
+        errorData as Record<string, unknown>
+      );
       this.handleError(error, { source: 'remote_error' });
     }
   }
@@ -320,17 +319,18 @@ class SharedErrorHandler {
       const report = {
         error: error.toJSON(),
         diagnostics: await sharedLogger.exportDiagnostics(),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
       await chrome.storage.local.set({
-        [`error_report_${Date.now()}`]: report
+        [`error_report_${Date.now()}`]: report,
       });
 
       sharedLogger.info('Error report stored', { errorCode: error.code });
     } catch (reportingError) {
-      sharedLogger.warn('Failed to report error', { 
-        reportingError: reportingError instanceof Error ? reportingError.message : String(reportingError) 
+      sharedLogger.warn('Failed to report error', {
+        reportingError:
+          reportingError instanceof Error ? reportingError.message : String(reportingError),
       });
     }
   }
@@ -338,7 +338,7 @@ class SharedErrorHandler {
   private async openErrorReportDialog(error: ExtensionError): Promise<void> {
     const diagnostics = await sharedLogger.exportDiagnostics();
     const mailtoLink = this.createErrorReportEmail(error, diagnostics);
-    
+
     if (typeof chrome !== 'undefined' && chrome.tabs) {
       chrome.tabs.create({ url: mailtoLink });
     } else if (typeof window !== 'undefined') {
@@ -347,7 +347,7 @@ class SharedErrorHandler {
   }
 
   private createErrorReportEmail(error: ExtensionError, diagnostics: string): string {
-    const subject = encodeURIComponent(`YouTube GIF Maker Extension Error: ${error.code}`);
+    const subject = encodeURIComponent(`YTgify Extension Error: ${error.code}`);
     const body = encodeURIComponent(`
 Error Report:
 - Code: ${error.code}
@@ -373,7 +373,7 @@ ${diagnostics}
 
   private async resetExtension(): Promise<void> {
     sharedLogger.info('Resetting extension data...');
-    
+
     try {
       await chrome.storage.local.clear();
       await chrome.storage.sync.clear();
@@ -382,22 +382,22 @@ ${diagnostics}
       sharedLogger.clearPerformanceMetrics();
       sharedLogger.clearAnalyticsEvents();
     } catch (error) {
-      sharedLogger.error('Failed to reset extension data', { 
-        error: error instanceof Error ? error.message : String(error) 
+      sharedLogger.error('Failed to reset extension data', {
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   }
 
   private async disableExtension(): Promise<void> {
     sharedLogger.info('Disabling extension...');
-    
+
     if (typeof chrome !== 'undefined' && chrome.management) {
       try {
         const extensionInfo = await chrome.management.getSelf();
         await chrome.management.setEnabled(extensionInfo.id, false);
       } catch (error) {
-        sharedLogger.error('Failed to disable extension', { 
-          error: error instanceof Error ? error.message : String(error) 
+        sharedLogger.error('Failed to disable extension', {
+          error: error instanceof Error ? error.message : String(error),
         });
       }
     }
@@ -409,8 +409,8 @@ ${diagnostics}
       await chrome.storage.sync.set({ errorReportingEnabled: enabled });
       sharedLogger.info(`Error reporting ${enabled ? 'enabled' : 'disabled'}`);
     } catch (error) {
-      sharedLogger.error('Failed to save error reporting setting', { 
-        error: error instanceof Error ? error.message : String(error) 
+      sharedLogger.error('Failed to save error reporting setting', {
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   }
@@ -420,13 +420,15 @@ ${diagnostics}
     criticalErrors: number;
     recentErrors: ExtensionError[];
   } {
-    const logs = sharedLogger.getAnalyticsEvents().filter(event => event.eventName === 'error_occurred');
+    const logs = sharedLogger
+      .getAnalyticsEvents()
+      .filter((event) => event.eventName === 'error_occurred');
     const recentErrors: ExtensionError[] = [];
 
     return {
       totalErrors: logs.length,
       criticalErrors: this.criticalErrorCount,
-      recentErrors
+      recentErrors,
     };
   }
 }
@@ -446,14 +448,18 @@ function _errorBoundaryDecorator(strategy?: ErrorRecoveryStrategy) {
 
     descriptor.value = function (...args: unknown[]) {
       const result = originalMethod.apply(this, args);
-      
+
       if (result && typeof result.then === 'function') {
         return result.catch((error: unknown) => {
-          const processedError = sharedErrorHandler.handleError(error, {
-            className: target?.constructor?.name,
-            methodName: propertyName,
-            arguments: args
-          }, strategy);
+          const processedError = sharedErrorHandler.handleError(
+            error,
+            {
+              className: target?.constructor?.name,
+              methodName: propertyName,
+              arguments: args,
+            },
+            strategy
+          );
 
           if (strategy?.fallbackAction) {
             const fallback = strategy.fallbackAction();
@@ -467,7 +473,7 @@ function _errorBoundaryDecorator(strategy?: ErrorRecoveryStrategy) {
           throw processedError;
         });
       }
-      
+
       return result;
     };
 

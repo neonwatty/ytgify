@@ -2,7 +2,7 @@
  * Comprehensive Chrome Extension API mocks for testing
  * 
  * This file provides Jest-compatible mocks for Chrome extension APIs
- * used throughout the YouTube GIF Maker extension.
+ * used throughout the YTgify extension.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -73,7 +73,7 @@ export function createChromeMock(): MockChrome {
       getURL: jest.fn((path: string) => `chrome-extension://mock-extension-id/${path}`),
       id: 'mock-extension-id',
       getManifest: jest.fn(() => ({
-        name: 'YouTube GIF Maker',
+        name: 'YTgify',
         version: '1.0.0',
         manifest_version: 3
       }))

@@ -1,7 +1,7 @@
 /**
  * Keyboard Shortcuts System
- * 
- * Manages keyboard shortcuts for the YouTube GIF Maker extension.
+ *
+ * Manages keyboard shortcuts for the YTgify extension.
  * Handles shortcut registration, event listening, and conflict resolution
  * with YouTube's native shortcuts.
  */
@@ -43,42 +43,42 @@ const DEFAULT_SHORTCUTS: ShortcutConfig = {
   preview: {
     key: 'Space',
     description: 'Toggle preview',
-    action: 'preview'
+    action: 'preview',
   },
   save: {
     key: 'Enter',
     description: 'Save GIF',
-    action: 'save'
+    action: 'save',
   },
   cancel: {
     key: 'Escape',
     description: 'Cancel operation',
-    action: 'cancel'
+    action: 'cancel',
   },
   activateGifMode: {
     key: 'g',
     modifiers: { alt: true },
     description: 'Activate GIF mode',
-    action: 'activateGifMode'
+    action: 'activateGifMode',
   },
   openLibrary: {
     key: 'l',
     modifiers: { alt: true },
     description: 'Open GIF library',
-    action: 'openLibrary'
+    action: 'openLibrary',
   },
   selectAll: {
     key: 'a',
     modifiers: { ctrl: true },
     description: 'Select entire video',
-    action: 'selectAll'
+    action: 'selectAll',
   },
   resetSelection: {
     key: 'r',
     modifiers: { ctrl: true },
     description: 'Reset selection',
-    action: 'resetSelection'
-  }
+    action: 'resetSelection',
+  },
 };
 
 // YouTube's native shortcuts we need to avoid conflicts with
@@ -101,9 +101,20 @@ const YOUTUBE_SHORTCUTS = {
     'ArrowRight', // Fast forward 5s
     'ArrowUp', // Volume up
     'ArrowDown', // Volume down
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', // Jump to %
-    ',', '.', // Frame by frame
-    '<', '>', // Playback speed
+    '0',
+    '1',
+    '2',
+    '3',
+    '4',
+    '5',
+    '6',
+    '7',
+    '8',
+    '9', // Jump to %
+    ',',
+    '.', // Frame by frame
+    '<',
+    '>', // Playback speed
   ]),
   withModifiers: new Set([
     'shift+n', // Previous video (alternative)
@@ -111,7 +122,7 @@ const YOUTUBE_SHORTCUTS = {
     'ctrl+shift+k', // Dark/Light theme toggle
     'alt+left', // Previous page
     'alt+right', // Next page
-  ])
+  ]),
 };
 
 export class KeyboardShortcutManager {
@@ -147,14 +158,14 @@ export class KeyboardShortcutManager {
    */
   registerHandler(handler: ShortcutHandler): () => void {
     const { action } = handler;
-    
+
     if (!this.handlers.has(action)) {
       this.handlers.set(action, []);
     }
-    
+
     const handlers = this.handlers.get(action)!;
     handlers.push(handler);
-    
+
     // Sort by priority (higher first)
     handlers.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
@@ -176,10 +187,13 @@ export class KeyboardShortcutManager {
   /**
    * Update shortcut configuration
    */
-  async updateShortcut(action: keyof ShortcutConfig, shortcut: Partial<KeyboardShortcut>): Promise<void> {
+  async updateShortcut(
+    action: keyof ShortcutConfig,
+    shortcut: Partial<KeyboardShortcut>
+  ): Promise<void> {
     const current = this.currentConfig[action];
     const updated = { ...current, ...shortcut };
-    
+
     // Validate shortcut doesn't conflict with YouTube shortcuts
     if (this.context === 'content' && this.hasYouTubeConflict(updated)) {
       throw new Error(`Shortcut conflicts with YouTube's native shortcuts: ${updated.key}`);
@@ -232,34 +246,34 @@ export class KeyboardShortcutManager {
    */
   private shouldIgnoreElement(element: Element): boolean {
     const tagName = element.tagName.toLowerCase();
-    
+
     // Ignore input elements and contenteditable
     if (['input', 'textarea', 'select'].includes(tagName)) {
       return true;
     }
-    
+
     if (element.getAttribute('contenteditable') === 'true') {
       return true;
     }
-    
+
     // Ignore YouTube's player controls and search elements
     if (element.closest('.ytp-chrome-controls')) {
       return true;
     }
-    
+
     if (element.closest('#masthead-search') || element.closest('#search')) {
       return true;
     }
-    
+
     if (element.closest('.ytd-searchbox')) {
       return true;
     }
-    
+
     // Allow shortcuts in our own components
     if (element.closest('[data-gif-maker-shortcut-zone]')) {
       return false;
     }
-    
+
     return false;
   }
 
@@ -275,7 +289,7 @@ export class KeyboardShortcutManager {
    */
   private handleKeyDown = (event: KeyboardEvent): void => {
     if (!this.isActive) return;
-    
+
     // Ignore events from input elements (unless in our components)
     if (this.shouldIgnoreElement(event.target as Element)) {
       return;
@@ -298,17 +312,17 @@ export class KeyboardShortcutManager {
       try {
         const result = handler.handler(event);
         if (result instanceof Promise) {
-          result.catch(error => {
+          result.catch((error) => {
             console.error(`Error executing shortcut handler for ${matchedAction}:`, error);
           });
         }
-        
+
         // If handler doesn't explicitly not prevent default, we prevent it
         if (!event.defaultPrevented) {
           event.preventDefault();
           event.stopPropagation();
         }
-        
+
         break; // Only execute the highest priority handler
       } catch (error) {
         console.error(`Error executing shortcut handler for ${matchedAction}:`, error);
@@ -338,7 +352,7 @@ export class KeyboardShortcutManager {
     }
 
     const modifiers = shortcut.modifiers || {};
-    
+
     // Check modifiers
     if (Boolean(modifiers.ctrl) !== event.ctrlKey) return false;
     if (Boolean(modifiers.alt) !== event.altKey) return false;
@@ -352,10 +366,13 @@ export class KeyboardShortcutManager {
    * Check if shortcut conflicts with YouTube's native shortcuts
    */
   private hasYouTubeConflict(shortcut: KeyboardShortcut): boolean {
-    const hasModifiers = shortcut.modifiers && 
-      (shortcut.modifiers.ctrl || shortcut.modifiers.alt || 
-       shortcut.modifiers.shift || shortcut.modifiers.meta);
-    
+    const hasModifiers =
+      shortcut.modifiers &&
+      (shortcut.modifiers.ctrl ||
+        shortcut.modifiers.alt ||
+        shortcut.modifiers.shift ||
+        shortcut.modifiers.meta);
+
     if (hasModifiers) {
       // Check modified shortcuts
       const modifierString = this.formatShortcutForConflictCheck(shortcut).toLowerCase();
@@ -371,14 +388,14 @@ export class KeyboardShortcutManager {
    */
   private formatShortcutForConflictCheck(shortcut: KeyboardShortcut): string {
     const parts: string[] = [];
-    
+
     if (shortcut.modifiers?.ctrl) parts.push('ctrl');
     if (shortcut.modifiers?.alt) parts.push('alt');
     if (shortcut.modifiers?.shift) parts.push('shift');
     if (shortcut.modifiers?.meta) parts.push('meta');
-    
+
     parts.push(shortcut.key.toLowerCase());
-    
+
     return parts.join('+');
   }
 
@@ -390,7 +407,7 @@ export class KeyboardShortcutManager {
       const result = await chrome.storage.sync.get(['keyboardShortcuts']);
       return result.keyboardShortcuts || null;
     }
-    
+
     // Fallback to localStorage for popup context
     const stored = localStorage.getItem('gif-maker-shortcuts');
     return stored ? JSON.parse(stored) : null;
@@ -401,7 +418,7 @@ export class KeyboardShortcutManager {
    */
   private async saveShortcutConfig(): Promise<void> {
     const config = this.currentConfig;
-    
+
     if (typeof chrome !== 'undefined' && chrome.storage) {
       await chrome.storage.sync.set({ keyboardShortcuts: config });
     } else {
@@ -417,14 +434,14 @@ const _keyboardShortcuts = new KeyboardShortcutManager('content');
 // Utility functions for shortcut display
 function _formatShortcut(shortcut: KeyboardShortcut): string {
   const parts: string[] = [];
-  
+
   if (shortcut.modifiers?.ctrl) parts.push('Ctrl');
   if (shortcut.modifiers?.alt) parts.push('Alt');
   if (shortcut.modifiers?.shift) parts.push('Shift');
   if (shortcut.modifiers?.meta) parts.push('Cmd');
-  
+
   parts.push(shortcut.key);
-  
+
   return parts.join(' + ');
 }
 
@@ -432,21 +449,24 @@ function _parseShortcutString(shortcutString: string): Partial<KeyboardShortcut>
   if (!shortcutString || shortcutString.trim() === '') {
     return {};
   }
-  
-  const parts = shortcutString.split(' + ').map(s => s.trim()).filter(Boolean);
-  
+
+  const parts = shortcutString
+    .split(' + ')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
   if (parts.length === 0) {
     return {};
   }
-  
+
   const key = parts[parts.length - 1];
-  
+
   if (!key || key.length === 0) {
     return {};
   }
-  
+
   const modifiers: KeyboardShortcut['modifiers'] = {};
-  
+
   for (const part of parts.slice(0, -1)) {
     switch (part.toLowerCase()) {
       case 'ctrl':
@@ -464,6 +484,6 @@ function _parseShortcutString(shortcutString: string): Partial<KeyboardShortcut>
         break;
     }
   }
-  
+
   return { key, modifiers: Object.keys(modifiers).length > 0 ? modifiers : undefined };
 }

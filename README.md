@@ -1,4 +1,4 @@
-# YouTube GIF Maker Chrome Extension
+# YTgify Chrome Extension
 
 A Chrome extension that enables users to create GIFs directly from YouTube videos with an intuitive visual interface integrated into the YouTube player.
 

@@ -1,6 +1,6 @@
-# Contributing to YouTube GIF Maker
+# Contributing to YTgify
 
-Thank you for your interest in contributing to the YouTube GIF Maker Chrome Extension! This guide will help you get started with development and ensure your contributions meet our quality standards.
+Thank you for your interest in contributing to the YTgify Chrome Extension! This guide will help you get started with development and ensure your contributions meet our quality standards.
 
 ## 🚀 Getting Started
 
@@ -15,8 +15,8 @@ Thank you for your interest in contributing to the YouTube GIF Maker Chrome Exte
 1. Fork and clone the repository:
 
 ```bash
-git clone https://github.com/[your-username]/ytgiphy.git
-cd ytgiphy
+git clone https://github.com/[your-username]/ytgify.git
+cd ytgify
 ```
 
 2. Install dependencies:
@@ -52,9 +52,15 @@ npm run dev
 
 ### Automated Quality Checks
 
-⚠️ **Important**: This project uses Git hooks to ensure code quality. Every commit will automatically run:
+⚠️ **Important**: This project uses Git hooks to ensure code quality:
 
-1. ESLint on staged files
+**On Commit (fast):**
+
+- ESLint on staged files only
+
+**On Push (comprehensive):**
+
+1. Full ESLint check
 2. Full extension build
 3. TypeScript type checking
 4. Unit tests
@@ -67,9 +73,20 @@ npm run dev
 - Chrome extension loading issues in headless mode
 - Regional content and cookie consent variations
 
-**Commit times**: Expect ~1 minute per commit with parallel E2E testing. All validation happens at commit time - pushing is instant with no additional checks.
+**Timing**:
 
-To test what will run on commit:
+- Commits are instant (only lint checks)
+- Pushes take ~3-5 minutes (full validation with parallel E2E testing)
+
+To test what will run:
+
+**On commit:**
+
+```bash
+npx lint-staged
+```
+
+**On push:**
 
 ```bash
 npm run validate:pre-push
@@ -105,9 +122,11 @@ git checkout -b feature/your-feature-name
 
 2. **Make your changes** following our coding standards
 
-3. **Commits are automatically validated** - our Git hooks ensure all tests pass before any commit succeeds
+3. **Commit frequently** - commits only run quick lint checks
 
-4. **Write meaningful commit messages**:
+4. **Push validation** - Git hooks ensure all tests pass before pushing to remote
+
+5. **Write meaningful commit messages**:
    - Use present tense ("Add feature" not "Added feature")
    - Keep first line under 50 characters
    - Reference issues and pull requests liberally

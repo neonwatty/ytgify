@@ -3,10 +3,12 @@
 ## ✅ Required Assets - READY
 
 ### Extension Package
+
 - [x] **Extension ZIP**: Build with `npm run build`, then zip the `dist/` folder
 - [x] **Manifest V3**: Using latest manifest version as required
 
 ### Icons - ALL READY ✅
+
 - [x] 16x16 PNG: `icons/icon16.png` (toolbar icon)
 - [x] 32x32 PNG: `icons/icon32.png` (Windows)
 - [x] 48x48 PNG: `icons/icon48.png` (extensions page)
@@ -14,7 +16,9 @@
 - [x] Store icon: `store-assets/icon-128.png`
 
 ### Screenshots - ALL READY ✅
+
 All screenshots are 1280x800 PNG as required:
+
 1. `screenshot-1.png` - Extension popup interface
 2. `screenshot-2.png` - GIF design interface
 3. `screenshot-3.png` - Text overlay feature
@@ -24,15 +28,17 @@ All screenshots are 1280x800 PNG as required:
 ## 📝 Store Listing Information Needed
 
 ### Basic Information
-- **Name**: YouTube GIF Maker
+
+- **Name**: YTgify
 - **Short Description** (132 chars max):
   "Create GIFs directly from YouTube videos with an intuitive visual interface"
 
 ### Detailed Description (Suggested)
+
 ```
 Transform any YouTube video into a GIF with just a few clicks!
 
-YouTube GIF Maker integrates seamlessly into YouTube's player, allowing you to:
+YTgify integrates seamlessly into YouTube's player, allowing you to:
 
 ✨ KEY FEATURES:
 • One-click GIF creation button in YouTube player
@@ -61,39 +67,44 @@ Privacy-focused: All processing happens locally in your browser. No data is sent
 ```
 
 ### Category
+
 - Suggested: "Productivity" or "Photos"
 
 ### Language
+
 - English (US)
 
 ### Privacy Policy
+
 - Not required unless collecting user data
 - Current implementation is fully local/client-side
 
 ## 📦 Creating the Submission Package
 
 1. **Build the extension**:
+
    ```bash
    npm run build
    ```
 
 2. **Create ZIP for submission**:
+
    ```bash
    cd dist
-   zip -r ../youtube-gif-maker.zip *
+   zip -r ../ytgify.zip *
    cd ..
    ```
 
 3. **Verify ZIP contents**:
    ```bash
-   unzip -l youtube-gif-maker.zip
+   unzip -l ytgify.zip
    ```
 
 ## 🚀 Submission Steps
 
 1. Go to [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole)
 2. Click "New Item"
-3. Upload `youtube-gif-maker.zip`
+3. Upload `ytgify.zip`
 4. Fill in store listing details
 5. Upload screenshots from `store-assets/screenshots/`
 6. Set pricing (Free)
@@ -101,10 +112,12 @@ Privacy-focused: All processing happens locally in your browser. No data is sent
 8. Submit for review
 
 ## ⏱️ Review Timeline
+
 - Initial review: 1-3 business days typically
 - Updates: Usually within 24 hours
 
 ## 📋 Pre-submission Checks
+
 - [ ] Test extension in Chrome (load unpacked from `dist/`)
 - [ ] Verify all permissions in manifest are necessary
 - [ ] Check that no remote code is loaded
@@ -113,6 +126,7 @@ Privacy-focused: All processing happens locally in your browser. No data is sent
 - [ ] Verify GIF creation and download works
 
 ## 🎯 Optional Enhancements (Post-Launch)
+
 - [ ] Create promotional tiles (440x280, 1400x560)
 - [ ] Add demo video for store listing
 - [ ] Create website/landing page
