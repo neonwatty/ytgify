@@ -191,9 +191,6 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
         <h2 className="ytgif-wizard-title">Make It Memorable</h2>
         <div style={{ width: '20px' }}></div>
       </div>
-      <p className="ytgif-wizard-subtitle" style={{ marginTop: '-8px', marginBottom: '16px' }}>
-        Resolution: {resolution} • Font sizes adjusted for optimal display
-      </p>
 
       <div className="ytgif-wizard-content">
         {/* Helper text */}

@@ -90,12 +90,6 @@ describe('TextOverlayScreenV2', () => {
       expect(screen.getByText('Create GIF Without Text')).toBeInTheDocument();
     });
 
-    it('shows correct resolution info in subtitle', () => {
-      render(<TextOverlayScreenV2 {...defaultProps} resolution="480p" />);
-
-      expect(screen.getByText(/Resolution: 480p • Font sizes adjusted for optimal display/)).toBeInTheDocument();
-    });
-
     it('displays back button only when onBack prop provided', () => {
       const { rerender } = render(<TextOverlayScreenV2 {...defaultProps} />);
 
@@ -112,12 +106,6 @@ describe('TextOverlayScreenV2', () => {
       const canvas = document.querySelector('canvas');
       expect(canvas).toBeInTheDocument();
       expect(canvas).toHaveStyle('display: none');
-    });
-
-    it('defaults to 144p resolution when not specified', () => {
-      render(<TextOverlayScreenV2 {...defaultProps} />);
-
-      expect(screen.getByText(/Resolution: 144p • Font sizes adjusted for optimal display/)).toBeInTheDocument();
     });
   });
 
