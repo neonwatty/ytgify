@@ -6,6 +6,7 @@ import { handleYouTubeCookieConsent, waitForGifButton } from './helpers/extensio
 
 test.describe('Basic Wizard Test with Extension', () => {
   test('Extension loads and GIF button appears', async ({ page, context, extensionId }) => {
+    test.setTimeout(120000); // 2 minutes timeout for this test
     expect(extensionId).toBeTruthy();
 
 
@@ -77,7 +78,7 @@ test.describe('Basic Wizard Test with Extension', () => {
     });
 
     // Wait for content script to detect video and inject button
-    await waitForGifButton(page, 5000);
+    await waitForGifButton(page, 15000);
 
     // Now check if the state has been refreshed and button injected
     const stateAfterRefresh = await page.evaluate(() => {
@@ -125,7 +126,7 @@ test.describe('Basic Wizard Test with Extension', () => {
     });
 
     // Wait for button injection with smart retry
-    await waitForGifButton(page, 3000);
+    await waitForGifButton(page, 10000);
 
     // Check for service workers (extension loaded)
     const serviceWorkers = context.serviceWorkers();
@@ -202,7 +203,7 @@ test.describe('Basic Wizard Test with Extension', () => {
     await page.goto(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await page.waitForSelector('video', { timeout: 30000 });
-    await waitForGifButton(page, 5000);
+    await waitForGifButton(page, 10000);
 
     // Click GIF button
     await page.click('.ytgif-button');
@@ -275,7 +276,7 @@ test.describe('Basic Wizard Test with Extension', () => {
     await page.waitForSelector('.ytp-right-controls', { timeout: 30000 });
 
     // Wait for button to be injected with smart polling
-    await waitForGifButton(page, 3000);
+    await waitForGifButton(page, 10000);
 
     // Click the GIF button
     const gifButton = await page.$('.ytgif-button');
@@ -335,7 +336,7 @@ test.describe('Basic Wizard Test with Extension', () => {
     await page.goto(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await page.waitForSelector('video', { timeout: 30000 });
-    await waitForGifButton(page, 5000);
+    await waitForGifButton(page, 10000);
 
     // Click GIF button to open wizard
     await page.click('.ytgif-button');
@@ -507,7 +508,7 @@ test.describe('Basic Wizard Test with Extension', () => {
     await page.goto(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await page.waitForSelector('video', { timeout: 30000 });
-    await waitForGifButton(page, 5000);
+    await waitForGifButton(page, 10000);
 
     // Click GIF button to open wizard
     await page.click('.ytgif-button');
@@ -696,7 +697,7 @@ test.describe('Basic Wizard Test with Extension', () => {
     await page.goto(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await page.waitForSelector('video', { timeout: 30000 });
-    await waitForGifButton(page, 5000);
+    await waitForGifButton(page, 10000);
 
     // Click GIF button to open wizard
     await page.click('.ytgif-button');

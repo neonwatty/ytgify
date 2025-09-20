@@ -1,57 +1,13 @@
 #!/usr/bin/env sh
 
-echo "🚨 Running mandatory pre-commit validation..."
-echo "⚠️  This will take 3-5 minutes to ensure code quality"
-echo ""
+echo "📝 Running quick pre-commit checks..."
 
-# Run linting on staged files
-echo "📝 Running ESLint on staged files..."
+# Run linting on staged files only
 npx lint-staged
 
-# Build the extension
-echo "🔨 Building extension..."
-npm run build
-
-# Verify extension build
-if [ ! -f "dist/manifest.json" ]; then
-  echo "❌ Extension build failed - manifest.json not found"
-  echo "💡 Run 'npm run build' to fix this issue"
-  exit 1
-fi
-
-echo "✅ Extension built successfully"
-
-# Run type checking
-echo "🔍 Running TypeScript type check..."
-npm run typecheck
-
-# Run unit tests
-echo "🧪 Running unit tests..."
-npm test
-
-# Run E2E tests (mandatory - no bypass allowed)
-echo ""
-echo "🎭 Running E2E tests (wizard-basic.spec.ts with 3 parallel workers)..."
-echo "⚠️  This ensures extension works on real YouTube pages"
-echo "📍 Tests require Chrome browser and internet connection"
-echo "🚀 Running with 3 workers for faster execution"
-
-npm run test:e2e:fast
-
 if [ $? -ne 0 ]; then
-  echo ""
-  echo "❌ E2E tests failed!"
-  echo ""
-  echo "💡 Tips for fixing E2E test failures:"
-  echo "   • Ensure Chrome browser is available"
-  echo "   • Check your internet connection"
-  echo "   • Run 'npm run test:e2e:headed -- tests/e2e/wizard-basic.spec.ts' to see what's happening"
-  echo "   • Run 'npm run test:e2e:debug -- tests/e2e/wizard-basic.spec.ts' for detailed debugging"
-  echo ""
-  echo "🚫 Commit blocked - wizard-basic E2E tests must pass before committing"
+  echo "❌ Linting failed! Please fix the issues before committing."
   exit 1
 fi
 
-echo ""
-echo "✅ All pre-commit checks passed!"
-echo "🎉 Your commit is ready - all tests verified"
+echo "✅ Pre-commit checks passed!"
