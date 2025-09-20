@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-YouTube GIF Maker Chrome Extension - A Chrome extension that creates GIFs from YouTube videos with an integrated visual interface in the YouTube player. The extension uses Manifest V3 and injects UI elements directly into YouTube's video player for seamless GIF creation.
+YTgify Chrome Extension - A Chrome extension that creates GIFs from YouTube videos with an integrated visual interface in the YouTube player. The extension uses Manifest V3 and injects UI elements directly into YouTube's video player for seamless GIF creation.
 
 ## Essential Commands
 

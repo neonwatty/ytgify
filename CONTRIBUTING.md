@@ -1,6 +1,6 @@
-# Contributing to YouTube GIF Maker
+# Contributing to YTgify
 
-Thank you for your interest in contributing to the YouTube GIF Maker Chrome Extension! This guide will help you get started with development and ensure your contributions meet our quality standards.
+Thank you for your interest in contributing to the YTgify Chrome Extension! This guide will help you get started with development and ensure your contributions meet our quality standards.
 
 ## 🚀 Getting Started
 
@@ -15,8 +15,8 @@ Thank you for your interest in contributing to the YouTube GIF Maker Chrome Exte
 1. Fork and clone the repository:
 
 ```bash
-git clone https://github.com/[your-username]/ytgiphy.git
-cd ytgiphy
+git clone https://github.com/[your-username]/ytgify.git
+cd ytgify
 ```
 
 2. Install dependencies:

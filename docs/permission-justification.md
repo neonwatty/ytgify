@@ -1,26 +1,30 @@
 # Permission Justification Document
-## YouTube GIF Maker Chrome Extension
+
+## YTgify Chrome Extension
 
 ---
 
 ## Overview
 
-This document provides detailed justification for each permission requested by the YouTube GIF Maker Chrome Extension, ensuring transparency and compliance with Chrome Web Store policies.
+This document provides detailed justification for each permission requested by the YTgify Chrome Extension, ensuring transparency and compliance with Chrome Web Store policies.
 
 ---
 
 ## Requested Permissions
 
 ### 1. `storage`
+
 **Purpose**: Store user preferences, settings, and GIF metadata
 
 **Specific Usage**:
+
 - User preferences (frame rate, quality, button visibility)
 - GIF library metadata (creation date, duration, file size)
 - Error reporting preferences
 - Analytics settings (disabled by default for privacy)
 
 **Files Using This Permission**:
+
 - `src/background/index.ts` - User preferences management
 - `src/popup/popup-modern.tsx` - Settings persistence
 - `src/lib/chrome-gif-storage.ts` - GIF metadata storage
@@ -28,6 +32,7 @@ This document provides detailed justification for each permission requested by t
 - `src/storage/chrome-storage.ts` - Storage abstraction layer
 
 **Data Stored**:
+
 - Settings: Quality presets, frame rates, output dimensions
 - User preferences: Button visibility, keyboard shortcuts
 - GIF metadata: Creation timestamps, video URLs (for re-editing)
@@ -36,15 +41,18 @@ This document provides detailed justification for each permission requested by t
 ---
 
 ### 2. `tabs`
+
 **Purpose**: Query active tab and send messages between extension contexts
 
 **Specific Usage**:
+
 - Query active tab to check if it's a YouTube page
 - Send messages to content script for GIF processing
 - Create new YouTube tabs when needed
 - Update tab URLs for navigation
 
 **Files Using This Permission**:
+
 - `src/background/index.ts` - Tab management and messaging
 - `src/background/message-handler.ts` - Inter-context communication
 - `src/popup/popup-modern.tsx` - Check current tab URL
@@ -55,9 +63,11 @@ This document provides detailed justification for each permission requested by t
 ---
 
 ### 3. `activeTab`
+
 **Purpose**: Access current YouTube tab for GIF creation
 
 **Specific Usage**:
+
 - Inject content script into active YouTube tab
 - Extract video frames for GIF processing
 - Access YouTube video metadata (title, duration)
@@ -68,15 +78,18 @@ This document provides detailed justification for each permission requested by t
 ---
 
 ### 4. `scripting`
+
 **Purpose**: Inject content script into YouTube pages
 
 **Specific Usage**:
+
 - Inject main content script (`content.js`) into YouTube pages
 - Add GIF creation button to YouTube player controls
 - Insert timeline overlay for segment selection
 - Provide video frame extraction capabilities
 
 **Files Using This Permission**:
+
 - Manifest declares content script injection
 - Background service worker manages script execution
 
@@ -85,9 +98,11 @@ This document provides detailed justification for each permission requested by t
 ---
 
 ### 5. `clipboardWrite`
+
 **Purpose**: Copy created GIFs to clipboard
 
 **Specific Usage**:
+
 - Copy GIF blob data to system clipboard
 - Allow users to paste GIFs directly into other applications
 - Provide quick sharing functionality
@@ -99,9 +114,11 @@ This document provides detailed justification for each permission requested by t
 ---
 
 ### 6. `downloads`
+
 **Purpose**: Save GIFs to user's computer
 
 **Specific Usage**:
+
 - Download generated GIF files to user's Downloads folder
 - Save with descriptive filenames (e.g., "youtube_gif_2025_01_09.gif")
 - Respect user's download folder preferences
@@ -113,15 +130,18 @@ This document provides detailed justification for each permission requested by t
 ## Host Permissions
 
 ### `https://*.youtube.com/*`
+
 **Purpose**: Enable extension functionality on YouTube
 
 **Specific Usage**:
+
 - Inject content scripts into YouTube pages
 - Access YouTube player for video frame extraction
 - Monitor for Single Page Application (SPA) navigation
 - Add UI elements to YouTube interface
 
-**Scope**: 
+**Scope**:
+
 - Includes all YouTube subdomains (www, m, music, etc.)
 - Required for content script injection
 - Enables YouTube API integration
@@ -133,6 +153,7 @@ This document provides detailed justification for each permission requested by t
 ## Permission Minimization
 
 ### Why We Don't Request:
+
 - **Host permission for all sites**: Only works on YouTube
 - **Cookies**: No tracking or user identification needed
 - **History**: No need to access browsing history
@@ -142,6 +163,7 @@ This document provides detailed justification for each permission requested by t
 - **WebRequest**: No need to intercept network requests
 
 ### Privacy-First Design:
+
 - All permissions are functionally necessary
 - No data collection or analytics by default
 - All processing happens locally
@@ -152,7 +174,9 @@ This document provides detailed justification for each permission requested by t
 ## User Communication
 
 ### Store Listing Description:
+
 "This extension requires the following permissions to create GIFs from YouTube videos:
+
 - Storage: Save your preferences and created GIFs
 - Active Tab: Access the YouTube video you're watching
 - Downloads: Save GIFs to your computer
@@ -166,6 +190,7 @@ All processing happens locally on your device. No data is collected or transmitt
 ## Compliance Statement
 
 All requested permissions are:
+
 1. **Necessary**: Required for core functionality
 2. **Minimal**: Only what's needed, nothing more
 3. **Transparent**: Clearly documented and justified
@@ -174,5 +199,5 @@ All requested permissions are:
 
 ---
 
-*Last Updated: January 9, 2025*
-*Extension Version: 1.0.0*
+_Last Updated: January 9, 2025_
+_Extension Version: 1.0.0_

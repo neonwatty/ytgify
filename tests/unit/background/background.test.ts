@@ -42,7 +42,7 @@ describe('Background Service Worker Framework Tests', () => {
     const manifest = chrome.runtime.getManifest();
     
     expect(manifest).toBeDefined();
-    expect(manifest.name).toBe('YouTube GIF Maker');
+    expect(manifest.name).toBe('YTgify');
     expect(manifest.version).toBe('1.0.0');
     expect(manifest.manifest_version).toBe(3);
   });

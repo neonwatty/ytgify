@@ -1,21 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "YouTube GIF Maker",
+  "name": "YTgify",
   "version": "1.0.0",
   "description": "Create GIFs directly from YouTube videos with an intuitive visual interface",
   "author": "Jeremy Watt",
-  "homepage_url": "https://github.com/neonwatty/ytgiphy",
-  "permissions": [
-    "storage",
-    "tabs",
-    "activeTab",
-    "scripting",
-    "clipboardWrite",
-    "downloads"
-  ],
-  "host_permissions": [
-    "https://*.youtube.com/*"
-  ],
+  "homepage_url": "https://github.com/neonwatty/ytgify",
+  "permissions": ["storage", "tabs", "activeTab", "scripting", "clipboardWrite", "downloads"],
+  "host_permissions": ["https://*.youtube.com/*"],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   },
@@ -25,9 +16,7 @@
   },
   "content_scripts": [
     {
-      "matches": [
-        "https://*.youtube.com/*"
-      ],
+      "matches": ["https://*.youtube.com/*"],
       "js": ["content.js"],
       "css": ["content.css"],
       "run_at": "document_end"

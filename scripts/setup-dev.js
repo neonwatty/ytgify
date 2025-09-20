@@ -98,7 +98,7 @@ function printInstructions() {
 
 async function main() {
   try {
-    console.log('🚀 YouTube GIF Maker - Development Setup');
+    console.log('🚀 YTgify - Development Setup');
     console.log('='.repeat(60));
     
     // Check and install dependencies

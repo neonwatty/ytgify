@@ -1,5 +1,5 @@
 {
-  "name": "youtube-gif-maker",
+  "name": "ytgify",
   "version": "1.0.0",
   "description": "Chrome extension to create GIFs from YouTube videos",
   "private": true,

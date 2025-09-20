@@ -28,7 +28,7 @@ async function execCommand(command) {
 
 async function createZip(version) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-  const filename = `youtube-gif-maker-v${version}-${timestamp}.zip`;
+  const filename = `ytgify-v${version}-${timestamp}.zip`;
   const outputPath = path.join(OUTPUT_DIR, filename);
   
   return new Promise((resolve, reject) => {

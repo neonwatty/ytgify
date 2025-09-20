@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * E2E test configuration for YouTube GIF Maker Chrome Extension
+ * E2E test configuration for YTgify Chrome Extension
  * Tests run against real YouTube videos with the extension loaded
  */
 export default defineConfig({

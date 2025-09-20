@@ -1,50 +1,59 @@
 # Chrome Web Store Listing Content
 
 ## Extension Name
-YouTube GIF Maker
+
+YTgify
 
 ## Short Description (132 characters max)
+
 Create high-quality GIFs from YouTube videos instantly. Add text overlays, adjust speed, and build your personal GIF library.
 
 ## Categories
+
 - Primary: Productivity
 - Secondary: Photos
 
 ## Detailed Description
 
 ### Headline
+
 Transform YouTube Videos into Perfect GIFs in Seconds! 🎬
 
 ### Main Description
 
-**YouTube GIF Maker** is the ultimate Chrome extension for creating high-quality GIFs directly from YouTube videos. No downloads, no complicated software – just click, select, and create!
+**YTgify** is the ultimate Chrome extension for creating high-quality GIFs directly from YouTube videos. No downloads, no complicated software – just click, select, and create!
 
 ### ✨ Key Features
 
 **🎯 One-Click GIF Creation**
+
 - Seamlessly integrated into YouTube's player
 - Create GIFs without leaving the video page
 - Visual timeline for precise moment selection
 
 **🎨 Professional Editing Tools**
+
 - Add custom text overlays (top and bottom)
 - Choose from multiple fonts and styles
 - Adjust colors, size, and positioning
 - Real-time preview of your creation
 
 **⚡ Flexible Output Options**
+
 - Multiple quality presets (Fast, Balanced, High Quality)
 - Custom resolution settings (240p to 1080p)
 - Adjustable frame rates (5-30 FPS)
 - Smart compression for optimal file sizes
 
 **📚 Built-in GIF Library**
+
 - Save all your creations automatically
 - Search and organize your GIF collection
 - Quick access to recent creations
 - Re-edit or delete GIFs anytime
 
 **🚀 Advanced Features**
+
 - Timeline scrubber for frame-perfect selection
 - Keyboard shortcuts for power users (Ctrl+Shift+G)
 - Multiple export formats support
@@ -82,7 +91,7 @@ Transform YouTube Videos into Perfect GIFs in Seconds! 🎬
 - React-based UI for smooth interactions
 - Supports all YouTube video types
 
-### 📈 Why Choose YouTube GIF Maker?
+### 📈 Why Choose YTgify?
 
 Unlike online GIF makers that require video downloads and uploads, our extension works directly in your browser. No watermarks, no sign-ups, no limits – just pure GIF-making power at your fingertips.
 
@@ -104,30 +113,36 @@ Unlike online GIF makers that require video downloads and uploads, our extension
 
 ### 📞 Support
 
-- GitHub Issues: https://github.com/neonwatty/ytgiphy/issues
+- GitHub Issues: https://github.com/neonwatty/ytgify/issues
 - Documentation: Available in extension
 - Updates: Regular feature additions and bug fixes
 
 ### 🏷️ Tags
+
 gif, youtube, gif maker, video to gif, meme creator, gif creator, youtube downloader, gif generator, video converter, animation
 
 ---
 
-**Install YouTube GIF Maker today and start creating amazing GIFs from your favorite YouTube videos!**
+**Install YTgify today and start creating amazing GIFs from your favorite YouTube videos!**
 
 ## Additional Store Information
 
 ### Language
+
 English
 
 ### Promotional Text (optional)
+
 Turn YouTube moments into GIFs instantly! No downloads, no uploads, no watermarks. Just click and create.
 
 ### Why should users install your extension?
-Users should install YouTube GIF Maker because it's the fastest, easiest, and most privacy-focused way to create GIFs from YouTube videos. With professional editing features and zero data collection, it's the perfect tool for anyone who wants to capture and share video moments.
+
+Users should install YTgify because it's the fastest, easiest, and most privacy-focused way to create GIFs from YouTube videos. With professional editing features and zero data collection, it's the perfect tool for anyone who wants to capture and share video moments.
 
 ### Version Notes (What's New)
+
 Version 1.0.0
+
 - Initial release
 - Core GIF creation functionality
 - Text overlay support
@@ -136,10 +151,13 @@ Version 1.0.0
 - Multiple quality presets
 
 ### Website
-https://github.com/neonwatty/ytgiphy
+
+https://github.com/neonwatty/ytgify
 
 ### Support Email
+
 [To be added]
 
 ### Support URL
-https://github.com/neonwatty/ytgiphy/issues
+
+https://github.com/neonwatty/ytgify/issues

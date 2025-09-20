@@ -1,6 +1,7 @@
-# YouTube GIF Maker - User Guide
+# YTgify - User Guide
 
 ## Table of Contents
+
 1. [Getting Started](#getting-started)
 2. [Creating Your First GIF](#creating-your-first-gif)
 3. [Advanced Features](#advanced-features)
@@ -12,12 +13,14 @@
 ## Getting Started
 
 ### Installation
+
 1. Install the extension from the Chrome Web Store
 2. Click "Add to Chrome" and confirm permissions
 3. The extension icon will appear in your toolbar
 4. Navigate to any YouTube video to start creating GIFs!
 
 ### First Time Setup
+
 No setup required! The extension works immediately after installation. All features are available with default settings optimized for most users.
 
 ## Creating Your First GIF
@@ -66,6 +69,7 @@ No setup required! The extension works immediately after installation. All featu
 ### Adding Text Overlays
 
 #### Single Text Overlay
+
 1. After selecting your clip, click "Add Text"
 2. Enter your text in the input field
 3. Choose position (top/bottom)
@@ -77,6 +81,7 @@ No setup required! The extension works immediately after installation. All featu
    - Stroke/outline
 
 #### Dual Text Overlay (Meme Style)
+
 1. Select "Meme Style" option
 2. Add top text and bottom text
 3. Both texts can be styled independently
@@ -85,12 +90,14 @@ No setup required! The extension works immediately after installation. All featu
 ### Quality Settings
 
 #### Preset Options
+
 - **Fast**: Lower quality, quick processing (240p, 10 FPS)
 - **Balanced**: Good quality and speed (480p, 15 FPS)
 - **High Quality**: Best quality, slower (720p, 20 FPS)
 - **Custom**: Set your own parameters
 
 #### Custom Settings
+
 - **Resolution**: 240p to 1080p
 - **Frame Rate**: 5 to 30 FPS
 - **Quality**: 1-10 scale
@@ -99,12 +106,14 @@ No setup required! The extension works immediately after installation. All featu
 ### Timeline Controls
 
 #### Basic Controls
+
 - **Play/Pause**: Space bar or click button
 - **Scrub**: Click and drag on timeline
 - **Zoom**: Scroll wheel on timeline
 - **Fine Adjust**: Arrow keys for frame-by-frame
 
 #### Advanced Selection
+
 - **Set Start**: Click "Set Start" or press `[`
 - **Set End**: Click "Set End" or press `]`
 - **Clear Selection**: Press `Esc`
@@ -113,10 +122,12 @@ No setup required! The extension works immediately after installation. All featu
 ## Keyboard Shortcuts
 
 ### Global Shortcuts
+
 - `Ctrl+Shift+G`: Open GIF creator
 - `Esc`: Close any overlay
 
 ### Timeline Shortcuts
+
 - `Space`: Play/pause video
 - `←/→`: Move one frame
 - `Shift+←/→`: Move 1 second
@@ -125,6 +136,7 @@ No setup required! The extension works immediately after installation. All featu
 - `Enter`: Create GIF
 
 ### Editor Shortcuts
+
 - `T`: Add text overlay
 - `Delete`: Remove selected element
 - `Ctrl+Z`: Undo
@@ -133,6 +145,7 @@ No setup required! The extension works immediately after installation. All featu
 ## Managing Your GIF Library
 
 ### Accessing Your Library
+
 1. Click the extension icon
 2. Select "Library" tab
 3. View all your created GIFs
@@ -140,11 +153,13 @@ No setup required! The extension works immediately after installation. All featu
 ### Library Features
 
 #### Search and Filter
+
 - Search by title or tags
 - Filter by date created
 - Sort by size, date, or name
 
 #### GIF Actions
+
 - **Download**: Save to your computer
 - **Copy Link**: Copy shareable link
 - **Edit**: Re-open in editor
@@ -152,12 +167,14 @@ No setup required! The extension works immediately after installation. All featu
 - **Share**: Quick share to social media
 
 #### Bulk Operations
+
 - Select multiple GIFs
 - Bulk download
 - Bulk delete
 - Export entire library
 
 ### Storage Management
+
 - View storage usage in settings
 - Set auto-cleanup rules
 - Export before clearing
@@ -166,18 +183,21 @@ No setup required! The extension works immediately after installation. All featu
 ## Settings and Preferences
 
 ### General Settings
+
 - **Theme**: Light/Dark/Auto
 - **Default Quality**: Set preferred preset
 - **Auto-Save**: Enable/disable
 - **Notifications**: Success/error messages
 
 ### Advanced Settings
+
 - **Max GIF Duration**: 5-30 seconds
 - **Default Frame Rate**: 5-30 FPS
 - **Encoder**: GIF.js or WebWorker
 - **Cache Settings**: Temporary file handling
 
 ### Privacy Settings
+
 - **Data Collection**: Always OFF (no telemetry)
 - **Local Storage**: Manage space
 - **Clear Data**: Remove all GIFs and settings
@@ -187,24 +207,28 @@ No setup required! The extension works immediately after installation. All featu
 ### Common Issues
 
 #### GIF Button Not Appearing
+
 - Refresh the YouTube page
 - Check if extension is enabled
 - Try disabling other YouTube extensions
 - Clear browser cache
 
 #### GIF Creation Fails
+
 - Check video isn't age-restricted
 - Ensure video is fully loaded
 - Try shorter duration (under 10 seconds)
 - Lower quality settings
 
 #### Poor GIF Quality
+
 - Increase resolution in settings
 - Use "High Quality" preset
 - Ensure source video is HD
 - Adjust frame rate higher
 
 #### Large File Sizes
+
 - Reduce resolution
 - Lower frame rate
 - Shorten duration
@@ -233,11 +257,13 @@ No setup required! The extension works immediately after installation. All featu
 ### Getting Help
 
 #### Support Resources
+
 - **GitHub Issues**: Report bugs and request features
 - **FAQ**: Check the frequently asked questions
 - **Community**: Join discussions on GitHub
 
 #### Diagnostic Tools
+
 1. Open extension popup
 2. Click settings gear
 3. Select "Diagnostics"
@@ -246,12 +272,14 @@ No setup required! The extension works immediately after installation. All featu
 ## Tips and Tricks
 
 ### Pro Tips
+
 1. **Perfect Loops**: End frame matches start frame
 2. **Smooth Motion**: Higher FPS for action scenes
 3. **File Size**: Balance quality vs. size for sharing
 4. **Text Timing**: Add text after preview for accuracy
 
 ### Creative Ideas
+
 - Create reaction GIFs from creators
 - Make tutorial snippets
 - Capture gaming moments
@@ -264,4 +292,4 @@ The extension auto-updates through Chrome. Check the [changelog](./changelog.md)
 
 ---
 
-**Need more help?** Open an issue on [GitHub](https://github.com/neonwatty/ytgiphy/issues) or check the [FAQ](./faq.md).
+**Need more help?** Open an issue on [GitHub](https://github.com/neonwatty/ytgify/issues) or check the [FAQ](./faq.md).
