@@ -12,7 +12,9 @@ export const test = base.extend<{
   // Override context fixture to load extension
   context: async ({ }, use) => {
     const pathToExtension = path.join(__dirname, '..', '..', 'dist');
-    const userDataDir = path.join(__dirname, '..', 'test-user-data-' + Date.now());
+    // Ensure unique user data dir for each worker to prevent profile lock conflicts
+    const uniqueId = Date.now() + '-' + Math.random().toString(36).substring(2, 9);
+    const userDataDir = path.join(__dirname, '..', 'test-user-data-' + uniqueId);
 
     // Check if --headed flag was passed
     const isHeaded = process.argv.includes('--headed');

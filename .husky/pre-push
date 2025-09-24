@@ -1,5 +1,8 @@
 #!/usr/bin/env sh
 
+# Exit on any error
+set -e
+
 echo "🚨 Running mandatory pre-push validation..."
 echo "⚠️  This will take 3-5 minutes to ensure code quality before pushing to remote"
 echo ""
@@ -7,10 +10,18 @@ echo ""
 # Run full linting
 echo "📝 Running ESLint..."
 npm run lint
+if [ $? -ne 0 ]; then
+  echo "❌ ESLint failed! Please fix linting errors before pushing."
+  exit 1
+fi
 
 # Build the extension
 echo "🔨 Building extension..."
 npm run build
+if [ $? -ne 0 ]; then
+  echo "❌ Build failed! Please fix build errors before pushing."
+  exit 1
+fi
 
 # Verify extension build
 if [ ! -f "dist/manifest.json" ]; then
@@ -24,10 +35,18 @@ echo "✅ Extension built successfully"
 # Run type checking
 echo "🔍 Running TypeScript type check..."
 npm run typecheck
+if [ $? -ne 0 ]; then
+  echo "❌ TypeScript type check failed! Please fix type errors before pushing."
+  exit 1
+fi
 
 # Run unit tests
 echo "🧪 Running unit tests..."
 npm test
+if [ $? -ne 0 ]; then
+  echo "❌ Unit tests failed! Please fix failing tests before pushing."
+  exit 1
+fi
 
 # Run E2E tests (mandatory - no bypass allowed)
 echo ""
@@ -36,9 +55,31 @@ echo "⚠️  This ensures extension works on real YouTube pages"
 echo "📍 Tests require Chrome browser and internet connection"
 echo "🚀 Running with 3 workers for faster execution"
 
-npm run test:e2e:fast
+# Capture test output to check for flaky tests
+TEST_OUTPUT=$(npm run test:e2e:fast 2>&1)
+TEST_EXIT_CODE=$?
 
-if [ $? -ne 0 ]; then
+# Display the output
+echo "$TEST_OUTPUT"
+
+# Check for flaky tests (tests that failed first attempt but passed on retry)
+if echo "$TEST_OUTPUT" | grep -q "flaky"; then
+  echo ""
+  echo "⚠️  E2E tests have flaky failures!"
+  echo "❌ Tests that fail and require retries indicate instability."
+  echo ""
+  echo "💡 Tips for fixing flaky test failures:"
+  echo "   • Review the test that failed on first attempt"
+  echo "   • Check for timing issues or race conditions"
+  echo "   • Ensure proper waits and assertions"
+  echo "   • Run 'npm run test:e2e:fast:headed' to see what's happening"
+  echo ""
+  echo "🚫 Push blocked - flaky tests must be fixed before pushing"
+  exit 1
+fi
+
+# Check for regular test failures
+if [ $TEST_EXIT_CODE -ne 0 ]; then
   echo ""
   echo "❌ E2E tests failed!"
   echo ""

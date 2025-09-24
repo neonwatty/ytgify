@@ -196,7 +196,7 @@ test.describe('Basic Wizard Test with Extension', () => {
   });
 
   test('Can create a simple GIF', async ({ page, context, extensionId }) => {
-    test.setTimeout(60000); // Increase timeout for GIF creation
+    test.setTimeout(90000); // 90 seconds timeout for GIF creation (includes 45s processing wait)
     const youtube = new YouTubePage(page);
 
     // Navigate and wait for button
