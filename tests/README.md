@@ -58,9 +58,17 @@ npm run test:e2e:headed
 # Run with debug mode
 npm run test:e2e:debug
 
+# Run quick smoke tests in headless mode (default, fast)
+npm run test:e2e:fast
+
+# Run quick smoke tests with visible browser (for debugging)
+npm run test:e2e:fast:headed
+
 # Run all tests (unit + E2E)
 npm run test:all
 ```
+
+**Note on Headless Mode**: The tests use Playwright's bundled Chromium browser which is the only browser that supports Chrome extensions in headless mode. The `test:e2e:fast` command runs tests in headless mode by default for faster execution. Use `test:e2e:fast:headed` when you need to see the browser for debugging.
 
 ### Benchmarks
 

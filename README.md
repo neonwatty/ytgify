@@ -20,6 +20,7 @@ https://github.com/user-attachments/assets/6b9e72b6-032a-430d-9e4c-1d637f9aec20
 - Node.js 18+
 - npm or yarn
 - Chrome browser
+- Playwright's Chromium (installed automatically with `npm install`)
 
 ### Installation
 
@@ -69,7 +70,9 @@ npm run dev
 
 - `npm run dev` - Build in development mode with watch
 - `npm run build` - Build for production
-- `npm run test` - Run tests
+- `npm run test` - Run unit tests
+- `npm run test:e2e:fast` - Run E2E tests in headless mode (fast, for CI)
+- `npm run test:e2e:fast:headed` - Run E2E tests with visible browser (for debugging)
 - `npm run lint` - Run ESLint
 - `npm run typecheck` - Run TypeScript type checking
 - `npm run validate:pre-push` - Run full validation suite (same as Git hooks)
@@ -84,10 +87,12 @@ Testing Chrome extensions that interact with YouTube videos is extremely challen
 
 - YouTube blocking/rate-limiting CI server IPs
 - Regional content restrictions and cookie consent variations
-- Chrome extension loading issues in headless environments
 - Video playback requiring real browser environments
+- Chrome/Edge browsers not supporting extensions in headless mode
 
 Therefore, we use **mandatory pre-commit hooks** to ensure all tests run in a real, local development environment where they can reliably interact with YouTube.
+
+**Important**: E2E tests use Playwright's bundled Chromium browser, which is the only browser that supports Chrome extensions in headless mode. Regular Chrome or Edge browsers cannot load extensions in headless mode.
 
 ### What Runs Automatically:
 

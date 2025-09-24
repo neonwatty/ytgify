@@ -18,11 +18,10 @@ export const test = base.extend<{
     const isHeaded = process.argv.includes('--headed');
     const isCI = process.env.CI === 'true';
 
-    // Extensions work in headless mode when using the 'chromium' channel
-    // Headed mode can be forced with --headed flag for debugging
-    const context = await chromium.launchPersistentContext(userDataDir, {
+    // Extensions require Playwright's bundled chromium channel
+    const launchOptions: any = {
       channel: 'chromium', // Required for extensions to work in headless mode
-      headless: !isHeaded, // Run headless by default, headed with --headed flag
+      headless: false, // Default to headed, will be overridden below if needed
       args: [
         `--disable-extensions-except=${pathToExtension}`,
         `--load-extension=${pathToExtension}`,
@@ -32,7 +31,21 @@ export const test = base.extend<{
         '--disable-blink-features=AutomationControlled',
       ],
       viewport: { width: 1280, height: 720 },
-    });
+    };
+
+    // Enable proper headless mode when requested
+    if (process.env.HEADLESS === 'true' || (process.env.CI === 'true' && !isHeaded)) {
+      launchOptions.headless = true; // Playwright's chromium channel supports extensions in headless
+    } else if (isHeaded) {
+      launchOptions.headless = false; // Explicitly set headed mode
+    }
+
+    // Allow override for testing different channels (though chromium is required for headless extensions)
+    if (process.env.PLAYWRIGHT_CHROMIUM_CHANNEL) {
+      launchOptions.channel = process.env.PLAYWRIGHT_CHROMIUM_CHANNEL;
+    }
+
+    const context = await chromium.launchPersistentContext(userDataDir, launchOptions);
 
     await use(context);
     await context.close();
@@ -44,19 +57,30 @@ export const test = base.extend<{
 
     // Wait for service worker to be ready with exponential backoff
     let retries = 0;
-    const maxRetries = 3;
+    const maxRetries = 5; // Increased retries
     while (retries < maxRetries) {
-      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retries)));
-      if (context.serviceWorkers().length > 0) break;
+      await new Promise(resolve => setTimeout(resolve, 2000 * Math.pow(1.5, retries))); // Longer wait
+      const serviceWorkers = context.serviceWorkers();
+      if (serviceWorkers.length > 0) {
+        const url = serviceWorkers[0].url();
+        const match = url.match(/chrome-extension:\/\/([^\/]+)/);
+        if (match) {
+          extensionId = match[1];
+          break;
+        }
+      }
       retries++;
     }
 
-    const serviceWorkers = context.serviceWorkers();
-    if (serviceWorkers.length > 0) {
-      const url = serviceWorkers[0].url();
-      const match = url.match(/chrome-extension:\/\/([^\/]+)/);
-      if (match) {
-        extensionId = match[1];
+    // Final check after all retries
+    if (!extensionId) {
+      const serviceWorkers = context.serviceWorkers();
+      if (serviceWorkers.length > 0) {
+        const url = serviceWorkers[0].url();
+        const match = url.match(/chrome-extension:\/\/([^\/]+)/);
+        if (match) {
+          extensionId = match[1];
+        }
       }
     }
 

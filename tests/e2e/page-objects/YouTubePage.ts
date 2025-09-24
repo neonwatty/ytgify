@@ -29,19 +29,19 @@ export class YouTubePage {
 
   async waitForVideoReady() {
     // Wait for video element to be present
-    await this.videoElement.waitFor({ state: 'visible', timeout: 30000 });
+    await this.videoElement.waitFor({ state: 'visible', timeout: 15000 });
 
     // Wait for player controls to be loaded
-    await this.playerControls.waitFor({ state: 'visible', timeout: 30000 });
+    await this.playerControls.waitFor({ state: 'visible', timeout: 10000 });
 
-    // Additional delay for content script to detect video and inject button
-    await this.page.waitForTimeout(5000);
+    // Small delay for content script to detect video and inject button
+    await this.page.waitForTimeout(2000);
 
     // Wait for GIF button to be injected by extension
-    await this.gifButton.waitFor({ state: 'visible', timeout: 20000 });
+    await this.gifButton.waitFor({ state: 'visible', timeout: 15000 });
 
-    // Small delay to ensure everything is fully loaded
-    await this.page.waitForTimeout(1000);
+    // Very small delay to ensure everything is settled
+    await this.page.waitForTimeout(500);
   }
 
   async openGifWizard() {
