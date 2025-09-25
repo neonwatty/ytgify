@@ -20,8 +20,8 @@ function areCanvasFramesSimilar(
     return false;
   }
 
-  const ctx1 = canvas1.getContext('2d');
-  const ctx2 = canvas2.getContext('2d');
+  const ctx1 = canvas1.getContext('2d', { willReadFrequently: true });
+  const ctx2 = canvas2.getContext('2d', { willReadFrequently: true });
 
   if (!ctx1 || !ctx2) {
     return false;
@@ -157,7 +157,7 @@ export class ContentScriptGifProcessor {
     // Initialize main canvas
     if (!this.mainCanvas) {
       this.mainCanvas = document.createElement('canvas');
-      this.mainCtx = this.mainCanvas.getContext('2d');
+      this.mainCtx = this.mainCanvas.getContext('2d', { willReadFrequently: true });
       if (!this.mainCtx) {
         throw createError('gif', 'Failed to create main canvas context');
       }
@@ -166,7 +166,7 @@ export class ContentScriptGifProcessor {
     // Initialize recovery canvas
     if (!this.recoveryCanvas) {
       this.recoveryCanvas = document.createElement('canvas');
-      this.recoveryCtx = this.recoveryCanvas.getContext('2d');
+      this.recoveryCtx = this.recoveryCanvas.getContext('2d', { willReadFrequently: true });
       if (!this.recoveryCtx) {
         throw createError('gif', 'Failed to create recovery canvas context');
       }
@@ -531,7 +531,7 @@ export class ContentScriptGifProcessor {
       const frameCanvas = document.createElement('canvas');
       frameCanvas.width = actualWidth;
       frameCanvas.height = actualHeight;
-      const frameCtx = frameCanvas.getContext('2d');
+      const frameCtx = frameCanvas.getContext('2d', { willReadFrequently: true });
       if (!frameCtx) {
         throw createError('gif', 'Failed to create frame canvas context');
       }
@@ -600,7 +600,7 @@ export class ContentScriptGifProcessor {
     try {
       // Convert canvas frames to encoder format
       const frameData: EncoderFrameData[] = frames.map((canvas, index) => {
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         if (!ctx) {
           throw new Error(`Failed to get context for frame ${index + 1}`);
         }

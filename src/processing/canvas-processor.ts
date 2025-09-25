@@ -13,7 +13,7 @@ interface ProcessingConfig {
   targetHeight?: number;
   maintainAspectRatio?: boolean;
   scalingMode?: 'fit' | 'fill' | 'stretch' | 'crop';
-  
+
   // Cropping options
   cropArea?: {
     x: number;
@@ -21,12 +21,12 @@ interface ProcessingConfig {
     width: number;
     height: number;
   };
-  
+
   // Visual adjustments
   brightness?: number; // -100 to 100
-  contrast?: number;   // -100 to 100
+  contrast?: number; // -100 to 100
   saturation?: number; // -100 to 100
-  
+
   // Quality options
   quality?: 'low' | 'medium' | 'high';
   enableFiltering?: boolean;
@@ -72,7 +72,7 @@ export class CanvasProcessor {
   constructor() {
     // Main canvas for output
     this.canvas = document.createElement('canvas');
-    const context = this.canvas.getContext('2d');
+    const context = this.canvas.getContext('2d', { willReadFrequently: true });
     if (!context) {
       throw new Error('Failed to get 2D rendering context for main canvas');
     }
@@ -80,7 +80,7 @@ export class CanvasProcessor {
 
     // Offscreen canvas for intermediate processing
     this.offscreenCanvas = document.createElement('canvas');
-    const offscreenContext = this.offscreenCanvas.getContext('2d');
+    const offscreenContext = this.offscreenCanvas.getContext('2d', { willReadFrequently: true });
     if (!offscreenContext) {
       throw new Error('Failed to get 2D rendering context for offscreen canvas');
     }
@@ -107,7 +107,7 @@ export class CanvasProcessor {
 
     this.isProcessing = true;
     this.abortController = new AbortController();
-    
+
     const startTime = performance.now();
     const processedFrames: ProcessedFrame[] = [];
     const processingTimes: number[] = [];
@@ -139,7 +139,7 @@ export class CanvasProcessor {
 
         const processedFrame = await this.processSingleFrame(frame, config, outputDimensions);
         const processingTime = performance.now() - frameStartTime;
-        
+
         processedFrames.push(processedFrame);
         processingTimes.push(processingTime);
 
@@ -147,19 +147,19 @@ export class CanvasProcessor {
         if (onProgress) {
           const elapsedTime = performance.now() - startTime;
           const averageTime = processingTimes.reduce((a, b) => a + b, 0) / processingTimes.length;
-          
+
           onProgress({
             framesProcessed: i + 1,
             totalFrames: frames.length,
             currentFrameIndex: i,
             averageProcessingTime: averageTime,
-            elapsedTime
+            elapsedTime,
           });
         }
 
         // Yield control to prevent blocking
         if (i % 10 === 0) {
-          await new Promise(resolve => setTimeout(resolve, 0));
+          await new Promise((resolve) => setTimeout(resolve, 0));
         }
       }
 
@@ -174,12 +174,11 @@ export class CanvasProcessor {
           totalProcessingTime: totalTime,
           originalDimensions: {
             width: firstFrame.imageData.width,
-            height: firstFrame.imageData.height
+            height: firstFrame.imageData.height,
           },
-          finalDimensions: outputDimensions
-        }
+          finalDimensions: outputDimensions,
+        },
       };
-
     } finally {
       this.cleanup();
     }
@@ -194,7 +193,7 @@ export class CanvasProcessor {
     targetDimensions: { width: number; height: number }
   ): Promise<ProcessedFrame> {
     const startTime = performance.now();
-    
+
     // Step 1: Load source image data onto offscreen canvas
     this.offscreenCanvas.width = frame.imageData.width;
     this.offscreenCanvas.height = frame.imageData.height;
@@ -214,7 +213,7 @@ export class CanvasProcessor {
     // Step 3: Apply resizing
     this.canvas.width = targetDimensions.width;
     this.canvas.height = targetDimensions.height;
-    
+
     await this.applyResizing(
       this.offscreenCanvas,
       workingImageData.width,
@@ -224,8 +223,13 @@ export class CanvasProcessor {
     );
 
     // Step 4: Apply visual filters
-    let finalImageData = this.ctx.getImageData(0, 0, targetDimensions.width, targetDimensions.height);
-    
+    let finalImageData = this.ctx.getImageData(
+      0,
+      0,
+      targetDimensions.width,
+      targetDimensions.height
+    );
+
     if (config.enableFiltering !== false) {
       finalImageData = await this.applyVisualFilters(finalImageData, config);
     }
@@ -238,10 +242,10 @@ export class CanvasProcessor {
       frameIndex: frame.frameIndex,
       originalDimensions: {
         width: frame.imageData.width,
-        height: frame.imageData.height
+        height: frame.imageData.height,
       },
       processedDimensions: targetDimensions,
-      processingTime
+      processingTime,
     };
   }
 
@@ -279,7 +283,7 @@ export class CanvasProcessor {
         const sourceIndex = ((y + row) * imageData.width + (x + col)) * 4;
         const targetIndex = (row * actualWidth + col) * 4;
 
-        targetData[targetIndex] = sourceData[sourceIndex];         // R
+        targetData[targetIndex] = sourceData[sourceIndex]; // R
         targetData[targetIndex + 1] = sourceData[sourceIndex + 1]; // G
         targetData[targetIndex + 2] = sourceData[sourceIndex + 2]; // B
         targetData[targetIndex + 3] = sourceData[sourceIndex + 3]; // A
@@ -297,7 +301,7 @@ export class CanvasProcessor {
     config: ProcessingConfig
   ): Promise<void> {
     const { width: targetWidth, height: targetHeight } = targetDimensions;
-    
+
     // Set image smoothing based on quality setting
     this.ctx.imageSmoothingEnabled = config.quality !== 'low';
     this.ctx.imageSmoothingQuality = config.quality === 'high' ? 'high' : 'medium';
@@ -359,8 +363,14 @@ export class CanvasProcessor {
     // Draw the resized image
     this.ctx.drawImage(
       sourceCanvas,
-      0, 0, sourceWidth, sourceHeight,
-      drawX, drawY, drawWidth, drawHeight
+      0,
+      0,
+      sourceWidth,
+      sourceHeight,
+      drawX,
+      drawY,
+      drawWidth,
+      drawHeight
     );
   }
 
@@ -448,16 +458,16 @@ export class CanvasProcessor {
   ): number {
     const processor = new CanvasProcessor();
     const outputDims = processor.calculateOutputDimensions(sourceWidth, sourceHeight, config);
-    
+
     // Calculate memory for source frames (4 bytes per pixel for RGBA)
     const sourceMemory = frameCount * sourceWidth * sourceHeight * 4;
-    
+
     // Calculate memory for output frames
     const outputMemory = frameCount * outputDims.width * outputDims.height * 4;
-    
+
     // Add working memory for canvas operations (estimated 2x output for double buffering)
     const workingMemory = outputDims.width * outputDims.height * 4 * 2;
-    
+
     return sourceMemory + outputMemory + workingMemory;
   }
 
@@ -476,7 +486,7 @@ export class CanvasProcessor {
     // Parse resolution if it's a string
     let targetWidth: number | undefined;
     let targetHeight: number | undefined;
-    
+
     if (gifSettings.resolution && typeof gifSettings.resolution === 'string') {
       const parts = gifSettings.resolution.split('x');
       if (parts.length === 2) {
@@ -494,7 +504,7 @@ export class CanvasProcessor {
       contrast: gifSettings.contrast || 0,
       quality: gifSettings.quality || 'medium',
       enableFiltering: true,
-      ...customConfig
+      ...customConfig,
     };
   }
 }
