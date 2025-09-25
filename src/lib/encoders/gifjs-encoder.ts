@@ -29,7 +29,13 @@ interface GIFJsInstance {
   on(event: 'workerReady', callback: (worker: Worker) => void): void;
 
   running: boolean;
-  frames: Array<{ frame: ImageData | CanvasRenderingContext2D | HTMLImageElement | HTMLCanvasElement; delay?: number; copy?: boolean; transparent?: number | string; dispose?: number }>;
+  frames: Array<{
+    frame: ImageData | CanvasRenderingContext2D | HTMLImageElement | HTMLCanvasElement;
+    delay?: number;
+    copy?: boolean;
+    transparent?: number | string;
+    dispose?: number;
+  }>;
   options: Record<string, unknown>;
 }
 
@@ -39,6 +45,9 @@ export class GifJsEncoder extends AbstractEncoder {
   private gifInstance: GIFJsInstance | null = null;
   private canvas: OffscreenCanvas | null = null;
   private ctx: OffscreenCanvasRenderingContext2D | null = null;
+  // Reusable regular canvas for gif.js compatibility
+  private regularCanvas: HTMLCanvasElement | null = null;
+  private regularCtx: CanvasRenderingContext2D | null = null;
 
   get name(): string {
     return 'gif.js';
@@ -100,6 +109,16 @@ export class GifJsEncoder extends AbstractEncoder {
     }
     this.ctx = ctx;
 
+    // Create reusable regular canvas for gif.js compatibility
+    this.regularCanvas = document.createElement('canvas');
+    this.regularCanvas.width = options.width;
+    this.regularCanvas.height = options.height;
+    const regularCtx = this.regularCanvas.getContext('2d');
+    if (!regularCtx) {
+      throw new Error('Failed to create regular 2D canvas context');
+    }
+    this.regularCtx = regularCtx;
+
     try {
       return await this.performEncoding(frames, options, abortSignal);
     } finally {
@@ -124,7 +143,9 @@ export class GifJsEncoder extends AbstractEncoder {
         : '/gif.worker.js';
 
     // Initialize gif.js instance (cast to our interface)
-    this.gifInstance = new ((window as unknown as { GIF: new (options: Record<string, unknown>) => GIFJsInstance }).GIF)({
+    this.gifInstance = new (
+      window as unknown as { GIF: new (options: Record<string, unknown>) => GIFJsInstance }
+    ).GIF({
       width: options.width,
       height: options.height,
       quality: quality,
@@ -153,22 +174,19 @@ export class GifJsEncoder extends AbstractEncoder {
       const frame = frames[i];
       const frameDelay = frame.delay !== undefined ? frame.delay : baseFrameDelay;
 
-      // Put ImageData onto canvas
+      // Put ImageData onto offscreen canvas
       this.ctx!.putImageData(frame.imageData, 0, 0);
 
-      // Add canvas frame to GIF (convert OffscreenCanvas to regular canvas context)
-      const regularCanvas = document.createElement('canvas');
-      regularCanvas.width = this.canvas!.width;
-      regularCanvas.height = this.canvas!.height;
-      const regularCtx = regularCanvas.getContext('2d');
-      if (regularCtx) {
-        regularCtx.drawImage(this.canvas!, 0, 0);
-        this.gifInstance!.addFrame(regularCtx, {
-          copy: true,
-          delay: frameDelay,
-          dispose: 2, // Restore to background
-        });
-      }
+      // Reuse regular canvas for gif.js compatibility
+      // Clear the canvas before drawing new frame
+      this.regularCtx!.clearRect(0, 0, this.regularCanvas!.width, this.regularCanvas!.height);
+      this.regularCtx!.drawImage(this.canvas!, 0, 0);
+
+      this.gifInstance!.addFrame(this.regularCtx!, {
+        copy: true,
+        delay: frameDelay,
+        dispose: 2, // Restore to background
+      });
 
       // Report progress for adding frames
       if (i % Math.ceil(frames.length / 20) === 0) {
@@ -310,5 +328,7 @@ export class GifJsEncoder extends AbstractEncoder {
     this.gifInstance = null;
     this.canvas = null;
     this.ctx = null;
+    this.regularCanvas = null;
+    this.regularCtx = null;
   }
 }
