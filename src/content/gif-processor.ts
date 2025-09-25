@@ -94,6 +94,12 @@ export class ContentScriptGifProcessor {
   private messageIndex = 0;
   private progressCallback: ((stageInfo: StageProgressInfo) => void) | undefined = undefined;
 
+  // Reusable canvases to avoid creating new ones for every frame
+  private mainCanvas: HTMLCanvasElement | null = null;
+  private mainCtx: CanvasRenderingContext2D | null = null;
+  private recoveryCanvas: HTMLCanvasElement | null = null;
+  private recoveryCtx: CanvasRenderingContext2D | null = null;
+
   // Stage definitions
   private stages = {
     CAPTURING: {
@@ -143,6 +149,40 @@ export class ContentScriptGifProcessor {
   };
 
   private constructor() {}
+
+  /**
+   * Initialize or resize reusable canvases to match the required dimensions
+   */
+  private initializeCanvases(width: number, height: number): void {
+    // Initialize main canvas
+    if (!this.mainCanvas) {
+      this.mainCanvas = document.createElement('canvas');
+      this.mainCtx = this.mainCanvas.getContext('2d');
+      if (!this.mainCtx) {
+        throw createError('gif', 'Failed to create main canvas context');
+      }
+    }
+
+    // Initialize recovery canvas
+    if (!this.recoveryCanvas) {
+      this.recoveryCanvas = document.createElement('canvas');
+      this.recoveryCtx = this.recoveryCanvas.getContext('2d');
+      if (!this.recoveryCtx) {
+        throw createError('gif', 'Failed to create recovery canvas context');
+      }
+    }
+
+    // Resize canvases if dimensions changed
+    if (this.mainCanvas.width !== width || this.mainCanvas.height !== height) {
+      this.mainCanvas.width = width;
+      this.mainCanvas.height = height;
+    }
+
+    if (this.recoveryCanvas.width !== width || this.recoveryCanvas.height !== height) {
+      this.recoveryCanvas.width = width;
+      this.recoveryCanvas.height = height;
+    }
+  }
 
   public static getInstance(): ContentScriptGifProcessor {
     if (!ContentScriptGifProcessor.instance) {
@@ -362,6 +402,9 @@ export class ContentScriptGifProcessor {
       targetAspectRatio,
     });
 
+    // Initialize reusable canvases with calculated dimensions
+    this.initializeCanvases(actualWidth, actualHeight);
+
     const frames: HTMLCanvasElement[] = [];
 
     // Store original state
@@ -437,24 +480,17 @@ export class ContentScriptGifProcessor {
         `[ContentScriptGifProcessor] Seek completed for frame ${i + 1} in ${seekDuration.toFixed(0)}ms (target=${captureTime.toFixed(2)}s, actual=${actualTime.toFixed(2)}s)`
       );
 
-      // Create canvas for this frame
-      let canvas = document.createElement('canvas');
-      canvas.width = actualWidth;
-      canvas.height = actualHeight;
-      const ctx = canvas.getContext('2d');
+      // Clear and reuse main canvas for this frame
+      this.mainCtx!.clearRect(0, 0, actualWidth, actualHeight);
 
-      if (!ctx) {
-        throw createError('gif', 'Failed to create canvas context');
-      }
-
-      // Draw video frame to canvas
-      ctx.drawImage(videoElement, 0, 0, actualWidth, actualHeight);
+      // Draw video frame to reusable canvas
+      this.mainCtx!.drawImage(videoElement, 0, 0, actualWidth, actualHeight);
 
       // Check for duplicate frames
       let isDuplicate = false;
       if (frames.length > 0) {
         const lastFrame = frames[frames.length - 1];
-        if (areCanvasFramesSimilar(canvas, lastFrame)) {
+        if (areCanvasFramesSimilar(this.mainCanvas!, lastFrame)) {
           isDuplicate = true;
           logger.warn(
             `[ContentScriptGifProcessor] ⚠️ DUPLICATE FRAME at ${i + 1}/${frameCount}: video stuck at ${videoElement.currentTime.toFixed(3)}s (wanted ${captureTime.toFixed(3)}s, prev was ${previousTime.toFixed(3)}s)`
@@ -468,33 +504,40 @@ export class ContentScriptGifProcessor {
             videoElement.currentTime = captureTime + 0.001;
             await new Promise((resolve) => setTimeout(resolve, 200));
 
-            // Create a new canvas for the recovery attempt
-            const recoveryCanvas = document.createElement('canvas');
-            recoveryCanvas.width = actualWidth;
-            recoveryCanvas.height = actualHeight;
-            const recoveryCtx = recoveryCanvas.getContext('2d');
+            // Clear and reuse recovery canvas for the recovery attempt
+            this.recoveryCtx!.clearRect(0, 0, actualWidth, actualHeight);
+            this.recoveryCtx!.drawImage(videoElement, 0, 0, actualWidth, actualHeight);
 
-            if (recoveryCtx) {
-              recoveryCtx.drawImage(videoElement, 0, 0, actualWidth, actualHeight);
-
-              // Check if recovery worked
-              if (!areCanvasFramesSimilar(recoveryCanvas, lastFrame)) {
-                logger.info(
-                  `[ContentScriptGifProcessor] Recovery successful! Now at ${videoElement.currentTime.toFixed(3)}s`
-                );
-                canvas = recoveryCanvas; // Use the recovery canvas
-                isDuplicate = false;
-              } else {
-                logger.warn(
-                  `[ContentScriptGifProcessor] Recovery failed, still stuck at ${videoElement.currentTime.toFixed(3)}s`
-                );
-              }
+            // Check if recovery worked
+            if (!areCanvasFramesSimilar(this.recoveryCanvas!, lastFrame)) {
+              logger.info(
+                `[ContentScriptGifProcessor] Recovery successful! Now at ${videoElement.currentTime.toFixed(3)}s`
+              );
+              // Copy recovery canvas content to main canvas
+              this.mainCtx!.clearRect(0, 0, actualWidth, actualHeight);
+              this.mainCtx!.drawImage(this.recoveryCanvas!, 0, 0);
+              isDuplicate = false;
+            } else {
+              logger.warn(
+                `[ContentScriptGifProcessor] Recovery failed, still stuck at ${videoElement.currentTime.toFixed(3)}s`
+              );
             }
           }
         }
       }
 
-      frames.push(canvas);
+      // Create a clone of the main canvas for the frames array
+      // since we reuse the same canvas for all frames
+      const frameCanvas = document.createElement('canvas');
+      frameCanvas.width = actualWidth;
+      frameCanvas.height = actualHeight;
+      const frameCtx = frameCanvas.getContext('2d');
+      if (!frameCtx) {
+        throw createError('gif', 'Failed to create frame canvas context');
+      }
+      frameCtx.drawImage(this.mainCanvas!, 0, 0);
+
+      frames.push(frameCanvas);
 
       // Export frame data for verification (in dev mode)
       if (typeof window !== 'undefined') {
@@ -513,7 +556,7 @@ export class ContentScriptGifProcessor {
           win.__DEBUG_CAPTURED_FRAMES = [];
         }
         // Convert canvas to data URL for debugging
-        const frameDataUrl = canvas.toDataURL('image/png');
+        const frameDataUrl = frameCanvas.toDataURL('image/png');
         win.__DEBUG_CAPTURED_FRAMES.push({
           frameNumber: i + 1,
           videoTime: videoElement.currentTime,

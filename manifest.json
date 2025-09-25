@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "YTgify",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Create GIFs directly from YouTube videos with an intuitive visual interface",
   "author": "Jeremy Watt",
   "homepage_url": "https://github.com/neonwatty/ytgify",
