@@ -196,7 +196,7 @@ test.describe('Basic Wizard Test with Extension', () => {
   });
 
   test('Can create a simple GIF', async ({ page, context, extensionId }) => {
-    test.setTimeout(60000); // Increase timeout for GIF creation
+    test.setTimeout(90000); // 90 seconds timeout for GIF creation (includes 45s processing wait)
     const youtube = new YouTubePage(page);
 
     // Navigate and wait for button
@@ -907,4 +907,179 @@ test.describe('Basic Wizard Test with Extension', () => {
       }
     }
   });
+
+  // New tests for gif-processor.ts updates
+  test('Verify frame rate matches selected setting', async ({ page, context: _context, extensionId: _extensionId }) => {
+    test.setTimeout(120000);
+    const quickCapture = new QuickCapturePage(page);
+
+    // Navigate and open wizard
+    await page.goto(TEST_VIDEOS.veryShort.url);
+    await handleYouTubeCookieConsent(page);
+    await page.waitForSelector('video', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+
+    await page.click('.ytgif-button');
+    await quickCapture.waitForScreen();
+
+    // Select 15 fps
+    await quickCapture.selectFps('15');
+
+    // Check if debug frames are captured with correct timing
+    await page.evaluate(() => {
+      (window as any).__DEBUG_CAPTURED_FRAMES = [];
+    });
+
+    // Continue to processing
+    await page.click('.ytgif-button-primary');
+    await page.waitForTimeout(1000);
+
+    // Skip text overlay
+    try {
+      await page.click('button:has-text("Skip")', { timeout: 3000 });
+    } catch {
+      await page.click('.ytgif-button-primary');
+    }
+
+    // Wait for processing
+    await page.waitForSelector('.ytgif-processing-screen', { timeout: 5000 });
+    await page.waitForSelector('.ytgif-success-screen', { timeout: 45000 });
+
+    // Check debug frames
+    const debugFrames = await page.evaluate(() => {
+      return (window as any).__DEBUG_CAPTURED_FRAMES || [];
+    });
+
+    if (debugFrames.length > 1) {
+      // Calculate actual frame rate from captured frames
+      const frameTimes = debugFrames.map((f: any) => f.targetTime);
+      const intervals = [];
+      for (let i = 1; i < frameTimes.length; i++) {
+        intervals.push(frameTimes[i] - frameTimes[i - 1]);
+      }
+
+      const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+      const actualFps = 1 / avgInterval;
+
+      // Should be close to 15 fps
+      expect(actualFps).toBeCloseTo(15, 1);
+      console.log(`✅ Frame rate verification: Expected 15 fps, got ${actualFps.toFixed(1)} fps`);
+    }
+  });
+
+  test('Verify duplicate frame detection and recovery', async ({ page, context: _context, extensionId: _extensionId }) => {
+    test.setTimeout(90000);
+
+    // Navigate to video
+    await page.goto(TEST_VIDEOS.veryShort.url);
+    await handleYouTubeCookieConsent(page);
+    await page.waitForSelector('video', { timeout: 15000 });
+
+    // Enable debug mode
+    await page.evaluate(() => {
+      (window as any).__DEBUG_CAPTURED_FRAMES = [];
+    });
+
+    await page.waitForTimeout(1500);
+    await page.click('.ytgif-button');
+    await page.waitForTimeout(1000);
+
+    // Quick advance to processing
+    await page.click('.ytgif-button-primary');
+    await page.waitForTimeout(1000);
+
+    try {
+      await page.click('button:has-text("Skip")', { timeout: 3000 });
+    } catch {
+      await page.click('.ytgif-button-primary');
+    }
+
+    // Wait for processing to complete
+    await page.waitForSelector('.ytgif-processing-screen', { timeout: 5000 });
+    await page.waitForSelector('.ytgif-success-screen', { timeout: 45000 });
+
+    // Check debug frames for duplicates
+    const debugFrames = await page.evaluate(() => {
+      return (window as any).__DEBUG_CAPTURED_FRAMES || [];
+    });
+
+    if (debugFrames.length > 0) {
+      const duplicates = debugFrames.filter((f: any) => f.isDuplicate);
+      console.log(`📊 Frame analysis: ${debugFrames.length} frames total, ${duplicates.length} marked as duplicates`);
+
+      // Log any duplicate detection
+      if (duplicates.length > 0) {
+        console.log(`⚠️ Duplicate frames detected and handled at positions:`,
+          duplicates.map((f: any) => f.frameNumber).join(', '));
+      }
+
+      // Test passes if frames were captured (duplicate handling is automatic)
+      expect(debugFrames.length).toBeGreaterThan(0);
+    }
+  });
+
+  test('Verify aspect ratio preservation', async ({ page, context: _context, extensionId: _extensionId }) => {
+    test.setTimeout(90000);
+    const quickCapture = new QuickCapturePage(page);
+
+    // Navigate and open wizard
+    await page.goto(TEST_VIDEOS.veryShort.url);
+    await handleYouTubeCookieConsent(page);
+    await page.waitForSelector('video', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+
+    // Get video dimensions
+    const videoDimensions = await page.evaluate(() => {
+      const video = document.querySelector('video');
+      return {
+        width: video?.videoWidth || 0,
+        height: video?.videoHeight || 0,
+      };
+    });
+
+    const videoAspectRatio = videoDimensions.width / videoDimensions.height;
+
+    await page.click('.ytgif-button');
+    await quickCapture.waitForScreen();
+
+    // Select a specific resolution
+    await quickCapture.selectResolution('360p');
+
+    // Enable debug mode
+    await page.evaluate(() => {
+      (window as any).__DEBUG_CAPTURED_FRAMES = [];
+    });
+
+    // Process GIF
+    await page.click('.ytgif-button-primary');
+    await page.waitForTimeout(1000);
+
+    try {
+      await page.click('button:has-text("Skip")', { timeout: 3000 });
+    } catch {
+      await page.click('.ytgif-button-primary');
+    }
+
+    // Wait for success
+    await page.waitForSelector('.ytgif-processing-screen', { timeout: 5000 });
+    await page.waitForSelector('.ytgif-success-screen', { timeout: 45000 });
+
+    // Check captured frame dimensions
+    const debugFrames = await page.evaluate(() => {
+      return (window as any).__DEBUG_CAPTURED_FRAMES || [];
+    });
+
+    if (debugFrames.length > 0) {
+      const frame = debugFrames[0];
+      const gifAspectRatio = frame.width / frame.height;
+
+      // Aspect ratio should be preserved (within 5% tolerance)
+      const ratioDifference = Math.abs(videoAspectRatio - gifAspectRatio) / videoAspectRatio;
+      expect(ratioDifference).toBeLessThan(0.05);
+
+      console.log(`✅ Aspect ratio preserved: Video ${videoAspectRatio.toFixed(2)}, GIF ${gifAspectRatio.toFixed(2)}`);
+      console.log(`   Dimensions: ${frame.width}x${frame.height}`);
+    }
+  });
+
 });

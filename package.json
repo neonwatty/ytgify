@@ -17,10 +17,8 @@
     "test:e2e": "playwright test --config tests/playwright.config.ts",
     "test:e2e:debug": "playwright test --config tests/playwright.config.ts --debug",
     "test:e2e:headed": "playwright test --config tests/playwright.config.ts --headed",
-    "test:e2e:ui": "playwright test --config tests/playwright.config.ts --ui",
-    "test:e2e:fast": "playwright test --config tests/playwright.config.ts tests/e2e/wizard-basic.spec.ts --workers=3 --fully-parallel",
+    "test:e2e:fast": "HEADLESS=true playwright test --config tests/playwright.config.ts tests/e2e/wizard-basic.spec.ts --workers=3 --fully-parallel",
     "test:all": "npm run test && npm run test:e2e",
-    "test:benchmarks": "jest --config tests/jest.config.cjs src/lib/encoders/encoder-benchmarks.test.ts --timeout=120000 --verbose",
     "validate:pre-push": "npm run lint && npm run build && npm run typecheck && npm test && npm run test:e2e:fast",
     "prepare": "husky"
   },
@@ -65,7 +63,6 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "gifenc": "^1.0.3",
-    "puppeteer": "^24.22.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "tailwind-merge": "^2.2.0"

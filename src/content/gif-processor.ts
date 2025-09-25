@@ -4,6 +4,57 @@ import { createError } from '@/lib/errors';
 import { encodeFrames, FrameData as EncoderFrameData, EncodingOptions } from '@/lib/encoders';
 import { TextOverlay } from '@/types';
 
+/**
+ * Compare two canvas frames to detect if they are similar/duplicate
+ * @param canvas1 First canvas to compare
+ * @param canvas2 Second canvas to compare
+ * @param threshold Similarity threshold (0-1), default 0.98 means 98% similar pixels
+ * @returns true if frames are considered duplicates
+ */
+function areCanvasFramesSimilar(
+  canvas1: HTMLCanvasElement,
+  canvas2: HTMLCanvasElement,
+  threshold = 0.98
+): boolean {
+  if (canvas1.width !== canvas2.width || canvas1.height !== canvas2.height) {
+    return false;
+  }
+
+  const ctx1 = canvas1.getContext('2d');
+  const ctx2 = canvas2.getContext('2d');
+
+  if (!ctx1 || !ctx2) {
+    return false;
+  }
+
+  const imageData1 = ctx1.getImageData(0, 0, canvas1.width, canvas1.height);
+  const imageData2 = ctx2.getImageData(0, 0, canvas2.width, canvas2.height);
+
+  const data1 = imageData1.data;
+  const data2 = imageData2.data;
+  const totalPixels = data1.length / 4;
+  const sampleSize = Math.min(1000, totalPixels);
+  const step = Math.max(4, Math.floor(data1.length / sampleSize / 4) * 4);
+
+  let matches = 0;
+  let samples = 0;
+
+  for (let i = 0; i < data1.length && samples < sampleSize; i += step) {
+    // Compare RGB values (skip alpha channel)
+    if (data1[i] === data2[i] && data1[i + 1] === data2[i + 1] && data1[i + 2] === data2[i + 2]) {
+      matches++;
+    }
+    samples++;
+  }
+
+  if (samples === 0) {
+    return false;
+  }
+
+  const similarity = matches / samples;
+  return similarity > threshold;
+}
+
 interface GifProcessingOptions {
   startTime: number;
   endTime: number;
@@ -242,7 +293,12 @@ export class ContentScriptGifProcessor {
     options: GifProcessingOptions
   ): Promise<HTMLCanvasElement[]> {
     const { startTime, endTime, frameRate = 5, width = 480, height = 270 } = options;
-    console.log('[gif-processor] captureFrames - frameRate from options:', options.frameRate, 'using:', frameRate);
+    console.log(
+      '[gif-processor] captureFrames - frameRate from options:',
+      options.frameRate,
+      'using:',
+      frameRate
+    );
     const duration = endTime - startTime;
     // Calculate proper frame count based on duration and frame rate
     const rawFrameCount = Math.ceil(duration * frameRate);
@@ -318,14 +374,71 @@ export class ContentScriptGifProcessor {
     for (let i = 0; i < frameCount; i++) {
       const captureTime = startTime + i * frameInterval;
 
+      logger.debug(
+        `[ContentScriptGifProcessor] Seeking to ${captureTime.toFixed(2)}s for frame ${i + 1}`
+      );
+
       // Seek to capture time
+      const seekStartTime = performance.now();
+      const previousTime = videoElement.currentTime;
       videoElement.currentTime = captureTime;
 
-      // Wait for seek to complete
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Wait for seek to complete using a combination of methods
+      // First, wait a bit for the seek to initiate
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      // Then poll to check if we're close to the target time
+      let attempts = 0;
+      const maxAttempts = 20; // 20 * 25ms = 500ms max wait
+      let lastCheckedTime = videoElement.currentTime;
+
+      // Keep polling until either:
+      // 1. We're close to the target time, OR
+      // 2. The video has stopped moving (stuck), OR
+      // 3. We've hit the max attempts
+      while (attempts < maxAttempts) {
+        const currentVideoTime = videoElement.currentTime;
+        const distanceToTarget = Math.abs(currentVideoTime - captureTime);
+
+        // If we're close enough to target, we're done
+        if (distanceToTarget < 0.05) {
+          break;
+        }
+
+        // If the video hasn't moved in the last few attempts, it might be stuck
+        if (attempts > 5 && Math.abs(currentVideoTime - lastCheckedTime) < 0.001) {
+          logger.debug(
+            `[ContentScriptGifProcessor] Video appears stuck at ${currentVideoTime.toFixed(3)}s after ${attempts} attempts`
+          );
+          break;
+        }
+
+        lastCheckedTime = currentVideoTime;
+        await new Promise((resolve) => setTimeout(resolve, 25));
+        attempts++;
+      }
+
+      // Additional wait to ensure frame is decoded and rendered
+      // This needs to be longer for seeks to non-keyframe positions
+      const seekDistance = Math.abs(captureTime - previousTime);
+      const additionalDelay = seekDistance > 2 ? 150 : 100; // Longer delay for longer seeks
+      await new Promise((resolve) => setTimeout(resolve, additionalDelay));
+
+      const seekDuration = performance.now() - seekStartTime;
+      const actualTime = videoElement.currentTime;
+
+      if (Math.abs(actualTime - captureTime) > 0.1) {
+        logger.warn(
+          `[ContentScriptGifProcessor] Seek inaccuracy for frame ${i + 1}: target=${captureTime.toFixed(2)}s, actual=${actualTime.toFixed(2)}s`
+        );
+      }
+
+      logger.debug(
+        `[ContentScriptGifProcessor] Seek completed for frame ${i + 1} in ${seekDuration.toFixed(0)}ms (target=${captureTime.toFixed(2)}s, actual=${actualTime.toFixed(2)}s)`
+      );
 
       // Create canvas for this frame
-      const canvas = document.createElement('canvas');
+      let canvas = document.createElement('canvas');
       canvas.width = actualWidth;
       canvas.height = actualHeight;
       const ctx = canvas.getContext('2d');
@@ -336,6 +449,51 @@ export class ContentScriptGifProcessor {
 
       // Draw video frame to canvas
       ctx.drawImage(videoElement, 0, 0, actualWidth, actualHeight);
+
+      // Check for duplicate frames
+      let isDuplicate = false;
+      if (frames.length > 0) {
+        const lastFrame = frames[frames.length - 1];
+        if (areCanvasFramesSimilar(canvas, lastFrame)) {
+          isDuplicate = true;
+          logger.warn(
+            `[ContentScriptGifProcessor] ⚠️ DUPLICATE FRAME at ${i + 1}/${frameCount}: video stuck at ${videoElement.currentTime.toFixed(3)}s (wanted ${captureTime.toFixed(3)}s, prev was ${previousTime.toFixed(3)}s)`
+          );
+
+          // Try one more aggressive seek attempt if we have a duplicate
+          if (Math.abs(videoElement.currentTime - captureTime) > 0.01) {
+            logger.info(`[ContentScriptGifProcessor] Attempting recovery seek for frame ${i + 1}`);
+
+            // Try nudging forward slightly
+            videoElement.currentTime = captureTime + 0.001;
+            await new Promise((resolve) => setTimeout(resolve, 200));
+
+            // Create a new canvas for the recovery attempt
+            const recoveryCanvas = document.createElement('canvas');
+            recoveryCanvas.width = actualWidth;
+            recoveryCanvas.height = actualHeight;
+            const recoveryCtx = recoveryCanvas.getContext('2d');
+
+            if (recoveryCtx) {
+              recoveryCtx.drawImage(videoElement, 0, 0, actualWidth, actualHeight);
+
+              // Check if recovery worked
+              if (!areCanvasFramesSimilar(recoveryCanvas, lastFrame)) {
+                logger.info(
+                  `[ContentScriptGifProcessor] Recovery successful! Now at ${videoElement.currentTime.toFixed(3)}s`
+                );
+                canvas = recoveryCanvas; // Use the recovery canvas
+                isDuplicate = false;
+              } else {
+                logger.warn(
+                  `[ContentScriptGifProcessor] Recovery failed, still stuck at ${videoElement.currentTime.toFixed(3)}s`
+                );
+              }
+            }
+          }
+        }
+      }
+
       frames.push(canvas);
 
       // Export frame data for verification (in dev mode)
@@ -344,9 +502,11 @@ export class ContentScriptGifProcessor {
           __DEBUG_CAPTURED_FRAMES?: Array<{
             frameNumber: number;
             videoTime: number;
+            targetTime: number;
             width: number;
             height: number;
             dataUrl: string;
+            isDuplicate: boolean;
           }>;
         };
         if (!win.__DEBUG_CAPTURED_FRAMES) {
@@ -356,14 +516,18 @@ export class ContentScriptGifProcessor {
         const frameDataUrl = canvas.toDataURL('image/png');
         win.__DEBUG_CAPTURED_FRAMES.push({
           frameNumber: i + 1,
-          videoTime: captureTime,
+          videoTime: videoElement.currentTime,
+          targetTime: captureTime,
           width: actualWidth,
           height: actualHeight,
           dataUrl: frameDataUrl,
+          isDuplicate: isDuplicate,
         });
       }
 
-      logger.debug(`[ContentScriptGifProcessor] Captured frame ${i + 1}/${frameCount}`);
+      logger.debug(
+        `[ContentScriptGifProcessor] Captured frame ${i + 1}/${frameCount} at ${videoElement.currentTime.toFixed(2)}s (target: ${captureTime.toFixed(2)}s)`
+      );
     }
 
     // Restore video state
@@ -383,7 +547,12 @@ export class ContentScriptGifProcessor {
     options: GifProcessingOptions
   ): Promise<Blob> {
     const { frameRate = 10, quality = 'medium' } = options;
-    console.log('[gif-processor] encodeGif - frameRate from options:', options.frameRate, 'using:', frameRate);
+    console.log(
+      '[gif-processor] encodeGif - frameRate from options:',
+      options.frameRate,
+      'using:',
+      frameRate
+    );
 
     try {
       // Convert canvas frames to encoder format
@@ -436,7 +605,7 @@ export class ContentScriptGifProcessor {
         return {
           imageData: imageData,
           timestamp: index * (1000 / frameRate),
-          delay: Math.round(1000 / frameRate)
+          delay: Math.round(1000 / frameRate),
         };
       });
 
@@ -446,22 +615,18 @@ export class ContentScriptGifProcessor {
         height: frames[0].height,
         quality: quality,
         frameRate: frameRate,
-        loop: true
+        loop: true,
       };
 
       // Encode frames using the main encoder system
-      const result = await encodeFrames(
-        frameData,
-        encodingOptions,
-        {
-          encoder: 'auto', // Let the system choose the best encoder
-          format: 'gif'
-        }
-      );
+      const result = await encodeFrames(frameData, encodingOptions, {
+        encoder: 'auto', // Let the system choose the best encoder
+        format: 'gif',
+      });
 
       logger.info('[ContentScriptGifProcessor] GIF encoding finished', {
         size: result.blob.size,
-        metadata: result.metadata
+        metadata: result.metadata,
       });
 
       return result.blob;
