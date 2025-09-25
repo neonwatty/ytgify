@@ -53,7 +53,7 @@ class FrameExtractor {
 
   constructor() {
     this.canvas = document.createElement('canvas');
-    const context = this.canvas.getContext('2d');
+    const context = this.canvas.getContext('2d', { willReadFrequently: true });
     if (!context) {
       throw new Error('Failed to get 2D rendering context');
     }
@@ -64,9 +64,11 @@ class FrameExtractor {
    * Check if WebCodecs API is supported
    */
   static isSupported(): boolean {
-    return typeof VideoDecoder !== 'undefined' && 
-           typeof VideoEncoder !== 'undefined' &&
-           typeof VideoFrame !== 'undefined';
+    return (
+      typeof VideoDecoder !== 'undefined' &&
+      typeof VideoEncoder !== 'undefined' &&
+      typeof VideoFrame !== 'undefined'
+    );
   }
 
   /**
@@ -90,7 +92,7 @@ class FrameExtractor {
     this.startTime = performance.now();
     this.extractedFrames = [];
     this.abortController = new AbortController();
-    
+
     // Start overall extraction monitoring
     const sessionId = `extraction-${Date.now()}`;
     metricsCollector.startOperation(sessionId);
@@ -98,32 +100,32 @@ class FrameExtractor {
       config: {
         duration: config.endTime - config.startTime,
         frameRate: config.frameRate,
-        quality: config.quality
-      }
+        quality: config.quality,
+      },
     });
 
     try {
       const result = await this.performExtraction(videoElement, config);
-      
+
       // Record successful completion
       const totalTime = metricsCollector.endOperation(sessionId, 'frame-extraction', {
         framesExtracted: result.frames.length,
-        dimensions: `${result.metadata.width}x${result.metadata.height}`
+        dimensions: `${result.metadata.width}x${result.metadata.height}`,
       });
-      
+
       metricsCollector.recordUserAction('frame-extraction-completed', {
         totalFrames: result.frames.length,
         totalTime,
-        averageTimePerFrame: totalTime / result.frames.length
+        averageTimePerFrame: totalTime / result.frames.length,
       });
-      
+
       return result;
     } catch (error) {
       // Record extraction failure
       metricsCollector.recordError({
         type: 'frame-extraction-error',
         message: error instanceof Error ? error.message : 'Unknown error',
-        context: { config }
+        context: { config },
       });
       throw error;
     } finally {
@@ -147,7 +149,7 @@ class FrameExtractor {
     const duration = config.endTime - config.startTime;
     const targetFrameCount = Math.ceil(duration * config.frameRate);
     const frameInterval = 1 / config.frameRate;
-    
+
     // Record memory usage before extraction
     await performanceTracker.recordMemoryUsage();
 
@@ -157,14 +159,14 @@ class FrameExtractor {
       videoElement.videoHeight,
       config
     );
-    
+
     this.canvas.width = dimensions.width;
     this.canvas.height = dimensions.height;
 
     // Extract frames by seeking through the video
     const timestamps: number[] = [];
     for (let i = 0; i < targetFrameCount; i++) {
-      const timestamp = config.startTime + (i * frameInterval);
+      const timestamp = config.startTime + i * frameInterval;
       if (timestamp <= config.endTime) {
         timestamps.push(timestamp);
       }
@@ -187,7 +189,7 @@ class FrameExtractor {
           framesExtracted: i + 1,
           totalFrames: timestamps.length,
           currentTimestamp: timestamp,
-          elapsedTime
+          elapsedTime,
         });
       }
     }
@@ -199,8 +201,8 @@ class FrameExtractor {
         actualFrameRate: this.extractedFrames.length / duration,
         duration,
         width: dimensions.width,
-        height: dimensions.height
-      }
+        height: dimensions.height,
+      },
     };
   }
 
@@ -211,13 +213,13 @@ class FrameExtractor {
   ): Promise<ExtractedFrame> {
     const frameStartTime = performance.now();
     const operationId = `frame-extraction-${frameIndex}`;
-    
+
     // Start monitoring this frame extraction
     performanceTracker.startTimer(operationId);
 
     // Seek to the timestamp
     videoElement.currentTime = timestamp;
-    
+
     // Wait for seek to complete
     await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
@@ -248,10 +250,12 @@ class FrameExtractor {
     // Draw frame to canvas
     this.ctx.drawImage(
       videoElement,
-      0, 0,
+      0,
+      0,
       videoElement.videoWidth,
       videoElement.videoHeight,
-      0, 0,
+      0,
+      0,
       this.canvas.width,
       this.canvas.height
     );
@@ -260,17 +264,17 @@ class FrameExtractor {
     const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
 
     const extractionTime = performance.now() - frameStartTime;
-    
+
     // End monitoring and record metrics
     performanceTracker.endTimer(operationId, 'frame-extraction', {
       frameIndex,
       timestamp,
-      dimensions: `${this.canvas.width}x${this.canvas.height}`
+      dimensions: `${this.canvas.width}x${this.canvas.height}`,
     });
-    
+
     // Record frame extraction metrics
     metricsCollector.trackFrameExtraction(frameIndex, extractionTime, true);
-    
+
     // Log performance warning if extraction takes too long
     if (extractionTime > 100) {
       console.warn(`Frame extraction took ${extractionTime.toFixed(2)}ms (target: <100ms)`);
@@ -278,14 +282,14 @@ class FrameExtractor {
       metricsCollector.recordError({
         type: 'performance-warning',
         message: `Slow frame extraction: ${extractionTime.toFixed(2)}ms`,
-        context: { frameIndex, timestamp, target: 100 }
+        context: { frameIndex, timestamp, target: 100 },
       });
     }
 
     return {
       imageData,
       timestamp,
-      frameIndex
+      frameIndex,
     };
   }
 
@@ -295,7 +299,7 @@ class FrameExtractor {
     config: FrameExtractionConfig
   ): { width: number; height: number } {
     const aspectRatio = sourceWidth / sourceHeight;
-    
+
     let targetWidth = sourceWidth;
     let targetHeight = sourceHeight;
 
@@ -339,7 +343,7 @@ class FrameExtractor {
     this.isExtracting = false;
     this.progressCallback = undefined;
     this.abortController = null;
-    
+
     if (this.decoder) {
       this.decoder.close();
       this.decoder = null;
@@ -361,7 +365,7 @@ class FrameExtractor {
       startTime: selection.startTime,
       endTime: selection.endTime,
       frameRate: settings.frameRate,
-      quality: settings.quality
+      quality: settings.quality,
     };
 
     // Only set max dimensions if not original resolution
@@ -383,16 +387,15 @@ class FrameExtractor {
   ): number {
     const duration = config.endTime - config.startTime;
     const frameCount = Math.ceil(duration * config.frameRate);
-    
-    const qualityScale = config.quality === 'low' ? 0.5 : 
-                        config.quality === 'medium' ? 0.75 : 1.0;
-    
+
+    const qualityScale = config.quality === 'low' ? 0.5 : config.quality === 'medium' ? 0.75 : 1.0;
+
     const frameWidth = Math.floor(videoWidth * qualityScale);
     const frameHeight = Math.floor(videoHeight * qualityScale);
-    
+
     // ImageData uses 4 bytes per pixel (RGBA)
     const bytesPerFrame = frameWidth * frameHeight * 4;
-    
+
     return frameCount * bytesPerFrame;
   }
 }

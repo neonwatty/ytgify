@@ -37,7 +37,7 @@ export const RESOLUTION_PRESETS: ResolutionPreset[] = [
     label: '480p HD',
     description: 'Best quality',
     qualityScore: 0.6,
-    fileSizeMultiplier: 1.3
+    fileSizeMultiplier: 1.3,
   },
   {
     name: '360p',
@@ -45,7 +45,7 @@ export const RESOLUTION_PRESETS: ResolutionPreset[] = [
     label: '360p Compact',
     description: 'Ideal for email',
     qualityScore: 0.4,
-    fileSizeMultiplier: 1.0
+    fileSizeMultiplier: 1.0,
   },
   {
     name: '240p',
@@ -53,7 +53,7 @@ export const RESOLUTION_PRESETS: ResolutionPreset[] = [
     label: '240p Mini',
     description: 'Quick to share',
     qualityScore: 0.3,
-    fileSizeMultiplier: 0.5
+    fileSizeMultiplier: 0.5,
   },
   {
     name: '144p',
@@ -61,13 +61,13 @@ export const RESOLUTION_PRESETS: ResolutionPreset[] = [
     label: '144p Nano',
     description: 'Perfect for chat',
     qualityScore: 0.2,
-    fileSizeMultiplier: 0.3
-  }
+    fileSizeMultiplier: 0.3,
+  },
 ];
 
 export class ResolutionScaler {
   private aspectRatioCalculator: AspectRatioCalculator;
-  
+
   constructor() {
     this.aspectRatioCalculator = new AspectRatioCalculator();
   }
@@ -80,14 +80,11 @@ export class ResolutionScaler {
     originalHeight: number,
     preset: ResolutionPreset | string
   ): ScaledDimensions {
-    const resolutionPreset = typeof preset === 'string' 
-      ? this.getPresetByName(preset)
-      : preset;
+    const resolutionPreset = typeof preset === 'string' ? this.getPresetByName(preset) : preset;
 
     if (!resolutionPreset) {
       throw new Error(`Invalid resolution preset: ${preset}`);
     }
-
 
     // Don't upscale - if original is smaller than target, keep original
     if (originalHeight <= resolutionPreset.targetHeight) {
@@ -97,7 +94,7 @@ export class ResolutionScaler {
         scaleFactor: 1.0,
         originalWidth,
         originalHeight,
-        aspectRatio: originalWidth / originalHeight
+        aspectRatio: originalWidth / originalHeight,
       };
     }
 
@@ -117,7 +114,7 @@ export class ResolutionScaler {
       scaleFactor,
       originalWidth,
       originalHeight,
-      aspectRatio
+      aspectRatio,
     };
   }
 
@@ -125,7 +122,7 @@ export class ResolutionScaler {
    * Get resolution preset by name
    */
   getPresetByName(name: string): ResolutionPreset | undefined {
-    return RESOLUTION_PRESETS.find(preset => preset.name === name);
+    return RESOLUTION_PRESETS.find((preset) => preset.name === name);
   }
 
   /**
@@ -138,13 +135,12 @@ export class ResolutionScaler {
     baseFileSizeMB: number
   ): ResolutionPreset {
     const fileSizeRatio = targetFileSizeMB / baseFileSizeMB;
-    
+
     // Find the preset with the closest file size multiplier
     let bestPreset = RESOLUTION_PRESETS[RESOLUTION_PRESETS.length - 1]; // Default to lowest
     let minDiff = Infinity;
 
     for (const preset of RESOLUTION_PRESETS) {
-      
       const diff = Math.abs(preset.fileSizeMultiplier - fileSizeRatio);
       if (diff < minDiff) {
         minDiff = diff;
@@ -167,21 +163,23 @@ export class ResolutionScaler {
       preserveDetails: true,
       algorithm: 'bicubic',
       sharpening: 0.2,
-      ...options
+      ...options,
     };
 
     // Create target canvas
     const isOffscreen = sourceCanvas instanceof OffscreenCanvas;
-    const targetCanvas = isOffscreen 
+    const targetCanvas = isOffscreen
       ? new OffscreenCanvas(targetDimensions.width, targetDimensions.height)
       : document.createElement('canvas');
-    
+
     if (!isOffscreen) {
       (targetCanvas as HTMLCanvasElement).width = targetDimensions.width;
       (targetCanvas as HTMLCanvasElement).height = targetDimensions.height;
     }
 
-    const ctx = targetCanvas.getContext('2d') as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+    const ctx = targetCanvas.getContext('2d') as
+      | CanvasRenderingContext2D
+      | OffscreenCanvasRenderingContext2D;
     if (!ctx) throw new Error('Failed to get canvas context');
 
     // Set quality rendering hints
@@ -196,8 +194,14 @@ export class ResolutionScaler {
       // Direct scaling for minor size changes
       ctx.drawImage(
         sourceCanvas,
-        0, 0, sourceCanvas.width, sourceCanvas.height,
-        0, 0, targetDimensions.width, targetDimensions.height
+        0,
+        0,
+        sourceCanvas.width,
+        sourceCanvas.height,
+        0,
+        0,
+        targetDimensions.width,
+        targetDimensions.height
       );
     }
 
@@ -220,12 +224,20 @@ export class ResolutionScaler {
     const steps = Math.ceil(Math.log2(1 / dimensions.scaleFactor));
     if (steps <= 1) {
       // Not enough downscaling to benefit from multi-step
-      const ctx = target.getContext('2d') as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+      const ctx = target.getContext('2d') as
+        | CanvasRenderingContext2D
+        | OffscreenCanvasRenderingContext2D;
       if (ctx) {
         ctx.drawImage(
           source,
-          0, 0, source.width, source.height,
-          0, 0, dimensions.width, dimensions.height
+          0,
+          0,
+          source.width,
+          source.height,
+          0,
+          0,
+          dimensions.width,
+          dimensions.height
         );
       }
       return;
@@ -240,23 +252,32 @@ export class ResolutionScaler {
       const nextWidth = Math.max(dimensions.width, Math.floor(currentWidth * 0.5));
       const nextHeight = Math.max(dimensions.height, Math.floor(currentHeight * 0.5));
 
-      const intermediateCanvas = source instanceof OffscreenCanvas
-        ? new OffscreenCanvas(nextWidth, nextHeight)
-        : document.createElement('canvas');
-      
+      const intermediateCanvas =
+        source instanceof OffscreenCanvas
+          ? new OffscreenCanvas(nextWidth, nextHeight)
+          : document.createElement('canvas');
+
       if (!(source instanceof OffscreenCanvas)) {
         (intermediateCanvas as HTMLCanvasElement).width = nextWidth;
         (intermediateCanvas as HTMLCanvasElement).height = nextHeight;
       }
 
-      const ctx = intermediateCanvas.getContext('2d') as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+      const ctx = intermediateCanvas.getContext('2d') as
+        | CanvasRenderingContext2D
+        | OffscreenCanvasRenderingContext2D;
       if (ctx) {
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(
           currentCanvas,
-          0, 0, currentWidth, currentHeight,
-          0, 0, nextWidth, nextHeight
+          0,
+          0,
+          currentWidth,
+          currentHeight,
+          0,
+          0,
+          nextWidth,
+          nextHeight
         );
       }
 
@@ -266,14 +287,22 @@ export class ResolutionScaler {
     }
 
     // Final step to target dimensions
-    const targetCtx = target.getContext('2d') as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+    const targetCtx = target.getContext('2d') as
+      | CanvasRenderingContext2D
+      | OffscreenCanvasRenderingContext2D;
     if (targetCtx) {
       targetCtx.imageSmoothingEnabled = true;
       targetCtx.imageSmoothingQuality = 'high';
       targetCtx.drawImage(
         currentCanvas,
-        0, 0, currentWidth, currentHeight,
-        0, 0, dimensions.width, dimensions.height
+        0,
+        0,
+        currentWidth,
+        currentHeight,
+        0,
+        0,
+        dimensions.width,
+        dimensions.height
       );
     }
   }
@@ -285,7 +314,9 @@ export class ResolutionScaler {
     canvas: HTMLCanvasElement | OffscreenCanvas,
     strength: number
   ): void {
-    const ctx = canvas.getContext('2d') as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true }) as
+      | CanvasRenderingContext2D
+      | OffscreenCanvasRenderingContext2D;
     if (!ctx) return;
 
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -297,19 +328,16 @@ export class ResolutionScaler {
     const original = new Uint8ClampedArray(data);
 
     // Simple unsharp mask kernel
-    const kernel = [
-      0, -strength, 0,
-      -strength, 1 + 4 * strength, -strength,
-      0, -strength, 0
-    ];
+    const kernel = [0, -strength, 0, -strength, 1 + 4 * strength, -strength, 0, -strength, 0];
 
     for (let y = 1; y < height - 1; y++) {
       for (let x = 1; x < width - 1; x++) {
         const idx = (y * width + x) * 4;
 
-        for (let c = 0; c < 3; c++) { // RGB channels only
+        for (let c = 0; c < 3; c++) {
+          // RGB channels only
           let sum = 0;
-          
+
           // Apply kernel
           for (let ky = -1; ky <= 1; ky++) {
             for (let kx = -1; kx <= 1; kx++) {
@@ -354,7 +382,7 @@ export class ResolutionScaler {
    */
   estimateQualityLoss(scaleFactor: number): number {
     if (scaleFactor >= 1) return 0; // No loss when upscaling or maintaining size
-    
+
     // Logarithmic quality loss model
     // More aggressive quality loss as we scale down more
     const loss = 1 - Math.pow(scaleFactor, 0.7);
@@ -372,16 +400,12 @@ export class ResolutionScaler {
   ): ResolutionPreset {
     // For text content, maintain higher resolution
     if (contentType === 'text') {
-      return originalHeight > 480
-        ? this.getPresetByName('480p')!
-        : this.getPresetByName('360p')!;
+      return originalHeight > 480 ? this.getPresetByName('480p')! : this.getPresetByName('360p')!;
     }
 
     // For animations, balance quality and size
     if (contentType === 'animation') {
-      return originalHeight > 480
-        ? this.getPresetByName('480p')!
-        : this.getPresetByName('360p')!;
+      return originalHeight > 480 ? this.getPresetByName('480p')! : this.getPresetByName('360p')!;
     }
 
     // For video content, can use lower resolutions
@@ -389,14 +413,10 @@ export class ResolutionScaler {
       if (targetFileSizeMB && targetFileSizeMB < 5) {
         return this.getPresetByName('360p')!;
       }
-      return originalHeight > 480
-        ? this.getPresetByName('480p')!
-        : this.getPresetByName('360p')!;
+      return originalHeight > 480 ? this.getPresetByName('480p')! : this.getPresetByName('360p')!;
     }
 
     // Default mixed content handling
-    return originalHeight > 480
-      ? this.getPresetByName('480p')!
-      : this.getPresetByName('360p')!;
+    return originalHeight > 480 ? this.getPresetByName('480p')! : this.getPresetByName('360p')!;
   }
 }
