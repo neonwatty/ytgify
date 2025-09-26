@@ -461,11 +461,21 @@ class YouTubeGifMaker {
         }
       }
     } else {
-      this.log('warn', '[Content] No video element found after 10s timeout', {
-        url: window.location.href,
-        canCreateGif: youTubeDetector.canCreateGif(),
-        pageType: youTubeDetector.getCurrentState().pageType,
-      });
+      const currentState = youTubeDetector.getCurrentState();
+      const isVideoPage = currentState.pageType === 'watch' || currentState.pageType === 'shorts';
+
+      if (isVideoPage) {
+        this.log('warn', '[Content] No video element found after 10s timeout on video page', {
+          url: window.location.href,
+          canCreateGif: youTubeDetector.canCreateGif(),
+          pageType: currentState.pageType,
+        });
+      } else {
+        this.log('debug', '[Content] No video element found (expected on non-video page)', {
+          url: window.location.href,
+          pageType: currentState.pageType,
+        });
+      }
     }
   }
 
