@@ -1,7 +1,7 @@
 {
   "name": "ytgify",
-  "version": "1.0.2",
-  "description": "Chrome extension to create GIFs from YouTube videos",
+  "version": "1.0.3",
+  "description": "Turn your favorite YouTube moments into shareable GIFs.",
   "private": true,
   "type": "module",
   "scripts": {

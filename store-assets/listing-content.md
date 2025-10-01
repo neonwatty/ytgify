@@ -141,6 +141,15 @@ Users should install YTgify because it's the fastest, easiest, and most privacy-
 
 ### Version Notes (What's New)
 
+Version 1.0.3
+
+- Updated extension description for improved clarity
+
+Version 1.0.1
+
+- Canvas reuse optimization for better performance
+- Reduced memory usage during GIF creation
+
 Version 1.0.0
 
 - Initial release
