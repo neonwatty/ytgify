@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cloud sync for settings
 - Advanced filters and effects
 
+## [1.0.3] - 2025-10-01
+
+### Changed
+
+- Updated extension description to "Turn your favorite YouTube moments into shareable GIFs." for improved marketing clarity
+
 ## [1.0.1] - 2025-09-24
 
 ### 🚀 Performance Improvements
@@ -136,6 +142,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date       | Highlights                            |
 | ------- | ---------- | ------------------------------------- |
+| 1.0.3   | 2025-10-01 | Updated extension description         |
+| 1.0.1   | 2025-09-24 | Canvas reuse optimization             |
 | 1.0.0   | 2025-01-09 | Initial release with full feature set |
 
 ## Upgrade Guide
