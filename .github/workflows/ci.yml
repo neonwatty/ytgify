@@ -104,7 +104,13 @@ jobs:
         run: npm run build
 
       - name: Install FFmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+        timeout-minutes: 3
+        run: |
+          # Retry logic for apt-get update in case of transient network issues
+          for i in 1 2 3; do
+            sudo apt-get update && break || sleep 5
+          done
+          sudo apt-get install -y ffmpeg
 
       - name: Generate test videos
         run: npm run generate:test-videos
