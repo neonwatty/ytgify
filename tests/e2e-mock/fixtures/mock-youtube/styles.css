@@ -1,0 +1,327 @@
+/**
+ * Mock YouTube Player Styles
+ * Minimal styles to replicate YouTube player structure for extension testing
+ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Roboto', Arial, sans-serif;
+  background-color: #0f0f0f;
+  color: #fff;
+  overflow: hidden;
+}
+
+#page-container {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#player-container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* Player wrapper */
+#movie_player {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background-color: #000;
+  overflow: hidden;
+}
+
+/* Video container */
+.html5-video-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.video-stream {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background-color: #000;
+}
+
+/* Player controls */
+.ytp-chrome-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+  padding: 10px 12px;
+  opacity: 1;
+  transition: opacity 0.25s cubic-bezier(0, 0, 0.2, 1);
+}
+
+#movie_player.playing-mode:not(:hover) .ytp-chrome-bottom {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Progress bar */
+.ytp-progress-bar-container {
+  position: relative;
+  height: 5px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.ytp-progress-bar {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.ytp-progress-bar-padding {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.ytp-load-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.4);
+  transition: width 0.2s;
+}
+
+.ytp-play-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background-color: #f00;
+  transition: width 0.1s linear;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.ytp-scrubber-button {
+  width: 12px;
+  height: 12px;
+  background-color: #f00;
+  border-radius: 50%;
+  transform: translateX(6px);
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.ytp-progress-bar-container:hover .ytp-scrubber-button {
+  opacity: 1;
+}
+
+/* Control buttons container */
+.ytp-chrome-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+}
+
+.ytp-left-controls,
+.ytp-right-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Buttons */
+.ytp-button,
+button[class*="ytp-"] {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 8px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  transition: background-color 0.1s;
+  position: relative;
+}
+
+.ytp-button:hover,
+button[class*="ytp-"]:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.ytp-button:active,
+button[class*="ytp-"]:active {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.ytp-button svg,
+button[class*="ytp-"] svg {
+  width: 100%;
+  height: 100%;
+  fill: #fff;
+}
+
+/* Time display */
+.ytp-time-display {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  user-select: none;
+  margin-left: 4px;
+}
+
+.ytp-time-current {
+  min-width: 32px;
+  text-align: right;
+}
+
+.ytp-time-separator {
+  margin: 0 4px;
+  opacity: 0.7;
+}
+
+.ytp-time-duration {
+  min-width: 32px;
+  opacity: 0.7;
+}
+
+/* Volume panel */
+.ytp-volume-panel {
+  display: flex;
+  align-items: center;
+}
+
+/* Player size modes */
+#movie_player.ytp-small-mode {
+  /* Default size */
+}
+
+#movie_player.ytp-big-mode {
+  /* Theater mode */
+  max-width: none !important;
+  width: 100% !important;
+  height: 100vh !important;
+}
+
+/* Fullscreen mode */
+#movie_player:fullscreen,
+#movie_player:-webkit-full-screen,
+#movie_player:-moz-full-screen {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+}
+
+/* Hide video metadata */
+#video-metadata {
+  display: none !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .ytp-chrome-controls {
+    height: 32px;
+  }
+
+  .ytp-button,
+  button[class*="ytp-"] {
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+  }
+
+  .ytp-time-display {
+    font-size: 12px;
+  }
+}
+
+/* Extension injection point styling */
+.ytp-right-controls {
+  /* Ensure right controls have proper spacing for extension button injection */
+  min-height: 36px;
+}
+
+/* Custom property for extension button to match YouTube style */
+.ytp-right-controls > .ytgif-button {
+  /* Extension button will be injected here and should inherit ytp-button styles */
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 8px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  transition: background-color 0.1s;
+}
+
+.ytp-right-controls > .ytgif-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Loading state */
+.ytp-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 48px;
+  height: 48px;
+}
+
+/* Player state classes */
+.playing-mode .ytp-play-icon {
+  display: none;
+}
+
+.playing-mode .ytp-pause-icon {
+  display: block !important;
+}
+
+.paused-mode .ytp-play-icon {
+  display: block;
+}
+
+.paused-mode .ytp-pause-icon {
+  display: none !important;
+}
+
+/* Focus styles for accessibility */
+.ytp-button:focus-visible,
+button[class*="ytp-"]:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Ensure controls are visible during interaction */
+#movie_player:hover .ytp-chrome-bottom,
+#movie_player:focus-within .ytp-chrome-bottom {
+  opacity: 1;
+  pointer-events: auto;
+}

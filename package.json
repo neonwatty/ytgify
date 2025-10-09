@@ -18,7 +18,13 @@
     "test:e2e:debug": "playwright test --config tests/playwright.config.ts --debug",
     "test:e2e:headed": "playwright test --config tests/playwright.config.ts --headed",
     "test:e2e:fast": "HEADLESS=true playwright test --config tests/playwright.config.ts tests/e2e/wizard-basic.spec.ts --workers=3 --fully-parallel",
+    "test:e2e:mock": "playwright test --config tests/playwright-mock.config.ts",
+    "test:e2e:mock:headed": "playwright test --config tests/playwright-mock.config.ts --headed",
+    "test:e2e:mock:debug": "playwright test --config tests/playwright-mock.config.ts --debug",
+    "test:e2e:mock:ui": "playwright test --config tests/playwright-mock.config.ts --ui",
+    "generate:test-videos": "cd tests/e2e-mock/fixtures/videos && chmod +x generate-test-videos.sh && ./generate-test-videos.sh",
     "test:all": "npm run test && npm run test:e2e",
+    "test:all:with-mock": "npm run test && npm run test:e2e:mock",
     "validate:pre-push": "npm run lint && npm run build && npm run typecheck && npm test && npm run test:e2e:fast",
     "prepare": "husky"
   },

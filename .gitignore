@@ -95,6 +95,9 @@ coverage/
 tests/test-user-data-*
 tests/test-results/
 test-results/
+tests/e2e-mock/fixtures/videos/*.mp4
+tests/e2e-mock/fixtures/videos/*.webm
+tests/e2e-mock/test-user-data/
 
 # Chrome Extension specific
 *.pem

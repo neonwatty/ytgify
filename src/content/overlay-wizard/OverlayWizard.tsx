@@ -102,12 +102,14 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
       const newData = {
         gifDataUrl: gifData.dataUrl,
         gifSize: gifData.size,
-        gifMetadata: gifData.metadata as {
-          width: number;
-          height: number;
-          duration: number;
-          frameCount?: number;
-        } | undefined,
+        gifMetadata: gifData.metadata as
+          | {
+              width: number;
+              height: number;
+              duration: number;
+              frameCount?: number;
+            }
+          | undefined,
       };
 
       setScreenData(newData);
@@ -147,7 +149,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
       selection,
       textOverlays: [],
       resolution: data.resolution,
-      frameRate: data.frameRate
+      frameRate: data.frameRate,
     });
     onCreateGif(selection, [], data.resolution, data.frameRate);
     goToScreen('processing');
@@ -201,6 +203,8 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
               currentTime={currentTime}
               duration={videoDuration}
               videoElement={videoElement}
+              frameRate={data.frameRate}
+              resolution={data.resolution}
               onConfirm={handleConfirmQuickCapture}
               onBack={goBack}
               onSeekTo={onSeekTo}
