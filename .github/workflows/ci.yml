@@ -103,6 +103,9 @@ jobs:
       - name: Build extension
         run: npm run build
 
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
       - name: Generate test videos
         run: npm run generate:test-videos
 
