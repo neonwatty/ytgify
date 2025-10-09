@@ -20,12 +20,12 @@ export interface MockVideo {
 export const MOCK_VIDEOS: Record<string, MockVideo> = {
   veryShort: {
     id: 'mock-short',
-    title: 'Test Short Video (5s)',
-    duration: 5,
+    title: 'Test Short Video (20s)',
+    duration: 20,
     width: 640,
     height: 360,
-    filename: 'test-short-5s.webm',
-    description: 'Very short 5-second test video for quick GIF creation tests'
+    filename: 'test-short-20s.webm',
+    description: '20-second test video for duration tests (supports 1s-10s GIF creation)'
   },
 
   medium: {

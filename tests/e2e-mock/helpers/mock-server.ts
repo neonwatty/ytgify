@@ -261,9 +261,9 @@ export class MockYouTubeServer {
     // Map video IDs to their configurations
     const videoConfigs: Record<string, VideoConfig> = {
       'mock-short': {
-        title: 'Test Short Video (5s)',
-        src: '/videos/test-short-5s.webm',
-        duration: 5,
+        title: 'Test Short Video (20s)',
+        src: '/videos/test-short-20s.webm',
+        duration: 20,
         width: 640,
         height: 360
       },

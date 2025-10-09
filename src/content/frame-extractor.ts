@@ -36,7 +36,9 @@ export class ContentScriptFrameExtractor {
   private constructor() {
     // Message handling is now done in the main content script
     // to avoid duplicate listeners
-    logger.info('[ContentScriptFrameExtractor] Initialized (message handling via main content script)');
+    logger.info(
+      '[ContentScriptFrameExtractor] Initialized (message handling via main content script)'
+    );
   }
 
   public static getInstance(): ContentScriptFrameExtractor {
@@ -64,7 +66,9 @@ export class ContentScriptFrameExtractor {
 
       logger.info('[ContentScriptFrameExtractor] Message handling initialized');
     } else {
-      logger.warn('[ContentScriptFrameExtractor] Chrome runtime not available for message handling');
+      logger.warn(
+        '[ContentScriptFrameExtractor] Chrome runtime not available for message handling'
+      );
     }
   }
 
@@ -75,13 +79,13 @@ export class ContentScriptFrameExtractor {
   ): Promise<void> {
     logger.info('[ContentScriptFrameExtractor] handleFrameExtractionRequest called', {
       isProcessing: this.isProcessing,
-      requestData: request.data
+      requestData: request.data,
     });
-    
+
     if (this.isProcessing) {
       logger.warn('[ContentScriptFrameExtractor] Already processing, rejecting request');
       sendResponse({
-        frames: []
+        frames: [],
       });
       return;
     }
@@ -95,8 +99,8 @@ export class ContentScriptFrameExtractor {
         frameRate: request.data.frameRate,
         targetDimensions: {
           width: request.data.targetWidth,
-          height: request.data.targetHeight
-        }
+          height: request.data.targetHeight,
+        },
       });
 
       // Find the active video element
@@ -112,7 +116,7 @@ export class ContentScriptFrameExtractor {
         duration: videoElement.duration,
         currentTime: videoElement.currentTime,
         paused: videoElement.paused,
-        readyState: videoElement.readyState
+        readyState: videoElement.readyState,
       });
 
       // Prepare video processing options
@@ -122,7 +126,7 @@ export class ContentScriptFrameExtractor {
         frameRate: request.data.frameRate,
         quality: request.data.quality,
         maxWidth: request.data.targetWidth,
-        maxHeight: request.data.targetHeight
+        maxHeight: request.data.targetHeight,
       };
 
       // Set up progress tracking
@@ -130,49 +134,61 @@ export class ContentScriptFrameExtractor {
         logger.debug('[ContentScriptFrameExtractor] Progress update', {
           stage: progress.stage,
           progress: progress.progress,
-          message: progress.message
+          message: progress.message,
         });
       };
 
-      // Try simplified extractor with timeout
+      // Try simplified extractor with timeout (calculated based on expected frames)
       let result;
       let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      const duration = request.data.endTime - request.data.startTime;
+      const expectedFrames = Math.ceil(duration * request.data.frameRate);
+      // 500ms per frame + 30s buffer for safety
+      const timeoutMs = Math.max(60000, expectedFrames * 500 + 30000);
+
       const extractionTimeout = new Promise<never>((_, reject) => {
         timeoutId = setTimeout(() => {
-          logger.error('[ContentScriptFrameExtractor] Extraction timeout after 15s');
+          logger.error(
+            `[ContentScriptFrameExtractor] Extraction timeout after ${timeoutMs / 1000}s`
+          );
           reject(new Error('Extraction timeout'));
-        }, 15000);
+        }, timeoutMs);
       });
-      
+
       logger.info('[ContentScriptFrameExtractor] Starting extractFramesSimple with timeout');
       try {
         result = await Promise.race([
           extractFramesSimple(videoElement, processingOptions, onProgress),
-          extractionTimeout
+          extractionTimeout,
         ]);
         if (timeoutId) clearTimeout(timeoutId);
         logger.info('[ContentScriptFrameExtractor] extractFramesSimple completed', {
           frameCount: result.frames.length,
-          method: result.metadata.extractionMethod
+          method: result.metadata.extractionMethod,
         });
       } catch (timeoutError) {
         if (timeoutId) clearTimeout(timeoutId);
-        logger.warn('[ContentScriptFrameExtractor] Simple extraction timed out, using instant capture', {
-          error: timeoutError instanceof Error ? timeoutError.message : 'Unknown error'
-        });
-        
+        logger.warn(
+          '[ContentScriptFrameExtractor] Simple extraction timed out, using instant capture',
+          {
+            error: timeoutError instanceof Error ? timeoutError.message : 'Unknown error',
+          }
+        );
+
         // Fallback to instant capture
         const instantFrames = await captureInstantFrames(
           videoElement,
           request.data.startTime,
           request.data.endTime,
           {
-            frameCount: Math.ceil((request.data.endTime - request.data.startTime) * request.data.frameRate),
+            frameCount: Math.ceil(
+              (request.data.endTime - request.data.startTime) * request.data.frameRate
+            ),
             width: request.data.targetWidth,
-            height: request.data.targetHeight
+            height: request.data.targetHeight,
           }
         );
-        
+
         result = {
           frames: instantFrames,
           metadata: {
@@ -181,8 +197,8 @@ export class ContentScriptFrameExtractor {
             dimensions: { width: request.data.targetWidth, height: request.data.targetHeight },
             duration: request.data.endTime - request.data.startTime,
             extractionMethod: 'instant-fallback',
-            processingTime: 0
-          }
+            processingTime: 0,
+          },
         };
       }
 
@@ -194,34 +210,36 @@ export class ContentScriptFrameExtractor {
       try {
         const response: ContentFrameExtractionResponse = {
           frames: result.frames, // Send all frames
-          metadata: result.metadata
+          metadata: result.metadata,
         };
-        
+
         logger.info('[ContentScriptFrameExtractor] Sending complete frame response', {
-          frameCount: result.frames.length
+          frameCount: result.frames.length,
         });
 
         sendResponse(response);
       } catch (error) {
-        logger.error('[ContentScriptFrameExtractor] Failed to send frames, sending empty response', { error });
+        logger.error(
+          '[ContentScriptFrameExtractor] Failed to send frames, sending empty response',
+          { error }
+        );
         sendResponse({
           frames: [],
-          metadata: result.metadata
+          metadata: result.metadata,
         });
       }
 
       logger.info('[ContentScriptFrameExtractor] Frame extraction completed successfully', {
         frameCount: result.frames.length,
         processingTime: result.metadata.processingTime,
-        method: result.metadata.extractionMethod
+        method: result.metadata.extractionMethod,
       });
-
     } catch (error) {
       logger.error('[ContentScriptFrameExtractor] Frame extraction failed', { error });
-      
+
       // Send empty response on error
       sendResponse({
-        frames: []
+        frames: [],
       });
     } finally {
       this.isProcessing = false;
@@ -232,7 +250,7 @@ export class ContentScriptFrameExtractor {
   private findActiveVideoElement(): HTMLVideoElement | null {
     // Try to find YouTube video element first
     let videoElement = this.findYouTubeVideoElement();
-    
+
     if (videoElement) {
       logger.debug('[ContentScriptFrameExtractor] Found YouTube video element');
       return videoElement;
@@ -240,7 +258,7 @@ export class ContentScriptFrameExtractor {
 
     // Fallback to any video element
     videoElement = document.querySelector('video') as HTMLVideoElement;
-    
+
     if (videoElement) {
       logger.debug('[ContentScriptFrameExtractor] Found generic video element');
       return videoElement;
@@ -273,10 +291,10 @@ export class ContentScriptFrameExtractor {
     // YouTube uses specific selectors for video elements
     const selectors = [
       'video.video-stream.html5-main-video', // Main YouTube video
-      '.html5-video-container video',        // YouTube container
-      '#movie_player video',                 // YouTube player
-      'video[src*="youtube"]',              // Generic YouTube video
-      'video[src*="ytimg"]',                // YouTube image/video
+      '.html5-video-container video', // YouTube container
+      '#movie_player video', // YouTube player
+      'video[src*="youtube"]', // Generic YouTube video
+      'video[src*="ytimg"]', // YouTube image/video
     ];
 
     for (const selector of selectors) {
@@ -292,11 +310,13 @@ export class ContentScriptFrameExtractor {
 
   // Check if video is ready for processing
   private isVideoReady(video: HTMLVideoElement): boolean {
-    return video.readyState >= 2 && 
-           video.videoWidth > 0 && 
-           video.videoHeight > 0 && 
-           video.duration > 0 && 
-           !video.ended;
+    return (
+      video.readyState >= 2 &&
+      video.videoWidth > 0 &&
+      video.videoHeight > 0 &&
+      video.duration > 0 &&
+      !video.ended
+    );
   }
 
   // Get video state information
@@ -308,14 +328,14 @@ export class ContentScriptFrameExtractor {
     dimensions: { width: number; height: number };
   } {
     const video = this.findActiveVideoElement();
-    
+
     if (!video) {
       return {
         hasVideo: false,
         isPlaying: false,
         currentTime: 0,
         duration: 0,
-        dimensions: { width: 0, height: 0 }
+        dimensions: { width: 0, height: 0 },
       };
     }
 
@@ -326,8 +346,8 @@ export class ContentScriptFrameExtractor {
       duration: video.duration || 0,
       dimensions: {
         width: video.videoWidth,
-        height: video.videoHeight
-      }
+        height: video.videoHeight,
+      },
     };
   }
 
@@ -346,16 +366,16 @@ export class ContentScriptFrameExtractor {
         frameRate: 1,
         quality: 'low' as const,
         maxWidth: 320,
-        maxHeight: 240
+        maxHeight: 240,
       };
 
       const result = await extractFramesSimple(video, testOptions);
-      
+
       logger.info('[ContentScriptFrameExtractor] Test frame extraction successful', {
         frameCount: result.frames.length,
-        method: result.metadata.extractionMethod
+        method: result.metadata.extractionMethod,
       });
-      
+
       return result.frames.length > 0;
     } catch (error) {
       logger.error('[ContentScriptFrameExtractor] Test frame extraction failed', { error });

@@ -75,10 +75,17 @@ export function extractGifMetadataFromBuffer(buffer: Buffer): GifMetadata {
   // Read logical screen descriptor (bytes 6-12)
   const width = buffer.readUInt16LE(6);
   const height = buffer.readUInt16LE(8);
+  const packedFields = buffer[10];
+
+  // Check for Global Color Table
+  const hasGlobalColorTable = (packedFields & 0x80) !== 0;
+  const globalColorTableSize = hasGlobalColorTable ? 2 ** ((packedFields & 0x07) + 1) : 0;
+  const globalColorTableBytes = globalColorTableSize * 3;
 
   // Count frames by looking for image separator (0x2C)
   let frameCount = 0;
-  let position = 13; // Skip header and logical screen descriptor
+  // Start after header, logical screen descriptor, AND global color table (if present)
+  let position = 13 + globalColorTableBytes;
 
   while (position < buffer.length) {
     const byte = buffer[position];
@@ -97,10 +104,20 @@ export function extractGifMetadataFromBuffer(buffer: Buffer): GifMetadata {
       frameCount++;
       position++; // Move past separator
 
-      // Skip image descriptor (9 bytes)
+      // Read image descriptor (9 bytes): left, top, width, height, packed fields
       position += 9;
 
-      // Skip image data
+      // Check for local color table
+      const localPackedFields = buffer[position - 1]; // Last byte of image descriptor
+      const hasLocalColorTable = (localPackedFields & 0x80) !== 0;
+
+      if (hasLocalColorTable) {
+        const localColorTableSize = 2 ** ((localPackedFields & 0x07) + 1);
+        const localColorTableBytes = localColorTableSize * 3;
+        position += localColorTableBytes;
+      }
+
+      // Skip image data (LZW + sub-blocks)
       const lzwMinimum = buffer[position];
       position++; // LZW minimum code size
 
@@ -122,18 +139,69 @@ export function extractGifMetadataFromBuffer(buffer: Buffer): GifMetadata {
   // Get file size
   const fileSize = buffer.length;
 
-  // Estimate duration and FPS (this is approximate without parsing timing info)
-  // For accurate timing, we parse Graphic Control Extensions
+  // Parse duration by looking for Graphic Control Extensions
+  // Use same structure-aware parsing as frame counting
   let totalDelay = 0;
-  position = 13;
+  position = 13 + globalColorTableBytes;
 
-  while (position < buffer.length - 1) {
-    if (buffer[position] === 0x21 && buffer[position + 1] === 0xF9) {
-      // Found Graphic Control Extension
-      position += 3; // Skip to delay time
-      const delay = buffer.readUInt16LE(position + 1); // Delay in 1/100ths of a second
-      totalDelay += delay;
-      position += 5;
+  while (position < buffer.length) {
+    const byte = buffer[position];
+
+    if (byte === 0x21) { // Extension introducer
+      const extensionLabel = buffer[position + 1];
+
+      if (extensionLabel === 0xF9) {
+        // Graphic Control Extension - contains frame delay
+        position += 2; // Skip introducer and label
+        const blockSize = buffer[position];
+        position++; // Move to block data
+
+        // Read delay time (2 bytes, little-endian, in 1/100ths of a second)
+        const delay = buffer.readUInt16LE(position + 1);
+        totalDelay += delay;
+
+        // Skip rest of block and terminator
+        position += blockSize + 1;
+      } else {
+        // Other extension - skip it
+        position += 2; // Skip introducer and label
+        let blockSize = buffer[position];
+        while (blockSize > 0) {
+          position += blockSize + 1;
+          if (position >= buffer.length) break;
+          blockSize = buffer[position];
+        }
+        position++; // Skip block terminator
+      }
+    } else if (byte === 0x2C) { // Image separator
+      position++; // Move past separator
+
+      // Read image descriptor (9 bytes)
+      position += 9;
+
+      // Check for local color table
+      const localPackedFields = buffer[position - 1];
+      const hasLocalColorTable = (localPackedFields & 0x80) !== 0;
+
+      if (hasLocalColorTable) {
+        const localColorTableSize = 2 ** ((localPackedFields & 0x07) + 1);
+        const localColorTableBytes = localColorTableSize * 3;
+        position += localColorTableBytes;
+      }
+
+      // Skip image data (LZW + sub-blocks)
+      position++; // Skip LZW minimum code size
+
+      // Skip sub-blocks
+      let subBlockSize = buffer[position];
+      while (subBlockSize > 0) {
+        position += subBlockSize + 1;
+        if (position >= buffer.length) break;
+        subBlockSize = buffer[position];
+      }
+      position++; // Skip block terminator
+    } else if (byte === 0x3B) { // Trailer (end of file)
+      break;
     } else {
       position++;
     }

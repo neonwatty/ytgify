@@ -86,19 +86,7 @@ export class ResolutionScaler {
       throw new Error(`Invalid resolution preset: ${preset}`);
     }
 
-    // Don't upscale - if original is smaller than target, keep original
-    if (originalHeight <= resolutionPreset.targetHeight) {
-      return {
-        width: originalWidth,
-        height: originalHeight,
-        scaleFactor: 1.0,
-        originalWidth,
-        originalHeight,
-        aspectRatio: originalWidth / originalHeight,
-      };
-    }
-
-    // Calculate dimensions maintaining aspect ratio
+    // Calculate dimensions maintaining aspect ratio (supports both upscaling and downscaling)
     const aspectRatio = originalWidth / originalHeight;
     const scaleFactor = resolutionPreset.targetHeight / originalHeight;
     const scaledWidth = Math.round(originalWidth * scaleFactor);
@@ -372,9 +360,10 @@ export class ResolutionScaler {
 
   /**
    * Make a number even (required for video encoding)
+   * Rounds to the nearest even number
    */
   private makeEven(n: number): number {
-    return Math.floor(n / 2) * 2;
+    return Math.round(n / 2) * 2;
   }
 
   /**

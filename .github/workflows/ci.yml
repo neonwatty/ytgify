@@ -2,9 +2,9 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, develop]
   push:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
   test:
@@ -67,9 +67,14 @@ jobs:
           fi
 
   mock-e2e-tests:
-    name: Mock E2E Tests
+    name: Mock E2E Tests (Shard ${{ matrix.shard }}/4)
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
 
     steps:
       - name: Checkout code
@@ -84,6 +89,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
 
@@ -93,21 +106,25 @@ jobs:
       - name: Generate test videos
         run: npm run generate:test-videos
 
-      - name: Run mock E2E tests
-        run: npm run test:e2e:mock
+      - name: Run mock E2E tests (Shard ${{ matrix.shard }}/4)
+        env:
+          HEADLESS: true
+        run: npx playwright test --config tests/playwright-mock.config.ts --shard=${{ matrix.shard }}/4
 
-      - name: Upload test results
-        if: always()
+      - name: Upload test artifacts on failure
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: mock-e2e-results
-          path: tests/test-results/
+          name: playwright-report-shard-${{ matrix.shard }}
+          path: |
+            tests/test-results/
+            playwright-report/
           retention-days: 7
 
-      - name: Upload mock test report
+      - name: Upload JUnit results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mock-e2e-html-report
-          path: tests/test-results/html-mock/
+          name: junit-results-shard-${{ matrix.shard }}
+          path: tests/test-results/junit-mock.xml
           retention-days: 7

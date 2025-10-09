@@ -34,34 +34,20 @@ export async function extractFramesSimple(
     logger.info('[SimpleFrameExtractor] Starting simplified frame extraction');
 
     // Calculate dimensions - use reasonable defaults while maintaining aspect ratio
-    const aspectRatio = videoElement.videoWidth / videoElement.videoHeight;
-    const maxWidth = options.maxWidth || 640; // Default 640px width
-    const maxHeight = options.maxHeight || 360; // Default 360px height
+    const targetHeight = options.maxHeight || 360; // Default 360px height
 
-    let width = videoElement.videoWidth;
-    let height = videoElement.videoHeight;
+    // Note: Quality scaling is already applied by the caller when computing targetWidth/targetHeight
+    // Do not apply quality scaling here to avoid double-scaling
 
-    // Apply quality scaling
-    const qualityScale =
-      options.quality === 'low' ? 0.5 : options.quality === 'medium' ? 0.75 : 1.0;
+    // Lock to target height and scale width proportionally (matches ResolutionScaler behavior)
+    // This ensures consistent dimensions across upscaling and downscaling
+    const scaleFactor = targetHeight / videoElement.videoHeight;
+    let width = Math.round(videoElement.videoWidth * scaleFactor);
+    let height = targetHeight;
 
-    // Scale based on quality first
-    width = width * qualityScale;
-    height = height * qualityScale;
-
-    // Then apply max constraints while maintaining aspect ratio
-    if (width > maxWidth) {
-      width = maxWidth;
-      height = width / aspectRatio;
-    }
-    if (height > maxHeight) {
-      height = maxHeight;
-      width = height * aspectRatio;
-    }
-
-    // Ensure even dimensions for video encoding
-    width = Math.floor(width / 2) * 2;
-    height = Math.floor(height / 2) * 2;
+    // Ensure even dimensions for video encoding (round to nearest even number)
+    width = Math.round(width / 2) * 2;
+    height = Math.round(height / 2) * 2;
 
     // Create canvas for frame capture
     const canvas = new OffscreenCanvas(width, height);
@@ -122,9 +108,9 @@ export async function extractFramesSimple(
       // Set video to capture time
       videoElement.currentTime = Math.min(captureTime, options.endTime);
 
-      // Small delay to let frame render
-      logger.debug(`[SimpleFrameExtractor] Waiting 100ms for frame to render`);
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Delay to let video seek to keyframe and render (increased for test reliability)
+      logger.debug(`[SimpleFrameExtractor] Waiting 500ms for frame to render`);
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Capture frame
       ctx.clearRect(0, 0, width, height);

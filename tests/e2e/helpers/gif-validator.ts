@@ -47,10 +47,17 @@ export async function extractGifMetadata(filePath: string): Promise<GifMetadata>
   // Read logical screen descriptor (bytes 6-12)
   const width = buffer.readUInt16LE(6);
   const height = buffer.readUInt16LE(8);
+  const packedFields = buffer[10];
+
+  // Check for Global Color Table
+  const hasGlobalColorTable = (packedFields & 0x80) !== 0;
+  const globalColorTableSize = hasGlobalColorTable ? 2 ** ((packedFields & 0x07) + 1) : 0;
+  const globalColorTableBytes = globalColorTableSize * 3;
 
   // Count frames by looking for image separator (0x2C)
   let frameCount = 0;
-  let position = 13; // Skip header and logical screen descriptor
+  // Start after header, logical screen descriptor, AND global color table (if present)
+  let position = 13 + globalColorTableBytes;
 
   while (position < buffer.length) {
     const byte = buffer[position];
@@ -97,7 +104,7 @@ export async function extractGifMetadata(filePath: string): Promise<GifMetadata>
   // Estimate duration and FPS (this is approximate without parsing timing info)
   // For accurate timing, we'd need to parse Graphic Control Extensions
   let totalDelay = 0;
-  position = 13;
+  position = 13 + globalColorTableBytes;
 
   while (position < buffer.length - 1) {
     if (buffer[position] === 0x21 && buffer[position + 1] === 0xF9) {

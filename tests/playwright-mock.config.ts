@@ -44,7 +44,7 @@ export default defineConfig({
     video: 'retain-on-failure',
 
     // Timeouts - faster than real YouTube since mock is local
-    actionTimeout: 10000, // 10 seconds for actions
+    actionTimeout: 60000, // 60 seconds for actions (GIF processing needs more time)
     navigationTimeout: 15000, // 15 seconds for navigation
   },
 

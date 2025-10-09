@@ -45,11 +45,12 @@ export class QuickCapturePage {
       '480p': page.locator('.ytgif-resolution-btn:has-text("480p")'),
     };
 
-    // FPS buttons
+    // FPS buttons - use getByRole with regex to avoid substring matching issues
+    // (e.g., "5 fps" substring matches both "5 fps" and "15 fps")
     this.fpsButtons = {
-      '5': page.locator('.ytgif-frame-rate-btn:has-text("5 fps")'),
-      '10': page.locator('.ytgif-frame-rate-btn:has-text("10 fps")'),
-      '15': page.locator('.ytgif-frame-rate-btn:has-text("15 fps")'),
+      '5': page.getByRole('button', { name: /^5 fps/ }),
+      '10': page.getByRole('button', { name: /^10 fps/ }),
+      '15': page.getByRole('button', { name: /^15 fps/ }),
     };
 
     this.nextButton = page.locator('.ytgif-button-primary, button:has-text("Next")');

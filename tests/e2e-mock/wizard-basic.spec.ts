@@ -267,15 +267,12 @@ test.describe('Mock E2E: Basic Wizard Tests', () => {
   test('Can create GIF with specific resolution and validate output', async ({ page, mockServerUrl }) => {
     test.setTimeout(90000);
 
-    const { gifUrl, quickCapture } = await createAndValidateGif(page, mockServerUrl, {
+    const { gifUrl } = await createAndValidateGif(page, mockServerUrl, {
       resolution: '480p',
       validateMetadata: true
     });
 
-    // Verify selection was applied
-    const selectedResolution = await quickCapture!.getSelectedResolution();
-    expect(selectedResolution).toBe('480p');
-
+    // Validate the actual GIF output (selection state is no longer available after workflow completion)
     const validation = await validateGifComplete(page, gifUrl, {
       resolution: '480p',
       fps: 5,
@@ -298,7 +295,8 @@ test.describe('Mock E2E: Basic Wizard Tests', () => {
       validateMetadata: true
     });
 
-    expect(metadata!.fps).toBeCloseTo(15, 2);
+    // Relaxed tolerance for GIF format centisecond rounding (allows 14-16 fps)
+    expect(Math.abs(metadata!.fps - 15)).toBeLessThanOrEqual(1);
     expect(metadata!.frameCount).toBeGreaterThan(0);
 
     console.log(`✅ [Mock Test] Successfully created GIF with 15 fps (actual: ${metadata!.fps.toFixed(1)} fps)`);
