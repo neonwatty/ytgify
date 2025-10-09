@@ -56,8 +56,8 @@ test.describe('Mock E2E: Wizard Settings Matrix', () => {
     }
 
     // Get selected settings if validation requested
-    let selectedRes: string | undefined;
-    let selectedFps: string | undefined;
+    let selectedRes: string | null = null;
+    let selectedFps: string | null = null;
     if (validateSettings) {
       selectedRes = await quickCapture.getSelectedResolution();
       selectedFps = await quickCapture.getSelectedFps();
