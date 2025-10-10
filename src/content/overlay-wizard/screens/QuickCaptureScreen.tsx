@@ -8,6 +8,8 @@ interface QuickCaptureScreenProps {
   currentTime: number;
   duration: number;
   videoElement?: HTMLVideoElement;
+  frameRate?: number;
+  resolution?: string;
   onConfirm: (startTime: number, endTime: number, frameRate?: number, resolution?: string) => void;
   onBack: () => void;
   onSeekTo?: (time: number) => void;
@@ -19,6 +21,8 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
   currentTime,
   duration,
   videoElement,
+  frameRate: initialFrameRate,
+  resolution: initialResolution,
   onConfirm,
   onBack,
   onSeekTo,
@@ -32,8 +36,8 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
     console.log('[QuickCaptureScreen] Preview playing state changed:', isPreviewPlaying);
   }, [isPreviewPlaying]);
   const [previewTime, setPreviewTime] = useState(startTime);
-  const [selectedFrameRate, setSelectedFrameRate] = useState(5); // Default to 5 fps
-  const [selectedResolution, setSelectedResolution] = useState('144p'); // Default to 144p for smallest file size
+  const [selectedFrameRate, setSelectedFrameRate] = useState(initialFrameRate || 5); // Default to 5 fps
+  const [selectedResolution, setSelectedResolution] = useState(initialResolution || '144p'); // Default to 144p for smallest file size
 
   const handleRangeChange = useCallback((newStart: number, newEnd: number) => {
     setStartTime(newStart);

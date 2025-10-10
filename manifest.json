@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
   "name": "YTgify",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Turn your favorite YouTube moments into shareable GIFs.",
   "author": "Jeremy Watt",
   "homepage_url": "https://github.com/neonwatty/ytgify",
-  "permissions": ["storage", "tabs", "activeTab", "scripting", "clipboardWrite", "downloads"],
-  "host_permissions": ["https://*.youtube.com/*"],
+  "permissions": ["storage", "tabs", "activeTab", "downloads"],
+  "host_permissions": ["https://*.youtube.com/*", "http://localhost:*/*", "http://127.0.0.1:*/*"],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   },
@@ -16,7 +16,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://*.youtube.com/*"],
+      "matches": ["https://*.youtube.com/*", "http://localhost:*/*", "http://127.0.0.1:*/*"],
       "js": ["content.js"],
       "css": ["content.css"],
       "run_at": "document_end"
@@ -50,7 +50,7 @@
   "web_accessible_resources": [
     {
       "resources": ["*.js", "*.css", "icons/*", "gif.worker.js"],
-      "matches": ["https://*.youtube.com/*"]
+      "matches": ["https://*.youtube.com/*", "http://localhost:*/*", "http://127.0.0.1:*/*"]
     }
   ]
 }

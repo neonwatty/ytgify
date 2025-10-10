@@ -65,7 +65,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   React.useEffect(() => {
     if (currentScreen === 'quick-capture' && !data.startTime && !data.endTime) {
       const startTime = currentTime;
-      const endTime = Math.min(videoDuration, currentTime + 10);
+      const endTime = Math.min(videoDuration, currentTime + 5);
       setScreenData({ startTime, endTime });
     }
   }, [currentScreen, currentTime, videoDuration, data.startTime, data.endTime, setScreenData]);
@@ -102,12 +102,14 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
       const newData = {
         gifDataUrl: gifData.dataUrl,
         gifSize: gifData.size,
-        gifMetadata: gifData.metadata as {
-          width: number;
-          height: number;
-          duration: number;
-          frameCount?: number;
-        } | undefined,
+        gifMetadata: gifData.metadata as
+          | {
+              width: number;
+              height: number;
+              duration: number;
+              frameCount?: number;
+            }
+          | undefined,
       };
 
       setScreenData(newData);
@@ -127,8 +129,8 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     setScreenData({ textOverlays: overlays });
     const selection: TimelineSelection = {
       startTime: data.startTime || 0,
-      endTime: data.endTime || 10,
-      duration: (data.endTime || 10) - (data.startTime || 0),
+      endTime: data.endTime || 5,
+      duration: (data.endTime || 5) - (data.startTime || 0),
     };
 
     console.log('[OverlayWizard] handleCreateGif - frameRate:', data.frameRate);
@@ -139,15 +141,15 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   const handleSkipTextOverlay = () => {
     const selection: TimelineSelection = {
       startTime: data.startTime || 0,
-      endTime: data.endTime || 10,
-      duration: (data.endTime || 10) - (data.startTime || 0),
+      endTime: data.endTime || 5,
+      duration: (data.endTime || 5) - (data.startTime || 0),
     };
     console.log('[OverlayWizard] handleSkipTextOverlay - frameRate:', data.frameRate);
     console.log('[OverlayWizard] Calling onCreateGif with params:', {
       selection,
       textOverlays: [],
       resolution: data.resolution,
-      frameRate: data.frameRate
+      frameRate: data.frameRate,
     });
     onCreateGif(selection, [], data.resolution, data.frameRate);
     goToScreen('processing');
@@ -197,10 +199,12 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
           {currentScreen === 'quick-capture' && (
             <QuickCaptureScreen
               startTime={data.startTime || 0}
-              endTime={data.endTime || 10}
+              endTime={data.endTime || 5}
               currentTime={currentTime}
               duration={videoDuration}
               videoElement={videoElement}
+              frameRate={data.frameRate}
+              resolution={data.resolution}
               onConfirm={handleConfirmQuickCapture}
               onBack={goBack}
               onSeekTo={onSeekTo}

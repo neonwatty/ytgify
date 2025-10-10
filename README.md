@@ -68,44 +68,75 @@ npm run dev
 
 ## Scripts
 
+### Development
 - `npm run dev` - Build in development mode with watch
-- `npm run build` - Build for production
-- `npm run test` - Run unit tests
-- `npm run test:e2e:fast` - Run E2E tests in headless mode (fast, for CI)
-- `npm run test:e2e:fast:headed` - Run E2E tests with visible browser (for debugging)
+- `npm run build` - Build for production (development manifest with localhost permissions)
+- `npm run build:production` - Build Chrome Web Store package (strips localhost permissions)
 - `npm run lint` - Run ESLint
 - `npm run typecheck` - Run TypeScript type checking
-- `npm run validate:pre-push` - Run full validation suite (same as Git hooks)
+
+### Testing
+- `npm test` - Run unit tests
+- `npm run test:e2e` - Run real E2E tests against actual YouTube
+- `npm run test:e2e:headed` - Run real E2E tests with visible browser
+- `npm run test:e2e:mock` - Run mock E2E tests with localhost videos (used in CI)
+- `npm run test:e2e:mock:headed` - Run mock E2E tests with visible browser
+- `npm run validate:pre-push` - Run full validation suite (lint, typecheck, build, unit tests)
+
+## Production Build for Chrome Web Store
+
+To create a production-ready package for Chrome Web Store submission:
+
+```bash
+npm run build:production
+```
+
+This script:
+1. Builds the extension to `dist/`
+2. Copies everything to `dist-production/`
+3. **Strips localhost permissions** from `manifest.json` (used only for mock E2E testing in CI)
+4. Creates a versioned zip file: `ytgify-v{version}-chrome-store-production.zip`
+
+The development build includes `localhost` permissions in `host_permissions`, `content_scripts.matches`, and `web_accessible_resources.matches` to support mock E2E tests that use local test videos. These permissions are automatically removed from the production build to ensure Chrome Web Store compliance.
 
 ## Quality Assurance
 
-This project enforces strict quality standards through automated Git hooks that run **locally** on every commit.
+This project maintains quality through a combination of manual pre-PR validation and automated CI testing.
 
-### Why Local Testing?
+### Before Submitting a Pull Request
 
-Testing Chrome extensions that interact with YouTube videos is extremely challenging in CI/CD environments like GitHub Actions due to:
-
-- YouTube blocking/rate-limiting CI server IPs
-- Regional content restrictions and cookie consent variations
-- Video playback requiring real browser environments
-- Chrome/Edge browsers not supporting extensions in headless mode
-
-Therefore, we use **mandatory pre-commit hooks** to ensure all tests run in a real, local development environment where they can reliably interact with YouTube.
-
-**Important**: E2E tests use Playwright's bundled Chromium browser, which is the only browser that supports Chrome extensions in headless mode. Regular Chrome or Edge browsers cannot load extensions in headless mode.
-
-### What Runs Automatically:
-
-- **Every commit** runs: linting, build, type checking, unit tests, and E2E tests
-- **No bypassing**: All tests must pass before code enters the repository
-- **Expected time**: 3-5 minutes per commit (due to comprehensive E2E testing)
-- **Pushing is instant**: No additional validation on push
-
-To manually run the full validation suite:
+Run the full validation suite locally:
 
 ```bash
+# Run linting, type checking, build, and unit tests
 npm run validate:pre-push
+
+# Run real E2E tests against actual YouTube
+npm run test:e2e
 ```
+
+**Important**: Real E2E tests must pass before PR submission. These tests verify the extension works correctly with actual YouTube videos and player behavior.
+
+### Automated CI Testing
+
+GitHub Actions automatically runs:
+- Linting, type checking, and unit tests
+- Build verification
+- **Mock E2E tests** using localhost test videos
+
+### Why Two Types of E2E Tests?
+
+**Real E2E tests** (`test:e2e`):
+- Test against actual YouTube videos and player
+- Required before PR submission to ensure real-world functionality
+- Cannot run in CI due to YouTube blocking/rate-limiting CI server IPs
+
+**Mock E2E tests** (`test:e2e:mock`):
+- Test using locally-served test videos (requires localhost permissions)
+- Run automatically in CI to catch regressions
+- Use Playwright's bundled Chromium (the only browser supporting extensions in headless mode)
+
+This dual approach ensures both real YouTube integration and fast automated regression detection.
 
 ## Technology Stack
 

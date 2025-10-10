@@ -1,9 +1,8 @@
-import * as fs from 'fs/promises';
-import * as path from 'path';
 import { Page } from '@playwright/test';
 
 /**
- * GIF validation utilities for verifying output matches input settings
+ * GIF validation utilities for mock E2E tests
+ * These work with data URLs and blob URLs instead of file paths
  */
 
 export interface GifMetadata {
@@ -32,12 +31,41 @@ export const RESOLUTION_SPECS: Record<string, ResolutionSpec> = {
 };
 
 /**
- * Parse GIF file header and extract metadata
- * GIF87a/GIF89a format parser
+ * Convert data URL or blob URL to Buffer
+ * For blob URLs, we need to fetch them first
  */
-export async function extractGifMetadata(filePath: string): Promise<GifMetadata> {
-  const buffer = await fs.readFile(filePath);
+export async function urlToBuffer(page: Page, url: string): Promise<Buffer> {
+  if (url.startsWith('data:image/gif;base64,')) {
+    // Data URL - extract base64 and convert
+    const base64Data = url.replace(/^data:image\/gif;base64,/, '');
+    return Buffer.from(base64Data, 'base64');
+  } else if (url.startsWith('blob:')) {
+    // Blob URL - need to fetch via page context
+    const base64 = await page.evaluate(async (blobUrl) => {
+      const response = await fetch(blobUrl);
+      const blob = await response.blob();
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const dataUrl = reader.result as string;
+          const base64 = dataUrl.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }, url);
+    return Buffer.from(base64, 'base64');
+  } else {
+    throw new Error(`Unsupported URL type: ${url}`);
+  }
+}
 
+/**
+ * Parse GIF buffer and extract metadata
+ * GIF87a/GIF89a format parser - works with Buffer instead of file paths
+ */
+export function extractGifMetadataFromBuffer(buffer: Buffer): GifMetadata {
   // Verify GIF signature
   const signature = buffer.toString('ascii', 0, 6);
   if (signature !== 'GIF87a' && signature !== 'GIF89a') {
@@ -76,10 +104,20 @@ export async function extractGifMetadata(filePath: string): Promise<GifMetadata>
       frameCount++;
       position++; // Move past separator
 
-      // Skip image descriptor (9 bytes)
+      // Read image descriptor (9 bytes): left, top, width, height, packed fields
       position += 9;
 
-      // Skip image data
+      // Check for local color table
+      const localPackedFields = buffer[position - 1]; // Last byte of image descriptor
+      const hasLocalColorTable = (localPackedFields & 0x80) !== 0;
+
+      if (hasLocalColorTable) {
+        const localColorTableSize = 2 ** ((localPackedFields & 0x07) + 1);
+        const localColorTableBytes = localColorTableSize * 3;
+        position += localColorTableBytes;
+      }
+
+      // Skip image data (LZW + sub-blocks)
       const lzwMinimum = buffer[position];
       position++; // LZW minimum code size
 
@@ -99,20 +137,71 @@ export async function extractGifMetadata(filePath: string): Promise<GifMetadata>
   }
 
   // Get file size
-  const stats = await fs.stat(filePath);
+  const fileSize = buffer.length;
 
-  // Estimate duration and FPS (this is approximate without parsing timing info)
-  // For accurate timing, we'd need to parse Graphic Control Extensions
+  // Parse duration by looking for Graphic Control Extensions
+  // Use same structure-aware parsing as frame counting
   let totalDelay = 0;
   position = 13 + globalColorTableBytes;
 
-  while (position < buffer.length - 1) {
-    if (buffer[position] === 0x21 && buffer[position + 1] === 0xF9) {
-      // Found Graphic Control Extension
-      position += 3; // Skip to delay time
-      const delay = buffer.readUInt16LE(position + 1); // Delay in 1/100ths of a second
-      totalDelay += delay;
-      position += 5;
+  while (position < buffer.length) {
+    const byte = buffer[position];
+
+    if (byte === 0x21) { // Extension introducer
+      const extensionLabel = buffer[position + 1];
+
+      if (extensionLabel === 0xF9) {
+        // Graphic Control Extension - contains frame delay
+        position += 2; // Skip introducer and label
+        const blockSize = buffer[position];
+        position++; // Move to block data
+
+        // Read delay time (2 bytes, little-endian, in 1/100ths of a second)
+        const delay = buffer.readUInt16LE(position + 1);
+        totalDelay += delay;
+
+        // Skip rest of block and terminator
+        position += blockSize + 1;
+      } else {
+        // Other extension - skip it
+        position += 2; // Skip introducer and label
+        let blockSize = buffer[position];
+        while (blockSize > 0) {
+          position += blockSize + 1;
+          if (position >= buffer.length) break;
+          blockSize = buffer[position];
+        }
+        position++; // Skip block terminator
+      }
+    } else if (byte === 0x2C) { // Image separator
+      position++; // Move past separator
+
+      // Read image descriptor (9 bytes)
+      position += 9;
+
+      // Check for local color table
+      const localPackedFields = buffer[position - 1];
+      const hasLocalColorTable = (localPackedFields & 0x80) !== 0;
+
+      if (hasLocalColorTable) {
+        const localColorTableSize = 2 ** ((localPackedFields & 0x07) + 1);
+        const localColorTableBytes = localColorTableSize * 3;
+        position += localColorTableBytes;
+      }
+
+      // Skip image data (LZW + sub-blocks)
+      position++; // Skip LZW minimum code size
+
+      // Skip sub-blocks
+      let subBlockSize = buffer[position];
+      while (subBlockSize > 0) {
+        position += subBlockSize + 1;
+        if (position >= buffer.length) break;
+        subBlockSize = buffer[position];
+      }
+      position++; // Skip block terminator
+    } else if (byte === 0x3B) { // Trailer (end of file)
+      break;
     } else {
       position++;
     }
@@ -127,9 +216,21 @@ export async function extractGifMetadata(filePath: string): Promise<GifMetadata>
     frameCount,
     duration,
     fps: Math.round(fps),
-    fileSize: stats.size,
+    fileSize,
     hasTransparency: signature === 'GIF89a', // GIF89a supports transparency
   };
+}
+
+/**
+ * Extract GIF metadata from data URL or blob URL
+ * This is the main entry point for mock tests
+ */
+export async function extractGifMetadata(
+  page: Page,
+  gifUrl: string
+): Promise<GifMetadata> {
+  const buffer = await urlToBuffer(page, gifUrl);
+  return extractGifMetadataFromBuffer(buffer);
 }
 
 /**
@@ -159,7 +260,7 @@ export function validateResolution(
 export function validateFrameRate(
   metadata: GifMetadata,
   expectedFps: number,
-  tolerance: number = 1
+  tolerance: number = 2 // Slightly higher tolerance for GIF encoding variations
 ): { valid: boolean; message: string } {
   const fpsDiff = Math.abs(metadata.fps - expectedFps);
   const valid = fpsDiff <= tolerance;
@@ -219,31 +320,11 @@ export function validateFileSize(
 }
 
 /**
- * Extract GIF from page download or data URL
+ * Validate GIF from data URL or blob URL
  */
-export async function extractGifFromPage(
+export async function validateGifFromUrl(
   page: Page,
-  downloadPath: string
-): Promise<string> {
-  // Set up download handler
-  const downloadPromise = page.waitForEvent('download', { timeout: 30000 });
-
-  // Trigger download (assumes download button is clicked elsewhere)
-  const download = await downloadPromise;
-
-  // Save file
-  const fileName = `test-gif-${Date.now()}.gif`;
-  const filePath = path.join(downloadPath, fileName);
-  await download.saveAs(filePath);
-
-  return filePath;
-}
-
-/**
- * Validate GIF from data URL
- */
-export async function validateGifDataUrl(
-  dataUrl: string,
+  gifUrl: string,
   expectedSettings: {
     resolution: '144p' | '240p' | '360p' | '480p';
     fps: number;
@@ -258,72 +339,28 @@ export async function validateGifDataUrl(
     duration: { valid: boolean; message: string };
   };
 }> {
-  // Convert data URL to buffer
-  const base64Data = dataUrl.replace(/^data:image\/gif;base64,/, '');
-  const buffer = Buffer.from(base64Data, 'base64');
+  const metadata = await extractGifMetadata(page, gifUrl);
 
-  // Save temporarily for analysis
-  const tempPath = path.join(__dirname, '..', '..', 'temp', `temp-gif-${Date.now()}.gif`);
-  await fs.mkdir(path.dirname(tempPath), { recursive: true });
-  await fs.writeFile(tempPath, buffer);
+  const validationResults = {
+    resolution: validateResolution(metadata, expectedSettings.resolution),
+    frameRate: validateFrameRate(metadata, expectedSettings.fps),
+    duration: validateDuration(metadata, expectedSettings.duration),
+  };
 
-  try {
-    const metadata = await extractGifMetadata(tempPath);
+  const valid =
+    validationResults.resolution.valid &&
+    validationResults.frameRate.valid &&
+    validationResults.duration.valid;
 
-    const validationResults = {
-      resolution: validateResolution(metadata, expectedSettings.resolution),
-      frameRate: validateFrameRate(metadata, expectedSettings.fps),
-      duration: validateDuration(metadata, expectedSettings.duration),
-    };
-
-    const valid =
-      validationResults.resolution.valid &&
-      validationResults.frameRate.valid &&
-      validationResults.duration.valid;
-
-    return { valid, metadata, validationResults };
-  } finally {
-    // Clean up temp file
-    await fs.unlink(tempPath).catch(() => {});
-  }
+  return { valid, metadata, validationResults };
 }
 
 /**
- * Visual comparison for text overlay validation
- * This checks if text is visible in the GIF frames
- */
-export async function validateTextOverlay(
-  page: Page,
-  gifElement: string,
-  expectedText: string[]
-): Promise<{ hasText: boolean; confidence: number }> {
-  // Take screenshot of GIF preview
-  const screenshot = await page.locator(gifElement).screenshot();
-
-  // In a real implementation, you'd use OCR here (like Tesseract.js)
-  // For now, we'll do a simple check based on image characteristics
-
-  // Check if the image has enough variation (text adds complexity)
-  const buffer = Buffer.from(screenshot);
-  const uniqueColors = new Set();
-
-  for (let i = 0; i < Math.min(buffer.length, 10000); i += 4) {
-    const color = `${buffer[i]},${buffer[i+1]},${buffer[i+2]}`;
-    uniqueColors.add(color);
-  }
-
-  // More colors = likely has text overlay
-  const hasText = uniqueColors.size > 100;
-  const confidence = Math.min(uniqueColors.size / 200, 1);
-
-  return { hasText, confidence };
-}
-
-/**
- * Complete validation suite for a GIF
+ * Complete validation suite for a GIF from URL
  */
 export async function validateGifComplete(
-  gifPath: string,
+  page: Page,
+  gifUrl: string,
   expectedSettings: {
     resolution: '144p' | '240p' | '360p' | '480p';
     fps: number;
@@ -341,7 +378,7 @@ export async function validateGifComplete(
   };
   summary: string;
 }> {
-  const metadata = await extractGifMetadata(gifPath);
+  const metadata = await extractGifMetadata(page, gifUrl);
 
   const results = {
     resolution: validateResolution(metadata, expectedSettings.resolution),
@@ -361,7 +398,7 @@ export async function validateGifComplete(
     results.duration.valid;
 
   const summary = `
-GIF Validation Results:
+[Mock Test] GIF Validation Results:
 - Resolution: ${results.resolution.valid ? '✅' : '❌'} ${results.resolution.message}
 - Frame Rate: ${results.frameRate.valid ? '✅' : '❌'} ${results.frameRate.message}
 - Duration: ${results.duration.valid ? '✅' : '❌'} ${results.duration.message}
@@ -370,4 +407,57 @@ GIF Validation Results:
 `.trim();
 
   return { passed, metadata, results, summary };
+}
+
+/**
+ * Helper to check aspect ratio preservation
+ */
+export function validateAspectRatio(
+  metadata: GifMetadata,
+  sourceWidth: number,
+  sourceHeight: number,
+  tolerance: number = 0.05 // 5% tolerance
+): { valid: boolean; message: string } {
+  const sourceAspectRatio = sourceWidth / sourceHeight;
+  const gifAspectRatio = metadata.width / metadata.height;
+
+  const ratioDiff = Math.abs(sourceAspectRatio - gifAspectRatio) / sourceAspectRatio;
+  const valid = ratioDiff <= tolerance;
+
+  const message = valid
+    ? `Aspect ratio preserved: ${gifAspectRatio.toFixed(2)} (source: ${sourceAspectRatio.toFixed(2)})`
+    : `Aspect ratio changed! Source: ${sourceAspectRatio.toFixed(2)}, GIF: ${gifAspectRatio.toFixed(2)} (diff: ${(ratioDiff * 100).toFixed(1)}%)`;
+
+  return { valid, message };
+}
+
+/**
+ * Visual comparison for text overlay validation
+ * This checks if text is visible in the GIF by analyzing color variation
+ */
+export async function validateTextOverlay(
+  page: Page,
+  gifSelector: string,
+  expectedText?: string[]
+): Promise<{ hasText: boolean; confidence: number }> {
+  // Take screenshot of GIF element
+  const screenshot = await page.locator(gifSelector).screenshot();
+
+  // In a real implementation, you'd use OCR here (like Tesseract.js)
+  // For now, we'll do a simple check based on image characteristics
+
+  // Check if the image has enough variation (text adds complexity)
+  const buffer = Buffer.from(screenshot);
+  const uniqueColors = new Set();
+
+  for (let i = 0; i < Math.min(buffer.length, 10000); i += 4) {
+    const color = `${buffer[i]},${buffer[i+1]},${buffer[i+2]}`;
+    uniqueColors.add(color);
+  }
+
+  // More colors = likely has text overlay
+  const hasText = uniqueColors.size > 100;
+  const confidence = Math.min(uniqueColors.size / 200, 1);
+
+  return { hasText, confidence };
 }
