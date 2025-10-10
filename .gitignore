@@ -16,6 +16,7 @@ chrome-store-submission.zip
 
 # Build outputs
 dist/
+dist-production/
 dist-ssr/
 build/
 out/
