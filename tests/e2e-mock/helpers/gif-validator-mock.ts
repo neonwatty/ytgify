@@ -430,3 +430,34 @@ export function validateAspectRatio(
 
   return { valid, message };
 }
+
+/**
+ * Visual comparison for text overlay validation
+ * This checks if text is visible in the GIF by analyzing color variation
+ */
+export async function validateTextOverlay(
+  page: Page,
+  gifSelector: string,
+  expectedText?: string[]
+): Promise<{ hasText: boolean; confidence: number }> {
+  // Take screenshot of GIF element
+  const screenshot = await page.locator(gifSelector).screenshot();
+
+  // In a real implementation, you'd use OCR here (like Tesseract.js)
+  // For now, we'll do a simple check based on image characteristics
+
+  // Check if the image has enough variation (text adds complexity)
+  const buffer = Buffer.from(screenshot);
+  const uniqueColors = new Set();
+
+  for (let i = 0; i < Math.min(buffer.length, 10000); i += 4) {
+    const color = `${buffer[i]},${buffer[i+1]},${buffer[i+2]}`;
+    uniqueColors.add(color);
+  }
+
+  // More colors = likely has text overlay
+  const hasText = uniqueColors.size > 100;
+  const confidence = Math.min(uniqueColors.size / 200, 1);
+
+  return { hasText, confidence };
+}

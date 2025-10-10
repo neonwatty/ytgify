@@ -230,12 +230,11 @@ test.describe('Mock E2E: GIF Output Validation', () => {
   });
 
   // ========== Duration Validation Tests ==========
-  // Note: Using individual tests instead of loop for better debuggability in mock environment
+  // NOTE: Timeline interaction uses programmatic setTimeRange() method
+  // Duration selection works correctly in mock tests via direct time range manipulation
+  // Real E2E tests additionally validate manual timeline drag interaction
 
-  test.skip('GIF with 1s duration is correct length', async ({ page, mockServerUrl }) => {
-    // Skip: Timeline interaction doesn't work in mock E2E tests
-    // Duration tests require setTimeRange() which relies on Playwright drag operations
-    // that are unstable in the mock environment
+  test('GIF with 1s duration is correct length', async ({ page, mockServerUrl }) => {
     test.setTimeout(90000);
 
     const youtube = new YouTubePage(page);
@@ -251,12 +250,13 @@ test.describe('Mock E2E: GIF Output Validation', () => {
     await quickCapture.selectResolution('144p');
     await quickCapture.selectFps('5');
 
-    // Set specific 1-second duration
-    try {
-      await quickCapture.setTimeRange(0, 1);
-    } catch {
-      console.log('[Mock Test] setTimeRange not available, skipping specific duration');
-    }
+    // Set specific 1-second duration using improved setTimeRange
+    await quickCapture.setTimeRange(0, 1);
+    await page.waitForTimeout(500);
+
+    // Verify duration was set correctly in UI before proceeding
+    const selectedDuration = await quickCapture.getSelectionDuration();
+    expect(selectedDuration).toBeCloseTo(1, 0); // Should be ~1s
 
     await quickCapture.clickNext();
 
@@ -270,21 +270,19 @@ test.describe('Mock E2E: GIF Output Validation', () => {
 
     expect(gifUrl).toBeTruthy();
 
-    // Note: Timeline interaction doesn't work in mock tests, so GIF will be 10s (wizard default)
-    // Accept actual duration instead of expected 1s
     const metadata = await extractGifMetadata(page, gifUrl!);
 
-    console.log(`[Mock Test] Duration test result: ${metadata.duration}s (timeline interaction unavailable, using wizard default)`);
+    // Validate duration matches what we set (with reasonable tolerance)
+    console.log(`[Mock Test] GIF duration: ${metadata.duration}s (expected: 1s)`);
 
-    // Just validate that a GIF was created successfully
-    expect(metadata.duration).toBeGreaterThan(0);
+    expect(metadata.duration).toBeCloseTo(1, 0); // Allow ±1s tolerance
     expect(metadata.frameCount).toBeGreaterThan(0);
+    expect(metadata.frameCount).toBeCloseTo(5, 2); // 5fps * 1s = ~5 frames
 
-    console.log(`✅ [Mock Test] 1s duration GIF validated`);
+    console.log(`✅ [Mock Test] 1s duration GIF validated (actual: ${metadata.duration.toFixed(1)}s, ${metadata.frameCount} frames)`);
   });
 
-  test.skip('GIF with 3s duration is correct length', async ({ page, mockServerUrl }) => {
-    // Skip: Timeline interaction doesn't work in mock E2E tests
+  test('GIF with 3s duration is correct length', async ({ page, mockServerUrl }) => {
     test.setTimeout(90000);
 
     const youtube = new YouTubePage(page);
@@ -300,12 +298,13 @@ test.describe('Mock E2E: GIF Output Validation', () => {
     await quickCapture.selectResolution('144p');
     await quickCapture.selectFps('5');
 
-    // Set specific 3-second duration
-    try {
-      await quickCapture.setTimeRange(0, 3);
-    } catch {
-      console.log('[Mock Test] setTimeRange not available, skipping specific duration');
-    }
+    // Set specific 3-second duration using improved setTimeRange
+    await quickCapture.setTimeRange(0, 3);
+    await page.waitForTimeout(500);
+
+    // Verify duration was set correctly in UI before proceeding
+    const selectedDuration = await quickCapture.getSelectionDuration();
+    expect(selectedDuration).toBeCloseTo(3, 0); // Should be ~3s
 
     await quickCapture.clickNext();
 
@@ -319,21 +318,19 @@ test.describe('Mock E2E: GIF Output Validation', () => {
 
     expect(gifUrl).toBeTruthy();
 
-    // Note: Timeline interaction doesn't work in mock tests, so GIF will be 10s (wizard default)
-    // Accept actual duration instead of expected 3s
     const metadata = await extractGifMetadata(page, gifUrl!);
 
-    console.log(`[Mock Test] Duration test result: ${metadata.duration}s (timeline interaction unavailable, using wizard default)`);
+    // Validate duration matches what we set (with reasonable tolerance)
+    console.log(`[Mock Test] GIF duration: ${metadata.duration}s (expected: 3s)`);
 
-    // Just validate that a GIF was created successfully
-    expect(metadata.duration).toBeGreaterThan(0);
+    expect(metadata.duration).toBeCloseTo(3, 0); // Allow ±1s tolerance
     expect(metadata.frameCount).toBeGreaterThan(0);
+    expect(metadata.frameCount).toBeCloseTo(15, 3); // 5fps * 3s = ~15 frames
 
-    console.log(`✅ [Mock Test] 3s duration GIF validated`);
+    console.log(`✅ [Mock Test] 3s duration GIF validated (actual: ${metadata.duration.toFixed(1)}s, ${metadata.frameCount} frames)`);
   });
 
-  test.skip('GIF with 5s duration is correct length', async ({ page, mockServerUrl }) => {
-    // Skip: Timeline interaction doesn't work in mock E2E tests
+  test('GIF with 5s duration is correct length', async ({ page, mockServerUrl }) => {
     test.setTimeout(90000);
 
     const youtube = new YouTubePage(page);
@@ -349,12 +346,13 @@ test.describe('Mock E2E: GIF Output Validation', () => {
     await quickCapture.selectResolution('144p');
     await quickCapture.selectFps('5');
 
-    // Set specific 5-second duration
-    try {
-      await quickCapture.setTimeRange(0, 5);
-    } catch {
-      console.log('[Mock Test] setTimeRange not available, skipping specific duration');
-    }
+    // Set specific 5-second duration using improved setTimeRange
+    await quickCapture.setTimeRange(0, 5);
+    await page.waitForTimeout(500);
+
+    // Verify duration was set correctly in UI before proceeding
+    const selectedDuration = await quickCapture.getSelectionDuration();
+    expect(selectedDuration).toBeCloseTo(5, 0); // Should be ~5s
 
     await quickCapture.clickNext();
 
@@ -368,22 +366,25 @@ test.describe('Mock E2E: GIF Output Validation', () => {
 
     expect(gifUrl).toBeTruthy();
 
-    // Note: Timeline interaction doesn't work in mock tests, so GIF will be 10s (wizard default)
-    // Accept actual duration instead of expected 5s
     const metadata = await extractGifMetadata(page, gifUrl!);
 
-    console.log(`[Mock Test] Duration test result: ${metadata.duration}s (timeline interaction unavailable, using wizard default)`);
+    // Validate duration matches what we set (with reasonable tolerance)
+    console.log(`[Mock Test] GIF duration: ${metadata.duration}s (expected: 5s)`);
 
-    // Just validate that a GIF was created successfully
-    expect(metadata.duration).toBeGreaterThan(0);
+    expect(metadata.duration).toBeCloseTo(5, 0); // Allow ±1s tolerance
     expect(metadata.frameCount).toBeGreaterThan(0);
+    expect(metadata.frameCount).toBeCloseTo(25, 3); // 5fps * 5s = ~25 frames
 
-    console.log(`✅ [Mock Test] 5s duration GIF validated`);
+    console.log(`✅ [Mock Test] 5s duration GIF validated (actual: ${metadata.duration.toFixed(1)}s, ${metadata.frameCount} frames)`);
   });
 
   // ========== Text Overlay Test ==========
+  // NOTE: Text overlay visual validation differs between mock and real E2E tests:
+  // - Real E2E: Validates text actually appears in GIF output (OCR/visual validation)
+  // - Mock E2E: Validates workflow completes (text interaction unreliable in mock environment)
+  // For full text rendering validation, see real E2E tests (tests/e2e/gif-output-validation.spec.ts)
 
-  test('Text overlay produces valid GIF', async ({ page, mockServerUrl }) => {
+  test('Text overlay screen appears and GIF creation works', async ({ page, mockServerUrl }) => {
     test.setTimeout(90000);
 
     const youtube = new YouTubePage(page);
@@ -396,13 +397,16 @@ test.describe('Mock E2E: GIF Output Validation', () => {
     await youtube.openGifWizard();
 
     await quickCapture.waitForScreen();
-    await quickCapture.selectResolution('144p');
+    await quickCapture.selectResolution('240p');
     await quickCapture.selectFps('5');
     await quickCapture.clickNext();
 
-    // Text overlay interaction is unreliable in mock environment - just skip
-    // Text overlay functionality is validated in real E2E tests
+    // Verify text overlay screen appears
     await textOverlay.waitForScreen();
+
+    // NOTE: Text overlay interaction (typing text, positioning) is unreliable in mock environment
+    // due to DOM manipulation issues. The actual text rendering is validated in real E2E tests.
+    // Here we just verify the screen appears and we can proceed through the workflow.
     await textOverlay.clickSkip();
 
     await processing.waitForCompletion(45000);
@@ -412,11 +416,20 @@ test.describe('Mock E2E: GIF Output Validation', () => {
 
     expect(gifUrl).toBeTruthy();
 
-    const metadata = await extractGifMetadata(page, gifUrl!);
-    expect(metadata.width).toBeGreaterThan(0);
-    expect(metadata.frameCount).toBeGreaterThan(0);
+    // Comprehensive validation of the output GIF
+    const validation = await validateGifComplete(page, gifUrl!, {
+      resolution: '240p',
+      fps: 5,
+      duration: 5
+    });
 
-    console.log(`✅ [Mock Test] Text overlay GIF validated: ${metadata.width}x${metadata.height}`);
+    console.log('\n' + validation.summary);
+
+    expect(validation.passed).toBe(true);
+    expect(validation.results.resolution.valid).toBe(true);
+    expect(validation.results.frameRate.valid).toBe(true);
+
+    console.log(`✅ [Mock Test] Text overlay workflow validated (Note: Visual text validation done in real E2E tests)`);
   });
 
   // ========== Combined Validation Test ==========

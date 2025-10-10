@@ -93,40 +93,54 @@ export class QuickCapturePage {
   }
 
   async setTimeRange(startSeconds: number, endSeconds: number) {
-    // For mock tests, we use a simpler approach since timeline interaction
-    // is not as critical as functional validation
+    // Use the duration slider approach (more reliable in mock environment)
+    const videoDuration = await this.getVideoDuration();
+    const targetDuration = endSeconds - startSeconds;
+
+    // Validate inputs
+    if (startSeconds < 0 || endSeconds > videoDuration || startSeconds >= endSeconds) {
+      console.warn(`[Mock Test] Invalid time range: ${startSeconds}-${endSeconds}s (video duration: ${videoDuration}s)`);
+      throw new Error(`Invalid time range: ${startSeconds}-${endSeconds}s`);
+    }
+
+    // Step 1: Click on the timeline to set the start position
     const timelineBox = await this.timeline.boundingBox();
     if (!timelineBox) {
-      console.warn('[Mock Test] Timeline not visible, skipping time range setting');
-      return;
+      throw new Error('Timeline not visible');
     }
 
-    const videoDuration = await this.getVideoDuration();
+    const startPercent = startSeconds / videoDuration;
+    const clickX = timelineBox.x + (startPercent * timelineBox.width);
+    const clickY = timelineBox.y + (timelineBox.height / 2);
 
-    // Calculate positions
-    const startX = timelineBox.x + (startSeconds / videoDuration) * timelineBox.width;
-    const endX = timelineBox.x + (endSeconds / videoDuration) * timelineBox.width;
+    await this.page.mouse.click(clickX, clickY);
+    await this.page.waitForTimeout(300);
 
-    // Drag start handle
-    try {
-      await this.startHandle.dragTo(this.timeline, {
-        targetPosition: { x: startX - timelineBox.x, y: timelineBox.height / 2 }
-      });
-    } catch (e) {
-      console.warn('[Mock Test] Start handle drag failed, using default range');
+    // Step 2: Adjust the duration using the slider
+    const durationSlider = this.page.locator('.ytgif-slider-input');
+    await durationSlider.waitFor({ state: 'visible', timeout: 5000 });
+
+    // Get slider constraints
+    const sliderMax = await durationSlider.getAttribute('max');
+    const maxDuration = sliderMax ? parseFloat(sliderMax) : 20;
+
+    // Clamp duration to slider limits
+    const clampedDuration = Math.min(Math.max(targetDuration, 1), maxDuration);
+
+    // Set the slider value
+    await durationSlider.fill(clampedDuration.toString());
+    await this.page.waitForTimeout(300);
+
+    // Step 3: Verify the change took effect
+    const actualDuration = await this.getSelectionDuration();
+    const tolerance = 0.5; // Allow 0.5s tolerance
+
+    if (Math.abs(actualDuration - clampedDuration) > tolerance) {
+      console.error(`[Mock Test] Timeline update failed: expected ${clampedDuration}s, got ${actualDuration}s`);
+      throw new Error(`Timeline duration mismatch: expected ${clampedDuration}s, got ${actualDuration}s`);
     }
 
-    // Drag end handle
-    try {
-      await this.endHandle.dragTo(this.timeline, {
-        targetPosition: { x: endX - timelineBox.x, y: timelineBox.height / 2 }
-      });
-    } catch (e) {
-      console.warn('[Mock Test] End handle drag failed, using default range');
-    }
-
-    // Wait for UI to update
-    await this.page.waitForTimeout(500);
+    console.log(`[Mock Test] ✅ Timeline set to ${startSeconds}s - ${endSeconds}s (${actualDuration}s duration)`);
   }
 
   async playPreview() {
@@ -135,6 +149,20 @@ export class QuickCapturePage {
   }
 
   async getSelectionDuration(): Promise<number> {
+    // Try to read from the duration slider value display
+    const sliderValue = this.page.locator('.ytgif-slider-value');
+    try {
+      const text = await sliderValue.textContent({ timeout: 2000 });
+      if (text) {
+        // Parse duration from text like "5.0s" or "5.2s"
+        const match = text.match(/(\d+\.?\d*)\s*s/);
+        if (match) return parseFloat(match[1]);
+      }
+    } catch {
+      // Fallback to duration display if slider value not found
+    }
+
+    // Fallback: Try duration display
     const text = await this.durationDisplay.textContent();
     if (!text) return 0;
 
