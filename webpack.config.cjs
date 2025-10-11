@@ -10,6 +10,7 @@ module.exports = (env, argv) => {
     entry: {
       background: './src/background/index.ts',
       content: './src/content/index.ts',
+      'content-styles': './src/content/styles-entry.ts', // Generates content.css for dynamic loading
       popup: './src/popup/index.tsx', // Re-enabled popup for better UX
     },
     output: {

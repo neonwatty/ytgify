@@ -25,9 +25,11 @@
     "test:e2e:mock:debug": "playwright test --config tests/playwright-mock.config.ts --debug",
     "test:e2e:mock:ui": "playwright test --config tests/playwright-mock.config.ts --ui",
     "generate:test-videos": "cd tests/e2e-mock/fixtures/videos && chmod +x generate-test-videos.sh && ./generate-test-videos.sh",
+    "test:layout": "HEADLESS=true playwright test --config tests/playwright.config.ts tests/e2e/youtube-layout-integrity.spec.ts tests/e2e/css-isolation.spec.ts",
+    "test:layout:headed": "playwright test --config tests/playwright.config.ts tests/e2e/youtube-layout-integrity.spec.ts tests/e2e/css-isolation.spec.ts --headed",
     "test:all": "npm run test && npm run test:e2e",
     "test:all:with-mock": "npm run test && npm run test:e2e:mock",
-    "validate:pre-push": "npm run lint && npm run build && npm run typecheck && npm test && npm run test:e2e:fast",
+    "validate:pre-push": "npm run lint && npm run build && npm run typecheck && npm test && npm run test:layout && npm run test:e2e:fast",
     "prepare": "husky"
   },
   "devDependencies": {

@@ -6,7 +6,7 @@ if (typeof chrome !== 'undefined' && chrome.runtime) {
   __webpack_public_path__ = chrome.runtime.getURL('/');
 }
 
-import './styles.css';
+// CSS is loaded dynamically when wizard opens - see injectCSS()
 import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import {
@@ -60,6 +60,8 @@ class YouTubeGifMaker {
     | { dataUrl: string; size: number; metadata: Record<string, unknown> }
     | undefined = undefined;
   private buttonVisible = false; // Track button visibility state - default to hidden
+  private cssInjected = false; // Track if CSS has been injected
+  private cssLinkElement: HTMLLinkElement | null = null; // Reference to injected CSS link
 
   constructor() {
     this.init();
@@ -80,6 +82,30 @@ class YouTubeGifMaker {
 
     // openGifWizard functionality is available via keyboard shortcuts and GIF button
     // No script injection needed - removed for Chrome Web Store compliance
+  }
+
+  // Inject CSS dynamically when wizard is opened
+  private injectCSS() {
+    if (this.cssInjected) return;
+
+    this.cssLinkElement = document.createElement('link');
+    this.cssLinkElement.rel = 'stylesheet';
+    this.cssLinkElement.href = chrome.runtime.getURL('content-styles.css');
+    document.head.appendChild(this.cssLinkElement);
+    this.cssInjected = true;
+
+    this.log('debug', '[Content] CSS injected dynamically');
+  }
+
+  // Remove CSS when no longer needed
+  private removeCSS() {
+    if (!this.cssInjected || !this.cssLinkElement) return;
+
+    this.cssLinkElement.remove();
+    this.cssLinkElement = null;
+    this.cssInjected = false;
+
+    this.log('debug', '[Content] CSS removed');
   }
 
   private init() {
@@ -684,6 +710,9 @@ class YouTubeGifMaker {
 
   private showWizardOverlay(message: ShowTimelineRequest) {
     try {
+      // Inject CSS before showing overlay
+      this.injectCSS();
+
       // Remove existing overlay
       this.hideTimelineOverlay();
 

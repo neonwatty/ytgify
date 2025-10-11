@@ -18,7 +18,6 @@
     {
       "matches": ["https://*.youtube.com/*", "http://localhost:*/*", "http://127.0.0.1:*/*"],
       "js": ["content.js"],
-      "css": ["content.css"],
       "run_at": "document_end"
     }
   ],
