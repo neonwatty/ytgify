@@ -142,14 +142,16 @@ class CleanupManager {
   }
 
   private setupNavigationListeners(): void {
-    // Listen to URL changes (YouTube SPA navigation)
+    // Use YouTube's own navigation events instead of DOM observation
     let currentUrl = window.location.href;
-    const urlObserver = new MutationObserver(() => {
+
+    // YouTube fires 'yt-navigate-finish' event on SPA navigation
+    const youtubeNavigationHandler = () => {
       if (window.location.href !== currentUrl) {
         const from = currentUrl;
         const to = window.location.href;
         currentUrl = to;
-        
+
         this.handleNavigation({
           from: this.getPageTypeFromUrl(from),
           to: this.getPageTypeFromUrl(to),
@@ -157,10 +159,9 @@ class CleanupManager {
           timestamp: Date.now()
         });
       }
-    });
+    };
 
-    // Observe URL changes by watching the document
-    urlObserver.observe(document, { subtree: true, childList: true });
+    window.addEventListener('yt-navigate-finish', youtubeNavigationHandler);
 
     // Also listen to popstate events for back/forward navigation
     const popstateHandler = () => {
@@ -174,7 +175,7 @@ class CleanupManager {
         });
       }, 50);
     };
-    
+
     window.addEventListener('popstate', popstateHandler);
 
     // Store cleanup for navigation listeners
@@ -183,8 +184,8 @@ class CleanupManager {
       name: 'Navigation Listeners Cleanup',
       priority: 60,
       cleanup: () => {
-        
-        urlObserver.disconnect();
+
+        window.removeEventListener('yt-navigate-finish', youtubeNavigationHandler);
         window.removeEventListener('popstate', popstateHandler);
       }
     });

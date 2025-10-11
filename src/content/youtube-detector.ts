@@ -246,10 +246,16 @@ export class YouTubeDetector {
   // Start monitoring for navigation changes
   private startMonitoring(): void {
     this.startUrlPolling();
-    this.startDomObservation();
 
-    logger.info('[YouTubeDetector] Started monitoring', { 
-      initialState: this.currentState 
+    // Only observe DOM on video pages (watch/shorts)
+    const isVideoPage = this.currentState.pageType === 'watch' || this.currentState.pageType === 'shorts';
+    if (isVideoPage) {
+      this.startDomObservation();
+    }
+
+    logger.info('[YouTubeDetector] Started monitoring', {
+      initialState: this.currentState,
+      domObservationActive: isVideoPage
     });
   }
 
@@ -266,6 +272,11 @@ export class YouTubeDetector {
 
   // Observe DOM changes for dynamic content updates
   private startDomObservation(): void {
+    // Prevent duplicate observers
+    if (this.observer) {
+      return;
+    }
+
     this.observer = new MutationObserver((mutations) => {
       let shouldCheck = false;
 
@@ -273,13 +284,13 @@ export class YouTubeDetector {
         // Check if significant page elements changed
         if (mutation.target instanceof Element) {
           const targetElement = mutation.target as Element;
-          
+
           // Watch for video player changes
           if (targetElement.matches('video, .html5-video-container, #movie_player')) {
             shouldCheck = true;
             break;
           }
-          
+
           // Watch for page title changes
           if (targetElement.matches('title')) {
             shouldCheck = true;
@@ -315,9 +326,26 @@ export class YouTubeDetector {
   private handleNavigation(navigationType: 'spa' | 'full' | 'initial'): void {
     const previousState = { ...this.currentState };
     const newState = this.detectCurrentState();
-    
+
     if (this.hasStateChanged(previousState, newState)) {
       this.currentState = newState;
+
+      // Start/stop DOM observation based on page type
+      const wasVideoPage = previousState.pageType === 'watch' || previousState.pageType === 'shorts';
+      const isVideoPage = newState.pageType === 'watch' || newState.pageType === 'shorts';
+
+      if (!wasVideoPage && isVideoPage) {
+        // Navigated TO a video page - start observing
+        this.startDomObservation();
+        logger.info('[YouTubeDetector] Started DOM observation for video page');
+      } else if (wasVideoPage && !isVideoPage) {
+        // Navigated AWAY from video page - stop observing
+        if (this.observer) {
+          this.observer.disconnect();
+          this.observer = null;
+          logger.info('[YouTubeDetector] Stopped DOM observation for non-video page');
+        }
+      }
 
       const navigationEvent: YouTubeNavigationEvent = {
         fromState: previousState,
@@ -330,7 +358,8 @@ export class YouTubeDetector {
         from: previousState.pageType,
         to: newState.pageType,
         videoId: newState.videoId,
-        type: navigationType
+        type: navigationType,
+        domObservationActive: isVideoPage
       });
 
       // Notify all registered callbacks

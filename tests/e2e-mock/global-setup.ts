@@ -53,7 +53,7 @@ async function globalSetup(config: FullConfig) {
     }
   }
 
-  // Step 2: Verify test video files (warn if missing, don't fail)
+  // Step 2: Verify test video files (generate if missing)
   console.log('🎬 Checking for test video files...');
   const videosPath = path.join(__dirname, 'fixtures', 'videos');
   const requiredFiles = getRequiredVideoFiles();
@@ -67,11 +67,21 @@ async function globalSetup(config: FullConfig) {
   }
 
   if (missingFiles.length > 0) {
-    console.warn('⚠️  Warning: Missing test video files:');
-    missingFiles.forEach(file => console.warn(`   - ${file}`));
-    console.warn('\n   To generate test videos, run:');
-    console.warn('   npm run generate:test-videos\n');
-    console.warn('   Tests will fail without these files!\n');
+    console.log('📹 Generating missing test videos...');
+    missingFiles.forEach(file => console.log(`   - ${file}`));
+    try {
+      execSync('npm run generate:test-videos', {
+        stdio: 'inherit',
+        cwd: path.join(__dirname, '..', '..')
+      });
+      console.log('✅ Test videos generated successfully\n');
+    } catch (error) {
+      console.error('❌ Failed to generate test videos:', error);
+      console.error('\n💡 Make sure FFmpeg is installed:');
+      console.error('   macOS:         brew install ffmpeg');
+      console.error('   Ubuntu/Debian: sudo apt-get install ffmpeg\n');
+      throw error;
+    }
   } else {
     console.log('✅ All test video files present\n');
   }
