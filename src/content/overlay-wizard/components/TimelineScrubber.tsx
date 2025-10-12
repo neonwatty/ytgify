@@ -41,7 +41,8 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
     const newValue = parseFloat(value.toFixed(1));
     const maxEnd = Math.min(startTime + newValue, duration);
     onRangeChange(startTime, maxEnd);
-    setDurationSliderValue(newValue);
+    // Set slider value to actual applied duration, not requested duration
+    setDurationSliderValue(maxEnd - startTime);
   };
 
   // Calculate slider constraints
