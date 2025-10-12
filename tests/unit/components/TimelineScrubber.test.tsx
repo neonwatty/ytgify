@@ -80,8 +80,8 @@ describe('TimelineScrubber', () => {
       expect(slider).toHaveAttribute('max', '15');
     });
 
-    it('should respect video duration limit when slider changes', () => {
-      render(<TimelineScrubber {...defaultProps} duration={10} startTime={8} />);
+    it('should respect video duration limit when slider changes and display actual duration', () => {
+      const { container } = render(<TimelineScrubber {...defaultProps} duration={10} startTime={8} />);
       const slider = screen.getByRole('slider', { name: /GIF duration/i });
 
       // Try to set duration beyond video end
@@ -89,6 +89,10 @@ describe('TimelineScrubber', () => {
 
       // Should be clamped to remaining duration (10 - 8 = 2)
       expect(defaultProps.onRangeChange).toHaveBeenCalledWith(8, 10);
+
+      // Verify slider displays actual applied duration (2s), not requested duration (5s)
+      const valueDisplay = container.querySelector('.ytgif-slider-value');
+      expect(valueDisplay).toHaveTextContent('2.0s');
     });
 
     it('should disable slider for videos shorter than 1 second', () => {
@@ -105,6 +109,71 @@ describe('TimelineScrubber', () => {
 
       // Max should be min(20, 25-10) = 15
       expect(slider).toHaveAttribute('max', '15');
+    });
+
+    it('should handle edge case: start time very close to end of short video', () => {
+      // Start with a smaller duration first, then test overflow
+      const { container } = render(<TimelineScrubber {...defaultProps} duration={5} startTime={4.5} endTime={4.7} />);
+      const slider = screen.getByRole('slider', { name: /GIF duration/i });
+
+      // Max should be 0.5 seconds (5 - 4.5)
+      expect(slider).toHaveAttribute('max', '0.5');
+
+      // Verify initial slider displays current duration (0.2s)
+      let valueDisplay = container.querySelector('.ytgif-slider-value');
+      expect(valueDisplay).toHaveTextContent('0.2s');
+
+      // Try to set a long duration (10s) which exceeds both max slider (0.5s) and video end
+      fireEvent.change(slider, { target: { value: '10' } });
+
+      // Should be clamped to remaining video duration (0.5s)
+      expect(defaultProps.onRangeChange).toHaveBeenCalledWith(4.5, 5);
+
+      // Verify slider displays actual applied duration (0.5s), not requested (10s)
+      valueDisplay = container.querySelector('.ytgif-slider-value');
+      expect(valueDisplay).toHaveTextContent('0.5s');
+    });
+
+    it('should synchronize slider value when timeline handles move start position', () => {
+      const { container, rerender } = render(<TimelineScrubber {...defaultProps} duration={10} startTime={2} endTime={7} />);
+
+      // Initial duration: 5s
+      let valueDisplay = container.querySelector('.ytgif-slider-value');
+      expect(valueDisplay).toHaveTextContent('5.0s');
+
+      // Simulate moving start handle near the end (startTime: 8, endTime: 7 is invalid, so it should adjust)
+      rerender(<TimelineScrubber {...defaultProps} duration={10} startTime={8} endTime={10} />);
+
+      // Duration should now be 2s (10 - 8)
+      valueDisplay = container.querySelector('.ytgif-slider-value');
+      expect(valueDisplay).toHaveTextContent('2.0s');
+
+      // Max slider value should also update
+      const slider = screen.getByRole('slider', { name: /GIF duration/i });
+      expect(slider).toHaveAttribute('max', '2');
+    });
+
+    it('should prevent slider from exceeding remaining video duration on very short videos', () => {
+      // Start with a smaller duration, then test increasing it beyond video bounds
+      const { container } = render(<TimelineScrubber {...defaultProps} duration={8} startTime={7} endTime={7.5} />);
+      const slider = screen.getByRole('slider', { name: /GIF duration/i });
+
+      // Only 1 second remaining from start position
+      expect(slider).toHaveAttribute('max', '1');
+
+      // Initial value should be 0.5s
+      let valueDisplay = container.querySelector('.ytgif-slider-value');
+      expect(valueDisplay).toHaveTextContent('0.5s');
+
+      // Try to drag to a longer duration (5s)
+      fireEvent.change(slider, { target: { value: '5' } });
+
+      // Should be clamped to max remaining duration (1s)
+      expect(defaultProps.onRangeChange).toHaveBeenCalledWith(7, 8);
+
+      // Verify slider displays actual applied duration (1.0s), not requested (5s)
+      valueDisplay = container.querySelector('.ytgif-slider-value');
+      expect(valueDisplay).toHaveTextContent('1.0s');
     });
   });
 

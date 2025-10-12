@@ -670,6 +670,7 @@
   cursor: pointer;
   margin-bottom: 20px;
   margin-top: 12px;
+  overflow: hidden;
 }
 
 .ytgif-timeline-background {

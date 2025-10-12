@@ -557,4 +557,158 @@ test.describe('Mock E2E: Basic Wizard Tests', () => {
 
     console.log('✅ [Mock Test] Duplicate frame detection workflow validated!');
   });
+
+  // ========== Short Video Edge Case Tests ==========
+
+  test('Timeline handles short video boundary correctly - prevents overflow', async ({ page, mockServerUrl }) => {
+    test.setTimeout(60000);
+
+    const youtube = new YouTubePage(page);
+    const quickCapture = new QuickCapturePage(page);
+
+    // Use 10-second video to test short video edge cases
+    await youtube.navigateToVideo(getMockVideoUrl('medium', mockServerUrl));
+    await youtube.openGifWizard();
+    await quickCapture.waitForScreen();
+
+    console.log('[Mock Test] Testing short video boundary handling...');
+
+    // Step 1: First set duration to 2 seconds using the slider
+    const slider = page.locator('.ytgif-slider-input');
+    await slider.waitFor({ state: 'visible', timeout: 5000 });
+    await slider.fill('2');
+    await page.waitForTimeout(300);
+
+    console.log('[Mock Test] Set initial duration to 2s');
+
+    // Step 2: Now click timeline near the end (80% position = 8 seconds on 10s video)
+    // This will move the 2s selection window to end at the video end
+    const timelineBox = await page.locator('.ytgif-timeline-track').boundingBox();
+    if (!timelineBox) {
+      throw new Error('Timeline not visible');
+    }
+
+    const clickX = timelineBox.x + (0.8 * timelineBox.width);
+    const clickY = timelineBox.y + (timelineBox.height / 2);
+    await page.mouse.click(clickX, clickY);
+    await page.waitForTimeout(500);
+
+    console.log('[Mock Test] Clicked timeline at 80% position');
+
+    // Step 3: Get current slider max (should be ~2 seconds since we're near the end)
+    const maxAttrBefore = await slider.getAttribute('max');
+    console.log(`[Mock Test] Slider max after clicking near end: ${maxAttrBefore}s`);
+
+    // Step 4: Try to set duration beyond video bounds by manually triggering change event
+    // Note: We can't use .fill() because HTML5 range inputs reject out-of-range values
+    // So we directly dispatch a change event with the value
+    await slider.evaluate((el: HTMLInputElement) => {
+      el.value = '10';
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    await page.waitForTimeout(500);
+
+    // Step 5: Verify slider shows actual applied duration, not requested
+    const sliderValue = await page.locator('.ytgif-slider-value').textContent();
+    console.log(`[Mock Test] Slider value after trying to set 10s: ${sliderValue}`);
+
+    // Should show clamped value (<=3s), NOT 10s
+    const displayedValue = parseFloat(sliderValue!.replace('s', ''));
+    expect(displayedValue).toBeLessThanOrEqual(4); // Should be clamped to remaining duration
+    expect(displayedValue).toBeGreaterThan(0);
+
+    // Step 6: Verify visual selection doesn't overflow container
+    const selection = await page.locator('.ytgif-timeline-selection').boundingBox();
+    const container = await page.locator('.ytgif-timeline-track').boundingBox();
+
+    if (selection && container) {
+      const selectionEnd = selection.x + selection.width;
+      const containerEnd = container.x + container.width;
+
+      console.log(`[Mock Test] Selection end: ${selectionEnd.toFixed(2)}, Container end: ${containerEnd.toFixed(2)}`);
+
+      // Selection should not extend beyond container (with 1px tolerance for rounding)
+      expect(selectionEnd).toBeLessThanOrEqual(containerEnd + 1);
+      console.log('✅ [Mock Test] Selection stays within bounds');
+    }
+
+    console.log('✅ [Mock Test] Timeline correctly handles short video boundary!');
+  });
+
+  test('Timeline slider value synchronizes with actual applied duration on short videos', async ({ page, mockServerUrl }) => {
+    test.setTimeout(60000);
+
+    const youtube = new YouTubePage(page);
+    const quickCapture = new QuickCapturePage(page);
+
+    // Use 10-second video
+    await youtube.navigateToVideo(getMockVideoUrl('medium', mockServerUrl));
+    await youtube.openGifWizard();
+    await quickCapture.waitForScreen();
+
+    console.log('[Mock Test] Testing slider value synchronization on short videos...');
+
+    // Step 1: Set duration to 1.5 seconds using the slider
+    const durationSlider = page.locator('.ytgif-slider-input');
+    await durationSlider.waitFor({ state: 'visible', timeout: 5000 });
+    await durationSlider.fill('1.5');
+    await page.waitForTimeout(300);
+
+    console.log('[Mock Test] Set initial duration to 1.5s');
+
+    // Step 2: Click near the end of the timeline (85% position = 8.5s on 10s video)
+    // This will move the 1.5s window to (8.5s, 10s)
+    const timelineBox = await page.locator('.ytgif-timeline-track').boundingBox();
+    if (!timelineBox) {
+      throw new Error('Timeline not visible');
+    }
+
+    const clickX = timelineBox.x + (0.85 * timelineBox.width);
+    const clickY = timelineBox.y + (timelineBox.height / 2);
+    await page.mouse.click(clickX, clickY);
+    await page.waitForTimeout(500);
+
+    console.log('[Mock Test] Clicked timeline at 85% position (~8.5s)');
+
+    // Step 3: Get current max value (should be ~1.5 seconds since we're at ~8.5s on 10s video)
+    const maxValue = await durationSlider.getAttribute('max');
+    console.log(`[Mock Test] Max slider value: ${maxValue}s`);
+
+    // Step 4: Try to set slider beyond the max (e.g., 10 seconds)
+    // Note: We can't use .fill() because HTML5 range inputs reject out-of-range values
+    // So we directly dispatch a change event with the value
+    await durationSlider.evaluate((el: HTMLInputElement) => {
+      el.value = '10';
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    await page.waitForTimeout(500);
+
+    // Step 5: Verify slider value display shows clamped value, not requested value
+    let sliderValueDisplay = await page.locator('.ytgif-slider-value').textContent();
+    console.log(`[Mock Test] Slider value after requesting 10s: ${sliderValueDisplay}`);
+
+    // Extract numeric value
+    let displayedValue = parseFloat(sliderValueDisplay!.replace('s', ''));
+
+    // Should be clamped to max (<=2.5s), not 10s
+    expect(displayedValue).toBeLessThanOrEqual(3); // Should be clamped
+    expect(displayedValue).toBeGreaterThan(0);
+
+    console.log(`[Mock Test] ✅ Slider value correctly clamped to ${displayedValue}s (not 10s)`);
+
+    // Step 6: Set slider to a valid value within range
+    await durationSlider.fill('1');
+    await page.waitForTimeout(300);
+
+    // Verify slider value display matches
+    sliderValueDisplay = await page.locator('.ytgif-slider-value').textContent();
+    console.log(`[Mock Test] Slider value after setting to 1s: ${sliderValueDisplay}`);
+
+    displayedValue = parseFloat(sliderValueDisplay!.replace('s', ''));
+
+    // Should be ~1s
+    expect(Math.abs(displayedValue - 1.0)).toBeLessThan(0.2);
+
+    console.log('✅ [Mock Test] Slider value correctly synchronized with actual duration!');
+  });
 });
