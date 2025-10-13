@@ -976,4 +976,110 @@ describe('QuickCaptureScreen', () => {
       });
     });
   });
+
+  describe('Start Time Input Integration', () => {
+    it('should render start time input in TimelineScrubber', () => {
+      render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+      // TimelineScrubber should be called with startTime
+      expect(TimelineScrubber).toHaveBeenCalledWith(
+        expect.objectContaining({
+          startTime: 10,
+        }),
+        {}
+      );
+    });
+
+    it('should update start time when TimelineScrubber onChange called', () => {
+      // Update the mock to allow calling onRangeChange
+      MockTimelineScrubber.mockImplementation((props: any) => {
+        return (
+          <div data-testid="timeline-scrubber">
+            <button
+              data-testid="timeline-set-start-btn"
+              onClick={() => props.onRangeChange && props.onRangeChange(15, 20)}
+            >
+              Set Start to 15
+            </button>
+            <span data-testid="timeline-times">{props.startTime}-{props.endTime}</span>
+          </div>
+        );
+      });
+
+      render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+      // Click to change start time
+      const setStartBtn = screen.getByTestId('timeline-set-start-btn');
+      fireEvent.click(setStartBtn);
+
+      // Verify TimelineScrubber receives updated start time
+      expect(TimelineScrubber).toHaveBeenCalledWith(
+        expect.objectContaining({
+          startTime: 15,
+          endTime: 20,
+        }),
+        {}
+      );
+    });
+
+    it('should pass updated start time to onConfirm', () => {
+      // Setup mock to capture onRangeChange
+      let capturedOnRangeChange: ((start: number, end: number) => void) | null = null;
+      MockTimelineScrubber.mockImplementation((props: any) => {
+        capturedOnRangeChange = props.onRangeChange;
+        return (
+          <div data-testid="timeline-scrubber">
+            <span>{props.startTime}-{props.endTime}</span>
+          </div>
+        );
+      });
+
+      render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+      // Simulate setting new start time via TimelineScrubber
+      if (capturedOnRangeChange) {
+        act(() => {
+          capturedOnRangeChange!(12, 17);
+        });
+      }
+
+      // Click confirm button
+      const confirmButton = screen.getByText(/Continue to Customize/);
+      fireEvent.click(confirmButton);
+
+      // onConfirm should receive the updated start time
+      expect(mockOnConfirm).toHaveBeenCalledWith(12, 17, 5, '144p');
+    });
+
+    it('should maintain start time with resolution and FPS changes', () => {
+      // Setup mock
+      let capturedOnRangeChange: ((start: number, end: number) => void) | null = null;
+      MockTimelineScrubber.mockImplementation((props: any) => {
+        capturedOnRangeChange = props.onRangeChange;
+        return <div data-testid="timeline-scrubber" />;
+      });
+
+      render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
+
+      // Set start time
+      if (capturedOnRangeChange) {
+        act(() => {
+          capturedOnRangeChange!(8, 13);
+        });
+      }
+
+      // Change resolution
+      fireEvent.click(screen.getByText('360p Compact').closest('button')!);
+
+      // Change FPS
+      fireEvent.click(screen.getByText('15 fps').closest('button')!);
+
+      // Confirm
+      const confirmButton = screen.getByText(/Continue to Customize/);
+      fireEvent.click(confirmButton);
+
+      // All settings should be passed including start time
+      expect(mockOnConfirm).toHaveBeenCalledWith(8, 13, 15, '360p');
+    });
+  });
 });

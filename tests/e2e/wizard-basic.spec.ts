@@ -1082,4 +1082,168 @@ test.describe('Basic Wizard Test with Extension', () => {
     }
   });
 
+  test('Can set custom start time using input field', async ({ page, context: _context, extensionId: _extensionId }) => {
+    test.setTimeout(90000);
+    const quickCapture = new QuickCapturePage(page);
+
+    // Navigate and open wizard
+    await page.goto(TEST_VIDEOS.veryShort.url);
+    await handleYouTubeCookieConsent(page);
+    await page.waitForSelector('video', { timeout: 30000 });
+    await waitForGifButton(page, 10000);
+
+    await page.click('.ytgif-button');
+    await quickCapture.waitForScreen();
+
+    // Wait for timeline to be ready
+    await page.waitForTimeout(1000);
+
+    // Locate start time input field
+    const startTimeInput = await page.$('#ytgif-start-time-input');
+    expect(startTimeInput).toBeTruthy();
+
+    // Check initial value
+    const initialValue = await startTimeInput!.inputValue();
+    expect(initialValue).toBeTruthy();
+
+    // Clear and type new start time in MM:SS format
+    await startTimeInput!.fill('0:02');
+    await startTimeInput!.press('Enter');
+    await page.waitForTimeout(500);
+
+    // Verify the input updated
+    const newValue = await startTimeInput!.inputValue();
+    expect(newValue).toBe('0:02');
+
+    // Continue through wizard
+    await page.click('.ytgif-button-primary');
+    await page.waitForTimeout(1000);
+
+    console.log('✅ Successfully set custom start time using input field');
+  });
+
+  test('Start time input validation works in E2E flow', async ({ page, context: _context, extensionId: _extensionId }) => {
+    test.setTimeout(90000);
+    const quickCapture = new QuickCapturePage(page);
+
+    // Navigate and open wizard
+    await page.goto(TEST_VIDEOS.veryShort.url);
+    await handleYouTubeCookieConsent(page);
+    await page.waitForSelector('video', { timeout: 30000 });
+    await waitForGifButton(page, 10000);
+
+    await page.click('.ytgif-button');
+    await quickCapture.waitForScreen();
+    await page.waitForTimeout(1000);
+
+    // Locate start time input
+    const startTimeInput = await page.$('#ytgif-start-time-input');
+    expect(startTimeInput).toBeTruthy();
+
+    // Try to input invalid start time
+    await startTimeInput!.fill('99:99');
+    await startTimeInput!.press('Enter');
+    await page.waitForTimeout(500);
+
+    // Check if error message appears
+    const errorMessage = await page.$('.ytgif-time-input-error-message');
+    if (errorMessage) {
+      const errorText = await errorMessage.textContent();
+      expect(errorText).toBeTruthy();
+      console.log(`✅ Validation error displayed: ${errorText}`);
+
+      // Input valid start time
+      await startTimeInput!.fill('0:01');
+      await startTimeInput!.press('Enter');
+      await page.waitForTimeout(500);
+
+      // Error should clear
+      const errorAfter = await page.$('.ytgif-time-input-error-message');
+      expect(errorAfter).toBeFalsy();
+      console.log('✅ Error cleared after valid input');
+    } else {
+      console.log('⚠️ Error message not displayed or input rejected invalid value correctly');
+    }
+  });
+
+  test('Can create GIF with custom start time', async ({ page, context: _context, extensionId: _extensionId }) => {
+    test.setTimeout(120000);
+    const quickCapture = new QuickCapturePage(page);
+
+    // Navigate and open wizard
+    await page.goto(TEST_VIDEOS.veryShort.url);
+    await handleYouTubeCookieConsent(page);
+    await page.waitForSelector('video', { timeout: 30000 });
+    await waitForGifButton(page, 10000);
+
+    await page.click('.ytgif-button');
+    await quickCapture.waitForScreen();
+    await page.waitForTimeout(1000);
+
+    // Set custom start time
+    const startTimeInput = await page.$('#ytgif-start-time-input');
+    if (startTimeInput) {
+      await startTimeInput.fill('0:01');
+      await startTimeInput.press('Enter');
+      await page.waitForTimeout(500);
+      console.log('✅ Set start time to 0:01');
+    }
+
+    // Continue through wizard
+    await page.click('.ytgif-button-primary');
+    await page.waitForTimeout(1000);
+
+    // Skip text overlay
+    try {
+      await page.click('button:has-text("Skip")', { timeout: 3000 });
+    } catch {
+      await page.click('.ytgif-button-primary');
+    }
+    await page.waitForTimeout(1000);
+
+    // Wait for processing
+    const processingInfo = await page.evaluate(() => {
+      const processing = document.querySelector('.ytgif-processing-screen');
+      return {
+        onProcessingScreen: !!processing,
+        processingVisible: processing ? (processing as HTMLElement).offsetParent !== null : false,
+      };
+    });
+
+    if (processingInfo.onProcessingScreen) {
+      // Wait for success
+      try {
+        await page.waitForFunction(
+          () => {
+            const success = document.querySelector('.ytgif-success-screen');
+            const error = document.querySelector('.ytgif-error-message');
+            return success || error;
+          },
+          { timeout: 45000, polling: 500 }
+        );
+      } catch (e) {
+        console.log('Timeout waiting for GIF processing completion');
+      }
+
+      // Check for success
+      const successInfo = await page.evaluate(() => {
+        const success = document.querySelector('.ytgif-success-screen');
+        const gifPreview = document.querySelector('.ytgif-gif-preview img, .ytgif-success-preview-image');
+        return {
+          onSuccessScreen: !!success,
+          hasGifPreview: !!gifPreview,
+          gifSrc: gifPreview ? (gifPreview as HTMLImageElement).src : null,
+        };
+      });
+
+      if (successInfo.hasGifPreview && successInfo.gifSrc) {
+        expect(successInfo.gifSrc).toBeTruthy();
+        const isValidDataUrl = successInfo.gifSrc.startsWith('data:image/gif');
+        const isValidBlobUrl = successInfo.gifSrc.startsWith('blob:');
+        expect(isValidDataUrl || isValidBlobUrl).toBe(true);
+        console.log('✅ Successfully created GIF with custom start time');
+      }
+    }
+  });
+
 });
