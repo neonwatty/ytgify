@@ -238,9 +238,332 @@ describe('TimelineScrubber', () => {
     it('should have accessible labels', () => {
       const { container } = render(<TimelineScrubber {...defaultProps} />);
 
+      // Should have "Duration" label in timeline controls and "Clip Duration" label in slider
+      expect(screen.getByText('Duration')).toBeInTheDocument();
       expect(screen.getByText('Clip Duration')).toBeInTheDocument();
       const valueDisplay = container.querySelector('.ytgif-slider-value');
       expect(valueDisplay).toHaveTextContent('5.0s');
+    });
+  });
+
+  describe('Start Time Input - Parsing', () => {
+    it('should initialize input with formatted start time', () => {
+      render(<TimelineScrubber {...defaultProps} startTime={90} duration={120} />);
+      const input = screen.getByLabelText('Start time');
+      expect(input).toHaveValue('1:30');
+    });
+
+    it('should parse MM:SS format correctly', () => {
+      render(<TimelineScrubber {...defaultProps} duration={120} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: '1:30' } });
+      fireEvent.blur(input);
+
+      expect(defaultProps.onRangeChange).toHaveBeenCalledWith(90, 95);
+    });
+
+    it('should parse MM:SS with leading zeros', () => {
+      render(<TimelineScrubber {...defaultProps} duration={120} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: '01:30' } });
+      fireEvent.blur(input);
+
+      expect(defaultProps.onRangeChange).toHaveBeenCalledWith(90, 95);
+    });
+
+    it('should parse decimal seconds', () => {
+      render(<TimelineScrubber {...defaultProps} duration={120} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: '90.5' } });
+      fireEvent.blur(input);
+
+      expect(defaultProps.onRangeChange).toHaveBeenCalledWith(90.5, 95.5);
+    });
+
+    it('should parse integer seconds', () => {
+      render(<TimelineScrubber {...defaultProps} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: '10' } });
+      fireEvent.blur(input);
+
+      expect(defaultProps.onRangeChange).toHaveBeenCalledWith(10, 15);
+    });
+
+    it('should handle seconds at 59', () => {
+      render(<TimelineScrubber {...defaultProps} duration={80} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: '0:59' } });
+      fireEvent.blur(input);
+
+      expect(defaultProps.onRangeChange).toHaveBeenCalledWith(59, 64);
+    });
+
+    it('should reject invalid format with colons', () => {
+      const { container } = render(<TimelineScrubber {...defaultProps} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: 'abc' } });
+      fireEvent.blur(input);
+
+      const errorMessage = container.querySelector('.ytgif-time-input-error-message');
+      expect(errorMessage).toHaveTextContent('Invalid format');
+    });
+
+    it('should reject seconds >= 60 in MM:SS format', () => {
+      const { container } = render(<TimelineScrubber {...defaultProps} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: '1:70' } });
+      fireEvent.blur(input);
+
+      const errorMessage = container.querySelector('.ytgif-time-input-error-message');
+      expect(errorMessage).toHaveTextContent('Invalid format');
+    });
+
+    it('should handle empty input gracefully', () => {
+      const { container } = render(<TimelineScrubber {...defaultProps} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: '' } });
+      fireEvent.blur(input);
+
+      const errorMessage = container.querySelector('.ytgif-time-input-error-message');
+      expect(errorMessage).toHaveTextContent('Invalid format');
+    });
+  });
+
+  describe('Start Time Input - Validation', () => {
+    it('should accept valid start time within bounds', () => {
+      render(<TimelineScrubber {...defaultProps} startTime={0} endTime={5} duration={30} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: '10' } });
+      fireEvent.blur(input);
+
+      expect(defaultProps.onRangeChange).toHaveBeenCalledWith(10, 15);
+    });
+
+    it('should reject negative start time', () => {
+      const { container } = render(<TimelineScrubber {...defaultProps} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: '-5' } });
+      fireEvent.blur(input);
+
+      const errorMessage = container.querySelector('.ytgif-time-input-error-message');
+      expect(errorMessage).toHaveTextContent('Start time cannot be negative');
+    });
+
+    it('should reject start time that exceeds video duration', () => {
+      const { container } = render(
+        <TimelineScrubber {...defaultProps} startTime={0} endTime={5} duration={10} />
+      );
+      const input = screen.getByLabelText('Start time');
+
+      // Duration is 10s, clip is 5s, so max start time is 5
+      fireEvent.change(input, { target: { value: '8' } });
+      fireEvent.blur(input);
+
+      const errorMessage = container.querySelector('.ytgif-time-input-error-message');
+      expect(errorMessage).toHaveTextContent('Must be between 0:00 and');
+    });
+
+    it('should show correct max time in error message', () => {
+      const { container } = render(
+        <TimelineScrubber {...defaultProps} startTime={0} endTime={3} duration={10} />
+      );
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: '8' } });
+      fireEvent.blur(input);
+
+      const errorMessage = container.querySelector('.ytgif-time-input-error-message');
+      expect(errorMessage).toHaveTextContent('0:07');
+    });
+
+    it('should accept start time at zero', () => {
+      render(<TimelineScrubber {...defaultProps} startTime={5} endTime={10} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: '0' } });
+      fireEvent.blur(input);
+
+      expect(defaultProps.onRangeChange).toHaveBeenCalledWith(0, 5);
+    });
+
+    it('should accept start time at max valid value', () => {
+      render(<TimelineScrubber {...defaultProps} startTime={0} endTime={5} duration={30} />);
+      const input = screen.getByLabelText('Start time');
+
+      // Max valid start time is 25 (30 - 5)
+      fireEvent.change(input, { target: { value: '25' } });
+      fireEvent.blur(input);
+
+      expect(defaultProps.onRangeChange).toHaveBeenCalledWith(25, 30);
+    });
+  });
+
+  describe('Start Time Input - Synchronization', () => {
+    it('should update input when scrubber handle dragged', () => {
+      const { rerender } = render(<TimelineScrubber {...defaultProps} startTime={0} endTime={5} />);
+      const input = screen.getByLabelText('Start time');
+      expect(input).toHaveValue('0:00');
+
+      rerender(<TimelineScrubber {...defaultProps} startTime={10} endTime={15} />);
+      expect(input).toHaveValue('0:10');
+    });
+
+    it('should not update input while user is typing (focused)', () => {
+      const { rerender } = render(<TimelineScrubber {...defaultProps} startTime={0} endTime={5} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.focus(input);
+      fireEvent.change(input, { target: { value: '1:2' } });
+
+      // Try to update via prop change (shouldn't affect focused input)
+      rerender(<TimelineScrubber {...defaultProps} startTime={10} endTime={15} />);
+      expect(input).toHaveValue('1:2');
+    });
+
+    it('should update scrubber when valid input submitted', () => {
+      render(<TimelineScrubber {...defaultProps} startTime={0} endTime={5} duration={120} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: '1:30' } });
+      fireEvent.blur(input);
+
+      expect(defaultProps.onRangeChange).toHaveBeenCalledWith(90, 95);
+    });
+
+    it('should revert input on invalid input', () => {
+      render(<TimelineScrubber {...defaultProps} startTime={10} endTime={15} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: 'invalid' } });
+      fireEvent.blur(input);
+
+      expect(input).toHaveValue('0:10');
+    });
+
+    it('should maintain clip duration when changing start time', () => {
+      render(<TimelineScrubber {...defaultProps} startTime={0} endTime={5} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: '10' } });
+      fireEvent.blur(input);
+
+      // Start moved to 10, end should be 10 + 5 = 15
+      expect(defaultProps.onRangeChange).toHaveBeenCalledWith(10, 15);
+    });
+
+    it('should clamp end time to video duration', () => {
+      render(<TimelineScrubber {...defaultProps} startTime={0} endTime={3} duration={30} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: '27' } });
+      fireEvent.blur(input);
+
+      // Start at 27, duration is 3, so end should be 27 + 3 = 30
+      expect(defaultProps.onRangeChange).toHaveBeenCalledWith(27, 30);
+    });
+  });
+
+  describe('Start Time Input - Keyboard Controls', () => {
+    it('should apply input on Enter key', () => {
+      render(<TimelineScrubber {...defaultProps} duration={120} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: '1:30' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+      // Enter key calls blur() in the handler, simulate the blur event
+      fireEvent.blur(input);
+
+      expect(defaultProps.onRangeChange).toHaveBeenCalledWith(90, 95);
+    });
+
+    it('should revert input on Escape key', () => {
+      render(<TimelineScrubber {...defaultProps} startTime={10} endTime={15} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: '20' } });
+      fireEvent.keyDown(input, { key: 'Escape' });
+
+      expect(input).toHaveValue('0:10');
+      expect(defaultProps.onRangeChange).not.toHaveBeenCalledWith(20, 25);
+    });
+
+    it('should clear error on new input', () => {
+      const { container } = render(<TimelineScrubber {...defaultProps} />);
+      const input = screen.getByLabelText('Start time');
+
+      // Trigger error
+      fireEvent.change(input, { target: { value: 'invalid' } });
+      fireEvent.blur(input);
+      expect(container.querySelector('.ytgif-time-input-error-message')).toBeInTheDocument();
+
+      // Start typing again
+      fireEvent.change(input, { target: { value: '1' } });
+      expect(container.querySelector('.ytgif-time-input-error-message')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Start Time Input - Error States', () => {
+    it('should apply error class to input field', () => {
+      render(<TimelineScrubber {...defaultProps} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: 'invalid' } });
+      fireEvent.blur(input);
+
+      expect(input).toHaveClass('error');
+    });
+
+    it('should show error message below input', () => {
+      const { container } = render(<TimelineScrubber {...defaultProps} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: 'invalid' } });
+      fireEvent.blur(input);
+
+      const errorMessage = container.querySelector('.ytgif-time-input-error-message');
+      expect(errorMessage).toBeInTheDocument();
+    });
+
+    it('should set aria-invalid when error present', () => {
+      render(<TimelineScrubber {...defaultProps} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: 'invalid' } });
+      fireEvent.blur(input);
+
+      expect(input).toHaveAttribute('aria-invalid', 'true');
+    });
+
+    it('should set aria-describedby when error present', () => {
+      render(<TimelineScrubber {...defaultProps} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: 'invalid' } });
+      fireEvent.blur(input);
+
+      expect(input).toHaveAttribute('aria-describedby', 'ytgif-time-input-error');
+    });
+
+    it('should remove error class when valid input entered', () => {
+      render(<TimelineScrubber {...defaultProps} />);
+      const input = screen.getByLabelText('Start time');
+
+      fireEvent.change(input, { target: { value: 'invalid' } });
+      fireEvent.blur(input);
+      expect(input).toHaveClass('error');
+
+      fireEvent.change(input, { target: { value: '10' } });
+      expect(input).not.toHaveClass('error');
     });
   });
 });

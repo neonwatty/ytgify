@@ -772,6 +772,119 @@
   color: #ff0000;
 }
 
+/* Timeline Controls - Start Time Input and Duration Display */
+.ytgif-timeline-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.ytgif-timeline-control-left,
+.ytgif-timeline-control-right {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ytgif-timeline-control-left {
+  align-items: flex-start;
+}
+
+.ytgif-timeline-control-right {
+  align-items: flex-end;
+}
+
+.ytgif-control-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.ytgif-control-value {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: monospace;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 6px 12px;
+  border-radius: 12px;
+  display: inline-block;
+  letter-spacing: 0.5px;
+  width: 80px;
+  max-width: 80px;
+  text-align: center;
+  box-sizing: border-box;
+  line-height: 1.2;
+}
+
+/* Screen 1: Capture control value */
+.ytgif-quick-capture-screen .ytgif-control-value {
+  background: rgba(255, 0, 0, 0.15);
+  border-color: rgba(255, 0, 0, 0.4);
+}
+
+.ytgif-time-input-field {
+  width: 80px;
+  max-width: 80px;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  color: white;
+  font-size: 13px;
+  font-family: monospace;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.2s ease;
+  outline: none;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+  box-sizing: border-box;
+}
+
+.ytgif-time-input-field:hover {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.ytgif-time-input-field:focus {
+  background: rgba(255, 0, 0, 0.15);
+  border-color: #ff0000;
+  box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Screen 1: Capture time input focus */
+.ytgif-quick-capture-screen .ytgif-time-input-field:focus {
+  border-color: #ff0000;
+  box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.3);
+}
+
+.ytgif-time-input-field.error {
+  border-color: #f44336;
+  background: rgba(244, 67, 54, 0.15);
+}
+
+.ytgif-time-input-field.error:focus {
+  box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.3);
+}
+
+.ytgif-time-input-error-message {
+  color: #f44336;
+  font-size: 11px;
+  margin-top: 4px;
+  animation: errorShake 0.3s ease;
+}
+
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
 .ytgif-duration-slider {
   margin-top: 12px;
   padding: 12px;

@@ -25,11 +25,69 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
   const [durationSliderValue, setDurationSliderValue] = useState(endTime - startTime);
+  const [inputValue, setInputValue] = useState('');
+  const [inputError, setInputError] = useState<string | null>(null);
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
   const dragStartRef = useRef<{ x: number; startTime: number }>({
     x: 0,
     startTime: 0,
   });
+
+  // Format time for display (seconds to MM:SS)
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Parse time input (accepts MM:SS or decimal seconds)
+  const parseTimeInput = (value: string): number | null => {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    // Try MM:SS format first
+    if (trimmed.includes(':')) {
+      const parts = trimmed.split(':');
+      if (parts.length === 2) {
+        const mins = parseInt(parts[0], 10);
+        const secs = parseFloat(parts[1]);
+        if (!isNaN(mins) && !isNaN(secs) && secs < 60) {
+          // Allow negative for validation to handle
+          return mins * 60 + secs;
+        }
+      }
+      return null;
+    }
+
+    // Try decimal seconds
+    const seconds = parseFloat(trimmed);
+    if (!isNaN(seconds)) {
+      return seconds;
+    }
+
+    return null;
+  };
+
+  // Validate start time
+  const validateStartTime = (time: number): string | null => {
+    if (time < 0) {
+      return 'Start time cannot be negative';
+    }
+    const clipDuration = endTime - startTime;
+    const maxStartTime = duration - clipDuration;
+    if (time > maxStartTime) {
+      return `Must be between 0:00 and ${formatTime(maxStartTime)}`;
+    }
+    return null;
+  };
+
+  // Update input value when startTime changes (scrubber dragged)
+  useEffect(() => {
+    if (!isInputFocused) {
+      setInputValue(formatTime(startTime));
+    }
+  }, [startTime, isInputFocused]);
 
   // Update slider value when handles are dragged
   useEffect(() => {
@@ -155,6 +213,53 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
     setIsDragging(false);
   }, []);
 
+  // Handle input change
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+    setInputError(null); // Clear error on typing
+  };
+
+  // Handle input blur (apply time)
+  const handleInputBlur = () => {
+    setIsInputFocused(false);
+    const parsedTime = parseTimeInput(inputValue);
+
+    if (parsedTime === null) {
+      setInputError('Invalid format. Use MM:SS or seconds');
+      setInputValue(formatTime(startTime)); // Revert to current value
+      return;
+    }
+
+    const validationError = validateStartTime(parsedTime);
+    if (validationError) {
+      setInputError(validationError);
+      setInputValue(formatTime(startTime)); // Revert to current value
+      return;
+    }
+
+    // Apply the new start time
+    const clipDuration = endTime - startTime;
+    const newEnd = Math.min(parsedTime + clipDuration, duration);
+    onRangeChange(parsedTime, newEnd);
+    setInputError(null);
+  };
+
+  // Handle input key down
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur(); // Trigger blur handler
+    } else if (e.key === 'Escape') {
+      setInputValue(formatTime(startTime)); // Revert
+      setInputError(null);
+      e.currentTarget.blur();
+    }
+  };
+
+  // Handle input focus
+  const handleInputFocus = () => {
+    setIsInputFocused(true);
+  };
+
   // Add/remove event listeners for dragging only
   useEffect(() => {
     if (isDragging) {
@@ -166,13 +271,6 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
       };
     }
   }, [isDragging, handleMouseMove, handleMouseUp]);
-
-  // Format time for display
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   // Calculate positions as percentages
   const startPercent = (startTime / duration) * 100;
@@ -239,6 +337,38 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
             {formatTime(startTime)} - {formatTime(endTime)}
           </span>
           <span className="ytgif-label-end">{formatTime(duration)}</span>
+        </div>
+
+        {/* Timeline Controls - Start Time Input and Duration Display */}
+        <div className="ytgif-timeline-controls">
+          <div className="ytgif-timeline-control-left">
+            <label htmlFor="ytgif-start-time-input" className="ytgif-control-label">
+              Start
+            </label>
+            <input
+              id="ytgif-start-time-input"
+              type="text"
+              className={`ytgif-time-input-field ${inputError ? 'error' : ''}`}
+              value={inputValue}
+              onChange={handleInputChange}
+              onBlur={handleInputBlur}
+              onFocus={handleInputFocus}
+              onKeyDown={handleInputKeyDown}
+              placeholder="0:00"
+              aria-label="Start time"
+              aria-invalid={inputError !== null}
+              aria-describedby={inputError ? 'ytgif-time-input-error' : undefined}
+            />
+            {inputError && (
+              <div id="ytgif-time-input-error" className="ytgif-time-input-error-message">
+                {inputError}
+              </div>
+            )}
+          </div>
+          <div className="ytgif-timeline-control-right">
+            <span className="ytgif-control-label">Duration</span>
+            <span className="ytgif-control-value">{durationSliderValue.toFixed(1)}s</span>
+          </div>
         </div>
       </div>
 
