@@ -2,175 +2,115 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Communication Style
+
+Absolute Mode
+- Eliminate emojis, filler, hype, transitions, appendixes.
+- Use blunt, directive phrasing; no mirroring, no softening.
+- Suppress sentiment-boosting, engagement, or satisfaction metrics.
+- No questions, offers, suggestions, or motivational content.
+- Deliver info only; end immediately after.
+
 ## Project Overview
 
-YTgify Chrome Extension - A Chrome extension that creates GIFs from YouTube videos with an integrated visual interface in the YouTube player. The extension uses Manifest V3 and injects UI elements directly into YouTube's video player for seamless GIF creation.
+YTgify is a Chrome Manifest V3 extension that enables users to create GIFs directly from YouTube videos with an integrated visual wizard. The extension injects UI overlays into YouTube pages, processes video frames in the content script, and manages GIF encoding through a background service worker.
 
-## Essential Commands
+## Essential Development Commands
 
-### Code Search and Refactoring with ast-grep
-
-ast-grep is a structural search tool that understands TypeScript/JavaScript AST. It's more powerful than text-based search for finding code patterns.
-
+### Build & Development
 ```bash
-# Installation (if not already installed)
-npm install -g @ast-grep/cli
-
-# Find all React components
-ast-grep --pattern 'const $COMP = () => { $$$ }' --lang tsx
-
-# Find all useEffect hooks
-ast-grep --pattern 'useEffect(() => { $$$ }, [$$$])' --lang tsx
-
-# Find Chrome API message handlers
-ast-grep --pattern 'chrome.runtime.onMessage.addListener($$$)' --lang ts
-
-# Find all interfaces extending a specific type
-ast-grep --pattern 'interface $NAME extends $TYPE { $$$ }' --lang ts
-
-# Find React useState declarations
-ast-grep --pattern 'const [$STATE, $SETTER] = useState($$$)' --lang tsx
-
-# Find all imports from a specific module
-ast-grep --pattern 'import { $$$ } from "@/types"' --lang ts
-
-# Replace pattern example: Update all console.log to use a logger
-ast-grep --pattern 'console.log($ARG)' --rewrite 'logger.debug($ARG)' --lang ts
-
-# Find all event handlers in React components
-ast-grep --pattern 'on$EVENT={$HANDLER}' --lang tsx
-
-# Find all Chrome storage API calls
-ast-grep --pattern 'chrome.storage.$METHOD.$ACTION($$$)' --lang ts
-```
-
-For more complex patterns and rules, see [ast-grep documentation](https://ast-grep.github.io/reference/cli.html).
-
-### Development
-
-```bash
-npm run dev              # Start webpack in watch mode for development
-npm run build            # Build production-ready extension in dist/
-npm run clean            # Remove dist directory
-```
-
-### Code Quality
-
-```bash
-npm run lint             # Run ESLint on src/**/*.{ts,tsx}
-npm run typecheck        # Run TypeScript type checking (tsc --noEmit)
+npm run build
+npm run dev
+npm run build:production
+npm run typecheck
+npm run lint
+npm run lint:fix
 ```
 
 ### Testing
-
 ```bash
-npm test                 # Run all tests
-npm test:watch           # Run tests in watch mode
-npm test -- path/to/test # Run a specific test file
-npm run validate:pre-push # Run full validation pipeline (same as Git hooks)
+npm run validate:pre-push  # Full local validation before PR
+npm run test:e2e          # Real E2E headless (REQUIRED locally before PR)
+npm test                  # Unit tests
+npm run test:e2e:mock     # Mock E2E headless (CI-safe)
+npm run test:layout       # Layout tests
 ```
 
-### Quality Validation
+Real E2E tests cannot run in CI (YouTube blocks CI IPs). Run headless locally before submitting PRs. Use `:headed` suffix for visible browser debugging.
 
-**Important Context**: This project uses mandatory Git hooks instead of GitHub Actions for E2E testing because:
+### Loading Extension
+1. `npm run build`
+2. Chrome: `chrome://extensions/` → Developer mode → Load unpacked → `dist/`
 
-- Chrome extensions interacting with YouTube videos cannot be reliably tested in CI environments
-- YouTube blocks/rate-limits GitHub Actions IPs
-- Video playback requires real browser environments with proper codecs
-- Extension loading in headless Chrome has limitations
+## Architecture Overview
 
-All commits and pushes automatically run the full validation suite locally where tests can properly interact with YouTube.
+### Core Structure
+- **Background** (`src/background/`): Message routing, async job management
+- **Content Script** (`src/content/`): YouTube integration, frame capture, React overlays, GIF processing
+- **Popup** (`src/popup/`): GIF library, settings UI
+- **Shared** (`src/shared/`): Message bus, state management, error handling
 
-### Loading Extension in Chrome
+### Key Components
+- **Frame Extraction** (`src/content/frame-extractor.ts`): Canvas-based frame capture from video element
+- **GIF Processor** (`src/content/gif-processor.ts`): Complete pipeline (extraction → overlay → encoding → save)
+- **Encoders** (`src/lib/encoders/`): Factory for gifenc (primary) and gif.js (fallback)
+- **YouTube Integration** (`src/content/youtube-detector.ts`, `youtube-api-integration.ts`): Page detection, video element access, SPA navigation
+- **Overlay Wizard** (`src/content/overlay-wizard/`): React UI (QuickCapture → TextOverlay → Processing → Success)
+- **Resolution Scaler** (`src/processing/resolution-scaler.ts`): Memory-aware scaling (144p-480p presets)
 
-1. Build the extension: `npm run build`
-2. Open Chrome and go to `chrome://extensions/`
-3. Enable "Developer mode"
-4. Click "Load unpacked" and select the `dist` folder
+### Message Passing
+Typed request/response pattern. Most processing happens in content script. Message types in `src/types/messages.ts` and `src/shared/messages.ts`. Use type guards for safe handling.
 
-## Architecture
+### Storage
+- **IndexedDB**: Primary storage (`YouTubeGifStore` database with `gifs`, `thumbnails`, `metadata` stores)
+- **chrome.storage.sync**: User preferences, button visibility
 
-### Chrome Extension Components
+## Key Development Patterns
 
-The extension follows Chrome's Manifest V3 architecture with three main entry points:
+### GIF Creation Flow
+User opens wizard → collects parameters (time range, text, resolution, frame rate) → `gifProcessor.processVideoToGif()` orchestrates extraction/overlay/encoding/save → success screen with preview/download.
 
-1. **Background Service Worker** (`src/background/index.ts`)
-   - Handles persistent extension logic
-   - Manages message passing between components
-   - Processes frame extraction and GIF encoding requests
-   - Runs as ES module service worker
+### YouTube Shorts
+Disabled due to technical limitations. Show user-friendly message when detected.
 
-2. **Content Script** (`src/content/index.ts`)
-   - Injects into YouTube pages matching `https://*.youtube.com/*`
-   - Inserts GIF button into YouTube player controls
-   - Manages timeline overlay for segment selection
-   - Communicates with background worker for processing
+### Error Handling
+Centralized in `src/lib/errors.ts`. All async operations wrapped in try-catch with actionable user messages.
 
-3. **Popup Interface** (`src/popup/index.tsx`)
-   - React-based UI shown when extension icon clicked
-   - Provides access to GIF library and settings
-   - Tab-based interface (Create/Library views)
+## Important Implementation Details
 
-### Message Flow Architecture
+- **Localhost Permissions**: Used only for mock E2E tests. NEVER include in Chrome Web Store. `npm run build:production` strips them automatically.
+- **CSS Loading**: Dynamically injected on wizard open, removed on close (Chrome Web Store compliance).
+- **Memory Management**: Reject processing if `(width * height * 4 * 2) / (1024 * 1024) > 1000 MB`. Ensure even dimensions.
+- **WebCodecs**: Not used (browser compatibility issues). Canvas-based extraction more reliable.
+- **Button Visibility**: Default hidden. Toggle in popup saves to `chrome.storage.sync.buttonVisibility`.
 
-```
-YouTube Page → Content Script → Background Worker → Processing
-                     ↓                    ↓
-              Timeline Overlay      GIF Encoding
-                     ↓                    ↓
-               Editor Panel         Storage/Export
-```
+## File Organization
 
-### Key Data Structures
+- `src/types/*.ts`: Shared interfaces
+- `src/utils/*.ts`: Pure functions
+- `src/processing/*.ts`: Image/video processing
+- `src/monitoring/*.ts`: Performance tracking
+- `src/shared/*.ts`: Cross-context utilities
 
-All GIF-related types are defined in `src/types/index.ts`:
+## Testing
 
-- `GifData`: Complete GIF with blob data and metadata
-- `GifSettings`: User-configurable encoding parameters
-- `TimelineSelection`: Video segment selection data
-- `TextOverlay`: Text overlay configuration
+### Mock E2E Videos
+Generate with `npm run generate:test-videos`. Use `getMockVideoUrl('veryShort', mockServerUrl)` helper.
 
-### Build Configuration
+### E2E Guidelines
+Real E2E: Use actual YouTube URLs, stable short videos, handle consent popups. Mock E2E: Use `getMockVideoUrl()` helper.
 
-The project uses Webpack with multiple entry points configured in `webpack.config.js`:
+## Common Development Tasks
 
-- Separate bundles for background, content, and popup
-- CSS extraction with PostCSS/Tailwind processing
-- Automatic manifest and icon copying
-- Path aliases (`@/components`, `@/lib`, etc.) for clean imports
+- **New Resolution Preset**: Update `src/processing/resolution-scaler.ts`, `src/content/index.ts` (resolutionDefaults), and `QuickCaptureScreen.tsx`
+- **New Message Type**: Define in `src/types/messages.ts`, add type guard, add handlers, update union types
+- **New Encoder**: Implement `AbstractEncoder` in `src/lib/encoders/`, add to factory, update `EncoderType` union
+- **Debug GIF Creation**: Check content script logs, enable debug in `src/lib/logger.ts`, verify `youTubeDetector.canCreateGif()`
 
-### Storage Strategy
+## Chrome Web Store Compliance
 
-- **IndexedDB**: For GIF library storage (blob data + metadata)
-- **Chrome Storage API**: For user preferences and settings
-- **Temporary Canvas**: For frame manipulation during processing
+Run `npm run build:production` (strips localhost permissions). Test production build. Verify `dist-production/manifest.json` has no localhost permissions.
 
-## Critical Implementation Details
+## Known Limitations
 
-### YouTube Player Integration
-
-The content script uses MutationObserver to detect YouTube's dynamic player loading and injects the GIF button into `.ytp-right-controls`. The button must be styled to match YouTube's native controls.
-
-### Cross-Component Communication
-
-All communication between content script and background worker uses Chrome's message passing API with typed message objects. Frame extraction and GIF encoding are handled asynchronously in the background worker.
-
-### Webpack Path Resolution
-
-The project uses TypeScript path aliases that must match between `tsconfig.json` and `webpack.config.js`. The tsconfig must NOT have `noEmit: true` for webpack builds to work.
-
-### React Component Library
-
-The extension uses Radix UI components (via shadcn/ui pattern) with Tailwind CSS. Components should follow the shadcn pattern of composition with class variance authority for styling variants.
-
-## Product Requirements Context
-
-The extension implements a GIF creation workflow integrated directly into YouTube's player:
-
-1. User clicks GIF button in player controls
-2. Timeline overlay appears for segment selection
-3. Editor panel opens with live preview
-4. User adjusts settings (frame rate, resolution, text overlays)
-5. GIF is encoded and saved to library or downloaded
-
-The GIF library provides persistent local storage with search, filtering, and re-editing capabilities.
+Shorts not supported. Max ~30s GIF duration. Chrome/Chromium only. Desktop only. Live streams not recommended.
