@@ -256,7 +256,7 @@ describe('TextOverlayScreenV2', () => {
     it('shows font size slider with correct range and default for resolution', () => {
       const sizeSlider = screen.getAllByRole('slider')[0]; // First slider is size
 
-      expect(sizeSlider).toHaveAttribute('min', '28'); // 480p min
+      expect(sizeSlider).toHaveAttribute('min', '20'); // 480p min
       expect(sizeSlider).toHaveAttribute('max', '72'); // 480p max
       expect(sizeSlider).toHaveValue('36'); // 480p default
 
@@ -391,10 +391,10 @@ describe('TextOverlayScreenV2', () => {
 
   describe('Phase 2.1: Resolution-Based Font Calculations', () => {
     const resolutionTestCases = [
-      { resolution: '144p', min: 16, max: 48, default: 24 },
-      { resolution: '240p', min: 20, max: 56, default: 28 },
-      { resolution: '360p', min: 24, max: 64, default: 32 },
-      { resolution: '480p', min: 28, max: 72, default: 36 },
+      { resolution: '144p', min: 10, max: 48, default: 24 },
+      { resolution: '240p', min: 12, max: 56, default: 28 },
+      { resolution: '360p', min: 16, max: 64, default: 32 },
+      { resolution: '480p', min: 20, max: 72, default: 36 },
     ];
 
     resolutionTestCases.forEach(({ resolution, min, max, default: defaultValue }) => {
@@ -422,7 +422,7 @@ describe('TextOverlayScreenV2', () => {
 
       const sizeSlider = screen.getAllByRole('slider')[0];
 
-      expect(sizeSlider).toHaveAttribute('min', '16');
+      expect(sizeSlider).toHaveAttribute('min', '10');
       expect(sizeSlider).toHaveAttribute('max', '48');
       expect(sizeSlider).toHaveValue('24');
     });
@@ -439,8 +439,8 @@ describe('TextOverlayScreenV2', () => {
       const sliders = screen.getAllByRole('slider');
 
       // Both sliders should have same range for same resolution
-      expect(sliders[0]).toHaveAttribute('min', '24'); // Top text
-      expect(sliders[1]).toHaveAttribute('min', '24'); // Bottom text
+      expect(sliders[0]).toHaveAttribute('min', '16'); // Top text
+      expect(sliders[1]).toHaveAttribute('min', '16'); // Bottom text
       expect(sliders[0]).toHaveAttribute('max', '64');
       expect(sliders[1]).toHaveAttribute('max', '64');
       expect(sliders[0]).toHaveValue('32'); // Default for 360p

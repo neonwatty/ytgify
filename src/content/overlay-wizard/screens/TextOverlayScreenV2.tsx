@@ -27,15 +27,15 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
   const getFontSizeRange = () => {
     switch (resolution) {
       case '144p':
-        return { min: 16, max: 48, default: 24 };
+        return { min: 10, max: 48, default: 24 };
       case '240p':
-        return { min: 20, max: 56, default: 28 };
+        return { min: 12, max: 56, default: 28 };
       case '360p':
-        return { min: 24, max: 64, default: 32 };
+        return { min: 16, max: 64, default: 32 };
       case '480p':
-        return { min: 28, max: 72, default: 36 };
+        return { min: 20, max: 72, default: 36 };
       default:
-        return { min: 16, max: 48, default: 24 };
+        return { min: 10, max: 48, default: 24 };
     }
   };
 
