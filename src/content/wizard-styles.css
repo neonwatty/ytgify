@@ -1863,3 +1863,74 @@
   color: #333;
   text-decoration: underline;
 }
+
+/* Milestone Screen Styles */
+.ytgif-milestone-screen {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.ytgif-milestone-icon {
+  display: flex;
+  justify-content: center;
+  margin: 32px 0;
+  animation: scaleIn 0.5s ease-out;
+}
+
+.ytgif-milestone-icon svg {
+  color: #9966cc;
+  stroke-width: 1.5;
+}
+
+.ytgif-milestone-message {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.ytgif-milestone-message h3 {
+  color: #fff;
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.ytgif-milestone-message p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 16px;
+  margin: 0;
+}
+
+.ytgif-milestone-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.ytgif-milestone-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ytgif-milestone-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.ytgif-milestone-continue {
+  width: 100%;
+  justify-content: center;
+  margin-top: 16px;
+}
