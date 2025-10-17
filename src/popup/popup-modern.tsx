@@ -1,5 +1,8 @@
 import React from 'react';
 import { ShowTimelineRequest } from '@/types';
+import { engagementTracker } from '@/shared/engagement-tracker';
+import { openExternalLink, getReviewLink, getGitHubStarLink } from '@/constants/links';
+import { getTwitterTemplates, generateTwitterShareUrl } from '@/utils/social-templates';
 
 const PopupApp: React.FC = () => {
   const [isYouTubePage, setIsYouTubePage] = React.useState(false);
@@ -7,6 +10,7 @@ const PopupApp: React.FC = () => {
   const [videoTitle, setVideoTitle] = React.useState<string>('');
   const [isLoading, setIsLoading] = React.useState(false);
   const [showButton, setShowButton] = React.useState(false);
+  const [showFooter, setShowFooter] = React.useState(false);
 
   // Load button visibility setting
   React.useEffect(() => {
@@ -45,13 +49,48 @@ const PopupApp: React.FC = () => {
     checkCurrentTab();
   }, []);
 
+  // Check footer qualification on mount
+  React.useEffect(() => {
+    const checkFooter = async () => {
+      try {
+        const stats = await engagementTracker.getEngagementStats();
+        const qualifies = await engagementTracker.shouldShowPrompt('primary');
+        const dismissed = stats.popupFooterDismissed;
+        setShowFooter(qualifies && !dismissed);
+      } catch (error) {
+        console.error('Error checking footer qualification:', error);
+      }
+    };
+    checkFooter();
+  }, []);
+
   // Handle toggle change
   const handleToggleChange = (checked: boolean) => {
     setShowButton(checked);
     // Save to Chrome storage
     chrome.storage.sync.set({ buttonVisibility: checked }, () => {
-      
+
     });
+  };
+
+  // Handle footer actions
+  const handleRate = () => {
+    openExternalLink(getReviewLink());
+  };
+
+  const handleShare = () => {
+    const templates = getTwitterTemplates();
+    const twitterUrl = generateTwitterShareUrl(templates[0].text);
+    openExternalLink(twitterUrl);
+  };
+
+  const handleGitHub = () => {
+    openExternalLink(getGitHubStarLink());
+  };
+
+  const handleDismissFooter = async () => {
+    await engagementTracker.recordDismissal('popup-footer');
+    setShowFooter(false);
   };
 
   const handleCreateGif = async () => {
@@ -243,6 +282,19 @@ const PopupApp: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Footer CTA */}
+      {showFooter && (
+        <div className="popup-footer">
+          <span>Enjoying YTGify? </span>
+          <a onClick={handleRate}>Rate us</a>
+          <span> | </span>
+          <a onClick={handleShare}>Share</a>
+          <span> | </span>
+          <a onClick={handleGitHub}>⭐</a>
+          <button className="dismiss-btn" onClick={handleDismissFooter}>×</button>
+        </div>
+      )}
 
     </div>
   );
