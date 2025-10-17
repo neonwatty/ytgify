@@ -1831,6 +1831,61 @@
   justify-content: center;
 }
 
+/* Show Your Support Section */
+.ytgif-support-section {
+  width: 100%;
+  padding: 24px;
+  background: rgba(153, 102, 204, 0.08);
+  border-radius: 12px;
+  border: 1px solid rgba(153, 102, 204, 0.2);
+  text-align: center;
+  margin-top: 8px;
+}
+
+.ytgif-support-section h3 {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.ytgif-support-section p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin: 0 0 20px 0;
+  line-height: 1.4;
+}
+
+.ytgif-support-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.ytgif-support-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ytgif-support-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
 .ytgif-success-feedback-action {
   display: flex;
   justify-content: center;
