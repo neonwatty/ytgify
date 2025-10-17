@@ -62,3 +62,27 @@ export interface TimelineSelection {
   endTime: number;
   duration: number;
 }
+
+// Engagement tracking interface
+export interface EngagementData {
+  installDate: number; // timestamp
+  totalGifsCreated: number;
+  prompts: {
+    primary: {
+      shown: boolean;
+      dismissedAt?: number;
+      clickedAction?: 'rate' | 'share' | 'github';
+    };
+    secondary: {
+      shown: boolean;
+      dismissedAt?: number;
+      clickedAction?: 'rate' | 'share' | 'github';
+    };
+  };
+  milestones: {
+    milestone10: boolean; // shown
+    milestone25: boolean;
+    milestone50: boolean;
+  };
+  popupFooterDismissed: boolean;
+}

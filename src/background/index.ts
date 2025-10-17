@@ -4,6 +4,7 @@ import { backgroundWorker } from './worker';
 import { logger } from '@/lib/logger';
 import { initializeMessageBus } from '@/shared/message-bus';
 import { sharedLogger, sharedErrorHandler, extensionStateManager } from '@/shared';
+import { engagementTracker } from '@/shared/engagement-tracker';
 
 // Service Worker lifecycle events with enhanced logging and error handling
 chrome.runtime.onInstalled.addListener(
@@ -33,6 +34,10 @@ chrome.runtime.onInstalled.addListener(
           // First install - log the event without opening a tab
           sharedLogger.info('[Background] First install completed', {}, 'background');
           sharedLogger.trackUserAction('first_install');
+
+          // Initialize engagement tracking
+          await engagementTracker.initializeEngagement();
+          sharedLogger.info('[Background] Engagement tracking initialized', {}, 'background');
         }
 
         endTimer();
