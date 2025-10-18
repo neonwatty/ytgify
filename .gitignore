@@ -7,6 +7,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 # Locals
+screenshots/
 chrome-store-submission.zip
 .tfq/
 .tfqrc
@@ -99,6 +100,11 @@ test-results/
 tests/e2e-mock/fixtures/videos/*.mp4
 tests/e2e-mock/fixtures/videos/*.webm
 tests/e2e-mock/test-user-data/
+playwright-report/
+tests/downloads/
+tests/outputs/
+jest-results.json
+test-output-*.gif
 
 # Chrome Extension specific
 *.pem
