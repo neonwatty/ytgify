@@ -1,6 +1,6 @@
 {
   "name": "ytgify",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Turn your favorite YouTube moments into shareable GIFs.",
   "private": true,
   "type": "module",
