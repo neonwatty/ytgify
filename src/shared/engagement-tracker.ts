@@ -52,9 +52,6 @@ class EngagementTracker {
       prompts: {
         primary: {
           shown: false
-        },
-        secondary: {
-          shown: false
         }
       },
       milestones: {
@@ -83,25 +80,13 @@ class EngagementTracker {
     return data.totalGifsCreated;
   }
 
-  async shouldShowPrompt(type: 'primary' | 'secondary'): Promise<boolean> {
+  async shouldShowPrompt(): Promise<boolean> {
     const data = await this.getStorageData();
-    const daysSinceInstall = (Date.now() - data.installDate) / (1000 * 60 * 60 * 24);
-
-    if (type === 'primary') {
-      // Primary: 10+ GIFs, 14+ days, not shown before
-      return (
-        data.totalGifsCreated >= 10 &&
-        daysSinceInstall >= 14 &&
-        !data.prompts.primary.shown
-      );
-    } else {
-      // Secondary: 20+ GIFs, primary was dismissed, not shown before
-      return (
-        data.totalGifsCreated >= 20 &&
-        data.prompts.primary.dismissedAt !== undefined &&
-        !data.prompts.secondary.shown
-      );
-    }
+    // Primary: 5+ GIFs, not shown before
+    return (
+      data.totalGifsCreated >= 5 &&
+      !data.prompts.primary.shown
+    );
   }
 
   async shouldShowMilestone(count: 10 | 25 | 50): Promise<boolean> {
@@ -117,9 +102,9 @@ class EngagementTracker {
     return !data.milestones[milestoneKey];
   }
 
-  async recordPromptShown(type: 'primary' | 'secondary'): Promise<void> {
+  async recordPromptShown(): Promise<void> {
     const data = await this.getStorageData();
-    data.prompts[type].shown = true;
+    data.prompts.primary.shown = true;
     await this.setStorageData(data);
   }
 
@@ -130,24 +115,21 @@ class EngagementTracker {
     await this.setStorageData(data);
   }
 
-  async recordDismissal(type: 'primary' | 'secondary' | 'popup-footer'): Promise<void> {
+  async recordDismissal(type: 'primary' | 'popup-footer'): Promise<void> {
     const data = await this.getStorageData();
 
     if (type === 'popup-footer') {
       data.popupFooterDismissed = true;
     } else {
-      data.prompts[type].dismissedAt = Date.now();
+      data.prompts.primary.dismissedAt = Date.now();
     }
 
     await this.setStorageData(data);
   }
 
-  async recordAction(
-    type: 'primary' | 'secondary',
-    action: 'rate' | 'share' | 'github'
-  ): Promise<void> {
+  async recordAction(action: 'rate' | 'share' | 'github'): Promise<void> {
     const data = await this.getStorageData();
-    data.prompts[type].clickedAction = action;
+    data.prompts.primary.clickedAction = action;
     await this.setStorageData(data);
   }
 

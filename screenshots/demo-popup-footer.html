@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Popup with Footer CTA - YTGify</title>
+    <link rel="stylesheet" href="../dist/popup.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0a0a0a;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div class="popup-modern" style="width: 360px">
+        <!-- Header -->
+        <div class="popup-header">
+            <div class="popup-logo-container">
+                <svg width="48" height="48" viewBox="0 0 100 100" style="width: 48px; height: 48px">
+                    <rect width="100" height="100" rx="20" fill="url(#grad1)"/>
+                    <text x="50" y="65" font-size="50" font-weight="bold" fill="white" text-anchor="middle">YT</text>
+                    <defs>
+                        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#ff0000;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#cc0000;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <div>
+                    <h1 class="popup-logo-title">YTGify</h1>
+                    <p class="popup-logo-subtitle">GIF your favorite YouTube moments</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div class="popup-settings">
+            <div class="settings-item">
+                <label class="settings-label">
+                    <span class="settings-text">Pin YTGify button to YouTube player</span>
+                    <div class="toggle-switch">
+                        <input
+                            type="checkbox"
+                            checked
+                            class="toggle-input"
+                        />
+                        <span class="toggle-slider"></span>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="popup-main">
+            <div class="popup-ready-state">
+                <div class="status-text">
+                    <p class="status-title">Capture GIF moments from:</p>
+                    <p class="video-title">
+                        Me at the zoo
+                    </p>
+                </div>
+
+                <!-- Create GIF Button -->
+                <button class="create-button">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                            d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <span>Create GIF</span>
+                </button>
+
+                <!-- Keyboard shortcut hint -->
+                <div class="quick-tip">
+                    <span class="shortcut-key">Ctrl</span>
+                    <span class="shortcut-plus">+</span>
+                    <span class="shortcut-key">Shift</span>
+                    <span class="shortcut-plus">+</span>
+                    <span class="shortcut-key">G</span>
+                    <span class="shortcut-text">Quick access</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer CTA -->
+        <div class="popup-footer">
+            <span>Enjoying YTGify? </span>
+            <a>Rate us</a>
+            <span> | </span>
+            <a>Share</a>
+            <span> | </span>
+            <a>⭐</a>
+            <button class="dismiss-btn">×</button>
+        </div>
+    </div>
+</body>
+</html>

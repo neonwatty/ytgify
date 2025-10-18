@@ -55,7 +55,7 @@ export function generateTwitterShareUrl(text: string): string {
   const baseUrl = 'https://twitter.com/intent/tweet';
   const params = new URLSearchParams({
     text,
-    url: 'https://github.com/neonwatty/ytgify', // Will be updated to Web Store URL when live
+    url: 'https://chromewebstore.google.com/detail/ytgify/dnljofakogbecppbkmnoffppkfdmpfje',
     hashtags: 'YTGify,ChromeExtension'
   });
   return `${baseUrl}?${params.toString()}`;
@@ -70,9 +70,4 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     console.error('Failed to copy to clipboard:', error);
     return false;
   }
-}
-
-// Get generic share message
-export function getGenericShareMessage(): string {
-  return 'Check out YTGify - create amazing GIFs from YouTube videos! https://github.com/neonwatty/ytgify';
 }

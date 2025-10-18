@@ -531,4 +531,298 @@ describe('PopupApp Component', () => {
       consoleSpy.mockRestore();
     });
   });
+
+  describe('Popup Footer CTA', () => {
+    beforeEach(() => {
+      // Mock chrome.storage.local.get for engagement tracker
+      (global as any).chrome.storage.local = {
+        get: jest.fn((keys, callback) => {
+          const result = {};
+          if (callback) callback(result);
+          return Promise.resolve(result);
+        }),
+        set: jest.fn((data, callback) => {
+          if (callback) callback();
+          return Promise.resolve();
+        }),
+        clear: jest.fn((callback) => {
+          if (callback) callback();
+          return Promise.resolve();
+        })
+      };
+
+      // Import and clear engagement tracker cache to avoid test pollution
+      const { engagementTracker } = require('../../../src/shared/engagement-tracker');
+      engagementTracker.clearCache();
+    });
+
+    test('footer appears when user qualifies (5+ GIFs, not dismissed)', async () => {
+      mockTabWithUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'Test Video - YouTube');
+
+      // Mock engagement data: 5+ GIFs, not dismissed, primary not shown
+      const installDate = Date.now();
+      (global as any).chrome.storage.local.get.mockImplementation((keys: any, callback: any) => {
+        const result = {
+          'engagement-data': {
+            installDate,
+            totalGifsCreated: 5,
+            prompts: {
+              primary: { shown: false },
+              secondary: { shown: false }
+            },
+            milestones: {
+              milestone10: false,
+              milestone25: false,
+              milestone50: false
+            },
+            popupFooterDismissed: false
+          }
+        };
+        if (callback) callback(result);
+        return Promise.resolve(result);
+      });
+
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Enjoying YTGify?/)).toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Verify footer elements
+      expect(screen.getByText('Leave us a review!')).toBeInTheDocument();
+      expect(screen.getByText('×')).toBeInTheDocument(); // Dismiss button
+    });
+
+    test('footer hidden when user has dismissed it', async () => {
+      mockTabWithUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'Test Video - YouTube');
+
+      // Mock engagement data: qualifies but dismissed
+      const installDate = Date.now();
+      (global as any).chrome.storage.local.get.mockImplementation((keys: any, callback: any) => {
+        const result = {
+          'engagement-data': {
+            installDate,
+            totalGifsCreated: 5,
+            prompts: {
+              primary: { shown: false },
+              secondary: { shown: false }
+            },
+            milestones: {
+              milestone10: false,
+              milestone25: false,
+              milestone50: false
+            },
+            popupFooterDismissed: true // Dismissed!
+          }
+        };
+        if (callback) callback(result);
+        return Promise.resolve(result);
+      });
+
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText('YTGify')).toBeInTheDocument();
+      });
+
+      // Footer should NOT be visible
+      expect(screen.queryByText(/Enjoying YTGify?/)).not.toBeInTheDocument();
+    });
+
+    test('footer hidden when user has not created enough GIFs', async () => {
+      mockTabWithUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'Test Video - YouTube');
+
+      // Mock engagement data: only 4 GIFs, not dismissed
+      const installDate = Date.now();
+      (global as any).chrome.storage.local.get.mockImplementation((keys: any, callback: any) => {
+        const result = {
+          'engagement-data': {
+            installDate,
+            totalGifsCreated: 4, // Not enough!
+            prompts: {
+              primary: { shown: false },
+              secondary: { shown: false }
+            },
+            milestones: {
+              milestone10: false,
+              milestone25: false,
+              milestone50: false
+            },
+            popupFooterDismissed: false
+          }
+        };
+        if (callback) callback(result);
+        return Promise.resolve(result);
+      });
+
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText('YTGify')).toBeInTheDocument();
+      });
+
+      // Footer should NOT be visible
+      expect(screen.queryByText(/Enjoying YTGify?/)).not.toBeInTheDocument();
+    });
+
+    test('footer hidden when primary prompt was already shown', async () => {
+      mockTabWithUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'Test Video - YouTube');
+
+      // Mock engagement data: qualifies but primary prompt already shown
+      const installDate = Date.now();
+      (global as any).chrome.storage.local.get.mockImplementation((keys: any, callback: any) => {
+        const result = {
+          'engagement-data': {
+            installDate,
+            totalGifsCreated: 5,
+            prompts: {
+              primary: { shown: true }, // Already shown!
+              secondary: { shown: false }
+            },
+            milestones: {
+              milestone10: false,
+              milestone25: false,
+              milestone50: false
+            },
+            popupFooterDismissed: false
+          }
+        };
+        if (callback) callback(result);
+        return Promise.resolve(result);
+      });
+
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText('YTGify')).toBeInTheDocument();
+      });
+
+      // Footer should NOT be visible
+      expect(screen.queryByText(/Enjoying YTGify?/)).not.toBeInTheDocument();
+    });
+
+    test('dismiss button hides footer and records dismissal', async () => {
+      mockTabWithUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'Test Video - YouTube');
+
+      // Mock engagement data: qualifies and not dismissed
+      const installDate = Date.now();
+      (global as any).chrome.storage.local.get.mockImplementation((keys: any, callback: any) => {
+        const result = {
+          'engagement-data': {
+            installDate,
+            totalGifsCreated: 5,
+            prompts: {
+              primary: { shown: false },
+              secondary: { shown: false }
+            },
+            milestones: {
+              milestone10: false,
+              milestone25: false,
+              milestone50: false
+            },
+            popupFooterDismissed: false
+          }
+        };
+        if (callback) callback(result);
+        return Promise.resolve(result);
+      });
+
+      render(<PopupApp />);
+
+      // Wait for footer to appear
+      await waitFor(() => {
+        expect(screen.getByText(/Enjoying YTGify?/)).toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      // Click dismiss button
+      const dismissButton = screen.getByText('×');
+      fireEvent.click(dismissButton);
+
+      // Footer should disappear
+      await waitFor(() => {
+        expect(screen.queryByText(/Enjoying YTGify?/)).not.toBeInTheDocument();
+      });
+
+      // Verify storage was updated with dismissal
+      await waitFor(() => {
+        expect((global as any).chrome.storage.local.set).toHaveBeenCalledWith(
+          expect.objectContaining({
+            'engagement-data': expect.objectContaining({
+              popupFooterDismissed: true
+            })
+          })
+        );
+      });
+    });
+
+    test('Review link opens Chrome Web Store review page', async () => {
+      mockTabWithUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'Test Video - YouTube');
+
+      // Mock engagement data: qualifies
+      const installDate = Date.now();
+      (global as any).chrome.storage.local.get.mockImplementation((keys: any, callback: any) => {
+        const result = {
+          'engagement-data': {
+            installDate,
+            totalGifsCreated: 5,
+            prompts: {
+              primary: { shown: false },
+              secondary: { shown: false }
+            },
+            milestones: {
+              milestone10: false,
+              milestone25: false,
+              milestone50: false
+            },
+            popupFooterDismissed: false
+          }
+        };
+        if (callback) callback(result);
+        return Promise.resolve(result);
+      });
+
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Leave us a review!')).toBeInTheDocument();
+      }, { timeout: 3000 });
+
+      const reviewLink = screen.getByText('Leave us a review!');
+      fireEvent.click(reviewLink);
+
+      // Verify chrome.tabs.create was called
+      await waitFor(() => {
+        expect((global as any).chrome.tabs.create).toHaveBeenCalled();
+      });
+    });
+
+    test('handles footer check errors gracefully', async () => {
+      mockTabWithUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'Test Video - YouTube');
+
+      // Mock storage to throw error
+      (global as any).chrome.storage.local.get.mockImplementation(() => {
+        throw new Error('Storage error');
+      });
+
+      // Spy on console.error
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText('YTGify')).toBeInTheDocument();
+      });
+
+      // Verify error was logged
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Error checking footer qualification:',
+        expect.any(Error)
+      );
+
+      // Footer should not appear
+      expect(screen.queryByText(/Enjoying YTGify?/)).not.toBeInTheDocument();
+
+      consoleSpy.mockRestore();
+    });
+  });
 });

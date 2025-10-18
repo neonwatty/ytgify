@@ -70,7 +70,7 @@ const MilestoneScreen: React.FC<MilestoneScreenProps> = ({
 
         {/* Milestone Message */}
         <div className="ytgif-milestone-message">
-          <h3>You've created {milestoneCount} GIFs!</h3>
+          <h3>You&apos;ve created {milestoneCount} GIFs!</h3>
           <p>Help us grow by supporting YTGify:</p>
         </div>
 

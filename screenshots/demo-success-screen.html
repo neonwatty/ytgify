@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Success Screen - YTGify</title>
+    <link rel="stylesheet" href="../dist/content-styles.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div class="ytgif-overlay-wizard">
+        <div class="ytgif-wizard-container">
+            <div class="ytgif-wizard-screens">
+                <div class="ytgif-wizard-screen ytgif-success-screen">
+                    <div class="ytgif-wizard-header">
+                        <div style="width: 20px"></div>
+                        <h2 class="ytgif-wizard-title">GIF Created Successfully!</h2>
+                        <div style="width: 20px"></div>
+                    </div>
+
+                    <div class="ytgif-wizard-content">
+                        <!-- GIF Preview -->
+                        <div class="ytgif-success-preview">
+                            <img src="data:image/gif;base64,R0lGODlhZABkAIABAP///wAAACH/C05FVFNDQVBFMi4wAwEAAAAh+QQJCgABACwAAAAAZABkAAACkYyPqcvtD6OctNqLs968+w+G4kiW5omm6sq27gvH8kzX9o3n+s73/g8MCofEovGITCqXzKbzCY1Kp9Sq9YrNarfcrvcLDovH5LL5jE6r1+y2+w2Py+f0uv2Oz+v3/L7/DxgoOEhYaHiImKi4yNjo+AgZKTlJWWl5iZmpucnZ6fkJGio6SlpqeoqaqrrK2ur6ChsrO0tba3uLUwAAOw==" alt="Created GIF" class="ytgif-success-preview-image" />
+                            <div class="ytgif-success-metadata">
+                                <span>480×270</span>
+                                <span>•</span>
+                                <span>1.2 MB</span>
+                                <span>•</span>
+                                <span>3.5s</span>
+                                <span>•</span>
+                                <span>35 frames</span>
+                            </div>
+                        </div>
+
+                        <!-- Success Message -->
+                        <div class="ytgif-success-message">
+                            <h3>Your GIF is ready!</h3>
+                        </div>
+
+                        <!-- Success Actions -->
+                        <div class="ytgif-success-actions">
+                            <button class="ytgif-button-secondary">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M15 19l-7-7 7-7"
+                                    />
+                                </svg>
+                                Back
+                            </button>
+
+                            <button class="ytgif-button-primary">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                                    <polyline points="7 10 12 15 17 10" />
+                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                </svg>
+                                Download GIF
+                            </button>
+                        </div>
+
+                        <!-- Feedback and Share Actions -->
+                        <div class="ytgif-success-bottom-actions">
+                            <button class="ytgif-button-secondary">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                                    />
+                                </svg>
+                                Give Feedback
+                            </button>
+
+                            <button class="ytgif-share-link">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                                    />
+                                </svg>
+                                Spread the word about YTGify
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

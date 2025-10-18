@@ -1,8 +1,7 @@
 import React from 'react';
 import { ShowTimelineRequest } from '@/types';
 import { engagementTracker } from '@/shared/engagement-tracker';
-import { openExternalLink, getReviewLink, getGitHubStarLink } from '@/constants/links';
-import { getTwitterTemplates, generateTwitterShareUrl } from '@/utils/social-templates';
+import { openExternalLink, getReviewLink } from '@/constants/links';
 
 const PopupApp: React.FC = () => {
   const [isYouTubePage, setIsYouTubePage] = React.useState(false);
@@ -54,7 +53,7 @@ const PopupApp: React.FC = () => {
     const checkFooter = async () => {
       try {
         const stats = await engagementTracker.getEngagementStats();
-        const qualifies = await engagementTracker.shouldShowPrompt('primary');
+        const qualifies = await engagementTracker.shouldShowPrompt();
         const dismissed = stats.popupFooterDismissed;
         setShowFooter(qualifies && !dismissed);
       } catch (error) {
@@ -74,18 +73,8 @@ const PopupApp: React.FC = () => {
   };
 
   // Handle footer actions
-  const handleRate = () => {
+  const handleReview = () => {
     openExternalLink(getReviewLink());
-  };
-
-  const handleShare = () => {
-    const templates = getTwitterTemplates();
-    const twitterUrl = generateTwitterShareUrl(templates[0].text);
-    openExternalLink(twitterUrl);
-  };
-
-  const handleGitHub = () => {
-    openExternalLink(getGitHubStarLink());
   };
 
   const handleDismissFooter = async () => {
@@ -287,11 +276,7 @@ const PopupApp: React.FC = () => {
       {showFooter && (
         <div className="popup-footer">
           <span>Enjoying YTGify? </span>
-          <a onClick={handleRate}>Rate us</a>
-          <span> | </span>
-          <a onClick={handleShare}>Share</a>
-          <span> | </span>
-          <a onClick={handleGitHub}>⭐</a>
+          <a onClick={handleReview}>Leave us a review!</a>
           <button className="dismiss-btn" onClick={handleDismissFooter}>×</button>
         </div>
       )}

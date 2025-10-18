@@ -1,6 +1,6 @@
 import React from 'react';
-import { getTwitterTemplates, generateTwitterShareUrl } from '@/utils/social-templates';
-import { openExternalLink } from '@/constants/links';
+import { engagementTracker } from '@/shared/engagement-tracker';
+import { openExternalLink, getReviewLink } from '@/constants/links';
 
 interface SuccessScreenProps {
   onDownload?: () => void;
@@ -26,16 +26,37 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
   gifDataUrl,
   gifMetadata,
 }) => {
+  const [showFooter, setShowFooter] = React.useState(false);
+
+  // Check footer qualification on mount
+  React.useEffect(() => {
+    const checkFooter = async () => {
+      try {
+        const stats = await engagementTracker.getEngagementStats();
+        const qualifies = await engagementTracker.shouldShowPrompt();
+        const dismissed = stats.popupFooterDismissed;
+        setShowFooter(qualifies && !dismissed);
+      } catch (error) {
+        console.error('Error checking footer qualification:', error);
+      }
+    };
+    checkFooter();
+  }, []);
+
+  // Handle footer actions
+  const handleReview = () => {
+    openExternalLink(getReviewLink());
+  };
+
+  const handleDismissFooter = async () => {
+    await engagementTracker.recordDismissal('popup-footer');
+    setShowFooter(false);
+  };
+
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
-  const handleShare = () => {
-    const templates = getTwitterTemplates();
-    const twitterUrl = generateTwitterShareUrl(templates[0].text); // Use short template
-    openExternalLink(twitterUrl);
   };
 
   return (
@@ -101,7 +122,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
           </button>
         </div>
 
-        {/* Feedback and Share Actions */}
+        {/* Feedback Action */}
         <div className="ytgif-success-bottom-actions">
           <button className="ytgif-button-secondary" onClick={onFeedback}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -114,20 +135,17 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
             </svg>
             Give Feedback
           </button>
-
-          <button className="ytgif-share-link" onClick={handleShare}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-              />
-            </svg>
-            Spread the word about YTGify
-          </button>
         </div>
       </div>
+
+      {/* Footer CTA */}
+      {showFooter && (
+        <div className="ytgif-wizard-footer">
+          <span>Enjoying YTGify? </span>
+          <a onClick={handleReview}>Leave us a review!</a>
+          <button className="dismiss-btn" onClick={handleDismissFooter}>×</button>
+        </div>
+      )}
     </div>
   );
 };

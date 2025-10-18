@@ -6,8 +6,6 @@ import QuickCaptureScreen from './screens/QuickCaptureScreen';
 import TextOverlayScreenV2 from './screens/TextOverlayScreenV2';
 import ProcessingScreen from './screens/ProcessingScreen';
 import SuccessScreen from './screens/SuccessScreen';
-import MilestoneScreen from './screens/MilestoneScreen';
-import { engagementTracker } from '@/shared/engagement-tracker';
 
 interface OverlayWizardProps {
   videoDuration: number;
@@ -97,7 +95,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     goToScreen('text-overlay');
   };
 
-  // Store GIF data when it's created and check for milestones
+  // Store GIF data when it's created
   React.useEffect(() => {
     if (gifData && gifData.dataUrl) {
       // Store the data
@@ -118,45 +116,13 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
 
       // Only transition if we're still on processing screen
       if (currentScreen === 'processing') {
-        // Check for milestones
-        (async () => {
-          try {
-            const stats = await engagementTracker.getEngagementStats();
-            const gifCount = stats.totalGifsCreated;
-
-            // Check if this is a milestone
-            if ([10, 25, 50].includes(gifCount)) {
-              const shouldShow = await engagementTracker.shouldShowMilestone(
-                gifCount as 10 | 25 | 50
-              );
-              if (shouldShow) {
-                // Record milestone shown
-                await engagementTracker.recordMilestoneShown(gifCount as 10 | 25 | 50);
-                // Store milestone count
-                setScreenData({ milestoneCount: gifCount as 10 | 25 | 50 });
-                // Go to milestone screen
-                setTimeout(() => {
-                  goToScreen('milestone');
-                }, 100);
-                return;
-              }
-            }
-
-            // Otherwise show success screen
-            setTimeout(() => {
-              goToScreen('success');
-            }, 100);
-          } catch (error) {
-            console.error('Error checking milestone:', error);
-            // Fallback to success screen
-            setTimeout(() => {
-              goToScreen('success');
-            }, 100);
-          }
-        })();
+        // Go directly to success screen
+        setTimeout(() => {
+          goToScreen('success');
+        }, 100);
       }
     }
-  }, [gifData, currentScreen, setScreenData, goToScreen]); // Add back required dependencies
+  }, [gifData, currentScreen, setScreenData, goToScreen]);
 
   // Add handlers for text overlay screen
   const handleConfirmTextOverlay = (overlays: TextOverlay[]) => {
@@ -198,7 +164,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
         ? 1
         : currentScreen === 'processing'
           ? 2
-          : currentScreen === 'milestone' || currentScreen === 'success'
+          : currentScreen === 'success'
             ? 3
             : currentScreen === 'feedback'
               ? 4
@@ -269,28 +235,6 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
               onError={(error) => {
                 console.error('GIF creation error:', error);
                 // Could show error screen or message
-              }}
-            />
-          )}
-
-          {currentScreen === 'milestone' && data.milestoneCount && (
-            <MilestoneScreen
-              milestoneCount={data.milestoneCount as 10 | 25 | 50}
-              onContinue={() => {
-                // Continue to success screen
-                goToScreen('success');
-              }}
-              onRate={() => {
-                // Track action
-                console.log('User clicked Rate from milestone');
-              }}
-              onShare={() => {
-                // Track action
-                console.log('User clicked Share from milestone');
-              }}
-              onGitHub={() => {
-                // Track action
-                console.log('User clicked GitHub from milestone');
               }}
             />
           )}

@@ -73,11 +73,6 @@ export interface EngagementData {
       dismissedAt?: number;
       clickedAction?: 'rate' | 'share' | 'github';
     };
-    secondary: {
-      shown: boolean;
-      dismissedAt?: number;
-      clickedAction?: 'rate' | 'share' | 'github';
-    };
   };
   milestones: {
     milestone10: boolean; // shown
