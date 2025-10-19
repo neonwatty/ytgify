@@ -1,4 +1,6 @@
 import React from 'react';
+import { engagementTracker } from '@/shared/engagement-tracker';
+import { openExternalLink, getReviewLink } from '@/constants/links';
 
 interface SuccessScreenProps {
   onDownload?: () => void;
@@ -24,6 +26,33 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
   gifDataUrl,
   gifMetadata,
 }) => {
+  const [showFooter, setShowFooter] = React.useState(false);
+
+  // Check footer qualification on mount
+  React.useEffect(() => {
+    const checkFooter = async () => {
+      try {
+        const stats = await engagementTracker.getEngagementStats();
+        const qualifies = await engagementTracker.shouldShowPrompt();
+        const dismissed = stats.popupFooterDismissed;
+        setShowFooter(qualifies && !dismissed);
+      } catch (error) {
+        console.error('Error checking footer qualification:', error);
+      }
+    };
+    checkFooter();
+  }, []);
+
+  // Handle footer actions
+  const handleReview = () => {
+    openExternalLink(getReviewLink());
+  };
+
+  const handleDismissFooter = async () => {
+    await engagementTracker.recordDismissal('popup-footer');
+    setShowFooter(false);
+  };
+
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -94,7 +123,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
         </div>
 
         {/* Feedback Action */}
-        <div className="ytgif-success-feedback-action">
+        <div className="ytgif-success-bottom-actions">
           <button className="ytgif-button-secondary" onClick={onFeedback}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path
@@ -108,6 +137,15 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Footer CTA */}
+      {showFooter && (
+        <div className="ytgif-wizard-footer">
+          <span>Enjoying YTGify? </span>
+          <a onClick={handleReview}>Leave us a review!</a>
+          <button className="dismiss-btn" onClick={handleDismissFooter}>×</button>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,7 +1,25 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { jest } from '@jest/globals';
 import SuccessScreen from '../../../../src/content/overlay-wizard/screens/SuccessScreen';
+import * as links from '../../../../src/constants/links';
+import * as engagementTrackerModule from '../../../../src/shared/engagement-tracker';
+
+// Mock dependencies
+jest.mock('../../../../src/constants/links', () => ({
+  openExternalLink: jest.fn(),
+  getGitHubStarLink: jest.fn(() => 'https://github.com/neonwatty/ytgify'),
+  getReviewLink: jest.fn(() => 'https://chromewebstore.google.com/detail/ytgify/mock-id/reviews'),
+}));
+
+jest.mock('../../../../src/shared/engagement-tracker', () => ({
+  engagementTracker: {
+    getEngagementStats: jest.fn(),
+    shouldShowPrompt: jest.fn(),
+    recordDismissal: jest.fn(),
+  },
+}));
 
 describe('SuccessScreen', () => {
   const mockOnDownload = jest.fn();
@@ -25,6 +43,15 @@ describe('SuccessScreen', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Default mock implementation - footer hidden (not qualified)
+    const mockEngagementTracker = engagementTrackerModule.engagementTracker as any;
+    mockEngagementTracker.getEngagementStats.mockResolvedValue({
+      totalGifsCreated: 0,
+      popupFooterDismissed: false,
+    });
+    mockEngagementTracker.shouldShowPrompt.mockResolvedValue(false);
+    mockEngagementTracker.recordDismissal.mockResolvedValue(undefined);
   });
 
   describe('Basic Rendering & UI Elements', () => {
@@ -197,7 +224,7 @@ describe('SuccessScreen', () => {
       const { container } = render(<SuccessScreen {...defaultProps} />);
 
       expect(container.querySelector('.ytgif-success-actions')).toBeInTheDocument();
-      expect(container.querySelector('.ytgif-success-feedback-action')).toBeInTheDocument();
+      expect(container.querySelector('.ytgif-success-bottom-actions')).toBeInTheDocument();
     });
 
     it('should render success message container with correct class', () => {
@@ -930,7 +957,7 @@ describe('SuccessScreen', () => {
       const originalCreateElement = document.createElement;
 
       // Test with limited DOM API
-      document.createElement = jest.fn().mockImplementation((tagName) => {
+      (document as any).createElement = jest.fn((tagName: string) => {
         const element = originalCreateElement.call(document, tagName);
         if (tagName === 'img') {
           // Simulate browser without full image support
@@ -951,7 +978,7 @@ describe('SuccessScreen', () => {
         )
       ).not.toThrow();
 
-      document.createElement = originalCreateElement;
+      (document as any).createElement = originalCreateElement;
     });
 
     it('should handle SVG icon rendering failures', () => {
@@ -1014,6 +1041,131 @@ describe('SuccessScreen', () => {
       }).toThrow();
 
       consoleSpy.mockRestore();
+    });
+  });
+
+  describe('Bottom Action Buttons', () => {
+    it('should render Give Feedback button', () => {
+      render(<SuccessScreen {...defaultProps} />);
+      expect(screen.getByText('Give Feedback')).toBeInTheDocument();
+    });
+
+    it('should render only one bottom action button', () => {
+      const { container } = render(<SuccessScreen {...defaultProps} />);
+      const buttons = container.querySelectorAll('.ytgif-success-bottom-actions button');
+      expect(buttons.length).toBe(1);
+      expect(buttons[0].textContent).toContain('Give Feedback');
+    });
+  });
+
+  describe('Footer CTA', () => {
+    it('should show footer when user qualifies (5+ GIFs, not shown, not dismissed)', async () => {
+      const mockEngagementTracker = engagementTrackerModule.engagementTracker as any;
+      mockEngagementTracker.getEngagementStats.mockResolvedValue({
+        totalGifsCreated: 5,
+        popupFooterDismissed: false,
+      });
+      mockEngagementTracker.shouldShowPrompt.mockResolvedValue(true);
+
+      render(<SuccessScreen {...defaultProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Leave us a review!')).toBeInTheDocument();
+      });
+
+      expect(screen.getByText('Enjoying YTGify?')).toBeInTheDocument();
+      expect(screen.getByText('×')).toBeInTheDocument(); // Dismiss button
+    });
+
+    it('should hide footer when user does not qualify (<5 GIFs)', async () => {
+      const mockEngagementTracker = engagementTrackerModule.engagementTracker as any;
+      mockEngagementTracker.getEngagementStats.mockResolvedValue({
+        totalGifsCreated: 4,
+        popupFooterDismissed: false,
+      });
+      mockEngagementTracker.shouldShowPrompt.mockResolvedValue(false);
+
+      render(<SuccessScreen {...defaultProps} />);
+
+      await waitFor(() => {
+        expect(screen.queryByText('Leave us a review!')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should hide footer when dismissed', async () => {
+      const mockEngagementTracker = engagementTrackerModule.engagementTracker as any;
+      mockEngagementTracker.getEngagementStats.mockResolvedValue({
+        totalGifsCreated: 10,
+        popupFooterDismissed: true, // Dismissed
+      });
+      mockEngagementTracker.shouldShowPrompt.mockResolvedValue(true);
+
+      render(<SuccessScreen {...defaultProps} />);
+
+      await waitFor(() => {
+        expect(screen.queryByText('Leave us a review!')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should hide footer when primary prompt already shown', async () => {
+      const mockEngagementTracker = engagementTrackerModule.engagementTracker as any;
+      mockEngagementTracker.getEngagementStats.mockResolvedValue({
+        totalGifsCreated: 10,
+        popupFooterDismissed: false,
+      });
+      mockEngagementTracker.shouldShowPrompt.mockResolvedValue(false); // Already shown
+
+      render(<SuccessScreen {...defaultProps} />);
+
+      await waitFor(() => {
+        expect(screen.queryByText('Leave us a review!')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should open Chrome Web Store review page when review link clicked', async () => {
+      const mockEngagementTracker = engagementTrackerModule.engagementTracker as any;
+      mockEngagementTracker.getEngagementStats.mockResolvedValue({
+        totalGifsCreated: 5,
+        popupFooterDismissed: false,
+      });
+      mockEngagementTracker.shouldShowPrompt.mockResolvedValue(true);
+
+      render(<SuccessScreen {...defaultProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Leave us a review!')).toBeInTheDocument();
+      });
+
+      const reviewLink = screen.getByText('Leave us a review!');
+      fireEvent.click(reviewLink);
+
+      expect(links.openExternalLink).toHaveBeenCalledWith('https://chromewebstore.google.com/detail/ytgify/mock-id/reviews');
+    });
+
+    it('should hide footer and persist dismissal when dismiss button clicked', async () => {
+      const mockEngagementTracker = engagementTrackerModule.engagementTracker as any;
+      mockEngagementTracker.getEngagementStats.mockResolvedValue({
+        totalGifsCreated: 5,
+        popupFooterDismissed: false,
+      });
+      mockEngagementTracker.shouldShowPrompt.mockResolvedValue(true);
+
+      render(<SuccessScreen {...defaultProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Leave us a review!')).toBeInTheDocument();
+      });
+
+      const dismissBtn = screen.getByText('×');
+      fireEvent.click(dismissBtn);
+
+      // Verify recordDismissal was called
+      expect(mockEngagementTracker.recordDismissal).toHaveBeenCalledWith('popup-footer');
+
+      // Footer should be hidden
+      await waitFor(() => {
+        expect(screen.queryByText('Leave us a review!')).not.toBeInTheDocument();
+      });
     });
   });
 });

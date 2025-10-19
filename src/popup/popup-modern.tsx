@@ -1,5 +1,7 @@
 import React from 'react';
 import { ShowTimelineRequest } from '@/types';
+import { engagementTracker } from '@/shared/engagement-tracker';
+import { openExternalLink, getReviewLink } from '@/constants/links';
 
 const PopupApp: React.FC = () => {
   const [isYouTubePage, setIsYouTubePage] = React.useState(false);
@@ -7,6 +9,7 @@ const PopupApp: React.FC = () => {
   const [videoTitle, setVideoTitle] = React.useState<string>('');
   const [isLoading, setIsLoading] = React.useState(false);
   const [showButton, setShowButton] = React.useState(false);
+  const [showFooter, setShowFooter] = React.useState(false);
 
   // Load button visibility setting
   React.useEffect(() => {
@@ -45,13 +48,38 @@ const PopupApp: React.FC = () => {
     checkCurrentTab();
   }, []);
 
+  // Check footer qualification on mount
+  React.useEffect(() => {
+    const checkFooter = async () => {
+      try {
+        const stats = await engagementTracker.getEngagementStats();
+        const qualifies = await engagementTracker.shouldShowPrompt();
+        const dismissed = stats.popupFooterDismissed;
+        setShowFooter(qualifies && !dismissed);
+      } catch (error) {
+        console.error('Error checking footer qualification:', error);
+      }
+    };
+    checkFooter();
+  }, []);
+
   // Handle toggle change
   const handleToggleChange = (checked: boolean) => {
     setShowButton(checked);
     // Save to Chrome storage
     chrome.storage.sync.set({ buttonVisibility: checked }, () => {
-      
+
     });
+  };
+
+  // Handle footer actions
+  const handleReview = () => {
+    openExternalLink(getReviewLink());
+  };
+
+  const handleDismissFooter = async () => {
+    await engagementTracker.recordDismissal('popup-footer');
+    setShowFooter(false);
   };
 
   const handleCreateGif = async () => {
@@ -243,6 +271,15 @@ const PopupApp: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Footer CTA */}
+      {showFooter && (
+        <div className="popup-footer">
+          <span>Enjoying YTGify? </span>
+          <a onClick={handleReview}>Leave us a review!</a>
+          <button className="dismiss-btn" onClick={handleDismissFooter}>×</button>
+        </div>
+      )}
 
     </div>
   );

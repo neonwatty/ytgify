@@ -1831,8 +1831,207 @@
   justify-content: center;
 }
 
+/* Show Your Support Section */
+.ytgif-support-section {
+  width: 100%;
+  padding: 24px;
+  background: rgba(153, 102, 204, 0.08);
+  border-radius: 12px;
+  border: 1px solid rgba(153, 102, 204, 0.2);
+  text-align: center;
+  margin-top: 8px;
+}
+
+.ytgif-support-section h3 {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.ytgif-support-section p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin: 0 0 20px 0;
+  line-height: 1.4;
+}
+
+.ytgif-support-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.ytgif-support-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ytgif-support-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
 .ytgif-success-feedback-action {
   display: flex;
   justify-content: center;
   margin-top: 16px;
+}
+
+/* Success Screen Bottom Actions - Feedback and Share Links */
+.ytgif-success-bottom-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 16px;
+  align-items: center;
+}
+
+.ytgif-share-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ytgif-share-link:hover {
+  color: #333;
+  text-decoration: underline;
+}
+
+/* Milestone Screen Styles */
+.ytgif-milestone-screen {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.ytgif-milestone-icon {
+  display: flex;
+  justify-content: center;
+  margin: 32px 0;
+  animation: scaleIn 0.5s ease-out;
+}
+
+.ytgif-milestone-icon svg {
+  color: #9966cc;
+  stroke-width: 1.5;
+}
+
+.ytgif-milestone-message {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.ytgif-milestone-message h3 {
+  color: #fff;
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.ytgif-milestone-message p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 16px;
+  margin: 0;
+}
+
+.ytgif-milestone-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.ytgif-milestone-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ytgif-milestone-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.ytgif-milestone-continue {
+  width: 100%;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+/* Wizard Footer CTA */
+.ytgif-wizard-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px 20px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  position: relative;
+  background: rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.ytgif-wizard-footer a {
+  color: rgba(255, 255, 255, 1.0);
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+.ytgif-wizard-footer a:hover {
+  color: rgba(255, 255, 255, 1.0);
+  text-decoration: underline;
+  transform: scale(1.02);
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+}
+
+.ytgif-wizard-footer .dismiss-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 8px;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.ytgif-wizard-footer .dismiss-btn:hover {
+  color: rgba(255, 255, 255, 0.8);
 }

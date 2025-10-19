@@ -95,7 +95,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     goToScreen('text-overlay');
   };
 
-  // Store GIF data when it's created and transition to success
+  // Store GIF data when it's created
   React.useEffect(() => {
     if (gifData && gifData.dataUrl) {
       // Store the data
@@ -116,13 +116,13 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
 
       // Only transition if we're still on processing screen
       if (currentScreen === 'processing') {
-        // Small delay to ensure state is updated
+        // Go directly to success screen
         setTimeout(() => {
           goToScreen('success');
         }, 100);
       }
     }
-  }, [gifData, currentScreen, setScreenData, goToScreen]); // Add back required dependencies
+  }, [gifData, currentScreen, setScreenData, goToScreen]);
 
   // Add handlers for text overlay screen
   const handleConfirmTextOverlay = (overlays: TextOverlay[]) => {

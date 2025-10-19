@@ -1,7 +1,23 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { jest } from '@jest/globals';
 import FeedbackScreen from '../../../../src/content/overlay-wizard/screens/FeedbackScreen';
+import * as links from '../../../../src/constants/links';
+
+// Mock dependencies
+jest.mock('../../../../src/constants/links', () => ({
+  openExternalLink: jest.fn(),
+  getReviewLink: jest.fn(() => 'https://chrome.google.com/webstore/review'),
+  LINKS: {
+    WEBSTORE_LISTING: 'https://chrome.google.com/webstore/listing',
+    WEBSTORE_REVIEWS: 'https://chrome.google.com/webstore/review',
+    GITHUB_REPO: 'https://github.com/neonwatty/ytgify',
+    GITHUB_ISSUES: 'https://github.com/neonwatty/ytgify/issues',
+    TWITTER_PROFILE: 'https://x.com/neonwatty',
+  },
+}));
+
 
 describe('FeedbackScreen', () => {
   const mockOnBack = jest.fn();
@@ -399,6 +415,144 @@ describe('FeedbackScreen', () => {
 
       const twitterLink = screen.getByRole('link', { name: /@neonwatty/i });
       expect(twitterLink.textContent).toContain('@neonwatty');
+    });
+  });
+
+  describe('Show Your Support Section', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should render "Enjoying YTGify?" section heading', () => {
+      render(<FeedbackScreen {...defaultProps} />);
+
+      const supportHeading = screen.getByRole('heading', { level: 3, name: 'Enjoying YTGify?' });
+      expect(supportHeading).toBeInTheDocument();
+    });
+
+    it('should display review button with text', () => {
+      render(<FeedbackScreen {...defaultProps} />);
+
+      const reviewButton = screen.getByRole('button', { name: /Leave us a review!/i });
+      expect(reviewButton).toBeInTheDocument();
+      expect(reviewButton.textContent).toContain('Leave us a review!');
+    });
+
+    it('should render support section container', () => {
+      const { container } = render(<FeedbackScreen {...defaultProps} />);
+
+      const supportSection = container.querySelector('.ytgif-support-section');
+      expect(supportSection).toBeInTheDocument();
+    });
+
+    it('should render support buttons container', () => {
+      const { container } = render(<FeedbackScreen {...defaultProps} />);
+
+      const supportButtons = container.querySelector('.ytgif-support-buttons');
+      expect(supportButtons).toBeInTheDocument();
+    });
+
+    it('should render review button', () => {
+      render(<FeedbackScreen {...defaultProps} />);
+
+      const reviewButton = screen.getByRole('button', { name: /Leave us a review!/i });
+      expect(reviewButton).toBeInTheDocument();
+    });
+
+    it('should apply correct CSS class to support button', () => {
+      const { container } = render(<FeedbackScreen {...defaultProps} />);
+
+      const supportButtons = container.querySelectorAll('.ytgif-support-btn');
+      expect(supportButtons).toHaveLength(1);
+    });
+
+    it('should render review button with star icon', () => {
+      render(<FeedbackScreen {...defaultProps} />);
+
+      const rateButton = screen.getByRole('button', { name: /Leave us a review!/i });
+      expect(rateButton).toBeInTheDocument();
+      expect(rateButton).toHaveClass('ytgif-support-btn');
+
+      const svg = rateButton?.querySelector('svg');
+      expect(svg).toBeInTheDocument();
+      expect(svg).toHaveAttribute('width', '18');
+      expect(svg).toHaveAttribute('height', '18');
+    });
+
+    it('should call openExternalLink with review link when review button clicked', () => {
+      render(<FeedbackScreen {...defaultProps} />);
+
+      const rateButton = screen.getByRole('button', { name: /Leave us a review!/i });
+      fireEvent.click(rateButton);
+
+      expect(links.openExternalLink).toHaveBeenCalledWith('https://chrome.google.com/webstore/review');
+    });
+
+    it('should handle multiple clicks on review button', () => {
+      render(<FeedbackScreen {...defaultProps} />);
+
+      const rateButton = screen.getByRole('button', { name: /Leave us a review!/i });
+      fireEvent.click(rateButton);
+      fireEvent.click(rateButton);
+      fireEvent.click(rateButton);
+
+      expect(links.openExternalLink).toHaveBeenCalledTimes(3);
+      expect(links.openExternalLink).toHaveBeenCalledWith('https://chrome.google.com/webstore/review');
+    });
+
+    it('should not interfere with Back/Done button functionality', () => {
+      render(<FeedbackScreen {...defaultProps} />);
+
+      fireEvent.click(screen.getByRole('button', { name: /Leave us a review!/i }));
+      fireEvent.click(screen.getByText('Back'));
+      fireEvent.click(screen.getByText('Done'));
+
+      expect(mockOnBack).toHaveBeenCalledTimes(1);
+      expect(mockOnClose).toHaveBeenCalledTimes(1);
+      expect(links.openExternalLink).toHaveBeenCalledTimes(1);
+    });
+
+    it('should render review button with correct text', () => {
+      const { container } = render(<FeedbackScreen {...defaultProps} />);
+
+      const supportButtons = container.querySelectorAll('.ytgif-support-btn');
+      expect(supportButtons[0].textContent).toContain('Leave us a review!');
+    });
+
+    it('should have correct button structure with icon and text', () => {
+      render(<FeedbackScreen {...defaultProps} />);
+
+      const rateButton = screen.getByRole('button', { name: /Leave us a review!/i });
+      const svg = rateButton?.querySelector('svg');
+      const span = rateButton?.querySelector('span');
+
+      expect(svg).toBeInTheDocument();
+      expect(span).toBeInTheDocument();
+      expect(span?.textContent).toBe('Leave us a review!');
+    });
+
+    it('should render support section after feedback options', () => {
+      const { container } = render(<FeedbackScreen {...defaultProps} />);
+
+      const feedbackContent = container.querySelector('.ytgif-feedback-content');
+      const feedbackOptions = feedbackContent?.querySelectorAll('.ytgif-feedback-option');
+      const supportSection = feedbackContent?.querySelector('.ytgif-support-section');
+
+      expect(feedbackOptions).toHaveLength(2);
+      expect(supportSection).toBeInTheDocument();
+
+      // Support section should come after feedback options in DOM
+      const allChildren = Array.from(feedbackContent?.children || []);
+      const supportIndex = allChildren.indexOf(supportSection as Element);
+      expect(supportIndex).toBeGreaterThan(1); // After 2 feedback options
+    });
+
+    it('should call getReviewLink helper for review button', () => {
+      render(<FeedbackScreen {...defaultProps} />);
+
+      fireEvent.click(screen.getByRole('button', { name: /Leave us a review!/i }));
+
+      expect(links.getReviewLink).toHaveBeenCalled();
     });
   });
 });

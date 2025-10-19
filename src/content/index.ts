@@ -41,6 +41,7 @@ import { initializeContentScriptFrameExtraction } from './frame-extractor';
 import { themeDetector, youtubeMatcher } from '@/themes';
 import { ResolutionScaler } from '@/processing/resolution-scaler';
 import { parseResolution } from '@/utils/resolution-parser';
+import { engagementTracker } from '@/shared/engagement-tracker';
 
 class YouTubeGifMaker {
   private gifButton: HTMLButtonElement | null = null;
@@ -1331,6 +1332,9 @@ class YouTubeGifMaker {
       // Save to IndexedDB
 
       await gifProcessor.saveGifToStorage(result.blob, result.metadata);
+
+      // Increment engagement tracker
+      await engagementTracker.incrementGifCount();
 
       // Convert blob to data URL for preview
       const reader = new FileReader();

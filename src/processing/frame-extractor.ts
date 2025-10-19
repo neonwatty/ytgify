@@ -23,7 +23,7 @@ export interface ExtractedFrame {
   frameIndex: number;
 }
 
-export interface FrameExtractionResult {
+interface FrameExtractionResult {
   frames: ExtractedFrame[];
   metadata: {
     totalFrames: number;

@@ -389,3 +389,50 @@ body {
 .toggle-input:checked + .toggle-slider:hover {
   background-color: #ff3333;
 }
+
+/* Popup Footer CTA */
+.popup-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px 20px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  position: relative;
+  background: rgba(0, 0, 0, 0.1);
+  text-align: center;
+  z-index: 10;
+}
+
+.popup-footer a {
+  color: rgba(255, 255, 255, 1.0);
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+.popup-footer a:hover {
+  color: rgba(255, 255, 255, 1.0);
+  text-decoration: underline;
+  transform: scale(1.02);
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+}
+
+.popup-footer .dismiss-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 8px;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.popup-footer .dismiss-btn:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
