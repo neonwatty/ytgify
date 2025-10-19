@@ -14,6 +14,7 @@ chrome-store-submission.zip
 .todoq/
 .todoqrc
 .claude/
+scripts/temp-user-data-*/
 
 # Build outputs
 dist/
