@@ -6,7 +6,6 @@ type OverlayScreenType =
   | 'quick-capture'
   | 'text-overlay'
   | 'processing'
-  | 'milestone'
   | 'success'
   | 'feedback';
 
@@ -26,7 +25,6 @@ interface ScreenData {
     duration: number;
     frameCount?: number;
   };
-  milestoneCount?: 10 | 25 | 50;
   [key: string]: unknown;
 }
 
