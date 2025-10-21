@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0d1117;
+  --foreground: #e6edf3;
+  --border: #30363d;
+  --card-bg: #161b22;
+  --accent-pink: #E91E8C;
+  --accent-purple: #7B2FBE;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  overflow-x: hidden;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* GitHub-style grid pattern */
+.grid-pattern {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Custom gradient text utility */
+@layer utilities {
+  .gradient-text {
+    background: linear-gradient(135deg, #E91E8C, #7B2FBE, #58a6ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .pink-text {
+    color: #E91E8C;
+  }
+
+  .gradient-border {
+    position: relative;
+    background: var(--card-bg);
+    border-radius: 0.75rem;
+    border: 1px solid var(--border);
+  }
+
+  .glow-effect {
+    box-shadow: 0 0 80px rgba(88, 166, 255, 0.15);
+  }
+
+  .glow-effect-purple {
+    box-shadow: 0 0 80px rgba(210, 168, 255, 0.15);
+  }
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* GitHub-style scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}
+
+/* Tag badge styling - from blog */
+.tag-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid #58a6ff;
+  background: rgba(88, 166, 255, 0.1);
+  color: #58a6ff;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+}
+
+.tag-badge:hover {
+  background: rgba(88, 166, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(88, 166, 255, 0.2);
+  border-color: #79c0ff;
+}
+
+/* Hero two-column grid */
+.hero-two-col-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 1024px) {
+  .hero-two-col-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
