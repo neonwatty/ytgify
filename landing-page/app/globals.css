@@ -1,32 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #0d1117;
-  --foreground: #e6edf3;
-  --border: #30363d;
+  --background: #0a0a0a;
+  --foreground: #ffffff;
+  --foreground-muted: #a0a0a0;
+  --border: #2a2a2a;
   --card-bg: #161b22;
+  --accent-cyan: #00d9ff;
   --accent-pink: #E91E8C;
   --accent-purple: #7B2FBE;
+
+  /* Blog-style variables */
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #cbd5e1;
+  --color-border-primary: #374151;
+  --gradient-elevated: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+  --shadow-subtle: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
   overflow-x: hidden;
   font-weight: 400;
+  letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* GitHub-style grid pattern */
+/* Grid pattern background */
 .grid-pattern {
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 50px 50px;
+    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
 /* Custom gradient text utility */

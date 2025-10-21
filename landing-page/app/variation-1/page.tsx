@@ -8,29 +8,29 @@ import { CHROME_EXTENSION_URL } from '@/lib/constants';
 
 export default function Variation1() {
   return (
-    <main className="min-h-screen bg-gray-50">
-      {/* Ultra Narrow Blog Style - Max 700px */}
-      <article className="max-w-[700px] mx-auto px-6 py-24">
+    <main className="min-h-screen bg-[#0a0a0a]">
+      {/* Ultra Narrow Blog Style - Max 800px */}
+      <article className="max-w-[800px] mx-auto px-6 py-32">
         {/* Tiny logo */}
-        <div className="mb-16">
-          <div className="w-12 h-12">
+        <div className="mb-20">
+          <div className="w-14 h-14">
             <Logo />
           </div>
         </div>
 
         {/* Large headline with lots of space */}
-        <h1 className="text-5xl font-bold mb-12 leading-tight text-gray-900">
+        <h1 className="text-6xl font-bold mb-16 leading-tight text-white tracking-tight">
           Turn your favorite YouTube moments into shareable GIFs.
         </h1>
 
         {/* Spacious description */}
-        <div className="text-xl text-gray-700 mb-16 leading-relaxed">
+        <div className="text-xl text-[#a0a0a0] mb-20 leading-loose">
           <HeroDescription />
         </div>
 
         {/* Features with Chrome Store Badge */}
-        <div className="mb-24">
-          <h2 className="text-3xl font-bold mb-6 text-gray-900">Features</h2>
+        <div className="mb-32">
+          <h2 className="text-4xl font-bold mb-8 text-white">Features</h2>
           <div className="flex gap-8 items-center">
             <div className="flex-1 [&>div]:grid-cols-2">
               <FeatureChecklist />
@@ -42,20 +42,20 @@ export default function Variation1() {
         </div>
 
         {/* Video with generous spacing */}
-        <div className="mb-24">
-          <h2 className="text-3xl font-bold mb-8 text-gray-900">See it in action</h2>
+        <div className="mb-32">
+          <h2 className="text-4xl font-bold mb-12 text-white">See it in action</h2>
           <DemoVideo />
         </div>
       </article>
 
       {/* Footer */}
-      <footer className="max-w-[700px] mx-auto px-6 py-12 border-t border-gray-200">
+      <footer className="max-w-[800px] mx-auto px-6 py-16 border-t border-[#2a2a2a]">
         <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-[#a0a0a0]">
             © {new Date().getFullYear()} YTgify. All rights reserved.
           </p>
           <div className="flex gap-6 text-sm">
-            <a href="https://github.com/neonwatty/ytgify/blob/main/docs/privacy-policy.md" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900 transition-colors">
+            <a href="https://github.com/neonwatty/ytgify/blob/main/docs/privacy-policy.md" target="_blank" rel="noopener noreferrer" className="text-[#a0a0a0] hover:text-white transition-colors">
               Privacy Policy
             </a>
           </div>
