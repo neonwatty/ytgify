@@ -9,7 +9,6 @@ export default function Logo() {
           alt="YTgify"
           width={120}
           height={120}
-          priority
           className="w-20 h-20 sm:w-24 sm:h-24 lg:w-[120px] lg:h-[120px]"
         />
       </div>
