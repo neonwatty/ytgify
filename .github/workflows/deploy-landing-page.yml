@@ -80,6 +80,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/landing-page'
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
