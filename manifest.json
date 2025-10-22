@@ -48,7 +48,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["*.js", "*.css", "icons/*", "gif.worker.js"],
+      "resources": ["*.js", "*.css", "*.wasm", "icons/*", "gif.worker.js"],
       "matches": ["https://*.youtube.com/*", "http://localhost:*/*", "http://127.0.0.1:*/*"]
     }
   ]

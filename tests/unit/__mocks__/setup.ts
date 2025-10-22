@@ -241,6 +241,12 @@ global.fetch = jest.fn(() =>
   } as Response)
 );
 
+// Mock gifski-wasm to avoid ES module import issues in tests
+jest.mock('gifski-wasm', () => ({
+  __esModule: true,
+  default: jest.fn().mockResolvedValue(new Uint8Array([0x47, 0x49, 0x46])) // GIF header
+}));
+
 // Console spy setup for testing console outputs
 const originalConsole = { ...console };
 
