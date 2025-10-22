@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - landing-page
-    paths-ignore:
-      - '**'
   workflow_dispatch:
 
 permissions:
