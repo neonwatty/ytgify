@@ -1,118 +1,41 @@
-# Dependencies
-node_modules/
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# Locals
-screenshots/
-chrome-store-submission.zip
-.tfq/
-.tfqrc
-.todoq/
-.todoqrc
-.claude/
-scripts/temp-user-data-*/
-
-# Build outputs
-dist/
-dist-production/
-dist-ssr/
-build/
-out/
-*.local
-
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-Thumbs.db
-
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-Icon
-._*
-.DocumentRevisions-V100
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-.com.apple.timemachine.donotpresent
-.AppleDB
-.AppleDesktop
-Network Trash Folder
-Temporary Items
-.apdisk
-
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
 .pnpm-debug.log*
 
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
+# env files (can opt-in for committing if needed)
+.env*
 
-# Coverage
-coverage/
-*.lcov
-.nyc_output/
+# vercel
+.vercel
 
-# TypeScript
+# typescript
 *.tsbuildinfo
-.tsc_cache/
-
-# Cache
-.npm/
-.eslintcache
-.stylelintcache
-.parcel-cache/
-.cache/
-.turbo/
-
-# Testing
-.jest/
-tests/test-user-data-*
-tests/test-results/
-test-results/
-tests/e2e-mock/fixtures/videos/*.mp4
-tests/e2e-mock/fixtures/videos/*.webm
-tests/e2e-mock/test-user-data/
-playwright-report/
-tests/downloads/
-tests/outputs/
-jest-results.json
-test-output-*.gif
-
-# Chrome Extension specific
-*.pem
-*.crx
-*.zip
-
-# Misc
-.history/
-.vscode-test/
-*.vsix
+next-env.d.ts
