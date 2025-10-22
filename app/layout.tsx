@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "YTgify - Turn YouTube Videos into GIFs",
-  description: "Create perfect GIFs from any YouTube video with just one click. Add text, customize quality, and share instantly. Free Chrome extension.",
-  keywords: "YouTube GIF, GIF maker, YouTube to GIF, Chrome extension, video to GIF, GIF creator",
+  title: "YTgify - Free Animated GIF Maker | Convert YouTube Videos to GIF",
+  description: "Free animated GIF maker for YouTube. Create and make animated GIFs from any video in seconds. Convert YouTube videos, MP4s into GIFs with custom text, FPS control, and multiple resolutions. Perfect for memes and social sharing.",
+  keywords: "animated gif maker, video to gif, make animated gif, gif create, youtube to gif, video into gif, mp4 to gif, gif maker, create animated gifs, youtube gif maker, gif creator, gif meme maker, chrome extension",
   authors: [{ name: "Jeremy Watt" }],
   openGraph: {
-    title: "YTgify - Turn YouTube Videos into GIFs",
-    description: "Create perfect GIFs from any YouTube video with just one click.",
+    title: "YTgify - Free Animated GIF Maker | Convert YouTube Videos to GIF",
+    description: "Free animated GIF maker for YouTube. Create and make animated GIFs from any video in seconds. Perfect for memes and social sharing.",
     type: "website",
     url: "https://neonwatty.github.io/ytgify",
     images: [
@@ -16,14 +16,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "YTgify - YouTube to GIF Converter",
+        alt: "YTgify - Animated GIF Maker for YouTube Videos",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "YTgify - Turn YouTube Videos into GIFs",
-    description: "Create perfect GIFs from any YouTube video with just one click.",
+    title: "YTgify - Free Animated GIF Maker for YouTube",
+    description: "Create animated GIFs from any YouTube video in seconds. Perfect for memes and social sharing.",
     images: ["/og-image.png"],
   },
 };

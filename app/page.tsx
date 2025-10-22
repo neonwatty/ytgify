@@ -19,12 +19,19 @@ export default function Home() {
 
           {/* Large headline with lots of space */}
           <h1 className="text-7xl sm:text-8xl font-bold mb-16 leading-tight text-white tracking-tight">
-            Turn your favorite YouTube moments into GIFs
+            Animated GIF Maker for YouTube Videos
           </h1>
 
           {/* Spacious description */}
           <div className="mb-20">
             <HeroDescription />
+          </div>
+
+          {/* Brief benefit statements */}
+          <div className="mb-20 space-y-3 text-xl text-white">
+            <p>✨ Transform any YouTube video into animated GIFs</p>
+            <p>🎬 Works with all video formats including MP4</p>
+            <p>😂 Perfect for creating memes and shareable moments</p>
           </div>
 
           {/* Features with Chrome Store Badge */}
