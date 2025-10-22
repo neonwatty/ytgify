@@ -1,11 +1,13 @@
 import Image from 'next/image';
 
+const basePath = process.env.NODE_ENV === 'production' ? '/ytgify' : '';
+
 export default function Logo() {
   return (
     <div className="flex justify-center mb-16">
       <div className="relative p-4 rounded-3xl bg-gradient-to-br from-[#E91E8C]/10 to-[#7B2FBE]/10 border-2 border-pink-200/50 shadow-lg">
         <Image
-          src="/ytgify-logo.svg"
+          src={`${basePath}/ytgify-logo.svg`}
           alt="YTgify"
           width={120}
           height={120}

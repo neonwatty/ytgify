@@ -1,6 +1,8 @@
 import Image from 'next/image';
 import { CHROME_EXTENSION_URL } from '@/lib/constants';
 
+const basePath = process.env.NODE_ENV === 'production' ? '/ytgify' : '';
+
 export default function ChromeStoreBadge() {
   return (
     <a
@@ -10,7 +12,7 @@ export default function ChromeStoreBadge() {
       className="inline-block hover:opacity-90 transition-opacity"
     >
       <Image
-        src="/chrome-web-store-badge.png"
+        src={`${basePath}/chrome-web-store-badge.png`}
         alt="Available in the Chrome Web Store"
         width={309}
         height={87}
