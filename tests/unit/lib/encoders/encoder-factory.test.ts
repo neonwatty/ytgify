@@ -123,6 +123,47 @@ describe('EncoderFactory', () => {
       expect(result.reason).toBe('Auto-selected based on performance characteristics');
     });
 
+    it('should fallback from gifski to gif.js when gifski is unavailable in auto mode', async () => {
+      mockGifskiEncoder.isAvailable.mockReturnValue(false);
+
+      const result = await factory.getEncoder({
+        primary: 'auto',
+        format: 'gif'
+      });
+
+      // Should fall back to gif.js (second priority in chain)
+      expect(result.encoder).toBe(mockGifJsEncoder);
+      expect(result.reason).toBe('Auto-selected based on performance characteristics');
+    });
+
+    it('should fallback from gifski to gif.js to gifenc when only gifenc available', async () => {
+      mockGifskiEncoder.isAvailable.mockReturnValue(false);
+      mockGifJsEncoder.isAvailable.mockReturnValue(false);
+
+      const result = await factory.getEncoder({
+        primary: 'auto',
+        format: 'gif'
+      });
+
+      // Should fall back to gifenc (third priority in chain)
+      expect(result.encoder).toBe(mockGifencEncoder);
+      expect(result.reason).toBe('Auto-selected based on performance characteristics');
+    });
+
+    it('should fallback to specified fallback when gifski explicitly requested but unavailable', async () => {
+      mockGifskiEncoder.isAvailable.mockReturnValue(false);
+
+      const result = await factory.getEncoder({
+        primary: 'gifski',
+        fallback: 'gifenc',
+        format: 'gif'
+      });
+
+      // Should use explicit fallback preference
+      expect(result.encoder).toBe(mockGifencEncoder);
+      expect(result.reason).toBe('Fallback to gifenc (primary unavailable)');
+    });
+
     it('should use emergency fallback when no preferred encoders available', async () => {
       mockGifencEncoder.isAvailable.mockReturnValue(false);
 
