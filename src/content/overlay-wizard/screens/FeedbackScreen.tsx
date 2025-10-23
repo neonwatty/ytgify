@@ -37,7 +37,7 @@ const FeedbackScreen: React.FC<FeedbackScreenProps> = ({ onBack, onClose }) => {
     <div className="ytgif-wizard-screen ytgif-feedback-screen">
       <div className="ytgif-wizard-header">
         <div style={{ width: '20px' }}></div>
-        <h2 className="ytgif-wizard-title">Support YTGify</h2>
+        <h2 className="ytgif-wizard-title">Stay Connected</h2>
         <div style={{ width: '20px' }}></div>
       </div>
 

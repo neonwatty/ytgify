@@ -46,19 +46,19 @@ describe('FeedbackScreen', () => {
   describe('Basic Rendering & UI Elements', () => {
     it('should render without crashing with minimal props', () => {
       render(<FeedbackScreen onBack={() => {}} onClose={() => {}} />);
-      expect(screen.getByText('Support YTGify')).toBeInTheDocument();
+      expect(screen.getByText('Stay Connected')).toBeInTheDocument();
     });
 
     it('should display main title correctly in header', () => {
       render(<FeedbackScreen {...defaultProps} />);
       const title = screen.getByRole('heading', { level: 2 });
-      expect(title).toHaveTextContent('Support YTGify');
+      expect(title).toHaveTextContent('Stay Connected');
       expect(title).toHaveClass('ytgif-wizard-title');
     });
 
     it('should show wizard header structure with proper spacing', () => {
       render(<FeedbackScreen {...defaultProps} />);
-      const header = screen.getByText('Support YTGify').closest('.ytgif-wizard-header');
+      const header = screen.getByText('Stay Connected').closest('.ytgif-wizard-header');
       expect(header).toBeInTheDocument();
       expect(header?.children).toHaveLength(3); // Two spacing divs + title
       expect(header?.children[0]).toHaveStyle({ width: '20px' });
@@ -134,7 +134,7 @@ describe('FeedbackScreen', () => {
 
     it('should apply correct CSS classes to main containers', () => {
       render(<FeedbackScreen {...defaultProps} />);
-      expect(screen.getByText('Support YTGify').closest('.ytgif-wizard-screen')).toHaveClass('ytgif-feedback-screen');
+      expect(screen.getByText('Stay Connected').closest('.ytgif-wizard-screen')).toHaveClass('ytgif-feedback-screen');
       expect(document.querySelector('.ytgif-wizard-content')).toBeInTheDocument();
       expect(document.querySelector('.ytgif-logo-container')).toBeInTheDocument();
       expect(document.querySelector('.ytgif-feedback-content')).toBeInTheDocument();
@@ -155,7 +155,7 @@ describe('FeedbackScreen', () => {
       const onBack = jest.fn();
       const onClose = jest.fn();
       render(<FeedbackScreen onBack={onBack} onClose={onClose} />);
-      expect(screen.getByText('Support YTGify')).toBeInTheDocument();
+      expect(screen.getByText('Stay Connected')).toBeInTheDocument();
     });
 
     it('should handle undefined onBack callback gracefully', () => {
@@ -172,7 +172,7 @@ describe('FeedbackScreen', () => {
 
     it('should render when all props are undefined', () => {
       render(<FeedbackScreen onBack={undefined as any} onClose={undefined as any} />);
-      expect(screen.getByText('Support YTGify')).toBeInTheDocument();
+      expect(screen.getByText('Stay Connected')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Back/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Done' })).toBeInTheDocument();
     });
@@ -199,7 +199,7 @@ describe('FeedbackScreen', () => {
 
     it('should work with empty props object', () => {
       render(<FeedbackScreen {...{} as any} />);
-      expect(screen.getByText('Support YTGify')).toBeInTheDocument();
+      expect(screen.getByText('Stay Connected')).toBeInTheDocument();
     });
 
     it('should not mutate passed props', () => {
@@ -302,7 +302,7 @@ describe('FeedbackScreen', () => {
 
       expect(onBackWithSideEffect).toHaveBeenCalledTimes(1);
       // Component should still be in the document after callback
-      expect(screen.getByText('Support YTGify')).toBeInTheDocument();
+      expect(screen.getByText('Stay Connected')).toBeInTheDocument();
       // Other buttons should still be functional
       fireEvent.click(screen.getByRole('button', { name: 'Done' }));
       expect(mockOnClose).toHaveBeenCalledTimes(1);
