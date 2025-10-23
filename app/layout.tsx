@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     title: "YTgify - Free Animated GIF Maker | Convert YouTube Videos to GIF",
     description: "Free animated GIF maker for YouTube. Create and make animated GIFs from any video in seconds. Perfect for memes and social sharing.",
     type: "website",
-    url: "https://neonwatty.github.io/ytgify",
+    url: "https://ytgify.com",
     images: [
       {
         url: "/og-image.png",
