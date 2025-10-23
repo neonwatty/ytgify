@@ -1886,6 +1886,37 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+/* Newsletter Section - BeehIiv Embed */
+.ytgif-newsletter-section {
+  width: 100%;
+  padding: 24px;
+  background: rgba(153, 102, 204, 0.08);
+  border-radius: 12px;
+  border: 1px solid rgba(153, 102, 204, 0.2);
+  text-align: center;
+  margin-top: 16px;
+}
+
+.ytgif-newsletter-section h3 {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.ytgif-newsletter-section p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin: 0 0 16px 0;
+  line-height: 1.4;
+}
+
+.ytgif-newsletter-embed {
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+}
+
 .ytgif-success-feedback-action {
   display: flex;
   justify-content: center;
