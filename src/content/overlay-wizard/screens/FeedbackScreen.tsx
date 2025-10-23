@@ -84,9 +84,9 @@ const FeedbackScreen: React.FC<FeedbackScreenProps> = ({ onBack, onClose }) => {
                 scrolling="no"
                 style={{
                   width: '100%',
-                  maxWidth: '560px',
+                  maxWidth: '100%',
                   height: '207px',
-                  margin: '0 auto',
+                  margin: '0',
                   borderRadius: '0px',
                   backgroundColor: 'transparent',
                   boxShadow: 'none',
