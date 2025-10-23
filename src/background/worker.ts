@@ -2,11 +2,14 @@
 import { ExtractFramesRequest, EncodeGifRequest } from '@/types';
 import { logger } from '@/lib/logger';
 import { errorHandler, createError } from '@/lib/errors';
-import { 
-  extractVideoFramesInServiceWorker, 
-  createServiceWorkerProcessorOptions 
+import {
+  extractVideoFramesInServiceWorker,
+  createServiceWorkerProcessorOptions
 } from '@/lib/service-worker-video-processor';
-import { encodeGif, detectEncoderFeatures } from '@/lib/gif-encoder-v2';
+
+// GIF encoding is NOT supported in service worker context
+// All GIF encoding must happen in content script where DOM APIs are available
+// This worker only handles frame extraction
 
 export interface VideoProcessingJob {
   id: string;
@@ -87,27 +90,13 @@ export class BackgroundVideoWorker {
   }
 
   public addGifEncodingJob(request: EncodeGifRequest): string {
-    const jobId = this.generateJobId();
-    
-    const job: VideoProcessingJob = {
-      id: jobId,
-      type: 'encode_gif',
-      data: request.data,
-      status: 'pending',
-      progress: 0,
-      createdAt: new Date()
-    };
-
-    this.jobs.set(jobId, job);
-    this.processingQueue.push(jobId);
-
-    logger.info('[BackgroundWorker] GIF encoding job added', { jobId, queueLength: this.processingQueue.length });
-
-    if (!this.isProcessing) {
-      this.processQueue();
-    }
-
-    return jobId;
+    // GIF encoding is not supported in service worker context
+    // Service workers lack DOM APIs required by GIF encoders
+    // All GIF encoding must happen in content script context
+    logger.error('[BackgroundWorker] GIF encoding not supported in service worker', {
+      request: request.type
+    });
+    throw createError('gif', 'GIF encoding must be performed in content script context, not in service worker');
   }
 
   // Get job status and progress
@@ -141,16 +130,16 @@ export class BackgroundVideoWorker {
           if (job.type === 'extract_frames') {
             await this.processFrameExtractionJob(job);
           } else if (job.type === 'encode_gif') {
-            await this.processGifEncodingJob(job);
+            throw createError('gif', 'GIF encoding is not supported in service worker context');
           }
 
           job.status = 'completed';
           job.completedAt = new Date();
           job.progress = 100;
 
-          logger.info('[BackgroundWorker] Job completed successfully', { 
-            jobId, 
-            processingTime: job.completedAt.getTime() - job.createdAt.getTime() 
+          logger.info('[BackgroundWorker] Job completed successfully', {
+            jobId,
+            processingTime: job.completedAt.getTime() - job.createdAt.getTime()
           });
 
         } catch (error) {
@@ -228,96 +217,14 @@ export class BackgroundVideoWorker {
     }
   }
 
-  // Process GIF encoding using advanced encoder
+  // GIF encoding is NOT supported in service worker context
+  // This method exists only for type compatibility but will always throw an error
+  // All GIF encoding must happen in content script where DOM APIs are available
   private async processGifEncodingJob(job: VideoProcessingJob): Promise<void> {
-    const jobData = job.data as { frames: ImageData[]; settings: Record<string, unknown>; metadata: Record<string, unknown> };
-    const { frames, settings, metadata } = jobData;
-    
-    logger.info('[BackgroundWorker] Starting advanced GIF encoding', {
-      frameCount: frames.length,
-      settings,
-      metadata
+    logger.error('[BackgroundWorker] GIF encoding called in service worker context', {
+      jobId: job.id
     });
-
-    try {
-      // Detect encoder capabilities for optimal performance
-      const encoderFeatures = await detectEncoderFeatures();
-      logger.info('[BackgroundWorker] Encoder detection completed', {
-        hasGifenc: encoderFeatures.hasGifenc,
-        hasGifJs: encoderFeatures.hasGifJs,
-        recommended: encoderFeatures.recommendedEncoder,
-        performance: encoderFeatures.performanceProfile
-      });
-
-      // Convert settings to GIF encoding options with encoder preferences
-      const gifOptions = {
-        width: Number(settings.width) || frames[0]?.width || 640,
-        height: Number(settings.height) || frames[0]?.height || 480,
-        frameRate: Number(settings.frameRate) || 10,
-        quality: (settings.quality as 'low' | 'medium' | 'high') || 'medium',
-        loop: Boolean(settings.loop ?? true),
-        preferredEncoder: encoderFeatures.recommendedEncoder,
-        enableFeatureDetection: true,
-        dithering: Boolean(settings.dithering ?? false),
-        optimizeColors: Boolean(settings.optimizeColors ?? true),
-        backgroundColor: settings.backgroundColor as string || undefined
-      };
-
-      // Set up progress tracking
-      const onProgress = (progress: { progress: number; message: string; stage: string }) => {
-        job.progress = progress.progress;
-        logger.debug('[BackgroundWorker] GIF encoding progress', { 
-          jobId: job.id, 
-          progress: progress.progress, 
-          stage: progress.stage,
-          message: progress.message 
-        });
-      };
-
-      // Encode GIF using the advanced encoder
-      const result = await encodeGif(frames, gifOptions, onProgress);
-
-      // Store the encoded GIF and enhanced metadata
-      job.data.encodedGif = {
-        gifBlob: result.gifBlob,
-        thumbnailBlob: result.thumbnailBlob,
-        metadata: {
-          fileSize: result.metadata.fileSize,
-          duration: result.metadata.duration,
-          width: result.metadata.width,
-          height: result.metadata.height,
-          frameCount: result.metadata.frameCount,
-          colorCount: result.metadata.colorCount,
-          compressionRatio: result.metadata.compressionRatio,
-          // Enhanced metadata from new encoder system
-          encodingTime: result.metadata.encodingTime,
-          averageFrameTime: result.metadata.averageFrameTime,
-          encoder: result.metadata.encoder,
-          performance: {
-            efficiency: result.metadata.performance.efficiency,
-            recommendations: result.metadata.performance.recommendations,
-            peakMemoryUsage: result.metadata.performance.peakMemoryUsage
-          }
-        }
-      };
-
-      logger.info('[BackgroundWorker] Advanced GIF encoding completed', {
-        fileSize: result.metadata.fileSize,
-        thumbnailSize: result.thumbnailBlob?.size || 0,
-        frameCount: result.metadata.frameCount,
-        colorCount: result.metadata.colorCount,
-        compressionRatio: result.metadata.compressionRatio,
-        processingTime: Date.now() - job.createdAt.getTime()
-      });
-
-    } catch (error) {
-      logger.error('[BackgroundWorker] Advanced GIF encoding failed', { error });
-      throw createError('gif', `GIF encoding failed: ${error instanceof Error ? error.message : 'Unknown error'}`, {
-        frameCount: frames.length,
-        settings,
-        jobId: job.id
-      });
-    }
+    throw createError('gif', 'GIF encoding is not supported in service worker context. Encoding must be performed in content script.');
   }
 
   // Utility methods

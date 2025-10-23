@@ -5,7 +5,8 @@
 
 import { AbstractEncoder } from './abstract-encoder';
 import { GifencEncoder } from './gifenc-encoder';
-import { GifJsEncoder } from './gifjs-encoder';
+// GifJsEncoder is lazy-imported to avoid service worker crashes
+// It requires DOM which service workers don't have
 import { GifskiEncoder } from './gifski-encoder';
 
 export type EncoderType = 'gifenc' | 'gif.js' | 'gifski' | 'auto';
@@ -99,20 +100,37 @@ export class EncoderFactory {
     }
 
     const cacheKey = type;
-    
+
     // Return cached instance if available
     if (this.encoderInstances.has(cacheKey)) {
       return this.encoderInstances.get(cacheKey)!;
     }
 
     let encoder: AbstractEncoder;
-    
+
     switch (type) {
       case 'gifenc':
         encoder = new GifencEncoder();
         break;
       case 'gif.js':
-        encoder = new GifJsEncoder();
+        // Lazy-import GifJsEncoder to avoid loading in service worker
+        // Service workers don't have DOM (document, window) which GifJsEncoder requires
+        // Check runtime context BEFORE attempting import to prevent webpack chunk loading
+        if (typeof document === 'undefined' || typeof window === 'undefined') {
+          console.warn('GifJsEncoder requires DOM - not available in service worker context');
+          return null;
+        }
+        try {
+          const { GifJsEncoder } = await import(
+            /* webpackChunkName: "gifjs-encoder" */
+            /* webpackMode: "lazy" */
+            './gifjs-encoder'
+          );
+          encoder = new GifJsEncoder();
+        } catch (error) {
+          console.warn('GifJsEncoder not available in this environment:', error);
+          return null;
+        }
         break;
       case 'gifski':
         encoder = new GifskiEncoder();
@@ -327,12 +345,23 @@ export class EncoderFactory {
     this.encoderInstances.clear();
   }
 
-  private createEncoderInstance(type: EncoderType): AbstractEncoder {
+  private async createEncoderInstance(type: EncoderType): Promise<AbstractEncoder> {
     switch (type) {
       case 'gifenc':
         return new GifencEncoder();
-      case 'gif.js':
+      case 'gif.js': {
+        // Check runtime context before importing
+        if (typeof document === 'undefined' || typeof window === 'undefined') {
+          throw new Error('GifJsEncoder requires DOM - not available in service worker context');
+        }
+        // Lazy-import to avoid service worker crashes
+        const { GifJsEncoder } = await import(
+          /* webpackChunkName: "gifjs-encoder" */
+          /* webpackMode: "lazy" */
+          './gifjs-encoder'
+        );
         return new GifJsEncoder();
+      }
       case 'gifski':
         return new GifskiEncoder();
       default:

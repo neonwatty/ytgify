@@ -32,7 +32,7 @@
     "test:layout:headed": "playwright test --config tests/playwright.config.ts tests/e2e/youtube-layout-integrity.spec.ts tests/e2e/css-isolation.spec.ts --headed",
     "test:all": "npm run test && npm run test:e2e",
     "test:all:with-mock": "npm run test && npm run test:e2e:mock",
-    "validate:pre-push": "npm run lint && npm run build && npm run typecheck && npm test && npm run test:layout && npm run test:e2e:fast",
+    "validate:pre-push": "npm run lint && npm run build && npm run typecheck && npm test && npm run test:e2e:mock:headless && npm run test:layout && npm run test:e2e:fast",
     "prepare": "husky"
   },
   "devDependencies": {

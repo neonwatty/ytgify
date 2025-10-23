@@ -104,6 +104,11 @@ export class GifJsEncoder extends AbstractEncoder {
       throw new Error('gif.js encoder requires DOM access and cannot run in service worker context');
     }
 
+    // Ensure OffscreenCanvas is available (lazy check)
+    if (typeof OffscreenCanvas === 'undefined') {
+      throw new Error('OffscreenCanvas not available in this environment');
+    }
+
     await this.initialize();
 
     this.isEncoding = true;
@@ -112,7 +117,7 @@ export class GifJsEncoder extends AbstractEncoder {
     this.startTime = performance.now();
     this.frameCount = frames.length;
 
-    // Create offscreen canvas for frame processing
+    // Lazy create offscreen canvas for frame processing (only when encode is called)
     this.canvas = new OffscreenCanvas(options.width, options.height);
     const ctx = this.canvas.getContext('2d');
     if (!ctx) {
@@ -120,7 +125,7 @@ export class GifJsEncoder extends AbstractEncoder {
     }
     this.ctx = ctx;
 
-    // Create reusable regular canvas for gif.js compatibility
+    // Lazy create reusable regular canvas for gif.js compatibility (only when encode is called)
     this.regularCanvas = document.createElement('canvas');
     this.regularCanvas.width = options.width;
     this.regularCanvas.height = options.height;
