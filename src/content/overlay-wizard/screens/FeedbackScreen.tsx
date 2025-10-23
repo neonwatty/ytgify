@@ -85,7 +85,7 @@ const FeedbackScreen: React.FC<FeedbackScreenProps> = ({ onBack, onClose }) => {
                 style={{
                   width: '100%',
                   maxWidth: '100%',
-                  height: '70px',
+                  height: '60px',
                   margin: '0',
                   borderRadius: '0px',
                   backgroundColor: 'transparent',
