@@ -16,7 +16,7 @@ import {
 interface GIFJsInstance {
   addFrame(
     element: HTMLCanvasElement | HTMLImageElement | CanvasRenderingContext2D | ImageData,
-    options?: { delay?: number; copy?: boolean; dispose?: number }
+    options?: { delay?: number; copy?: boolean; dispose?: number; localPalette?: boolean }
   ): void;
 
   render(): void;
@@ -152,7 +152,7 @@ export class GifJsEncoder extends AbstractEncoder {
       workers: 2,
       workerScript: workerScript,
       repeat: options.loop ? 0 : -1, // 0 = loop forever, -1 = no loop
-      dither: options.dithering || false,
+      dither: 'Stucki-serpentine', // Stucki-serpentine for highest quality dithering
       debug: false,
       background: options.backgroundColor || undefined,
     });
@@ -186,6 +186,7 @@ export class GifJsEncoder extends AbstractEncoder {
         copy: true,
         delay: frameDelay,
         dispose: 2, // Restore to background
+        localPalette: true, // Each frame gets optimized 256-color palette
       });
 
       // Report progress for adding frames
@@ -278,13 +279,13 @@ export class GifJsEncoder extends AbstractEncoder {
 
     switch (quality) {
       case 'low':
-        return 20;
+        return 10; // Improved from 20
       case 'medium':
-        return 10;
+        return 5; // Improved from 10
       case 'high':
-        return 5;
+        return 1; // Improved from 5 - maximum quality
       default:
-        return 10;
+        return 5;
     }
   }
 

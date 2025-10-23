@@ -6,6 +6,7 @@
 export { AbstractEncoder } from './abstract-encoder';
 export { GifencEncoder } from './gifenc-encoder';
 export { GifJsEncoder } from './gifjs-encoder';
+export { GifskiEncoder } from './gifski-encoder';
 export { 
   EncoderFactory, 
   encoderFactory, 

@@ -241,7 +241,7 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
                 const sizeEstimate =
                   gifDuration *
                   selectedFrameRate *
-                  0.05 *
+                  0.08 *
                   resolutionMultipliers[selectedResolution];
                 return sizeEstimate.toFixed(1);
               })()}

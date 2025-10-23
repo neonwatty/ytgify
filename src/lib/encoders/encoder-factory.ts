@@ -6,8 +6,9 @@
 import { AbstractEncoder } from './abstract-encoder';
 import { GifencEncoder } from './gifenc-encoder';
 import { GifJsEncoder } from './gifjs-encoder';
+import { GifskiEncoder } from './gifski-encoder';
 
-export type EncoderType = 'gifenc' | 'gif.js' | 'auto';
+export type EncoderType = 'gifenc' | 'gif.js' | 'gifski' | 'auto';
 export type FormatType = 'gif' | 'mp4';
 
 export interface EncoderPreference {
@@ -113,6 +114,9 @@ export class EncoderFactory {
       case 'gif.js':
         encoder = new GifJsEncoder();
         break;
+      case 'gifski':
+        encoder = new GifskiEncoder();
+        break;
       default:
         throw new Error(`Unknown encoder type: ${type}`);
     }
@@ -139,8 +143,8 @@ export class EncoderFactory {
    * Automatically select the best GIF encoder based on environment and performance
    */
   private async selectBestGifEncoder(): Promise<AbstractEncoder | null> {
-    // Priority order: gifenc (fast) -> gif.js (compatible)
-    const encoderPriority: EncoderType[] = ['gifenc', 'gif.js'];
+    // Priority order: gifski (highest quality) -> gif.js (quality with dithering) -> gifenc (fast fallback)
+    const encoderPriority: EncoderType[] = ['gifski', 'gif.js', 'gifenc'];
 
     for (const encoderType of encoderPriority) {
       const encoder = await this.getSpecificEncoder(encoderType);
@@ -157,8 +161,8 @@ export class EncoderFactory {
    * Get any available GIF encoder as ultimate fallback
    */
   private async getAnyAvailableGifEncoder(): Promise<AbstractEncoder | null> {
-    const allEncoders: EncoderType[] = ['gifenc', 'gif.js'];
-    
+    const allEncoders: EncoderType[] = ['gifski', 'gifenc', 'gif.js'];
+
     for (const encoderType of allEncoders) {
       try {
         const encoder = await this.getSpecificEncoder(encoderType);
@@ -205,7 +209,7 @@ export class EncoderFactory {
     characteristics: AbstractEncoder['characteristics'];
     supportedFormats: string[];
   }>> {
-    const encoderTypes: EncoderType[] = ['gifenc', 'gif.js'];
+    const encoderTypes: EncoderType[] = ['gifski', 'gifenc', 'gif.js'];
     const results = [];
 
     for (const type of encoderTypes) {
@@ -329,6 +333,8 @@ export class EncoderFactory {
         return new GifencEncoder();
       case 'gif.js':
         return new GifJsEncoder();
+      case 'gifski':
+        return new GifskiEncoder();
       default:
         throw new Error(`Unknown encoder type: ${type}`);
     }

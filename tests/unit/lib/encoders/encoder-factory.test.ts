@@ -6,16 +6,25 @@
 import { EncoderFactory, encoderFactory, selectEncoder, getPerformanceRecommendations } from '@/lib/encoders/encoder-factory';
 import { GifencEncoder } from '@/lib/encoders/gifenc-encoder';
 import { GifJsEncoder } from '@/lib/encoders/gifjs-encoder';
+import { GifskiEncoder } from '@/lib/encoders/gifski-encoder';
 import { AbstractEncoder } from '@/lib/encoders/abstract-encoder';
 
 // Mock the encoder modules
 jest.mock('@/lib/encoders/gifenc-encoder');
 jest.mock('@/lib/encoders/gifjs-encoder');
+jest.mock('@/lib/encoders/gifski-encoder');
+
+// Mock gifski-wasm to avoid ES module import issues
+jest.mock('gifski-wasm', () => ({
+  __esModule: true,
+  default: jest.fn().mockResolvedValue(new Uint8Array([0x47, 0x49, 0x46])) // GIF header
+}));
 
 describe('EncoderFactory', () => {
   let factory: EncoderFactory;
   let mockGifencEncoder: jest.Mocked<GifencEncoder>;
   let mockGifJsEncoder: jest.Mocked<GifJsEncoder>;
+  let mockGifskiEncoder: jest.Mocked<GifskiEncoder>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -51,8 +60,23 @@ describe('EncoderFactory', () => {
       encode: jest.fn().mockResolvedValue(new Blob(['gifjs-data'], { type: 'image/gif' }))
     } as any;
 
+    mockGifskiEncoder = {
+      name: 'gifski',
+      supportedFormats: ['gif'],
+      characteristics: {
+        speed: 'slow',
+        quality: 'high',
+        memoryUsage: 'high',
+        browserSupport: 'good'
+      },
+      isAvailable: jest.fn().mockReturnValue(true),
+      initialize: jest.fn().mockResolvedValue(undefined),
+      encode: jest.fn().mockResolvedValue(new Blob(['gifski-data'], { type: 'image/gif' }))
+    } as any;
+
     (GifencEncoder as jest.MockedClass<typeof GifencEncoder>).mockImplementation(() => mockGifencEncoder);
     (GifJsEncoder as jest.MockedClass<typeof GifJsEncoder>).mockImplementation(() => mockGifJsEncoder);
+    (GifskiEncoder as jest.MockedClass<typeof GifskiEncoder>).mockImplementation(() => mockGifskiEncoder);
   });
 
   describe('getInstance', () => {
@@ -94,8 +118,50 @@ describe('EncoderFactory', () => {
         format: 'gif'
       });
 
+      // gifski is now the default for highest quality
+      expect(result.encoder).toBe(mockGifskiEncoder);
+      expect(result.reason).toBe('Auto-selected based on performance characteristics');
+    });
+
+    it('should fallback from gifski to gif.js when gifski is unavailable in auto mode', async () => {
+      mockGifskiEncoder.isAvailable.mockReturnValue(false);
+
+      const result = await factory.getEncoder({
+        primary: 'auto',
+        format: 'gif'
+      });
+
+      // Should fall back to gif.js (second priority in chain)
+      expect(result.encoder).toBe(mockGifJsEncoder);
+      expect(result.reason).toBe('Auto-selected based on performance characteristics');
+    });
+
+    it('should fallback from gifski to gif.js to gifenc when only gifenc available', async () => {
+      mockGifskiEncoder.isAvailable.mockReturnValue(false);
+      mockGifJsEncoder.isAvailable.mockReturnValue(false);
+
+      const result = await factory.getEncoder({
+        primary: 'auto',
+        format: 'gif'
+      });
+
+      // Should fall back to gifenc (third priority in chain)
       expect(result.encoder).toBe(mockGifencEncoder);
       expect(result.reason).toBe('Auto-selected based on performance characteristics');
+    });
+
+    it('should fallback to specified fallback when gifski explicitly requested but unavailable', async () => {
+      mockGifskiEncoder.isAvailable.mockReturnValue(false);
+
+      const result = await factory.getEncoder({
+        primary: 'gifski',
+        fallback: 'gifenc',
+        format: 'gif'
+      });
+
+      // Should use explicit fallback preference
+      expect(result.encoder).toBe(mockGifencEncoder);
+      expect(result.reason).toBe('Fallback to gifenc (primary unavailable)');
     });
 
     it('should use emergency fallback when no preferred encoders available', async () => {
@@ -106,11 +172,12 @@ describe('EncoderFactory', () => {
         format: 'gif'
       });
 
-      expect(result.encoder).toBe(mockGifJsEncoder);
+      expect(result.encoder).toBe(mockGifskiEncoder);
       expect(result.reason).toBe('Emergency fallback to any available encoder');
     });
 
     it('should throw error when no encoders available', async () => {
+      mockGifskiEncoder.isAvailable.mockReturnValue(false);
       mockGifencEncoder.isAvailable.mockReturnValue(false);
       mockGifJsEncoder.isAvailable.mockReturnValue(false);
 
@@ -175,7 +242,8 @@ describe('EncoderFactory', () => {
 
     it('should auto-select when type is auto', async () => {
       const encoder = await factory.getSpecificEncoder('auto');
-      expect(encoder).toBe(mockGifencEncoder);
+      // gifski is now the default for highest quality
+      expect(encoder).toBe(mockGifskiEncoder);
     });
 
     it('should throw error for unknown encoder type', async () => {
@@ -188,15 +256,22 @@ describe('EncoderFactory', () => {
     it('should return information about all encoders', async () => {
       const encoders = await factory.getAvailableEncoders();
 
-      expect(encoders).toHaveLength(2);
+      expect(encoders).toHaveLength(3);
       expect(encoders[0]).toEqual({
+        name: 'gifski',
+        type: 'gifski',
+        available: true,
+        characteristics: mockGifskiEncoder.characteristics,
+        supportedFormats: ['gif']
+      });
+      expect(encoders[1]).toEqual({
         name: 'gifenc',
         type: 'gifenc',
         available: true,
         characteristics: mockGifencEncoder.characteristics,
         supportedFormats: ['gif']
       });
-      expect(encoders[1]).toEqual({
+      expect(encoders[2]).toEqual({
         name: 'gif.js',
         type: 'gif.js',
         available: true,
@@ -212,8 +287,9 @@ describe('EncoderFactory', () => {
 
       const encoders = await factory.getAvailableEncoders();
 
-      expect(encoders[0].available).toBe(false);
-      expect(encoders[1].available).toBe(true);
+      expect(encoders[0].available).toBe(true); // gifski still available
+      expect(encoders[1].available).toBe(false); // gifenc unavailable
+      expect(encoders[2].available).toBe(true); // gif.js still available
     });
   });
 
@@ -230,15 +306,22 @@ describe('EncoderFactory', () => {
     it('should benchmark available encoders', async () => {
       const results = await factory.benchmarkEncoders(10);
 
-      expect(results).toHaveLength(2);
+      expect(results).toHaveLength(3);
       expect(results[0]).toMatchObject({
+        name: 'gifski',
+        type: 'gifski',
+        available: true,
+        benchmarkTime: expect.any(Number),
+        framesPerSecond: expect.any(Number)
+      });
+      expect(results[1]).toMatchObject({
         name: 'gifenc',
         type: 'gifenc',
         available: true,
         benchmarkTime: expect.any(Number),
         framesPerSecond: expect.any(Number)
       });
-      expect(results[1]).toMatchObject({
+      expect(results[2]).toMatchObject({
         name: 'gif.js',
         type: 'gif.js',
         available: true,
@@ -246,6 +329,7 @@ describe('EncoderFactory', () => {
         framesPerSecond: expect.any(Number)
       });
 
+      expect(mockGifskiEncoder.encode).toHaveBeenCalled();
       expect(mockGifencEncoder.encode).toHaveBeenCalled();
       expect(mockGifJsEncoder.encode).toHaveBeenCalled();
     });
@@ -255,12 +339,12 @@ describe('EncoderFactory', () => {
 
       const results = await factory.benchmarkEncoders(10);
 
-      expect(results[0]).toMatchObject({
+      expect(results[1]).toMatchObject({
         name: 'gifenc',
         type: 'gifenc',
         available: false
       });
-      expect(results[0].benchmarkTime).toBeUndefined();
+      expect(results[1].benchmarkTime).toBeUndefined();
     });
 
     it('should handle encoding errors during benchmark', async () => {
@@ -268,7 +352,7 @@ describe('EncoderFactory', () => {
 
       const results = await factory.benchmarkEncoders(10);
 
-      expect(results[0]).toMatchObject({
+      expect(results[1]).toMatchObject({
         name: 'gifenc',
         type: 'gifenc',
         available: false
