@@ -6,7 +6,7 @@
   "author": "Jeremy Watt",
   "homepage_url": "https://github.com/neonwatty/ytgify",
   "permissions": ["storage", "tabs", "activeTab", "downloads"],
-  "host_permissions": ["https://*.youtube.com/*", "http://localhost:*/*", "http://127.0.0.1:*/*", "<all_urls>"],
+  "host_permissions": ["https://*.youtube.com/*", "http://localhost:*/*", "http://127.0.0.1:*/*"],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   },
@@ -19,12 +19,6 @@
       "matches": ["https://*.youtube.com/*", "http://localhost:*/*", "http://127.0.0.1:*/*"],
       "js": ["content.js"],
       "run_at": "document_end"
-    },
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "run_at": "document_end",
-      "all_frames": false
     }
   ],
   "action": {
@@ -55,7 +49,7 @@
   "web_accessible_resources": [
     {
       "resources": ["*.js", "*.css", "*.wasm", "icons/*", "gif.worker.js"],
-      "matches": ["https://*.youtube.com/*", "http://localhost:*/*", "http://127.0.0.1:*/*", "<all_urls>"]
+      "matches": ["https://*.youtube.com/*", "http://localhost:*/*", "http://127.0.0.1:*/*"]
     }
   ]
 }
