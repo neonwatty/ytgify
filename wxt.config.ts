@@ -1,12 +1,16 @@
 import { defineConfig } from 'wxt';
 import tsconfigPaths from 'vite-tsconfig-paths';
+import path from 'path';
 
 export default defineConfig({
-  // No srcDir - entrypoints at root level
+  // Custom alias to override default @ mapping
+  alias: {
+    '@': path.resolve(__dirname, './src'),
+  },
 
   // Configure Vite to handle path aliases from tsconfig.json
   vite: () => ({
-    plugins: [tsconfigPaths()],
+    plugins: [tsconfigPaths({ root: __dirname })],
   }),
 
   manifest: ({ mode, browser }) => ({

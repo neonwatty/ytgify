@@ -1,6 +1,7 @@
 import './style.css'; // Direct CSS import for shadow DOM
 import { WXTYouTubeNavigator } from './navigation';
 import { ShadowDOMUIManager } from './ui-manager';
+// import { YouTubeGifMaker } from './gif-maker'; // BLOCKED: See MIGRATION_NOTES.md
 
 export default defineContentScript({
   matches: ['*://*.youtube.com/*'],
@@ -20,7 +21,11 @@ export default defineContentScript({
     const uiManager = new ShadowDOMUIManager(ctx);
 
     // TODO: Initialize YouTubeGifMaker with WXT dependencies
-    // Blocked by path alias resolution issues - need to fix tsconfig paths first
+    // BLOCKED BY: WXT doesn't support @/* wildcard path aliases (GitHub issue #1663)
+    // Resolution requires either:
+    // 1. WXT fixing wildcard alias support
+    // 2. Moving src/* files to root to match @/* → ./* default
+    // 3. Converting all @/* imports to relative paths in src/**
     // const gifMaker = new YouTubeGifMaker(ctx, navigator, uiManager);
 
     // Setup WXT-specific cleanup
