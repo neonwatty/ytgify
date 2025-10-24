@@ -22,6 +22,7 @@ dist-production/
 dist-ssr/
 build/
 out/
+.output/
 *.local
 
 # Environment variables
