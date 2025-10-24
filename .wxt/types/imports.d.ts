@@ -3,8 +3,10 @@ export {}
 declare global {
   const ContentScriptContext: typeof import('wxt/client')['ContentScriptContext']
   const InvalidMatchPattern: typeof import('wxt/sandbox')['InvalidMatchPattern']
+  const KeyboardShortcutManager: typeof import('/Users/jeremywatt/Desktop/ytgify/src/utils/keyboard-shortcuts')['KeyboardShortcutManager']
   const MatchPattern: typeof import('wxt/sandbox')['MatchPattern']
   const browser: typeof import('wxt/browser')['browser']
+  const copyToClipboard: typeof import('/Users/jeremywatt/Desktop/ytgify/src/utils/social-templates')['copyToClipboard']
   const createIframeUi: typeof import('wxt/client')['createIframeUi']
   const createIntegratedUi: typeof import('wxt/client')['createIntegratedUi']
   const createShadowRootUi: typeof import('wxt/client')['createShadowRootUi']
@@ -15,6 +17,19 @@ declare global {
   const defineUnlistedScript: typeof import('wxt/sandbox')['defineUnlistedScript']
   const defineWxtPlugin: typeof import('wxt/sandbox')['defineWxtPlugin']
   const fakeBrowser: typeof import('wxt/testing')['fakeBrowser']
+  const generateTwitterShareUrl: typeof import('/Users/jeremywatt/Desktop/ytgify/src/utils/social-templates')['generateTwitterShareUrl']
+  const getDiscordTemplate: typeof import('/Users/jeremywatt/Desktop/ytgify/src/utils/social-templates')['getDiscordTemplate']
+  const getRedditTemplate: typeof import('/Users/jeremywatt/Desktop/ytgify/src/utils/social-templates')['getRedditTemplate']
+  const getResolutionDimensions: typeof import('/Users/jeremywatt/Desktop/ytgify/src/utils/resolution-parser')['getResolutionDimensions']
+  const getTwitterTemplates: typeof import('/Users/jeremywatt/Desktop/ytgify/src/utils/social-templates')['getTwitterTemplates']
+  const isOriginalResolution: typeof import('/Users/jeremywatt/Desktop/ytgify/src/utils/resolution-parser')['isOriginalResolution']
+  const parseResolution: typeof import('/Users/jeremywatt/Desktop/ytgify/src/utils/resolution-parser')['parseResolution']
   const storage: typeof import('wxt/storage')['storage']
   const useAppConfig: typeof import('wxt/client')['useAppConfig']
+}
+// for type re-export
+declare global {
+  // @ts-ignore
+  export type { KeyboardShortcutManager } from '/Users/jeremywatt/Desktop/ytgify/src/utils/keyboard-shortcuts'
+  import('/Users/jeremywatt/Desktop/ytgify/src/utils/keyboard-shortcuts')
 }

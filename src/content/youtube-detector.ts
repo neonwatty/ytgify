@@ -556,5 +556,13 @@ export class YouTubeDetector {
   }
 }
 
-// Export singleton instance
-export const youTubeDetector = YouTubeDetector.getInstance();
+// Export lazy singleton instance (don't initialize until first use to avoid window access during build)
+let _instance: YouTubeDetector | null = null;
+export const youTubeDetector = {
+  get instance(): YouTubeDetector {
+    if (!_instance) {
+      _instance = YouTubeDetector.getInstance();
+    }
+    return _instance;
+  }
+} as YouTubeDetector;

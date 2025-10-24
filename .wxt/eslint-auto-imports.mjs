@@ -1,8 +1,10 @@
 const globals = {
   "ContentScriptContext": true,
   "InvalidMatchPattern": true,
+  "KeyboardShortcutManager": true,
   "MatchPattern": true,
   "browser": true,
+  "copyToClipboard": true,
   "createIframeUi": true,
   "createIntegratedUi": true,
   "createShadowRootUi": true,
@@ -13,6 +15,13 @@ const globals = {
   "defineUnlistedScript": true,
   "defineWxtPlugin": true,
   "fakeBrowser": true,
+  "generateTwitterShareUrl": true,
+  "getDiscordTemplate": true,
+  "getRedditTemplate": true,
+  "getResolutionDimensions": true,
+  "getTwitterTemplates": true,
+  "isOriginalResolution": true,
+  "parseResolution": true,
   "storage": true,
   "useAppConfig": true
 }

@@ -1,17 +1,8 @@
 import { defineConfig } from 'wxt';
-import tsconfigPaths from 'vite-tsconfig-paths';
-import path from 'path';
 
 export default defineConfig({
-  // Custom alias to override default @ mapping
-  alias: {
-    '@': path.resolve(__dirname, './src'),
-  },
-
-  // Configure Vite to handle path aliases from tsconfig.json
-  vite: () => ({
-    plugins: [tsconfigPaths({ root: __dirname })],
-  }),
+  // Set srcDir to enable WXT's built-in @ alias to point to src/
+  srcDir: 'src',
 
   manifest: ({ mode, browser }) => ({
     name: 'YTgify',
