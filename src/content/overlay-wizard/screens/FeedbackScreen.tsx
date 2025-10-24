@@ -73,29 +73,31 @@ const FeedbackScreen: React.FC<FeedbackScreenProps> = ({ onBack, onClose, isStan
           </div>
 
           {/* BeehIiv Newsletter Section - Second */}
-          <div className="ytgif-newsletter-section">
-            <h3>Stay Updated</h3>
-            <p>Get notified about new features and releases:</p>
-            <div className="ytgif-newsletter-embed">
-              <iframe
-                src="https://subscribe-forms.beehiiv.com/40d30e3d-c27d-4986-a9ce-3d4ae314fc5d"
-                className="beehiiv-embed"
-                data-test-id="beehiiv-embed"
-                frameBorder="0"
-                scrolling="no"
-                style={{
-                  width: '100%',
-                  maxWidth: '100%',
-                  height: '60px',
-                  margin: '0',
-                  borderRadius: '0px',
-                  backgroundColor: 'transparent',
-                  boxShadow: 'none',
-                  display: 'block'
-                }}
-              />
+          {false && (
+            <div className="ytgif-newsletter-section">
+              <h3>Stay Updated</h3>
+              <p>Get notified about new features and releases:</p>
+              <div className="ytgif-newsletter-embed">
+                <iframe
+                  src="https://subscribe-forms.beehiiv.com/40d30e3d-c27d-4986-a9ce-3d4ae314fc5d"
+                  className="beehiiv-embed"
+                  data-test-id="beehiiv-embed"
+                  frameBorder="0"
+                  scrolling="no"
+                  style={{
+                    width: '100%',
+                    maxWidth: '100%',
+                    height: '60px',
+                    margin: '0',
+                    borderRadius: '0px',
+                    backgroundColor: 'transparent',
+                    boxShadow: 'none',
+                    display: 'block'
+                  }}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* GitHub Link - Third */}
           <div className="ytgif-feedback-option">
