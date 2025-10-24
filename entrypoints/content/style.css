@@ -1,0 +1,2101 @@
+/* Overlay Wizard Styles */
+.ytgif-overlay-wizard {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Wizard Container */
+.ytgif-wizard-container {
+  position: relative;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh; /* Limit height to 90% of viewport */
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  overflow-y: auto;
+  overflow-x: hidden;
+  animation: slideUp 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Custom Scrollbar for Wizard Container */
+.ytgif-wizard-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ytgif-wizard-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.ytgif-wizard-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.ytgif-wizard-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Header Container */
+.ytgif-wizard-header-container {
+  position: relative;
+  padding: 16px 40px;
+  background: linear-gradient(to bottom, #2d2d2d 0%, rgba(45, 45, 45, 0.8) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  z-index: 20;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Close Button */
+.ytgif-wizard-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ytgif-wizard-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+/* Progress Indicator */
+.ytgif-wizard-progress {
+  display: flex;
+  gap: 8px;
+  z-index: 5;
+}
+
+.ytgif-progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.ytgif-progress-dot:nth-child(1).active {
+  background: #ff0000;
+  transform: scale(1.3);
+}
+
+.ytgif-progress-dot:nth-child(2).active {
+  background: #ff0066;
+  transform: scale(1.3);
+}
+
+.ytgif-progress-dot:nth-child(3).active {
+  background: #cc3399;
+  transform: scale(1.3);
+}
+
+.ytgif-progress-dot:nth-child(4).active {
+  background: #9966cc;
+  transform: scale(1.3);
+}
+
+.ytgif-progress-dot:nth-child(5).active {
+  background: #764ba2;
+  transform: scale(1.3);
+}
+
+/* Wizard Screens */
+.ytgif-wizard-screens {
+  position: relative;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0; /* Allow shrinking for flexbox */
+}
+
+/* Custom Scrollbar for Wizard Screens */
+.ytgif-wizard-screens::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ytgif-wizard-screens::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.ytgif-wizard-screens::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.ytgif-wizard-screens::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.ytgif-wizard-screen {
+  padding: 20px 40px 40px;
+  animation: screenFadeIn 0.3s ease;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+@keyframes screenFadeIn {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Wizard Header */
+.ytgif-wizard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 40px;
+  background: linear-gradient(to bottom, #2d2d2d 0%, transparent 100%);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  min-height: 60px;
+}
+
+.ytgif-back-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.ytgif-back-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.ytgif-wizard-title {
+  color: white;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+  text-align: center;
+}
+
+.ytgif-wizard-tagline {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  font-weight: 400;
+  margin: 8px 0 0 0;
+  text-align: center;
+}
+
+.ytgif-wizard-helper {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: 400;
+  margin: 0 0 16px 0;
+  text-align: center;
+}
+
+/* Wizard Content */
+.ytgif-wizard-content {
+  color: white;
+  text-align: center;
+  padding-bottom: 20px; /* Space for sticky buttons */
+}
+
+/* Welcome Screen */
+.ytgif-welcome-screen .ytgif-wizard-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.ytgif-logo-container {
+  margin-bottom: 16px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.ytgif-logo-svg {
+  width: 80px;
+  height: 80px;
+  filter: drop-shadow(0 4px 20px rgba(255, 0, 102, 0.25));
+}
+
+.ytgif-logo {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  font-weight: bold;
+  color: white;
+  box-shadow: 0 4px 20px rgba(255, 0, 0, 0.3);
+}
+
+.ytgif-video-info {
+  max-width: 400px;
+}
+
+.ytgif-video-title {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.ytgif-video-duration {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.ytgif-loading-dots {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.ytgif-dot {
+  width: 8px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  animation: pulse 1.4s infinite ease-in-out both;
+}
+
+.ytgif-dot:nth-child(1) { animation-delay: -0.32s; }
+.ytgif-dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes pulse {
+  0%, 80%, 100% { 
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.ytgif-auto-advance {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Action Select Screen */
+.ytgif-action-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.ytgif-action-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.ytgif-action-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #ff0000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(255, 0, 0, 0.2);
+}
+
+/* Screen 1: Capture Screens - #ff0000 theme */
+.ytgif-quick-capture-screen .ytgif-button-primary {
+  background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+}
+
+.ytgif-quick-capture-screen .ytgif-button-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(255, 0, 0, 0.3);
+}
+
+.ytgif-card-icon {
+  margin-bottom: 16px;
+  color: #ff0000;
+}
+
+.ytgif-card-title {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.ytgif-card-description {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.ytgif-card-detail {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.ytgif-tip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(255, 193, 7, 0.1);
+  border-radius: 8px;
+  color: #ffc107;
+  font-size: 13px;
+}
+
+/* Processing Screen */
+.ytgif-processing-screen {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.ytgif-progress-circle-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 32px auto;
+}
+
+.ytgif-progress-circle {
+  transform: rotate(-90deg);
+}
+
+.ytgif-progress-circle-bg {
+  stroke: rgba(255, 255, 255, 0.1);
+}
+
+.ytgif-progress-circle-fill {
+  stroke: #ff0033;
+  transition: stroke-dasharray 0.3s ease;
+}
+
+/* Screen 3: Processing - #cc3399 theme */
+.ytgif-processing-screen .ytgif-progress-circle-fill {
+  stroke: #cc3399;
+}
+
+.ytgif-progress-circle-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.ytgif-status-text {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+  margin-bottom: 24px;
+  min-height: 24px;
+}
+
+.ytgif-progress-bar-container {
+  margin: 24px 0;
+}
+
+.ytgif-progress-bar {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ytgif-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff0033, #ff4444);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Screen 3: Processing progress bar */
+.ytgif-processing-screen .ytgif-progress-fill {
+  background: linear-gradient(90deg, #cc3399, #aa2277);
+}
+
+.ytgif-stage-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin-top: 24px;
+}
+
+.ytgif-processing-tips {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  margin-top: 32px;
+}
+
+/* Success Screen */
+.ytgif-success-screen {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.ytgif-success-icon {
+  display: flex;
+  justify-content: center;
+  margin: 32px 0;
+  animation: scaleIn 0.5s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.ytgif-success-message {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.ytgif-success-message h3 {
+  color: #fff;
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.ytgif-gif-size {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}
+
+.ytgif-success-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+/* Video Preview Component Styles */
+.ytgif-video-preview {
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.ytgif-preview-container {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+}
+
+.ytgif-preview-canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.ytgif-preview-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  z-index: 1;
+  background: rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+}
+
+.ytgif-preview-play-button {
+  background: rgba(255, 0, 0, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  z-index: 2;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.ytgif-preview-play-button:hover {
+  background: #ff0033;
+  transform: scale(1.1);
+}
+
+/* Screen 1: Capture preview play button */
+.ytgif-quick-capture-screen .ytgif-preview-play-button {
+  background: rgba(255, 0, 0, 0.9);
+}
+
+.ytgif-quick-capture-screen .ytgif-preview-play-button:hover {
+  background: #ff0000;
+}
+
+.ytgif-preview-time {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.ytgif-preview-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.ytgif-preview-control-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s;
+}
+
+.ytgif-preview-control-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.ytgif-preview-control-btn.playing {
+  background: rgba(255, 0, 51, 0.3);
+  border-color: #ff0033;
+}
+
+/* Screen 1: Capture preview control buttons */
+.ytgif-quick-capture-screen .ytgif-preview-control-btn.playing {
+  background: rgba(255, 0, 0, 0.3);
+  border-color: #ff0000;
+}
+
+.ytgif-preview-duration {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}
+
+/* Timeline Scrubber Component Styles */
+.ytgif-timeline-scrubber {
+  width: 100%;
+  margin: 20px 0;
+  position: relative;
+}
+
+/* Timeline Container - Similar to duration slider */
+.ytgif-timeline-container {
+  margin-bottom: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.ytgif-timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.ytgif-timeline-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+}
+
+.ytgif-timeline-value {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  background: rgba(255, 0, 0, 0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* Screen 1: Capture timeline customization */
+.ytgif-quick-capture-screen .ytgif-timeline-value {
+  background: rgba(255, 0, 0, 0.2);
+}
+
+.ytgif-timeline-track {
+  position: relative;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.ytgif-timeline-background {
+  display: none; /* No longer needed */
+}
+
+.ytgif-timeline-selection {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: #ff0033;
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+/* Screen 1: Capture timeline selection */
+.ytgif-quick-capture-screen .ytgif-timeline-selection {
+  background: #ff0000;
+}
+
+.ytgif-timeline-handle {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  background: #ff0000;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s;
+  z-index: 2;
+}
+
+/* Screen 1: Capture timeline handle */
+.ytgif-quick-capture-screen .ytgif-timeline-handle {
+  background: #ff0000;
+}
+
+.ytgif-timeline-handle:hover {
+  transform: translate(-50%, -50%) scale(1.2);
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+}
+
+.ytgif-timeline-handle:active {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+/* Screen 1: Capture timeline handle hover */
+.ytgif-quick-capture-screen .ytgif-timeline-handle:hover {
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+}
+
+/* Selection duration label removed - no longer needed with single handle */
+/* Current time indicator removed - single handle design doesn't need it */
+
+.ytgif-timeline-preview-head {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  width: 2px;
+  background: #ffff00;
+  pointer-events: none;
+  box-shadow: 0 0 4px rgba(255, 255, 0, 0.5);
+  z-index: 1;
+}
+
+.ytgif-timeline-tooltip {
+  position: absolute;
+  top: -28px;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.ytgif-timeline-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.ytgif-label-selection {
+  background: rgba(255, 0, 51, 0.2);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: bold;
+}
+
+/* Screen 1: Capture label selection */
+.ytgif-quick-capture-screen .ytgif-label-selection {
+  background: rgba(255, 0, 0, 0.2);
+  color: #ff0000;
+}
+
+/* Timeline Controls - Start Time Input and Duration Display */
+.ytgif-timeline-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.ytgif-timeline-control-left,
+.ytgif-timeline-control-right {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ytgif-timeline-control-left {
+  align-items: flex-start;
+}
+
+.ytgif-timeline-control-right {
+  align-items: flex-end;
+}
+
+.ytgif-control-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.ytgif-control-value {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: monospace;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 6px 12px;
+  border-radius: 12px;
+  display: inline-block;
+  letter-spacing: 0.5px;
+  width: 80px;
+  max-width: 80px;
+  text-align: center;
+  box-sizing: border-box;
+  line-height: 1.2;
+}
+
+/* Screen 1: Capture control value */
+.ytgif-quick-capture-screen .ytgif-control-value {
+  background: rgba(255, 0, 0, 0.15);
+  border-color: rgba(255, 0, 0, 0.4);
+}
+
+.ytgif-time-input-field {
+  width: 80px;
+  max-width: 80px;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  color: white;
+  font-size: 13px;
+  font-family: monospace;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.2s ease;
+  outline: none;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+  box-sizing: border-box;
+}
+
+.ytgif-time-input-field:hover {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.ytgif-time-input-field:focus {
+  background: rgba(255, 0, 0, 0.15);
+  border-color: #ff0000;
+  box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Screen 1: Capture time input focus */
+.ytgif-quick-capture-screen .ytgif-time-input-field:focus {
+  border-color: #ff0000;
+  box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.3);
+}
+
+.ytgif-time-input-field.error {
+  border-color: #f44336;
+  background: rgba(244, 67, 54, 0.15);
+}
+
+.ytgif-time-input-field.error:focus {
+  box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.3);
+}
+
+.ytgif-time-input-error-message {
+  color: #f44336;
+  font-size: 11px;
+  margin-top: 4px;
+  animation: errorShake 0.3s ease;
+}
+
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.ytgif-duration-slider {
+  margin-top: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.ytgif-slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.ytgif-slider-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+}
+
+.ytgif-slider-value {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  background: rgba(255, 0, 0, 0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.ytgif-slider-input {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+  transition: background 0.2s;
+}
+
+.ytgif-slider-input:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.ytgif-slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ff0000;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.ytgif-slider-input::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+}
+
+.ytgif-slider-input::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ff0000;
+  cursor: pointer;
+  transition: transform 0.2s;
+  border: none;
+}
+
+.ytgif-slider-input::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+}
+
+.ytgif-slider-input:focus {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.ytgif-slider-input:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.3);
+}
+
+.ytgif-slider-input:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.3);
+}
+
+.ytgif-slider-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ytgif-slider-input:disabled::-webkit-slider-thumb {
+  cursor: not-allowed;
+}
+
+.ytgif-slider-input:disabled::-moz-range-thumb {
+  cursor: not-allowed;
+}
+
+.ytgif-slider-disabled-message {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* Slider container for positioning marks */
+.ytgif-slider-container {
+  position: relative;
+  padding-bottom: 20px;
+}
+
+/* Hash marks container */
+.ytgif-slider-marks {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  right: 0;
+  height: 30px;
+  pointer-events: none;
+}
+
+/* Individual mark */
+.ytgif-slider-mark {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Mark vertical line */
+.ytgif-slider-mark-line {
+  width: 1px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.3);
+  margin-bottom: 4px;
+}
+
+/* Mark label */
+.ytgif-slider-mark-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+}
+
+/* Screen 1: Capture slider customization */
+.ytgif-quick-capture-screen .ytgif-slider-value {
+  background: rgba(255, 0, 0, 0.2);
+}
+
+.ytgif-quick-capture-screen .ytgif-slider-input::-webkit-slider-thumb {
+  background: #ff0000;
+}
+
+.ytgif-quick-capture-screen .ytgif-slider-input::-moz-range-thumb {
+  background: #ff0000;
+}
+
+.ytgif-quick-capture-screen .ytgif-slider-input::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+}
+
+.ytgif-quick-capture-screen .ytgif-slider-input::-moz-range-thumb:hover {
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+}
+
+.ytgif-quick-capture-screen .ytgif-slider-input:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.3);
+}
+
+.ytgif-quick-capture-screen .ytgif-slider-input:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.3);
+}
+
+/* Preview Fallback */
+.ytgif-preview-fallback {
+  width: 100%;
+  height: 270px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.ytgif-fallback-message {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.ytgif-fallback-message svg {
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.ytgif-fallback-message p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Preview Loading States */
+.ytgif-preview-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  font-size: 14px;
+}
+
+.ytgif-loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top: 3px solid #ff0033;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 12px;
+}
+
+/* Screen 3: Processing loading spinner */
+.ytgif-processing-screen .ytgif-loading-spinner {
+  border-top: 3px solid #cc3399;
+}
+
+/* Screen 4: Success - #9966cc theme */
+.ytgif-success-screen .ytgif-button-primary {
+  background: linear-gradient(135deg, #9966cc 0%, #7744aa 100%);
+}
+
+.ytgif-success-screen .ytgif-button-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(153, 102, 204, 0.3);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.ytgif-success-actions button {
+  flex: 1;
+}
+
+.ytgif-success-info {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ytgif-success-info p {
+  margin: 4px 0;
+}
+
+/* GIF Preview in Success Screen */
+.ytgif-success-preview {
+  margin: 24px auto 32px;
+  max-width: 400px;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.ytgif-success-preview-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.ytgif-success-metadata {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.5);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Timeline Components */
+.ytgif-timeline-preview {
+  margin-bottom: 32px;
+}
+
+/* Duplicate timeline styles removed - defined earlier in the file */
+
+.ytgif-timeline-interactive {
+  cursor: pointer;
+}
+
+/* Legacy handle styles removed - using single handle now */
+
+.ytgif-timeline-cursor {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: white;
+  pointer-events: none;
+}
+
+.ytgif-timeline-times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.ytgif-timeline-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Capture Info */
+.ytgif-capture-info {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.ytgif-info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.ytgif-info-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.ytgif-info-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
+/* Preview Controls */
+.ytgif-preview-controls {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.ytgif-preview-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ytgif-preview-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Time Inputs */
+.ytgif-time-inputs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+  padding: 0 40px;
+}
+
+.ytgif-time-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ytgif-time-input-group label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.ytgif-time-input {
+  width: 100px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: white;
+  font-size: 14px;
+  font-family: monospace;
+  text-align: center;
+}
+
+.ytgif-time-input:focus {
+  outline: none;
+  border-color: #ff0000;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Screen 1: Capture time input focus */
+.ytgif-quick-capture-screen .ytgif-time-input:focus {
+  border-color: #ff0000;
+}
+
+.ytgif-duration-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.ytgif-duration-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ff0000;
+}
+
+/* Screen 1: Capture duration value */
+.ytgif-quick-capture-screen .ytgif-duration-value {
+  color: #ff0000;
+}
+
+.ytgif-duration-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Presets */
+.ytgif-presets {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.ytgif-preset-button {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ytgif-preset-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* Action Buttons */
+.ytgif-wizard-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 20px 40px;
+  background: linear-gradient(to top, #1a1a1a 0%, transparent 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+}
+
+.ytgif-button-primary,
+.ytgif-button-secondary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.ytgif-button-primary {
+  background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+  color: white;
+}
+
+.ytgif-button-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(255, 0, 0, 0.3);
+}
+
+.ytgif-button-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ytgif-button-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ytgif-button-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Processing Screen */
+.ytgif-processing-screen .ytgif-wizard-content {
+  padding: 20px 40px 40px 40px;
+}
+
+/* Frame Rate Section */
+.ytgif-frame-rate-section {
+  margin: 20px 0;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ytgif-frame-rate-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
+.ytgif-frame-rate-label svg {
+  color: #ff0000;
+}
+
+/* Screen 1: Capture frame rate icon */
+.ytgif-quick-capture-screen .ytgif-frame-rate-label svg {
+  color: #ff0000;
+}
+
+.ytgif-frame-rate-options {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.ytgif-frame-rate-btn {
+  flex: 1;
+  padding: 12px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ytgif-frame-rate-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.ytgif-frame-rate-btn--active {
+  background: rgba(255, 0, 0, 0.2);
+  border-color: #ff0000;
+  color: white;
+}
+
+.ytgif-frame-rate-btn--active:hover {
+  background: rgba(255, 0, 0, 0.25);
+}
+
+/* Screen 1: Capture frame rate buttons */
+.ytgif-quick-capture-screen .ytgif-frame-rate-btn--active {
+  background: rgba(255, 0, 0, 0.2);
+  border-color: #ff0000;
+}
+
+.ytgif-quick-capture-screen .ytgif-frame-rate-btn--active:hover {
+  background: rgba(255, 0, 0, 0.25);
+}
+
+/* Screen 2: Text Overlay - #ff0066 theme */
+.ytgif-text-overlay-screen .ytgif-button-primary {
+  background: linear-gradient(135deg, #ff0066 0%, #dd0055 100%);
+}
+
+.ytgif-text-overlay-screen .ytgif-button-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(255, 0, 102, 0.3);
+}
+
+.ytgif-frame-rate-desc {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: normal;
+}
+
+.ytgif-frame-rate-btn--active .ytgif-frame-rate-desc {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Resolution Section */
+.ytgif-resolution-section {
+  margin: 20px 0 10px 0;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ytgif-resolution-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+}
+
+.ytgif-resolution-label svg {
+  color: #ff0000;
+}
+
+/* Screen 1: Capture resolution icon */
+.ytgif-quick-capture-screen .ytgif-resolution-label svg {
+  color: #ff0000;
+}
+
+.ytgif-resolution-options {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.ytgif-resolution-btn {
+  flex: 1;
+  padding: 12px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.ytgif-resolution-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.ytgif-resolution-btn--active {
+  background: rgba(255, 0, 0, 0.2);
+  border-color: #ff0000;
+  color: white;
+}
+
+.ytgif-resolution-btn--active:hover {
+  background: rgba(255, 0, 0, 0.25);
+}
+
+/* Screen 1: Capture resolution buttons */
+.ytgif-quick-capture-screen .ytgif-resolution-btn--active {
+  background: rgba(255, 0, 0, 0.2);
+  border-color: #ff0000;
+}
+
+.ytgif-quick-capture-screen .ytgif-resolution-btn--active:hover {
+  background: rgba(255, 0, 0, 0.25);
+}
+
+.ytgif-resolution-desc {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: normal;
+}
+
+.ytgif-resolution-btn--active .ytgif-resolution-desc {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Stage-Based Progress Display */
+.ytgif-stage-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 20px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.ytgif-stage-header h3 {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 18px;
+  text-align: center;
+  margin: 0;
+  font-weight: 600;
+}
+
+.ytgif-stage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ytgif-stage-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.ytgif-stage-item.completed {
+  background: rgba(76, 175, 80, 0.1);
+  border-left: 3px solid #4caf50;
+}
+
+.ytgif-stage-item.current {
+  background: rgba(204, 51, 153, 0.15);
+  border-left: 3px solid #cc3399;
+  animation: pulse 2s infinite;
+}
+
+.ytgif-stage-item.pending {
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 3px solid rgba(255, 255, 255, 0.1);
+}
+
+.ytgif-stage-item.error {
+  background: rgba(244, 67, 54, 0.1);
+  border-left: 3px solid #f44336;
+}
+
+@keyframes pulse {
+  0%, 100% { background: rgba(204, 51, 153, 0.15); }
+  50% { background: rgba(204, 51, 153, 0.25); }
+}
+
+.ytgif-stage-indicator {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.ytgif-stage-check {
+  color: #4caf50;
+}
+
+.ytgif-stage-active {
+  color: #cc3399;
+  animation: blink 1.5s infinite;
+}
+
+.ytgif-stage-pending {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.ytgif-stage-error {
+  color: #f44336;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+.ytgif-stage-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-grow: 1;
+}
+
+.ytgif-stage-icon {
+  font-size: 20px;
+}
+
+.ytgif-stage-name {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.ytgif-stage-item.pending .ytgif-stage-name {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.ytgif-current-message {
+  text-align: center;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ytgif-message-text {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.ytgif-loading-dots {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+
+.ytgif-dot {
+  color: #cc3399;
+  font-size: 16px;
+  animation: loadingDots 1.5s infinite;
+}
+
+.ytgif-dot:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.ytgif-dot:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+@keyframes loadingDots {
+  0%, 80%, 100% { opacity: 0.3; }
+  40% { opacity: 1; }
+}
+
+/* Screen 5: Feedback - #764ba2 theme */
+.ytgif-feedback-screen .ytgif-button-primary {
+  background: linear-gradient(135deg, #764ba2 0%, #5a3980 100%);
+}
+
+.ytgif-feedback-screen .ytgif-button-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(118, 75, 162, 0.3);
+}
+
+.ytgif-feedback-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: center;
+  max-width: 400px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.ytgif-feedback-description {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.ytgif-feedback-option {
+  width: 100%;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.ytgif-feedback-option h3 {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.ytgif-feedback-option p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin: 0 0 16px 0;
+  line-height: 1.4;
+}
+
+.ytgif-feedback-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: rgba(118, 75, 162, 0.1);
+  border: 1px solid rgba(118, 75, 162, 0.3);
+  border-radius: 8px;
+  color: #764ba2;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.ytgif-feedback-link:hover {
+  background: rgba(118, 75, 162, 0.2);
+  border-color: #764ba2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(118, 75, 162, 0.2);
+  color: white;
+}
+
+.ytgif-feedback-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+  justify-content: center;
+}
+
+/* Show Your Support Section */
+.ytgif-support-section {
+  width: 100%;
+  padding: 24px;
+  background: rgba(153, 102, 204, 0.08);
+  border-radius: 12px;
+  border: 1px solid rgba(153, 102, 204, 0.2);
+  text-align: center;
+  margin-top: 8px;
+}
+
+.ytgif-support-section h3 {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.ytgif-support-section p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin: 0 0 20px 0;
+  line-height: 1.4;
+}
+
+.ytgif-support-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.ytgif-support-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ytgif-support-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Newsletter Section - BeehIiv Embed */
+.ytgif-newsletter-section {
+  width: 100%;
+  padding: 24px;
+  background: rgba(153, 102, 204, 0.08);
+  border-radius: 12px;
+  border: 1px solid rgba(153, 102, 204, 0.2);
+  text-align: center;
+  margin-top: 16px;
+}
+
+.ytgif-newsletter-section h3 {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.ytgif-newsletter-section p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin: 0 0 4px 0;
+  line-height: 1.4;
+}
+
+.ytgif-newsletter-embed {
+  margin-top: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.ytgif-success-feedback-action {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+/* Success Screen Bottom Actions - Feedback and Share Links */
+.ytgif-success-bottom-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 16px;
+  align-items: center;
+}
+
+.ytgif-connect-button-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.ytgif-connect-subtext {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 400;
+}
+
+.ytgif-share-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ytgif-share-link:hover {
+  color: #333;
+  text-decoration: underline;
+}
+
+/* Milestone Screen Styles */
+.ytgif-milestone-screen {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.ytgif-milestone-icon {
+  display: flex;
+  justify-content: center;
+  margin: 32px 0;
+  animation: scaleIn 0.5s ease-out;
+}
+
+.ytgif-milestone-icon svg {
+  color: #9966cc;
+  stroke-width: 1.5;
+}
+
+.ytgif-milestone-message {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.ytgif-milestone-message h3 {
+  color: #fff;
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.ytgif-milestone-message p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 16px;
+  margin: 0;
+}
+
+.ytgif-milestone-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.ytgif-milestone-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ytgif-milestone-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.ytgif-milestone-continue {
+  width: 100%;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+/* Wizard Footer CTA */
+.ytgif-wizard-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px 20px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  position: relative;
+  background: rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.ytgif-wizard-footer a {
+  color: rgba(255, 255, 255, 1.0);
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+.ytgif-wizard-footer a:hover {
+  color: rgba(255, 255, 255, 1.0);
+  text-decoration: underline;
+  transform: scale(1.02);
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+}
+
+.ytgif-wizard-footer .dismiss-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px 8px;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.ytgif-wizard-footer .dismiss-btn:hover {
+  color: rgba(255, 255, 255, 0.8);
+}

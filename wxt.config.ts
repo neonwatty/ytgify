@@ -1,7 +1,14 @@
 import { defineConfig } from 'wxt';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
   // No srcDir - entrypoints at root level
+
+  // Configure Vite to handle path aliases from tsconfig.json
+  vite: () => ({
+    plugins: [tsconfigPaths()],
+  }),
+
   manifest: ({ mode, browser }) => ({
     name: 'YTgify',
     version: '1.0.8',
