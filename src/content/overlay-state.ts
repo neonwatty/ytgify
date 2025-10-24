@@ -391,4 +391,11 @@ class OverlayStateManager {
 }
 
 // Singleton instance
-export const overlayStateManager = new OverlayStateManager();
+// Export factory function (build-safe, no eager initialization)
+let _instance: OverlayStateManager | null = null;
+export function getOverlayStateManager(): OverlayStateManager {
+  if (!_instance) {
+    _instance = new OverlayStateManager();
+  }
+  return _instance;
+}

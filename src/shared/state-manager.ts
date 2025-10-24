@@ -347,5 +347,11 @@ class ExtensionStateManager {
   }
 }
 
-// Singleton instance
-export const extensionStateManager = new ExtensionStateManager();
+// Export factory function (build-safe, no eager initialization)
+let _instance: ExtensionStateManager | null = null;
+export function getExtensionStateManager(): ExtensionStateManager {
+  if (!_instance) {
+    _instance = new ExtensionStateManager();
+  }
+  return _instance;
+}

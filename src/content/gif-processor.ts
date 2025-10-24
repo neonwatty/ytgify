@@ -765,5 +765,7 @@ export class ContentScriptGifProcessor {
   }
 }
 
-// Export singleton instance
-export const gifProcessor = ContentScriptGifProcessor.getInstance();
+// Export factory function (build-safe, no eager initialization)
+export function getGifProcessor(): ContentScriptGifProcessor {
+  return ContentScriptGifProcessor.getInstance();
+}

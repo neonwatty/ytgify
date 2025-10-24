@@ -1,2 +1,2 @@
-export {  themeDetector,   } from './theme-detector';
-export {  youtubeMatcher,  } from './youtube-matcher';
+export { getThemeDetector, ThemeDetector, ThemeInfo } from './theme-detector';
+export { getYoutubeMatcher, YouTubeMatcher } from './youtube-matcher';

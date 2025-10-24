@@ -1,6 +1,6 @@
 import { logger } from '@/lib/logger';
-import { youTubeAPI, YouTubeAPIIntegration } from './youtube-api-integration';
-import { playerIntegration, PlayerSizeInfo } from './player-integration';
+import { getYouTubeAPI, YouTubeAPIIntegration } from './youtube-api-integration';
+import { getPlayerIntegration, PlayerSizeInfo } from './player-integration';
 import { previewLoop, PreviewLoopState } from './preview-loop';
 import { TimelineSelection } from '@/types';
 
@@ -44,6 +44,9 @@ export class PlayerController {
   }
 
   private setupIntegrations(): void {
+    const youTubeAPI = getYouTubeAPI();
+    const playerIntegration = getPlayerIntegration();
+
     // Setup YouTube API integration
     const unsubscribeAPI = youTubeAPI.onReady(() => {
       this.state.playerReady = true;
@@ -122,6 +125,7 @@ export class PlayerController {
   }
 
   private storeOriginalPlaybackState(): void {
+    const youTubeAPI = getYouTubeAPI();
     if (!youTubeAPI.isReady()) {
       return;
     }
@@ -158,6 +162,7 @@ export class PlayerController {
       
       if (success) {
         // Set button state to active
+        const playerIntegration = getPlayerIntegration();
         playerIntegration.setButtonState(true);
         logger.info('[PlayerController] Preview started successfully');
       } else {
@@ -178,11 +183,12 @@ export class PlayerController {
 
     try {
       logger.info('[PlayerController] Stopping video preview');
-      
+
       const success = await previewLoop.stopPreview();
-      
+
       if (success) {
         // Set button state to inactive
+        const playerIntegration = getPlayerIntegration();
         playerIntegration.setButtonState(false);
         logger.info('[PlayerController] Preview stopped successfully');
       } else {
@@ -252,6 +258,7 @@ export class PlayerController {
   }
 
   public async restoreOriginalPlaybackState(): Promise<boolean> {
+    const youTubeAPI = getYouTubeAPI();
     const originalState = this.state.originalPlaybackState;
     if (!originalState || !youTubeAPI.isReady()) {
       return false;
@@ -358,4 +365,7 @@ export class PlayerController {
   }
 }
 
-export const playerController = PlayerController.getInstance();
+// Export factory function (build-safe, no eager initialization)
+export function getPlayerController(): PlayerController {
+  return PlayerController.getInstance();
+}

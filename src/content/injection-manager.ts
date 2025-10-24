@@ -412,5 +412,7 @@ export class InjectionManager {
   }
 }
 
-// Export singleton instance
-export const injectionManager = InjectionManager.getInstance();
+// Export factory function (build-safe, no eager initialization)
+export function getInjectionManager(): InjectionManager {
+  return InjectionManager.getInstance();
+}

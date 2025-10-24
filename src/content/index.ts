@@ -25,20 +25,20 @@ import {
   ErrorResponse,
 } from '@/types';
 import { GifData, GifSettings } from '@/types/storage';
-import { youTubeDetector, YouTubeNavigationEvent } from './youtube-detector';
-import { injectionManager } from './injection-manager';
+import { YouTubeNavigationEvent, getYouTubeDetector } from './youtube-detector';
+import { getInjectionManager } from './injection-manager';
 import { extensionStateManager } from '@/shared';
-import { youTubeAPI, YouTubeAPIIntegration } from './youtube-api-integration';
+import { getYouTubeAPI, YouTubeAPIIntegration } from './youtube-api-integration';
 import { ContentScriptFrameExtractor, ContentFrameExtractionRequest } from './frame-extractor';
-import { gifProcessor } from './gif-processor';
-import { playerIntegration } from './player-integration';
-import { playerController } from './player-controller';
+import { getGifProcessor } from './gif-processor';
+import { getPlayerIntegration } from './player-integration';
+import { getPlayerController } from './player-controller';
 import { TimelineOverlayWrapper } from './timeline-overlay-wrapper';
 import { TimelineOverlayWizard } from './timeline-overlay-wizard';
 import { overlayStateManager } from './overlay-state';
 import { cleanupManager } from './cleanup-manager';
 import { initializeContentScriptFrameExtraction } from './frame-extractor';
-import { themeDetector, youtubeMatcher } from '@/themes';
+import { getThemeDetector, getYoutubeMatcher } from '@/themes';
 import { ResolutionScaler } from '@/processing/resolution-scaler';
 import { parseResolution } from '@/utils/resolution-parser';
 import { engagementTracker } from '@/shared/engagement-tracker';

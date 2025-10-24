@@ -217,4 +217,7 @@ export class ThemeDetector {
   }
 }
 
-export const themeDetector = ThemeDetector.getInstance();
+// Export factory function (build-safe, no eager initialization)
+export function getThemeDetector(): ThemeDetector {
+  return ThemeDetector.getInstance();
+}

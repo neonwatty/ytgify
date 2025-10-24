@@ -426,5 +426,7 @@ export class YouTubePlayerIntegration {
   }
 }
 
-// Export singleton instance
-export const playerIntegration = YouTubePlayerIntegration.getInstance();
+// Export factory function (build-safe, no eager initialization)
+export function getPlayerIntegration(): YouTubePlayerIntegration {
+  return YouTubePlayerIntegration.getInstance();
+}

@@ -1,5 +1,5 @@
 import { logger } from '@/lib/logger';
-import { youTubeAPI, YouTubeAPIIntegration } from './youtube-api-integration';
+import { getYouTubeAPI, YouTubeAPIIntegration } from './youtube-api-integration';
 import { TimelineSelection } from '@/types';
 
 export interface PreviewLoopState {
@@ -38,7 +38,7 @@ export class VideoPreviewLoop {
   }
 
   private setupPlayerIntegration(): void {
-    youTubeAPI.onReady(() => {
+    getYouTubeAPI().onReady(() => {
       this.isListeningToPlayer = true;
       logger.debug('[PreviewLoop] YouTube player ready for preview control');
     });
@@ -46,7 +46,7 @@ export class VideoPreviewLoop {
 
   public startPreview(selection: TimelineSelection): Promise<boolean> {
     return new Promise((resolve) => {
-      if (!youTubeAPI.isReady()) {
+      if (!getYouTubeAPI().isReady()) {
         logger.warn('[PreviewLoop] Cannot start preview - YouTube API not ready');
         resolve(false);
         return;
@@ -58,8 +58,8 @@ export class VideoPreviewLoop {
 
       try {
         // Store original player state
-        this.state.originalTime = youTubeAPI.getCurrentTime();
-        this.state.originalState = youTubeAPI.getPlayerState();
+        this.state.originalTime = getYouTubeAPI().getCurrentTime();
+        this.state.originalState = getYouTubeAPI().getPlayerState();
         this.state.selection = { ...selection };
 
         logger.info('[PreviewLoop] Starting preview', {
@@ -69,7 +69,7 @@ export class VideoPreviewLoop {
         });
 
         // Seek to start of selection
-        youTubeAPI.seekTo(selection.startTime).then((seekSuccess) => {
+        getYouTubeAPI().seekTo(selection.startTime).then((seekSuccess) => {
           if (!seekSuccess) {
             logger.error('[PreviewLoop] Failed to seek to preview start');
             resolve(false);
@@ -118,13 +118,13 @@ export class VideoPreviewLoop {
         }
 
         // Restore original player state
-        youTubeAPI.seekTo(this.state.originalTime).then((seekSuccess) => {
+        getYouTubeAPI().seekTo(this.state.originalTime).then((seekSuccess) => {
           if (seekSuccess) {
             // Restore original playback state
             if (this.state.originalState === YouTubeAPIIntegration.PlayerState.PLAYING) {
-              youTubeAPI.play();
+              getYouTubeAPI().play();
             } else if (this.state.originalState === YouTubeAPIIntegration.PlayerState.PAUSED) {
-              youTubeAPI.pause();
+              getYouTubeAPI().pause();
             }
           } else {
             logger.warn('[PreviewLoop] Failed to restore original position');
@@ -175,7 +175,7 @@ export class VideoPreviewLoop {
         this.state.loopInterval = null;
       }
 
-      youTubeAPI.seekTo(selection.startTime).then((seekSuccess) => {
+      getYouTubeAPI().seekTo(selection.startTime).then((seekSuccess) => {
         if (seekSuccess) {
           this.startLoop();
           this.notifyCallbacks();
@@ -208,15 +208,15 @@ export class VideoPreviewLoop {
     const checkInterval = 100; // Check every 100ms
 
     this.state.loopInterval = setInterval(() => {
-      if (!this.state.isActive || !youTubeAPI.isReady()) {
+      if (!this.state.isActive || !getYouTubeAPI().isReady()) {
         return;
       }
 
-      const currentTime = youTubeAPI.getCurrentTime();
+      const currentTime = getYouTubeAPI().getCurrentTime();
       
       // If we've reached or passed the end time, loop back to start
       if (currentTime >= selection.endTime) {
-        youTubeAPI.seekTo(selection.startTime);
+        getYouTubeAPI().seekTo(selection.startTime);
         logger.debug('[PreviewLoop] Looped back to start', {
           from: currentTime,
           to: selection.startTime
@@ -232,7 +232,7 @@ export class VideoPreviewLoop {
       this.stateChangeUnsubscribe();
     }
 
-    this.stateChangeUnsubscribe = youTubeAPI.onStateChange((playerState) => {
+    this.stateChangeUnsubscribe = getYouTubeAPI().onStateChange((playerState) => {
       if (!this.state.isActive) {
         return;
       }
@@ -242,8 +242,8 @@ export class VideoPreviewLoop {
         case YouTubeAPIIntegration.PlayerState.ENDED:
           // Video ended during preview - loop back to start
           if (this.state.selection) {
-            youTubeAPI.seekTo(this.state.selection.startTime);
-            youTubeAPI.play();
+            getYouTubeAPI().seekTo(this.state.selection.startTime);
+            getYouTubeAPI().play();
           }
           break;
           

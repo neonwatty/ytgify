@@ -464,5 +464,11 @@ class CleanupManager {
   }
 }
 
-// Singleton instance
-export const cleanupManager = new CleanupManager();
+// Export factory function (build-safe, no eager initialization)
+let _instance: CleanupManager | null = null;
+export function getCleanupManager(): CleanupManager {
+  if (!_instance) {
+    _instance = new CleanupManager();
+  }
+  return _instance;
+}

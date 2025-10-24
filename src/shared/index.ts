@@ -45,8 +45,8 @@ export {
 
 export {
   // Extension State Management
-
-  extensionStateManager,
+  getExtensionStateManager,
+  ExtensionStateManager,
 
   // Types
 } from './state-manager';

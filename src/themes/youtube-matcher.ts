@@ -1,4 +1,4 @@
-import { ThemeInfo, themeDetector } from './theme-detector';
+import { ThemeInfo, getThemeDetector } from './theme-detector';
 
 interface YouTubeThemeMapping {
   background: string;
@@ -23,6 +23,7 @@ export class YouTubeMatcher {
   private themeUnsubscribe: (() => void) | null = null;
 
   private constructor() {
+    const themeDetector = getThemeDetector();
     this.currentMapping = this.generateThemeMapping(themeDetector.getCurrentTheme());
     this.themeUnsubscribe = themeDetector.subscribe((themeInfo) => {
       this.currentMapping = this.generateThemeMapping(themeInfo);
@@ -158,13 +159,14 @@ export class YouTubeMatcher {
   }
 
   private updateExtensionClasses(): void {
+    const themeDetector = getThemeDetector();
     const themeInfo = themeDetector.getCurrentTheme();
     const extensionElements = document.querySelectorAll('.ytgif-button, .ytgif-timeline-overlay, .ytgif-quick-presets');
-    
+
     extensionElements.forEach((element) => {
       element.classList.remove('ytgif-theme-light', 'ytgif-theme-dark', 'ytgif-theme-auto');
       element.classList.add(`ytgif-theme-${themeInfo.theme}`);
-      
+
       if (themeInfo.isDark) {
         element.classList.add('ytgif-dark');
         element.classList.remove('ytgif-light');
@@ -176,6 +178,7 @@ export class YouTubeMatcher {
   }
 
   public subscribeToThemeChanges(callback: (mapping: YouTubeThemeMapping) => void): () => void {
+    const themeDetector = getThemeDetector();
     return themeDetector.subscribe((themeInfo) => {
       const newMapping = this.generateThemeMapping(themeInfo);
       callback(newMapping);
@@ -183,14 +186,16 @@ export class YouTubeMatcher {
   }
 
   public getThemeAwareColor(lightColor: string, darkColor: string): string {
+    const themeDetector = getThemeDetector();
     const themeInfo = themeDetector.getCurrentTheme();
     return themeInfo.isDark ? darkColor : lightColor;
   }
 
   public getThemeAwareOpacity(baseOpacity: number, isDarkMode?: boolean): number {
+    const themeDetector = getThemeDetector();
     const themeInfo = themeDetector.getCurrentTheme();
     const isDark = isDarkMode ?? themeInfo.isDark;
-    
+
     return isDark ? Math.min(baseOpacity * 1.2, 1) : baseOpacity;
   }
 
@@ -198,9 +203,10 @@ export class YouTubeMatcher {
     light: { start: string; end: string };
     dark: { start: string; end: string };
   }): string {
+    const themeDetector = getThemeDetector();
     const themeInfo = themeDetector.getCurrentTheme();
     const colorSet = themeInfo.isDark ? colors.dark : colors.light;
-    
+
     return `linear-gradient(135deg, ${colorSet.start} 0%, ${colorSet.end} 100%)`;
   }
 
@@ -209,9 +215,10 @@ export class YouTubeMatcher {
     darkShadow?: string;
     intensity?: number;
   }): string {
+    const themeDetector = getThemeDetector();
     const themeInfo = themeDetector.getCurrentTheme();
     const intensity = options?.intensity ?? 1;
-    
+
     if (themeInfo.isDark) {
       const defaultDark = `0 4px 12px rgba(0, 0, 0, ${0.5 * intensity})`;
       return options?.darkShadow ?? defaultDark;
@@ -257,4 +264,7 @@ export class YouTubeMatcher {
   }
 }
 
-export const youtubeMatcher = YouTubeMatcher.getInstance();
+// Export factory function (build-safe, no eager initialization)
+export function getYoutubeMatcher(): YouTubeMatcher {
+  return YouTubeMatcher.getInstance();
+}

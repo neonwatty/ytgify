@@ -361,5 +361,7 @@ export class YouTubeAPIIntegration {
   }
 }
 
-// Export singleton instance
-export const youTubeAPI = YouTubeAPIIntegration.getInstance();
+// Export factory function (build-safe, no eager initialization)
+export function getYouTubeAPI(): YouTubeAPIIntegration {
+  return YouTubeAPIIntegration.getInstance();
+}
