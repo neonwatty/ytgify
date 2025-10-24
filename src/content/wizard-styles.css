@@ -22,7 +22,8 @@
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   animation: slideUp 0.3s ease;
   display: flex;
   flex-direction: column;
@@ -31,6 +32,25 @@
 @keyframes slideUp {
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+/* Custom Scrollbar for Wizard Container */
+.ytgif-wizard-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ytgif-wizard-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.ytgif-wizard-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.ytgif-wizard-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 /* Header Container */
@@ -60,7 +80,7 @@
   font-size: 24px;
   cursor: pointer;
   transition: all 0.2s ease;
-  z-index: 10;
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: center;

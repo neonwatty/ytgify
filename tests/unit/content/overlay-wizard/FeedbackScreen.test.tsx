@@ -557,4 +557,63 @@ describe('FeedbackScreen', () => {
       expect(document.getElementById('beehiiv-embed-script')).not.toBeInTheDocument();
     });
   });
+
+  describe('Standalone Mode Behavior', () => {
+    it('should hide Back button when isStandalone=true', () => {
+      render(<FeedbackScreen onBack={mockOnBack} onClose={mockOnClose} isStandalone={true} />);
+      expect(screen.queryByRole('button', { name: /Back/i })).not.toBeInTheDocument();
+    });
+
+    it('should show Back button when isStandalone=false', () => {
+      render(<FeedbackScreen onBack={mockOnBack} onClose={mockOnClose} isStandalone={false} />);
+      expect(screen.getByRole('button', { name: /Back/i })).toBeInTheDocument();
+    });
+
+    it('should show Back button when isStandalone is undefined (default)', () => {
+      render(<FeedbackScreen onBack={mockOnBack} onClose={mockOnClose} />);
+      expect(screen.getByRole('button', { name: /Back/i })).toBeInTheDocument();
+    });
+
+    it('should display "Close" button text when isStandalone=true', () => {
+      render(<FeedbackScreen onBack={mockOnBack} onClose={mockOnClose} isStandalone={true} />);
+      const closeButton = screen.getByRole('button', { name: 'Close' });
+      expect(closeButton).toBeInTheDocument();
+      expect(closeButton).toHaveClass('ytgif-button-primary');
+    });
+
+    it('should display "Done" button text when isStandalone=false', () => {
+      render(<FeedbackScreen onBack={mockOnBack} onClose={mockOnClose} isStandalone={false} />);
+      expect(screen.getByRole('button', { name: 'Done' })).toBeInTheDocument();
+    });
+
+    it('should display "Done" button text when isStandalone is undefined (default)', () => {
+      render(<FeedbackScreen onBack={mockOnBack} onClose={mockOnClose} />);
+      expect(screen.getByRole('button', { name: 'Done' })).toBeInTheDocument();
+    });
+
+    it('should call onClose when Close button clicked in standalone mode', () => {
+      render(<FeedbackScreen onBack={mockOnBack} onClose={mockOnClose} isStandalone={true} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+      expect(mockOnClose).toHaveBeenCalledTimes(1);
+      expect(mockOnBack).not.toHaveBeenCalled();
+    });
+
+    it('should have only one action button when isStandalone=true', () => {
+      const { container } = render(<FeedbackScreen onBack={mockOnBack} onClose={mockOnClose} isStandalone={true} />);
+      const actionButtons = container.querySelectorAll('.ytgif-feedback-actions button');
+      expect(actionButtons).toHaveLength(1);
+    });
+
+    it('should have two action buttons when isStandalone=false', () => {
+      const { container } = render(<FeedbackScreen onBack={mockOnBack} onClose={mockOnClose} isStandalone={false} />);
+      const actionButtons = container.querySelectorAll('.ytgif-feedback-actions button');
+      expect(actionButtons).toHaveLength(2);
+    });
+
+    it('should have two action buttons when isStandalone is undefined (default)', () => {
+      const { container } = render(<FeedbackScreen onBack={mockOnBack} onClose={mockOnClose} />);
+      const actionButtons = container.querySelectorAll('.ytgif-feedback-actions button');
+      expect(actionButtons).toHaveLength(2);
+    });
+  });
 });

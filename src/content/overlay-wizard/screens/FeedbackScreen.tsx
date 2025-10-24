@@ -4,9 +4,10 @@ import { openExternalLink, getReviewLink } from '@/constants/links';
 interface FeedbackScreenProps {
   onBack: () => void;
   onClose: () => void;
+  isStandalone?: boolean; // If true, show "Close" instead of "Back"
 }
 
-const FeedbackScreen: React.FC<FeedbackScreenProps> = ({ onBack, onClose }) => {
+const FeedbackScreen: React.FC<FeedbackScreenProps> = ({ onBack, onClose, isStandalone = false }) => {
   const handleRate = () => {
     openExternalLink(getReviewLink());
   };
@@ -116,20 +117,22 @@ const FeedbackScreen: React.FC<FeedbackScreenProps> = ({ onBack, onClose }) => {
 
         {/* Action Buttons */}
         <div className="ytgif-feedback-actions">
-          <button className="ytgif-button-secondary" onClick={() => onBack && onBack()}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            Back
-          </button>
+          {!isStandalone && (
+            <button className="ytgif-button-secondary" onClick={() => onBack && onBack()}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              Back
+            </button>
+          )}
 
           <button className="ytgif-button-primary" onClick={() => onClose && onClose()}>
-            Done
+            {isStandalone ? 'Close' : 'Done'}
           </button>
         </div>
       </div>

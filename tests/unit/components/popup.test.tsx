@@ -825,4 +825,126 @@ describe('PopupApp Component', () => {
       consoleSpy.mockRestore();
     });
   });
+
+  describe('Stay Connected Button', () => {
+    beforeEach(() => {
+      // Mock chrome.tabs.sendMessage
+      (global as any).chrome.tabs.sendMessage = jest.fn((tabId, message, callback) => {
+        if (callback) callback({ success: true });
+        return Promise.resolve({ success: true });
+      });
+    });
+
+    test('Stay Connected button renders on YouTube video page', async () => {
+      mockTabWithUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'Sample Video - YouTube');
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Stay Connected/i })).toBeInTheDocument();
+      });
+    });
+
+    test('Stay Connected button renders on YouTube Shorts page', async () => {
+      mockTabWithUrl('https://www.youtube.com/shorts/ABC123', 'Short Video - YouTube');
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Stay Connected/i })).toBeInTheDocument();
+      });
+    });
+
+    test('Stay Connected button does NOT render on non-YouTube pages', async () => {
+      mockTabWithUrl('https://www.example.com', 'Example Website');
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText('No Video Found')).toBeInTheDocument();
+      });
+
+      expect(screen.queryByRole('button', { name: /Stay Connected/i })).not.toBeInTheDocument();
+    });
+
+    test('Stay Connected button shows subtitle text', async () => {
+      mockTabWithUrl('https://www.youtube.com/watch?v=test', 'Test - YouTube');
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Reviews, Feedback, & Updates')).toBeInTheDocument();
+      });
+    });
+
+    test('clicking Stay Connected button sends SHOW_NEWSLETTER_WIZARD message', async () => {
+      mockTabWithUrl('https://www.youtube.com/watch?v=test', 'Test - YouTube');
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Stay Connected/i })).toBeInTheDocument();
+      });
+
+      const stayConnectedButton = screen.getByRole('button', { name: /Stay Connected/i });
+      fireEvent.click(stayConnectedButton);
+
+      await waitFor(() => {
+        expect((global as any).chrome.tabs.sendMessage).toHaveBeenCalledWith(
+          1, // tab ID
+          { type: 'SHOW_NEWSLETTER_WIZARD' }
+        );
+      });
+    });
+
+    test('popup closes after clicking Stay Connected button', async () => {
+      mockTabWithUrl('https://www.youtube.com/watch?v=test', 'Test - YouTube');
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Stay Connected/i })).toBeInTheDocument();
+      });
+
+      const stayConnectedButton = screen.getByRole('button', { name: /Stay Connected/i });
+      fireEvent.click(stayConnectedButton);
+
+      await waitFor(() => {
+        expect((global as any).window.close).toHaveBeenCalled();
+      });
+    });
+
+    test('handles error when sendMessage fails', async () => {
+      const consoleError = jest.spyOn(console, 'error').mockImplementation();
+      (global as any).chrome.tabs.sendMessage = jest.fn(() => {
+        throw new Error('Tab not found');
+      });
+
+      mockTabWithUrl('https://www.youtube.com/watch?v=test', 'Test - YouTube');
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Stay Connected/i })).toBeInTheDocument();
+      });
+
+      const stayConnectedButton = screen.getByRole('button', { name: /Stay Connected/i });
+      fireEvent.click(stayConnectedButton);
+
+      await waitFor(() => {
+        expect(consoleError).toHaveBeenCalledWith(
+          'Failed to show newsletter wizard:',
+          expect.any(Error)
+        );
+      });
+
+      consoleError.mockRestore();
+    });
+
+    test('Stay Connected button has correct icon', async () => {
+      mockTabWithUrl('https://www.youtube.com/watch?v=test', 'Test - YouTube');
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        const button = screen.getByRole('button', { name: /Stay Connected/i });
+        const svg = button.querySelector('svg');
+        expect(svg).toBeInTheDocument();
+        expect(svg).toHaveAttribute('width', '20');
+        expect(svg).toHaveAttribute('height', '20');
+      });
+    });
+  });
 });
