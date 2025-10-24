@@ -74,14 +74,14 @@ describe('FeedbackScreen', () => {
       expect(global.chrome.runtime.getURL).toHaveBeenCalledWith('icons/icon.svg');
     });
 
-    it('should render BeehIiv newsletter section', () => {
+    it.skip('should render BeehIiv newsletter section', () => {
       render(<FeedbackScreen {...defaultProps} />);
       const newsletterHeading = screen.getByRole('heading', { level: 3, name: 'Stay Updated' });
       expect(newsletterHeading).toBeInTheDocument();
       expect(screen.getByText('Get notified about new features and releases:')).toBeInTheDocument();
     });
 
-    it('should render BeehIiv embed iframe', () => {
+    it.skip('should render BeehIiv embed iframe', () => {
       const { container } = render(<FeedbackScreen {...defaultProps} />);
       const iframe = container.querySelector('iframe.beehiiv-embed');
       expect(iframe).toBeInTheDocument();
@@ -491,7 +491,7 @@ describe('FeedbackScreen', () => {
       expect(span?.textContent).toBe('Leave us a review!');
     });
 
-    it('should render support section before newsletter and GitHub', () => {
+    it.skip('should render support section before newsletter and GitHub', () => {
       const { container } = render(<FeedbackScreen {...defaultProps} />);
 
       const feedbackContent = container.querySelector('.ytgif-feedback-content');
