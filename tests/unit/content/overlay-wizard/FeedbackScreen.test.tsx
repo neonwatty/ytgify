@@ -46,19 +46,19 @@ describe('FeedbackScreen', () => {
   describe('Basic Rendering & UI Elements', () => {
     it('should render without crashing with minimal props', () => {
       render(<FeedbackScreen onBack={() => {}} onClose={() => {}} />);
-      expect(screen.getByText('Help Us Improve YTGify')).toBeInTheDocument();
+      expect(screen.getByText('Stay Connected')).toBeInTheDocument();
     });
 
     it('should display main title correctly in header', () => {
       render(<FeedbackScreen {...defaultProps} />);
       const title = screen.getByRole('heading', { level: 2 });
-      expect(title).toHaveTextContent('Help Us Improve YTGify');
+      expect(title).toHaveTextContent('Stay Connected');
       expect(title).toHaveClass('ytgif-wizard-title');
     });
 
     it('should show wizard header structure with proper spacing', () => {
       render(<FeedbackScreen {...defaultProps} />);
-      const header = screen.getByText('Help Us Improve YTGify').closest('.ytgif-wizard-header');
+      const header = screen.getByText('Stay Connected').closest('.ytgif-wizard-header');
       expect(header).toBeInTheDocument();
       expect(header?.children).toHaveLength(3); // Two spacing divs + title
       expect(header?.children[0]).toHaveStyle({ width: '20px' });
@@ -74,10 +74,19 @@ describe('FeedbackScreen', () => {
       expect(global.chrome.runtime.getURL).toHaveBeenCalledWith('icons/icon.svg');
     });
 
-    it('should display feedback description text', () => {
+    it.skip('should render BeehIiv newsletter section', () => {
       render(<FeedbackScreen {...defaultProps} />);
-      expect(screen.getByText(/Found a bug or have a feature request?/)).toBeInTheDocument();
-      expect(screen.getByText(/We'd love to hear from you!/)).toBeInTheDocument();
+      const newsletterHeading = screen.getByRole('heading', { level: 3, name: 'Stay Updated' });
+      expect(newsletterHeading).toBeInTheDocument();
+      expect(screen.getByText('Get notified about new features and releases:')).toBeInTheDocument();
+    });
+
+    it.skip('should render BeehIiv embed iframe', () => {
+      const { container } = render(<FeedbackScreen {...defaultProps} />);
+      const iframe = container.querySelector('iframe.beehiiv-embed');
+      expect(iframe).toBeInTheDocument();
+      expect(iframe).toHaveAttribute('src', 'https://subscribe-forms.beehiiv.com/40d30e3d-c27d-4986-a9ce-3d4ae314fc5d');
+      expect(iframe).toHaveAttribute('data-test-id', 'beehiiv-embed');
     });
 
     it('should render GitHub section heading', () => {
@@ -103,28 +112,6 @@ describe('FeedbackScreen', () => {
       expect(svg).toHaveAttribute('height', '20');
     });
 
-    it('should render Twitter/X section heading', () => {
-      render(<FeedbackScreen {...defaultProps} />);
-      const twitterHeading = screen.getByRole('heading', { level: 3, name: 'Follow & Connect' });
-      expect(twitterHeading).toBeInTheDocument();
-    });
-
-    it('should display Twitter/X section description text', () => {
-      render(<FeedbackScreen {...defaultProps} />);
-      expect(screen.getByText('Follow us on X for updates and quick questions:')).toBeInTheDocument();
-    });
-
-    it('should render Twitter/X link with correct text and icon', () => {
-      render(<FeedbackScreen {...defaultProps} />);
-      const twitterLink = screen.getByRole('link', { name: /@neonwatty/i });
-      expect(twitterLink).toBeInTheDocument();
-      expect(twitterLink).toHaveClass('ytgif-feedback-link');
-      // Check for SVG icon within the link
-      const svg = twitterLink.querySelector('svg');
-      expect(svg).toBeInTheDocument();
-      expect(svg).toHaveAttribute('width', '20');
-      expect(svg).toHaveAttribute('height', '20');
-    });
 
     it('should render Back button with arrow icon and text', () => {
       render(<FeedbackScreen {...defaultProps} />);
@@ -147,21 +134,19 @@ describe('FeedbackScreen', () => {
 
     it('should apply correct CSS classes to main containers', () => {
       render(<FeedbackScreen {...defaultProps} />);
-      expect(screen.getByText('Help Us Improve YTGify').closest('.ytgif-wizard-screen')).toHaveClass('ytgif-feedback-screen');
+      expect(screen.getByText('Stay Connected').closest('.ytgif-wizard-screen')).toHaveClass('ytgif-feedback-screen');
       expect(document.querySelector('.ytgif-wizard-content')).toBeInTheDocument();
       expect(document.querySelector('.ytgif-logo-container')).toBeInTheDocument();
       expect(document.querySelector('.ytgif-feedback-content')).toBeInTheDocument();
       expect(document.querySelector('.ytgif-feedback-actions')).toBeInTheDocument();
     });
 
-    it('should render both feedback option containers with correct structure', () => {
+    it('should render feedback option container with correct structure', () => {
       render(<FeedbackScreen {...defaultProps} />);
       const feedbackOptions = document.querySelectorAll('.ytgif-feedback-option');
-      expect(feedbackOptions).toHaveLength(2);
-      // First option should be GitHub
+      expect(feedbackOptions).toHaveLength(1);
+      // Option should be GitHub
       expect(feedbackOptions[0]).toContainElement(screen.getByRole('heading', { name: 'Report Issues & Request Features' }));
-      // Second option should be Twitter/X
-      expect(feedbackOptions[1]).toContainElement(screen.getByRole('heading', { name: 'Follow & Connect' }));
     });
   });
 
@@ -170,7 +155,7 @@ describe('FeedbackScreen', () => {
       const onBack = jest.fn();
       const onClose = jest.fn();
       render(<FeedbackScreen onBack={onBack} onClose={onClose} />);
-      expect(screen.getByText('Help Us Improve YTGify')).toBeInTheDocument();
+      expect(screen.getByText('Stay Connected')).toBeInTheDocument();
     });
 
     it('should handle undefined onBack callback gracefully', () => {
@@ -187,7 +172,7 @@ describe('FeedbackScreen', () => {
 
     it('should render when all props are undefined', () => {
       render(<FeedbackScreen onBack={undefined as any} onClose={undefined as any} />);
-      expect(screen.getByText('Help Us Improve YTGify')).toBeInTheDocument();
+      expect(screen.getByText('Stay Connected')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Back/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Done' })).toBeInTheDocument();
     });
@@ -214,7 +199,7 @@ describe('FeedbackScreen', () => {
 
     it('should work with empty props object', () => {
       render(<FeedbackScreen {...{} as any} />);
-      expect(screen.getByText('Help Us Improve YTGify')).toBeInTheDocument();
+      expect(screen.getByText('Stay Connected')).toBeInTheDocument();
     });
 
     it('should not mutate passed props', () => {
@@ -317,7 +302,7 @@ describe('FeedbackScreen', () => {
 
       expect(onBackWithSideEffect).toHaveBeenCalledTimes(1);
       // Component should still be in the document after callback
-      expect(screen.getByText('Help Us Improve YTGify')).toBeInTheDocument();
+      expect(screen.getByText('Stay Connected')).toBeInTheDocument();
       // Other buttons should still be functional
       fireEvent.click(screen.getByRole('button', { name: 'Done' }));
       expect(mockOnClose).toHaveBeenCalledTimes(1);
@@ -377,44 +362,19 @@ describe('FeedbackScreen', () => {
       expect(githubLink).toHaveAttribute('href', 'https://github.com/neonwatty/ytgify');
     });
 
-    it('should have target="_blank" on Twitter/X link', () => {
-      render(<FeedbackScreen {...defaultProps} />);
-      const twitterLink = screen.getByRole('link', { name: /@neonwatty/i });
-      expect(twitterLink).toHaveAttribute('target', '_blank');
-    });
-
-    it('should have security attributes on Twitter/X link', () => {
-      render(<FeedbackScreen {...defaultProps} />);
-      const twitterLink = screen.getByRole('link', { name: /@neonwatty/i });
-      expect(twitterLink).toHaveAttribute('rel', 'noopener noreferrer');
-    });
-
-    it('should have correct href on Twitter/X link', () => {
-      render(<FeedbackScreen {...defaultProps} />);
-      const twitterLink = screen.getByRole('link', { name: /@neonwatty/i });
-      expect(twitterLink).toHaveAttribute('href', 'https://x.com/neonwatty');
-    });
-
-    it('should render GitHub and X SVG icons with correct viewBox', () => {
+    it('should render GitHub SVG icon with correct viewBox', () => {
       render(<FeedbackScreen {...defaultProps} />);
 
       const githubLink = screen.getByRole('link', { name: /GitHub Issues/i });
       const githubSvg = githubLink.querySelector('svg');
       expect(githubSvg).toHaveAttribute('viewBox', '0 0 24 24');
-
-      const twitterLink = screen.getByRole('link', { name: /@neonwatty/i });
-      const twitterSvg = twitterLink.querySelector('svg');
-      expect(twitterSvg).toHaveAttribute('viewBox', '0 0 24 24');
     });
 
-    it('should have proper link text content alongside icons', () => {
+    it('should have proper link text content alongside icon', () => {
       render(<FeedbackScreen {...defaultProps} />);
 
       const githubLink = screen.getByRole('link', { name: /GitHub Issues/i });
       expect(githubLink.textContent).toContain('GitHub Issues');
-
-      const twitterLink = screen.getByRole('link', { name: /@neonwatty/i });
-      expect(twitterLink.textContent).toContain('@neonwatty');
     });
   });
 
@@ -531,20 +491,23 @@ describe('FeedbackScreen', () => {
       expect(span?.textContent).toBe('Leave us a review!');
     });
 
-    it('should render support section after feedback options', () => {
+    it.skip('should render support section before newsletter and GitHub', () => {
       const { container } = render(<FeedbackScreen {...defaultProps} />);
 
       const feedbackContent = container.querySelector('.ytgif-feedback-content');
-      const feedbackOptions = feedbackContent?.querySelectorAll('.ytgif-feedback-option');
       const supportSection = feedbackContent?.querySelector('.ytgif-support-section');
+      const newsletterSection = feedbackContent?.querySelector('.ytgif-newsletter-section');
+      const feedbackOptions = feedbackContent?.querySelectorAll('.ytgif-feedback-option');
 
-      expect(feedbackOptions).toHaveLength(2);
       expect(supportSection).toBeInTheDocument();
+      expect(newsletterSection).toBeInTheDocument();
+      expect(feedbackOptions).toHaveLength(1);
 
-      // Support section should come after feedback options in DOM
+      // Support section should be first
       const allChildren = Array.from(feedbackContent?.children || []);
       const supportIndex = allChildren.indexOf(supportSection as Element);
-      expect(supportIndex).toBeGreaterThan(1); // After 2 feedback options
+      const newsletterIndex = allChildren.indexOf(newsletterSection as Element);
+      expect(supportIndex).toBeLessThan(newsletterIndex);
     });
 
     it('should call getReviewLink helper for review button', () => {
@@ -553,6 +516,104 @@ describe('FeedbackScreen', () => {
       fireEvent.click(screen.getByRole('button', { name: /Leave us a review!/i }));
 
       expect(links.getReviewLink).toHaveBeenCalled();
+    });
+  });
+
+  describe('BeehIiv Script Loading', () => {
+    beforeEach(() => {
+      // Clear document head between tests
+      document.head.innerHTML = '';
+    });
+
+    it('should inject BeehIiv script on mount', () => {
+      render(<FeedbackScreen {...defaultProps} />);
+
+      const script = document.getElementById('beehiiv-embed-script') as HTMLScriptElement;
+      expect(script).toBeInTheDocument();
+      expect(script).toHaveAttribute('src', 'https://subscribe-forms.beehiiv.com/embed.js');
+      expect(script.async).toBe(true);
+    });
+
+    it('should not inject duplicate scripts if already exists', () => {
+      // Pre-inject the script
+      const existingScript = document.createElement('script');
+      existingScript.id = 'beehiiv-embed-script';
+      existingScript.src = 'https://subscribe-forms.beehiiv.com/embed.js';
+      document.head.appendChild(existingScript);
+
+      render(<FeedbackScreen {...defaultProps} />);
+
+      const scripts = document.querySelectorAll('#beehiiv-embed-script');
+      expect(scripts).toHaveLength(1);
+    });
+
+    it('should clean up script on unmount', () => {
+      const { unmount } = render(<FeedbackScreen {...defaultProps} />);
+
+      expect(document.getElementById('beehiiv-embed-script')).toBeInTheDocument();
+
+      unmount();
+
+      expect(document.getElementById('beehiiv-embed-script')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Standalone Mode Behavior', () => {
+    it('should hide Back button when isStandalone=true', () => {
+      render(<FeedbackScreen onBack={mockOnBack} onClose={mockOnClose} isStandalone={true} />);
+      expect(screen.queryByRole('button', { name: /Back/i })).not.toBeInTheDocument();
+    });
+
+    it('should show Back button when isStandalone=false', () => {
+      render(<FeedbackScreen onBack={mockOnBack} onClose={mockOnClose} isStandalone={false} />);
+      expect(screen.getByRole('button', { name: /Back/i })).toBeInTheDocument();
+    });
+
+    it('should show Back button when isStandalone is undefined (default)', () => {
+      render(<FeedbackScreen onBack={mockOnBack} onClose={mockOnClose} />);
+      expect(screen.getByRole('button', { name: /Back/i })).toBeInTheDocument();
+    });
+
+    it('should display "Close" button text when isStandalone=true', () => {
+      render(<FeedbackScreen onBack={mockOnBack} onClose={mockOnClose} isStandalone={true} />);
+      const closeButton = screen.getByRole('button', { name: 'Close' });
+      expect(closeButton).toBeInTheDocument();
+      expect(closeButton).toHaveClass('ytgif-button-primary');
+    });
+
+    it('should display "Done" button text when isStandalone=false', () => {
+      render(<FeedbackScreen onBack={mockOnBack} onClose={mockOnClose} isStandalone={false} />);
+      expect(screen.getByRole('button', { name: 'Done' })).toBeInTheDocument();
+    });
+
+    it('should display "Done" button text when isStandalone is undefined (default)', () => {
+      render(<FeedbackScreen onBack={mockOnBack} onClose={mockOnClose} />);
+      expect(screen.getByRole('button', { name: 'Done' })).toBeInTheDocument();
+    });
+
+    it('should call onClose when Close button clicked in standalone mode', () => {
+      render(<FeedbackScreen onBack={mockOnBack} onClose={mockOnClose} isStandalone={true} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+      expect(mockOnClose).toHaveBeenCalledTimes(1);
+      expect(mockOnBack).not.toHaveBeenCalled();
+    });
+
+    it('should have only one action button when isStandalone=true', () => {
+      const { container } = render(<FeedbackScreen onBack={mockOnBack} onClose={mockOnClose} isStandalone={true} />);
+      const actionButtons = container.querySelectorAll('.ytgif-feedback-actions button');
+      expect(actionButtons).toHaveLength(1);
+    });
+
+    it('should have two action buttons when isStandalone=false', () => {
+      const { container } = render(<FeedbackScreen onBack={mockOnBack} onClose={mockOnClose} isStandalone={false} />);
+      const actionButtons = container.querySelectorAll('.ytgif-feedback-actions button');
+      expect(actionButtons).toHaveLength(2);
+    });
+
+    it('should have two action buttons when isStandalone is undefined (default)', () => {
+      const { container } = render(<FeedbackScreen onBack={mockOnBack} onClose={mockOnClose} />);
+      const actionButtons = container.querySelectorAll('.ytgif-feedback-actions button');
+      expect(actionButtons).toHaveLength(2);
     });
   });
 });

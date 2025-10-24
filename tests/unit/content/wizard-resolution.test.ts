@@ -100,8 +100,8 @@ describe('QuickCaptureScreen Resolution Options', () => {
     )?.textContent;
 
     // With 10 second duration, 5 fps, 360p (0.7 multiplier)
-    // Expected: 10 * 5 * 0.08 * 0.7 = 2.8 MB
-    expect(sizeEstimate).toContain('2.8MB'); // Rounded value
+    // Expected: 10 * 5 * 0.05 * 0.7 = 1.8 MB (updated for gifski compression)
+    expect(sizeEstimate).toContain('1.8MB'); // Rounded value
   });
 
   it('should have proper resolution order from lowest to highest', () => {

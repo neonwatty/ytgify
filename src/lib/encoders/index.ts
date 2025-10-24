@@ -5,7 +5,9 @@
 
 export { AbstractEncoder } from './abstract-encoder';
 export { GifencEncoder } from './gifenc-encoder';
-export { GifJsEncoder } from './gifjs-encoder';
+// GifJsEncoder is NOT exported directly to prevent service worker crashes
+// It requires DOM (document, window, HTMLCanvasElement) which service workers don't have
+// Use encoder-factory's lazy import instead
 export { GifskiEncoder } from './gifski-encoder';
 export { 
   EncoderFactory, 

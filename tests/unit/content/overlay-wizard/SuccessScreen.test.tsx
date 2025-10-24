@@ -180,10 +180,10 @@ describe('SuccessScreen', () => {
       expect(svg).toBeInTheDocument();
     });
 
-    it('should render Give Feedback button with correct structure', () => {
+    it('should render Stay Connected button with correct structure', () => {
       render(<SuccessScreen {...defaultProps} />);
 
-      const feedbackButton = screen.getByText('Give Feedback').closest('button');
+      const feedbackButton = screen.getByText('Stay Connected').closest('button');
       expect(feedbackButton).toBeInTheDocument();
       expect(feedbackButton).toHaveClass('ytgif-button-secondary');
 
@@ -424,7 +424,7 @@ describe('SuccessScreen', () => {
       expect(screen.getByText('GIF Created Successfully!')).toBeInTheDocument();
       expect(screen.getByText('Back')).toBeInTheDocument();
       expect(screen.getByText('Download GIF')).toBeInTheDocument();
-      expect(screen.getByText('Give Feedback')).toBeInTheDocument();
+      expect(screen.getByText('Stay Connected')).toBeInTheDocument();
     });
 
     it('should only show frame count when gifMetadata.frameCount exists', () => {
@@ -605,10 +605,10 @@ describe('SuccessScreen', () => {
       expect(mockOnBack).toHaveBeenCalledTimes(1);
     });
 
-    it('should call onFeedback when Give Feedback button is clicked', () => {
+    it('should call onFeedback when Stay Connected button is clicked', () => {
       render(<SuccessScreen {...defaultProps} />);
 
-      const feedbackButton = screen.getByText('Give Feedback');
+      const feedbackButton = screen.getByText('Stay Connected');
       fireEvent.click(feedbackButton);
 
       expect(mockOnFeedback).toHaveBeenCalledTimes(1);
@@ -631,7 +631,7 @@ describe('SuccessScreen', () => {
     it('should not error when onFeedback is undefined', () => {
       render(<SuccessScreen {...defaultProps} onFeedback={undefined} />);
 
-      const feedbackButton = screen.getByText('Give Feedback');
+      const feedbackButton = screen.getByText('Stay Connected');
       expect(() => fireEvent.click(feedbackButton)).not.toThrow();
     });
 
@@ -651,7 +651,7 @@ describe('SuccessScreen', () => {
 
       fireEvent.click(screen.getByText('Back'));
       fireEvent.click(screen.getByText('Download GIF'));
-      fireEvent.click(screen.getByText('Give Feedback'));
+      fireEvent.click(screen.getByText('Stay Connected'));
 
       expect(mockOnBack).toHaveBeenCalledTimes(1);
       expect(mockOnDownload).toHaveBeenCalledTimes(1);
@@ -1045,16 +1045,16 @@ describe('SuccessScreen', () => {
   });
 
   describe('Bottom Action Buttons', () => {
-    it('should render Give Feedback button', () => {
+    it('should render Stay Connected button', () => {
       render(<SuccessScreen {...defaultProps} />);
-      expect(screen.getByText('Give Feedback')).toBeInTheDocument();
+      expect(screen.getByText('Stay Connected')).toBeInTheDocument();
     });
 
     it('should render only one bottom action button', () => {
       const { container } = render(<SuccessScreen {...defaultProps} />);
       const buttons = container.querySelectorAll('.ytgif-success-bottom-actions button');
       expect(buttons.length).toBe(1);
-      expect(buttons[0].textContent).toContain('Give Feedback');
+      expect(buttons[0].textContent).toContain('Stay Connected');
     });
   });
 

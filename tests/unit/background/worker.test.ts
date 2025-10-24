@@ -188,7 +188,7 @@ describe('BackgroundVideoWorker', () => {
   });
 
   describe('addGifEncodingJob', () => {
-    it('should add GIF encoding job to queue', async () => {
+    it('should throw error when attempting to add GIF encoding job', () => {
       const request: EncodeGifRequest = {
         type: 'ENCODE_GIF',
         data: {
@@ -209,17 +209,15 @@ describe('BackgroundVideoWorker', () => {
         }
       };
 
-      const jobId = worker.addGifEncodingJob(request);
+      // GIF encoding is not supported in service worker context
+      expect(() => worker.addGifEncodingJob(request)).toThrow(
+        'GIF encoding must be performed in content script context, not in service worker'
+      );
 
-      expect(jobId).toBeDefined();
-
-      // Wait for processing
-      await new Promise(resolve => setTimeout(resolve, 110));
-
-      const job = worker.getJobStatus(jobId);
-      expect(job).toBeDefined();
-      expect(job?.type).toBe('encode_gif');
-      expect(job?.status).toMatch(/completed|failed/);
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringContaining('GIF encoding not supported in service worker'),
+        expect.any(Object)
+      );
     });
   });
 
@@ -343,7 +341,7 @@ describe('BackgroundVideoWorker', () => {
       );
     });
 
-    it('should process GIF encoding jobs successfully', async () => {
+    it('should reject GIF encoding jobs in service worker context', () => {
       const frames = [new ImageData(100, 100), new ImageData(100, 100)];
       const request: EncodeGifRequest = {
         type: 'ENCODE_GIF',
@@ -365,28 +363,15 @@ describe('BackgroundVideoWorker', () => {
         }
       };
 
-      const jobId = worker.addGifEncodingJob(request);
-
-      // Wait for processing
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      const job = worker.getJobStatus(jobId);
-      // Check if job failed and log the error for debugging
-      if (job?.status === 'failed') {
-        console.log('Job failed with error:', job.error);
-      }
-      expect(job?.status).toBe('completed');
-      expect(job?.data.encodedGif).toBeDefined();
-
-      expect(detectEncoderFeatures).toHaveBeenCalled();
-      expect(encodeGif).toHaveBeenCalledWith(
-        frames,
-        expect.objectContaining({
-          frameRate: 15,
-          quality: 'high'
-        }),
-        expect.any(Function)  // onProgress callback
+      // GIF encoding is not supported in service worker
+      // Should throw error immediately when trying to add job
+      expect(() => worker.addGifEncodingJob(request)).toThrow(
+        'GIF encoding must be performed in content script context'
       );
+
+      // Encoder functions should never be called in service worker
+      expect(detectEncoderFeatures).not.toHaveBeenCalled();
+      expect(encodeGif).not.toHaveBeenCalled();
     });
 
     it('should handle job processing errors', async () => {
@@ -430,7 +415,7 @@ describe('BackgroundVideoWorker', () => {
       );
     });
 
-    it('should process multiple jobs in sequence', async () => {
+    it('should process multiple frame extraction jobs in sequence', async () => {
       const request1: ExtractFramesRequest = {
         type: 'EXTRACT_FRAMES',
         data: {
@@ -449,28 +434,26 @@ describe('BackgroundVideoWorker', () => {
         }
       };
 
-      const request2: EncodeGifRequest = {
-        type: 'ENCODE_GIF',
+      const request2: ExtractFramesRequest = {
+        type: 'EXTRACT_FRAMES',
         data: {
-          frames: [new ImageData(100, 100)],
-          settings: {
-            quality: 'medium',
-            frameRate: 10,
-            width: 100,
-            height: 100,
-            loop: true
+          videoElement: {
+            currentTime: 5,
+            duration: 15,
+            videoWidth: 640,
+            videoHeight: 480
           },
-          metadata: {
-            title: 'Test GIF',
-            youtubeUrl: 'https://youtube.com/watch?v=test',
-            startTime: 0,
-            endTime: 5
+          settings: {
+            startTime: 5,
+            endTime: 10,
+            frameRate: 10,
+            quality: 'medium'
           }
         }
       };
 
       const jobId1 = worker.addFrameExtractionJob(request1);
-      const jobId2 = worker.addGifEncodingJob(request2);
+      const jobId2 = worker.addFrameExtractionJob(request2);
 
       // Wait for all processing
       await new Promise(resolve => setTimeout(resolve, 200));

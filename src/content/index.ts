@@ -42,6 +42,7 @@ import { themeDetector, youtubeMatcher } from '@/themes';
 import { ResolutionScaler } from '@/processing/resolution-scaler';
 import { parseResolution } from '@/utils/resolution-parser';
 import { engagementTracker } from '@/shared/engagement-tracker';
+import NewsletterWizard from './newsletter-wizard/NewsletterWizard';
 
 class YouTubeGifMaker {
   private gifButton: HTMLButtonElement | null = null;
@@ -63,6 +64,8 @@ class YouTubeGifMaker {
   private buttonVisible = false; // Track button visibility state - default to hidden
   private cssInjected = false; // Track if CSS has been injected
   private cssLinkElement: HTMLLinkElement | null = null; // Reference to injected CSS link
+  private newsletterWizardOverlay: HTMLDivElement | null = null; // Newsletter wizard overlay
+  private newsletterWizardRoot: Root | null = null; // Newsletter wizard React root
 
   constructor() {
     this.init();
@@ -217,6 +220,14 @@ class YouTubeGifMaker {
             // Handle direct wizard activation from extension icon
 
             this.handleDirectWizardActivation();
+            sendResponse({
+              type: 'SUCCESS_RESPONSE',
+              success: true,
+            } as SuccessResponse);
+            break;
+          case 'SHOW_NEWSLETTER_WIZARD':
+            // Handle newsletter wizard activation from popup
+            this.showNewsletterWizard();
             sendResponse({
               type: 'SUCCESS_RESPONSE',
               success: true,
@@ -792,6 +803,71 @@ class YouTubeGifMaker {
     // Use the new wizard overlay
     this.showWizardOverlay(message);
     return;
+  }
+
+  private showNewsletterWizard() {
+    try {
+      this.log('info', '[Newsletter] Showing newsletter wizard');
+
+      // Inject CSS if not already injected
+      this.injectCSS();
+
+      // Close main wizard if open
+      if (this.timelineOverlay) {
+        this.deactivateGifMode();
+      }
+
+      // Create overlay if it doesn't exist
+      if (!this.newsletterWizardOverlay) {
+        this.newsletterWizardOverlay = document.createElement('div');
+        this.newsletterWizardOverlay.id = 'ytgif-newsletter-wizard-root';
+        this.newsletterWizardOverlay.style.cssText = `
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          background: rgba(0, 0, 0, 0.85) !important;
+          z-index: 2147483647 !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+        `;
+        document.body.appendChild(this.newsletterWizardOverlay);
+
+        this.newsletterWizardRoot = createRoot(this.newsletterWizardOverlay);
+      }
+
+      // Render NewsletterWizard component
+      if (this.newsletterWizardRoot) {
+        this.newsletterWizardRoot.render(
+          React.createElement(NewsletterWizard, {
+            onClose: this.hideNewsletterWizard.bind(this),
+          })
+        );
+      }
+    } catch (error) {
+      this.log('error', '[Newsletter] Failed to show newsletter wizard', { error });
+      console.error('[Newsletter] Error showing newsletter wizard:', error);
+    }
+  }
+
+  private hideNewsletterWizard() {
+    try {
+      this.log('info', '[Newsletter] Hiding newsletter wizard');
+
+      if (this.newsletterWizardRoot) {
+        this.newsletterWizardRoot.unmount();
+        this.newsletterWizardRoot = null;
+      }
+
+      if (this.newsletterWizardOverlay) {
+        this.newsletterWizardOverlay.remove();
+        this.newsletterWizardOverlay = null;
+      }
+    } catch (error) {
+      this.log('error', '[Newsletter] Failed to hide newsletter wizard', { error });
+    }
   }
 
   private handleSelectionChange(selection: TimelineSelection) {
