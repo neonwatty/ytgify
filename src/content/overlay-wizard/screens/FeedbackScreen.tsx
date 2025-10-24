@@ -7,6 +7,9 @@ interface FeedbackScreenProps {
   isStandalone?: boolean; // If true, show "Close" instead of "Back"
 }
 
+// Toggle to show/hide newsletter signup section
+const SHOW_NEWSLETTER = false;
+
 const FeedbackScreen: React.FC<FeedbackScreenProps> = ({ onBack, onClose, isStandalone = false }) => {
   const handleRate = () => {
     openExternalLink(getReviewLink());
@@ -73,7 +76,7 @@ const FeedbackScreen: React.FC<FeedbackScreenProps> = ({ onBack, onClose, isStan
           </div>
 
           {/* BeehIiv Newsletter Section - Second */}
-          {false && (
+          {SHOW_NEWSLETTER && (
             <div className="ytgif-newsletter-section">
               <h3>Stay Updated</h3>
               <p>Get notified about new features and releases:</p>
