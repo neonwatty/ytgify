@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { openExternalLink, getReviewLink } from '@/constants/links';
 
 interface FeedbackScreenProps {
@@ -8,34 +8,16 @@ interface FeedbackScreenProps {
 }
 
 // Toggle to show/hide newsletter signup section
-const SHOW_NEWSLETTER = false;
+const SHOW_NEWSLETTER = true;
 
 const FeedbackScreen: React.FC<FeedbackScreenProps> = ({ onBack, onClose, isStandalone = false }) => {
   const handleRate = () => {
     openExternalLink(getReviewLink());
   };
 
-  // Load BeehIiv embed script
-  useEffect(() => {
-    const scriptId = 'beehiiv-embed-script';
-
-    // Check if script is already loaded
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement('script');
-      script.id = scriptId;
-      script.src = 'https://subscribe-forms.beehiiv.com/embed.js';
-      script.async = true;
-      document.head.appendChild(script);
-    }
-
-    // Cleanup function
-    return () => {
-      const script = document.getElementById(scriptId);
-      if (script) {
-        script.remove();
-      }
-    };
-  }, []);
+  const handleSubscribe = () => {
+    openExternalLink('https://neonwatty.beehiiv.com/subscribe');
+  };
 
   return (
     <div className="ytgif-wizard-screen ytgif-feedback-screen">
@@ -75,30 +57,22 @@ const FeedbackScreen: React.FC<FeedbackScreenProps> = ({ onBack, onClose, isStan
             </div>
           </div>
 
-          {/* BeehIiv Newsletter Section - Second */}
+          {/* Newsletter Section - Second */}
           {SHOW_NEWSLETTER && (
             <div className="ytgif-newsletter-section">
               <h3>Stay Updated</h3>
-              <p>Get notified about new features and releases:</p>
-              <div className="ytgif-newsletter-embed">
-                <iframe
-                  src="https://subscribe-forms.beehiiv.com/40d30e3d-c27d-4986-a9ce-3d4ae314fc5d"
-                  className="beehiiv-embed"
-                  data-test-id="beehiiv-embed"
-                  frameBorder="0"
-                  scrolling="no"
-                  style={{
-                    width: '100%',
-                    maxWidth: '100%',
-                    height: '60px',
-                    margin: '0',
-                    borderRadius: '0px',
-                    backgroundColor: 'transparent',
-                    boxShadow: 'none',
-                    display: 'block'
-                  }}
-                />
-              </div>
+              <p>Get notified about new features and releases</p>
+              <button className="ytgif-support-btn" onClick={handleSubscribe}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+                <span>Subscribe to Newsletter</span>
+              </button>
             </div>
           )}
 

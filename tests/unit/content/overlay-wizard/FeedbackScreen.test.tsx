@@ -74,19 +74,18 @@ describe('FeedbackScreen', () => {
       expect(global.chrome.runtime.getURL).toHaveBeenCalledWith('icons/icon.svg');
     });
 
-    it.skip('should render BeehIiv newsletter section', () => {
+    it('should render newsletter section', () => {
       render(<FeedbackScreen {...defaultProps} />);
       const newsletterHeading = screen.getByRole('heading', { level: 3, name: 'Stay Updated' });
       expect(newsletterHeading).toBeInTheDocument();
-      expect(screen.getByText('Get notified about new features and releases:')).toBeInTheDocument();
+      expect(screen.getByText('Get notified about new features and releases')).toBeInTheDocument();
     });
 
-    it.skip('should render BeehIiv embed iframe', () => {
-      const { container } = render(<FeedbackScreen {...defaultProps} />);
-      const iframe = container.querySelector('iframe.beehiiv-embed');
-      expect(iframe).toBeInTheDocument();
-      expect(iframe).toHaveAttribute('src', 'https://subscribe-forms.beehiiv.com/40d30e3d-c27d-4986-a9ce-3d4ae314fc5d');
-      expect(iframe).toHaveAttribute('data-test-id', 'beehiiv-embed');
+    it('should render newsletter subscribe button', () => {
+      render(<FeedbackScreen {...defaultProps} />);
+      const subscribeButton = screen.getByRole('button', { name: /Subscribe to Newsletter/i });
+      expect(subscribeButton).toBeInTheDocument();
+      expect(subscribeButton).toHaveClass('ytgif-support-btn');
     });
 
     it('should render GitHub section heading', () => {
@@ -419,11 +418,11 @@ describe('FeedbackScreen', () => {
       expect(reviewButton).toBeInTheDocument();
     });
 
-    it('should apply correct CSS class to support button', () => {
+    it('should apply correct CSS class to support buttons', () => {
       const { container } = render(<FeedbackScreen {...defaultProps} />);
 
       const supportButtons = container.querySelectorAll('.ytgif-support-btn');
-      expect(supportButtons).toHaveLength(1);
+      expect(supportButtons).toHaveLength(2); // Review button and newsletter button
     });
 
     it('should render review button with star icon', () => {
@@ -491,7 +490,7 @@ describe('FeedbackScreen', () => {
       expect(span?.textContent).toBe('Leave us a review!');
     });
 
-    it.skip('should render support section before newsletter and GitHub', () => {
+    it('should render support section before newsletter and GitHub', () => {
       const { container } = render(<FeedbackScreen {...defaultProps} />);
 
       const feedbackContent = container.querySelector('.ytgif-feedback-content');
@@ -519,42 +518,51 @@ describe('FeedbackScreen', () => {
     });
   });
 
-  describe('BeehIiv Script Loading', () => {
-    beforeEach(() => {
-      // Clear document head between tests
-      document.head.innerHTML = '';
-    });
-
-    it('should inject BeehIiv script on mount', () => {
+  describe('Newsletter Subscribe Button', () => {
+    it('should render newsletter subscribe button with mail icon', () => {
       render(<FeedbackScreen {...defaultProps} />);
 
-      const script = document.getElementById('beehiiv-embed-script') as HTMLScriptElement;
-      expect(script).toBeInTheDocument();
-      expect(script).toHaveAttribute('src', 'https://subscribe-forms.beehiiv.com/embed.js');
-      expect(script.async).toBe(true);
+      const subscribeButton = screen.getByRole('button', { name: /Subscribe to Newsletter/i });
+      expect(subscribeButton).toBeInTheDocument();
+      expect(subscribeButton).toHaveClass('ytgif-support-btn');
+
+      const svg = subscribeButton?.querySelector('svg');
+      expect(svg).toBeInTheDocument();
+      expect(svg).toHaveAttribute('width', '18');
+      expect(svg).toHaveAttribute('height', '18');
     });
 
-    it('should not inject duplicate scripts if already exists', () => {
-      // Pre-inject the script
-      const existingScript = document.createElement('script');
-      existingScript.id = 'beehiiv-embed-script';
-      existingScript.src = 'https://subscribe-forms.beehiiv.com/embed.js';
-      document.head.appendChild(existingScript);
-
+    it('should call openExternalLink with Beehiiv URL when subscribe button clicked', () => {
       render(<FeedbackScreen {...defaultProps} />);
 
-      const scripts = document.querySelectorAll('#beehiiv-embed-script');
-      expect(scripts).toHaveLength(1);
+      const subscribeButton = screen.getByRole('button', { name: /Subscribe to Newsletter/i });
+      fireEvent.click(subscribeButton);
+
+      expect(links.openExternalLink).toHaveBeenCalledWith('https://neonwatty.beehiiv.com/subscribe');
     });
 
-    it('should clean up script on unmount', () => {
-      const { unmount } = render(<FeedbackScreen {...defaultProps} />);
+    it('should handle multiple clicks on subscribe button', () => {
+      render(<FeedbackScreen {...defaultProps} />);
 
-      expect(document.getElementById('beehiiv-embed-script')).toBeInTheDocument();
+      const subscribeButton = screen.getByRole('button', { name: /Subscribe to Newsletter/i });
+      fireEvent.click(subscribeButton);
+      fireEvent.click(subscribeButton);
+      fireEvent.click(subscribeButton);
 
-      unmount();
+      expect(links.openExternalLink).toHaveBeenCalledTimes(3);
+      expect(links.openExternalLink).toHaveBeenCalledWith('https://neonwatty.beehiiv.com/subscribe');
+    });
 
-      expect(document.getElementById('beehiiv-embed-script')).not.toBeInTheDocument();
+    it('should not interfere with other button functionality', () => {
+      render(<FeedbackScreen {...defaultProps} />);
+
+      fireEvent.click(screen.getByRole('button', { name: /Subscribe to Newsletter/i }));
+      fireEvent.click(screen.getByText('Back'));
+      fireEvent.click(screen.getByText('Done'));
+
+      expect(mockOnBack).toHaveBeenCalledTimes(1);
+      expect(mockOnClose).toHaveBeenCalledTimes(1);
+      expect(links.openExternalLink).toHaveBeenCalledTimes(1);
     });
   });
 
