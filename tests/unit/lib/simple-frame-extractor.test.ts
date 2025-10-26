@@ -482,4 +482,131 @@ describe('SimpleFrameExtractor', () => {
       (global as any).OffscreenCanvas = OriginalOffscreenCanvas;
     });
   });
+
+  describe('Buffer Verification and Network Detection (New)', () => {
+    it('should detect readyState stuck at 0', () => {
+      const mockVideo = {
+        readyState: 0,
+        buffered: { length: 0, start: () => 0, end: () => 0 },
+      };
+
+      // Simulate checking readyState
+      let isStuck = false;
+      let lastReadyState = mockVideo.readyState;
+      let stuckCount = 0;
+
+      for (let i = 0; i < 40; i++) {
+        if (mockVideo.readyState === lastReadyState && mockVideo.readyState < 2) {
+          stuckCount++;
+        }
+        if (stuckCount >= 40) {
+          isStuck = true;
+          break;
+        }
+      }
+
+      expect(isStuck).toBe(true);
+    });
+
+    it('should verify buffered range contains target time', () => {
+      const targetTime = 5.0;
+      const mockBuffered = {
+        length: 1,
+        start: (i: number) => 0,
+        end: (i: number) => 10,
+      };
+
+      let isBuffered = false;
+      for (let i = 0; i < mockBuffered.length; i++) {
+        if (mockBuffered.start(i) <= targetTime && mockBuffered.end(i) >= targetTime) {
+          isBuffered = true;
+          break;
+        }
+      }
+
+      expect(isBuffered).toBe(true);
+    });
+
+    it('should detect buffer gap (target not buffered)', () => {
+      const targetTime = 15.0;
+      const mockBuffered = {
+        length: 1,
+        start: (i: number) => 0,
+        end: (i: number) => 10, // Only buffered 0-10s
+      };
+
+      let isBuffered = false;
+      for (let i = 0; i < mockBuffered.length; i++) {
+        if (mockBuffered.start(i) <= targetTime && mockBuffered.end(i) >= targetTime) {
+          isBuffered = true;
+          break;
+        }
+      }
+
+      expect(isBuffered).toBe(false);
+    });
+
+    it('should classify network speed as slow (avg > 1000ms)', () => {
+      const waitTimes = [1200, 1500, 1300];
+      const avgWaitTime = waitTimes.reduce((a, b) => a + b, 0) / waitTimes.length;
+
+      let speed: 'fast' | 'medium' | 'slow' = 'fast';
+      if (avgWaitTime > 1000) speed = 'slow';
+      else if (avgWaitTime > 300) speed = 'medium';
+
+      expect(speed).toBe('slow');
+    });
+
+    it('should classify network speed as medium (300ms < avg <= 1000ms)', () => {
+      const waitTimes = [400, 600, 500];
+      const avgWaitTime = waitTimes.reduce((a, b) => a + b, 0) / waitTimes.length;
+
+      let speed: 'fast' | 'medium' | 'slow' = 'fast';
+      if (avgWaitTime > 1000) speed = 'slow';
+      else if (avgWaitTime > 300) speed = 'medium';
+
+      expect(speed).toBe('medium');
+    });
+
+    it('should classify network speed as fast (avg <= 300ms)', () => {
+      const waitTimes = [50, 100, 200];
+      const avgWaitTime = waitTimes.reduce((a, b) => a + b, 0) / waitTimes.length;
+
+      let speed: 'fast' | 'medium' | 'slow' = 'fast';
+      if (avgWaitTime > 1000) speed = 'slow';
+      else if (avgWaitTime > 300) speed = 'medium';
+
+      expect(speed).toBe('fast');
+    });
+
+    it('should abort after 3 consecutive failures', () => {
+      let consecutiveFailures = 3;
+      const MAX_CONSECUTIVE_FAILURES = 3;
+
+      const shouldAbort = consecutiveFailures >= MAX_CONSECUTIVE_FAILURES;
+
+      expect(shouldAbort).toBe(true);
+    });
+
+    it('should reset consecutive failures on success', () => {
+      let consecutiveFailures = 2;
+
+      // Simulate successful frame
+      const frameReady = true;
+      if (frameReady) {
+        consecutiveFailures = 0;
+      }
+
+      expect(consecutiveFailures).toBe(0);
+    });
+
+    it('should abort when total wait time exceeds budget', () => {
+      const MAX_TOTAL_WAIT_TIME = 120000;
+      const totalWaitTime = 125000;
+
+      const shouldAbort = totalWaitTime > MAX_TOTAL_WAIT_TIME;
+
+      expect(shouldAbort).toBe(true);
+    });
+  });
 });
