@@ -58,7 +58,8 @@ export class YouTubeGifMaker {
   private createdGifData:
     | { dataUrl: string; size: number; metadata: Record<string, unknown> }
     | undefined = undefined;
-  private buttonVisible = false; // Track button visibility state - default to hidden
+  // Default visibility - initialized in constructor to avoid window access at module load time
+  private buttonVisible = false;
   private newsletterWizardOverlay: HTMLDivElement | null = null; // Newsletter wizard overlay
   private newsletterWizardRoot: Root | null = null; // Newsletter wizard React root
 
@@ -66,6 +67,8 @@ export class YouTubeGifMaker {
     this.ctx = ctx;
     this.navigator = navigator;
     this.uiManager = uiManager;
+    // Default visible for localhost (E2E tests), hidden for production YouTube
+    this.buttonVisible = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     this.init();
 
     // Add keyboard shortcut as backup trigger

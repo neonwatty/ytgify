@@ -1,16 +1,22 @@
 import './style.css'; // Direct CSS import for shadow DOM
+import { defineContentScript } from 'wxt/sandbox';
 import { WXTYouTubeNavigator } from './navigation';
 import { ShadowDOMUIManager } from './ui-manager';
 import { YouTubeGifMaker } from './gif-maker'; // Now unblocked: Singletons refactored to factory functions
 
+// Note: matches must be static array for Chrome extension manifest
+// Localhost permissions added for mock E2E tests - production build strips these via wxt.config.ts
 export default defineContentScript({
-  matches: ['*://*.youtube.com/*'],
+  matches: [
+    '*://*.youtube.com/*',
+    'http://localhost:*/*',
+    'http://127.0.0.1:*/*'
+  ],
   runAt: 'document_end',
-  cssInjectionMode: 'ui', // Critical for shadow DOM CSS isolation
+  cssInjectionMode: 'manifest', // Use manifest mode for reliable loading in tests
 
   main(ctx) {
     console.log('WXT Content Script - Initialized', {
-      id: browser.runtime.id,
       url: window.location.href
     });
 
