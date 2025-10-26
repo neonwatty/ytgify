@@ -23,8 +23,11 @@ export const test = base.extend<{
     const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     const userDataDir = path.join(__dirname, 'test-user-data', uniqueId);
 
+    // Check if --headed flag was passed
+    const isHeaded = process.argv.includes('--headed');
+
     const context = await chromium.launchPersistentContext(userDataDir, {
-      headless: process.env.CI === 'true' || process.env.HEADLESS === 'true',
+      headless: process.env.HEADLESS === 'true' || (process.env.CI === 'true' && !isHeaded),
       channel: 'chromium', // Required for extension support in headless
       args: [
         `--disable-extensions-except=${pathToExtension}`,

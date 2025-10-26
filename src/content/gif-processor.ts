@@ -406,6 +406,11 @@ export class ContentScriptGifProcessor {
     this.initializeCanvases(actualWidth, actualHeight);
 
     const frames: HTMLCanvasElement[] = [];
+    let consecutiveDuplicates = 0;
+    // Adaptive threshold: ~1 second of duplicates based on frame rate
+    // Minimum 5 frames, maximum 30 frames
+    const MAX_CONSECUTIVE_DUPLICATES = Math.max(5, Math.min(30, Math.ceil(frameRate)));
+    let totalDuplicates = 0;
 
     // Store original state
     const originalTime = videoElement.currentTime;
@@ -430,41 +435,81 @@ export class ContentScriptGifProcessor {
       // First, wait a bit for the seek to initiate
       await new Promise((resolve) => setTimeout(resolve, 50));
 
-      // Then poll to check if we're close to the target time
+      // Then poll to check if we're close to the target time AND video is ready
       let attempts = 0;
-      const maxAttempts = 20; // 20 * 25ms = 500ms max wait
+      const maxAttempts = 80; // 80 * 25ms = 2000ms max wait (increased for slow connections)
       let lastCheckedTime = videoElement.currentTime;
+      let lastReadyState = videoElement.readyState;
 
       // Keep polling until either:
-      // 1. We're close to the target time, OR
+      // 1. We're close to the target time AND video has buffered data, OR
       // 2. The video has stopped moving (stuck), OR
       // 3. We've hit the max attempts
       while (attempts < maxAttempts) {
         const currentVideoTime = videoElement.currentTime;
         const distanceToTarget = Math.abs(currentVideoTime - captureTime);
+        const currentReadyState = videoElement.readyState;
 
-        // If we're close enough to target, we're done
-        if (distanceToTarget < 0.05) {
-          break;
+        // Check if position is close AND we have data
+        // readyState >= 2 (HAVE_CURRENT_DATA) means we can render this frame
+        if (distanceToTarget < 0.05 && currentReadyState >= 2) {
+          // Additional check: verify the time is actually buffered
+          const buffered = videoElement.buffered;
+          let isBuffered = false;
+
+          for (let bi = 0; bi < buffered.length; bi++) {
+            if (buffered.start(bi) <= currentVideoTime && buffered.end(bi) >= currentVideoTime) {
+              isBuffered = true;
+              break;
+            }
+          }
+
+          if (isBuffered) {
+            logger.debug(
+              `[ContentScriptGifProcessor] Seek complete and buffered at ${currentVideoTime.toFixed(3)}s (readyState=${currentReadyState}) after ${attempts} attempts`
+            );
+            break;
+          }
         }
 
-        // If the video hasn't moved in the last few attempts, it might be stuck
-        if (attempts > 5 && Math.abs(currentVideoTime - lastCheckedTime) < 0.001) {
+        // If the video hasn't moved and readyState hasn't changed, it might be stuck
+        if (
+          attempts > 10 &&
+          Math.abs(currentVideoTime - lastCheckedTime) < 0.001 &&
+          currentReadyState === lastReadyState
+        ) {
           logger.debug(
-            `[ContentScriptGifProcessor] Video appears stuck at ${currentVideoTime.toFixed(3)}s after ${attempts} attempts`
+            `[ContentScriptGifProcessor] Video appears stuck at ${currentVideoTime.toFixed(3)}s (readyState=${currentReadyState}) after ${attempts} attempts`
           );
-          break;
+          // Only break if we have at least some data
+          if (currentReadyState >= 2) {
+            break;
+          }
         }
 
         lastCheckedTime = currentVideoTime;
+        lastReadyState = currentReadyState;
         await new Promise((resolve) => setTimeout(resolve, 25));
         attempts++;
       }
 
+      // Log if we timed out waiting for buffer
+      if (attempts >= maxAttempts) {
+        logger.warn(
+          `[ContentScriptGifProcessor] Seek timeout for frame ${i + 1}: readyState=${videoElement.readyState}, time=${videoElement.currentTime.toFixed(3)}s`
+        );
+      }
+
       // Additional wait to ensure frame is decoded and rendered
-      // This needs to be longer for seeks to non-keyframe positions
+      // This needs to be longer for seeks to non-keyframe positions or slow buffering
       const seekDistance = Math.abs(captureTime - previousTime);
-      const additionalDelay = seekDistance > 2 ? 150 : 100; // Longer delay for longer seeks
+      let additionalDelay = seekDistance > 2 ? 150 : 100; // Longer delay for longer seeks
+
+      // Extra delay if readyState indicates potential buffering issues
+      if (videoElement.readyState < 3) {
+        additionalDelay += 100; // Add extra time when buffering
+      }
+
       await new Promise((resolve) => setTimeout(resolve, additionalDelay));
 
       const seekDuration = performance.now() - seekStartTime;
@@ -492,9 +537,26 @@ export class ContentScriptGifProcessor {
         const lastFrame = frames[frames.length - 1];
         if (areCanvasFramesSimilar(this.mainCanvas!, lastFrame)) {
           isDuplicate = true;
+          consecutiveDuplicates++;
+          totalDuplicates++;
+
           logger.warn(
-            `[ContentScriptGifProcessor] ⚠️ DUPLICATE FRAME at ${i + 1}/${frameCount}: video stuck at ${videoElement.currentTime.toFixed(3)}s (wanted ${captureTime.toFixed(3)}s, prev was ${previousTime.toFixed(3)}s)`
+            `[ContentScriptGifProcessor] ⚠️ DUPLICATE FRAME at ${i + 1}/${frameCount}: video stuck at ${videoElement.currentTime.toFixed(3)}s (wanted ${captureTime.toFixed(3)}s, prev was ${previousTime.toFixed(3)}s) [consecutive: ${consecutiveDuplicates}]`
           );
+
+          // Abort if too many consecutive duplicates
+          if (consecutiveDuplicates >= MAX_CONSECUTIVE_DUPLICATES) {
+            // Restore video state before throwing
+            videoElement.currentTime = originalTime;
+            if (wasPlaying) {
+              videoElement.play().catch(() => {});
+            }
+
+            throw createError(
+              'video',
+              `Video buffering too slow. Unable to capture frames after ${i + 1} attempts. Try:\n• Waiting for video to fully buffer\n• Using a shorter duration\n• Reducing frame rate\n• Checking your network connection`
+            );
+          }
 
           // Try one more aggressive seek attempt if we have a duplicate
           if (Math.abs(videoElement.currentTime - captureTime) > 0.01) {
@@ -517,12 +579,16 @@ export class ContentScriptGifProcessor {
               this.mainCtx!.clearRect(0, 0, actualWidth, actualHeight);
               this.mainCtx!.drawImage(this.recoveryCanvas!, 0, 0);
               isDuplicate = false;
+              consecutiveDuplicates = 0; // Reset counter on successful recovery
             } else {
               logger.warn(
                 `[ContentScriptGifProcessor] Recovery failed, still stuck at ${videoElement.currentTime.toFixed(3)}s`
               );
             }
           }
+        } else {
+          // Frame is different, reset consecutive duplicate counter
+          consecutiveDuplicates = 0;
         }
       }
 
@@ -577,6 +643,21 @@ export class ContentScriptGifProcessor {
     videoElement.currentTime = originalTime;
     if (wasPlaying) {
       videoElement.play().catch(() => {});
+    }
+
+    // Log final statistics
+    const duplicatePercentage = (totalDuplicates / frameCount) * 100;
+    logger.info('[ContentScriptGifProcessor] Frame capture completed', {
+      totalFrames: frames.length,
+      totalDuplicates,
+      duplicatePercentage: duplicatePercentage.toFixed(1) + '%',
+    });
+
+    // Warn if significant duplicates detected (but still proceed)
+    if (duplicatePercentage > 20) {
+      logger.warn(
+        `[ContentScriptGifProcessor] High duplicate rate (${duplicatePercentage.toFixed(1)}%). GIF quality may be affected by slow buffering.`
+      );
     }
 
     return frames;

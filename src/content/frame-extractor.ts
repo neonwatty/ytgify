@@ -143,8 +143,9 @@ export class ContentScriptFrameExtractor {
       let timeoutId: ReturnType<typeof setTimeout> | undefined;
       const duration = request.data.endTime - request.data.startTime;
       const expectedFrames = Math.ceil(duration * request.data.frameRate);
-      // 500ms per frame + 30s buffer for safety
-      const timeoutMs = Math.max(60000, expectedFrames * 500 + 30000);
+      // Account for buffering waits (up to 3s per frame worst case) + base processing time
+      // Conservative: 3.5s per frame for slow connections, minimum 90s
+      const timeoutMs = Math.max(90000, expectedFrames * 3500);
 
       const extractionTimeout = new Promise<never>((_, reject) => {
         timeoutId = setTimeout(() => {

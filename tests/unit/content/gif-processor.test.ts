@@ -66,7 +66,8 @@ describe('ContentScriptGifProcessor', () => {
       videoHeight: 480,
       duration: 10,
       currentTime: 0,
-      paused: true
+      paused: true,
+      readyState: 4  // HAVE_ENOUGH_DATA
     };
 
     Object.defineProperties(mockVideoElement, {
@@ -93,6 +94,19 @@ describe('ContentScriptGifProcessor', () => {
       paused: {
         get: () => videoState.paused,
         set: (v) => { videoState.paused = v; },
+        configurable: true
+      },
+      readyState: {
+        get: () => videoState.readyState,
+        set: (v) => { videoState.readyState = v; },
+        configurable: true
+      },
+      buffered: {
+        get: () => ({
+          length: 1,
+          start: () => 0,
+          end: () => videoState.duration
+        }),
         configurable: true
       },
       play: { value: jest.fn().mockResolvedValue(undefined), writable: true, configurable: true },
