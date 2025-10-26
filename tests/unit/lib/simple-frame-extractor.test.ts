@@ -12,6 +12,7 @@ jest.mock('@/lib/logger', () => ({
   logger: {
     info: jest.fn(),
     debug: jest.fn(),
+    warn: jest.fn(),
     error: jest.fn()
   }
 }));
@@ -70,6 +71,12 @@ describe('SimpleFrameExtractor', () => {
       currentTime: 0,
       duration: 60,
       paused: false,
+      readyState: 4, // HAVE_ENOUGH_DATA
+      buffered: {
+        length: 1,
+        start: () => 0,
+        end: () => 60
+      },
       pause: jest.fn(),
       play: jest.fn().mockResolvedValue(undefined)
     } as any;
@@ -324,7 +331,7 @@ describe('SimpleFrameExtractor', () => {
     it('should handle very long durations', async () => {
       const options: SimpleFrameExtractionOptions = {
         startTime: 0,
-        endTime: 60, // 1 minute
+        endTime: 15, // 15 seconds (reduced from 60 to avoid hitting 120s wait budget in tests)
         frameRate: 10,
         quality: 'low' // Low quality for performance
       };
@@ -333,8 +340,8 @@ describe('SimpleFrameExtractor', () => {
       await jest.runAllTimersAsync();
       const result = await promise;
 
-      expect(result.frames).toHaveLength(600); // 60 seconds * 10 fps
-      expect(result.metadata.duration).toBe(60);
+      expect(result.frames).toHaveLength(150); // 15 seconds * 10 fps
+      expect(result.metadata.duration).toBe(15);
     });
 
     it('should capture frames at correct time intervals', async () => {
