@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { CHROME_EXTENSION_URL, DEMO_VIDEO_EMBED_URL } from '../lib/constants';
+import { DEMO_VIDEO_EMBED_URL } from '../lib/constants';
 
 test.describe('Landing Page Smoke Tests', () => {
   test('page loads successfully', async ({ page }) => {
@@ -15,9 +15,10 @@ test.describe('Landing Page Smoke Tests', () => {
 
   test('Chrome Store badge links correctly', async ({ page }) => {
     await page.goto('/');
-    const badge = page.locator('a[href*="chromewebstore.google.com"]');
-    await expect(badge).toBeVisible();
-    await expect(badge).toHaveAttribute('href', CHROME_EXTENSION_URL);
+    const badges = page.locator('a[href*="chromewebstore.google.com"]');
+    await expect(badges.first()).toBeVisible();
+    // Verify we have multiple Chrome Store CTAs (top, after video, footer)
+    await expect(badges).toHaveCount(3);
   });
 
   test('demo video iframe is present', async ({ page }) => {
@@ -36,7 +37,7 @@ test.describe('Landing Page Smoke Tests', () => {
 
   test('features section is visible', async ({ page }) => {
     await page.goto('/');
-    const featuresHeading = page.getByRole('heading', { name: /Features/i });
+    const featuresHeading = page.getByRole('heading', { name: /See it in action/i });
     await expect(featuresHeading).toBeVisible();
   });
 });

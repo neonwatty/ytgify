@@ -2,14 +2,14 @@ import Image from 'next/image';
 
 export default function Logo() {
   return (
-    <div className="flex justify-center mb-16">
-      <div className="relative p-4 rounded-3xl bg-gradient-to-br from-[#E91E8C]/10 to-[#7B2FBE]/10 border-2 border-pink-200/50 shadow-lg">
+    <div className="flex justify-center">
+      <div className="relative p-3 rounded-2xl bg-gradient-to-br from-[#E91E8C]/10 to-[#7B2FBE]/10 border-2 border-pink-200/50 shadow-lg">
         <Image
           src="/ytgify-logo.svg"
           alt="YTgify"
-          width={120}
-          height={120}
-          className="w-20 h-20 sm:w-24 sm:h-24 lg:w-[120px] lg:h-[120px]"
+          width={64}
+          height={64}
+          className="w-14 h-14 sm:w-16 sm:h-16"
         />
       </div>
     </div>

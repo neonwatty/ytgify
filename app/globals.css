@@ -1,8 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
   --background: #0a0a0a;
@@ -20,6 +18,39 @@
   --color-border-primary: #374151;
   --gradient-elevated: linear-gradient(135deg, #1f2937 0%, #374151 100%);
   --shadow-subtle: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+
+  /* YTgify Brand Colors - From Logo Gradient */
+  --ytgif-red: #ff0000;
+  --ytgif-hot-pink: #ff0066;
+  --ytgif-pink-purple: #cc3399;
+  --ytgif-purple: #9966cc;
+  --ytgif-deep-purple: #764ba2;
+
+  /* Background & Surface Colors */
+  --ytgif-bg: #0a0a0a;
+  --ytgif-surface: #161b22;
+  --ytgif-surface-hover: #1f2937;
+  --ytgif-logo-bg: #0f0f0f;
+
+  /* Border Colors */
+  --ytgif-border: #2a2a2a;
+  --ytgif-border-light: #374151;
+
+  /* Text Colors */
+  --ytgif-text-primary: #ffffff;
+  --ytgif-text-secondary: #cbd5e1;
+  --ytgif-text-muted: #a0a0a0;
+
+  /* Gradient Definitions */
+  --ytgif-gradient-vertical: linear-gradient(180deg, #ff0000 0%, #ff0066 25%, #cc3399 50%, #9966cc 75%, #764ba2 100%);
+  --ytgif-gradient-diagonal: linear-gradient(135deg, #ff0000 0%, #ff0066 25%, #cc3399 50%, #9966cc 75%, #764ba2 100%);
+  --ytgif-gradient-simple: linear-gradient(135deg, #ff0000, #764ba2);
+  --ytgif-gradient-subtle: linear-gradient(135deg, rgba(255, 0, 0, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+
+  /* Glow/Shadow Effects */
+  --ytgif-glow-pink: 0 0 20px rgba(255, 0, 102, 0.5);
+  --ytgif-glow-purple: 0 0 20px rgba(118, 75, 162, 0.5);
+  --ytgif-glow-mixed: 0 0 30px rgba(255, 0, 102, 0.6), 0 0 50px rgba(118, 75, 162, 0.4);
 }
 
 body {

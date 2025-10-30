@@ -3,70 +3,67 @@ import HeroDescription from './components/HeroDescription';
 import FeatureChecklist from './components/FeatureChecklist';
 import DemoVideo from './components/DemoVideo';
 import ChromeStoreBadge from './components/ChromeStoreBadge';
+import FirefoxStoreBadge from './components/FirefoxStoreBadge';
+import ExampleGifsGallery from './components/ExampleGifsGallery';
+import SiteFooter from './components/SiteFooter';
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] grid-pattern">
       <main>
         {/* Ultra Narrow Blog Style - Max 800px */}
-        <article className="max-w-[800px] mx-auto px-12 sm:px-6 pt-24 pb-32">
-          {/* Tiny logo */}
-          <div className="mt-16 mb-20">
-            <div className="w-14 h-14">
+        <article className="max-w-[800px] mx-auto px-12 sm:px-6 pt-12 pb-16">
+          {/* Logo and Chrome Store Badge - Side by Side */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 mt-2 mb-8">
+            <div className="flex items-center gap-3 flex-shrink-0">
               <Logo />
+              <h2 className="text-4xl sm:text-5xl font-bold text-white">YTgify</h2>
+            </div>
+            <div className="flex-shrink-0">
+              <ChromeStoreBadge />
             </div>
           </div>
 
-          {/* Large headline with lots of space */}
-          <h1 className="text-7xl sm:text-8xl font-bold mb-16 leading-tight text-white tracking-tight">
+          {/* Large headline */}
+          <h1 className="text-3xl sm:text-4xl font-bold mb-8 leading-tight text-white tracking-tight">
             Animated GIF Maker for YouTube Videos
           </h1>
 
-          {/* Spacious description */}
-          <div className="mb-20">
-            <HeroDescription />
-          </div>
+          {/* Description and Example GIFs - Two Column Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 mb-16">
+            {/* Left: Description */}
+            <div>
+              <HeroDescription />
+            </div>
 
-          {/* Brief benefit statements */}
-          <div className="mb-20 space-y-3 text-xl text-white">
-            <p>✨ Transform any YouTube video into animated GIFs</p>
-            <p>🎬 Works with all video formats including MP4</p>
-            <p>😂 Perfect for creating memes and shareable moments</p>
-          </div>
-
-          {/* Features with Chrome Store Badge */}
-          <div className="mb-32">
-            <h2 className="text-5xl font-bold mb-8 text-white">Features</h2>
-            <div className="flex gap-8 items-center">
-              <div className="flex-1 [&>div]:grid-cols-2">
-                <FeatureChecklist />
-              </div>
-              <div className="flex-shrink-0">
-                <ChromeStoreBadge />
-              </div>
+            {/* Right: GIF Gallery */}
+            <div className="flex items-center">
+              <ExampleGifsGallery />
             </div>
           </div>
 
-          {/* Video with generous spacing */}
-          <div className="mb-32">
-            <h2 className="text-5xl font-bold mb-12 text-white">See it in action</h2>
+          {/* Features and Video - Single Section */}
+          <div className="mb-12">
+            <h2 className="text-3xl font-bold mb-6 text-white">See it in action</h2>
+            {/* Features above video */}
+            <div className="mb-6">
+              <FeatureChecklist />
+            </div>
+            {/* Video */}
             <DemoVideo />
+
+            {/* CTA after video */}
+            <div className="mt-12 text-center">
+              <p className="text-xl text-white mb-6 font-semibold">Ready to create GIFs?</p>
+              <div className="flex flex-col sm:flex-row items-start justify-center gap-6">
+                <ChromeStoreBadge />
+                <FirefoxStoreBadge />
+              </div>
+            </div>
           </div>
         </article>
 
-        {/* Footer */}
-        <footer className="max-w-[800px] mx-auto px-12 sm:px-6 py-16 border-t border-[#2a2a2a]">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
-            <p className="text-sm text-[#a0a0a0]">
-              © {new Date().getFullYear()} YTgify. All rights reserved.
-            </p>
-            <div className="flex gap-6 text-sm">
-              <a href="https://github.com/neonwatty/ytgify/blob/main/docs/privacy-policy.md" target="_blank" rel="noopener noreferrer" className="text-[#a0a0a0] hover:text-white transition-colors">
-                Privacy Policy
-              </a>
-            </div>
-          </div>
-        </footer>
+        <SiteFooter />
       </main>
     </div>
   );
