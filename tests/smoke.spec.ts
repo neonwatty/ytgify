@@ -40,4 +40,36 @@ test.describe('Landing Page Smoke Tests', () => {
     const featuresHeading = page.getByRole('heading', { name: /See it in action/i });
     await expect(featuresHeading).toBeVisible();
   });
+
+  test('GitHub social link is visible and correct', async ({ page }) => {
+    await page.goto('/');
+    const githubLink = page.getByRole('link', { name: /GitHub/i });
+    await expect(githubLink).toBeVisible();
+    await expect(githubLink).toHaveAttribute('href', 'https://github.com/neonwatty');
+    await expect(githubLink).toHaveAttribute('target', '_blank');
+  });
+
+  test('X (Twitter) social link is visible and correct', async ({ page }) => {
+    await page.goto('/');
+    const xLink = page.getByRole('link', { name: /X \(Twitter\)/i });
+    await expect(xLink).toBeVisible();
+    await expect(xLink).toHaveAttribute('href', 'https://x.com/neonwatty');
+    await expect(xLink).toHaveAttribute('target', '_blank');
+  });
+
+  test('Blog social link is visible and correct', async ({ page }) => {
+    await page.goto('/');
+    const blogLink = page.getByRole('link', { name: /Blog/i });
+    await expect(blogLink).toBeVisible();
+    await expect(blogLink).toHaveAttribute('href', 'https://neonwatty.com/');
+    await expect(blogLink).toHaveAttribute('target', '_blank');
+  });
+
+  test('all social links have security attributes', async ({ page }) => {
+    await page.goto('/');
+    const socialLinks = page.locator('footer a[target="_blank"][rel="noopener noreferrer"]').filter({
+      has: page.locator('svg')
+    });
+    await expect(socialLinks).toHaveCount(3);
+  });
 });
