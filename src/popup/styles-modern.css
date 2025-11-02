@@ -474,3 +474,18 @@ body {
 .popup-footer .dismiss-btn:hover {
   color: rgba(255, 255, 255, 0.8);
 }
+
+/* Version Footer */
+.popup-version {
+  position: relative;
+  padding: 8px 12px;
+  text-align: center;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.05);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.3px;
+  z-index: 10;
+}

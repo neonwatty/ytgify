@@ -10,6 +10,7 @@ const PopupApp: React.FC = () => {
   const [isLoading, setIsLoading] = React.useState(false);
   const [showButton, setShowButton] = React.useState(false);
   const [showFooter, setShowFooter] = React.useState(false);
+  const [version, setVersion] = React.useState<string>('');
 
   // Load button visibility setting
   React.useEffect(() => {
@@ -61,6 +62,16 @@ const PopupApp: React.FC = () => {
       }
     };
     checkFooter();
+  }, []);
+
+  // Load extension version
+  React.useEffect(() => {
+    try {
+      const manifest = chrome.runtime.getManifest();
+      setVersion(manifest.version || '');
+    } catch (error) {
+      console.error('Error loading version:', error);
+    }
   }, []);
 
   // Handle toggle change
@@ -330,6 +341,11 @@ const PopupApp: React.FC = () => {
               <button className="dismiss-btn" onClick={handleDismissFooter}>×</button>
             </div>
           )}
+
+          {/* Version Footer */}
+          <div className="popup-version">
+            v{version}
+          </div>
     </div>
   );
 };
