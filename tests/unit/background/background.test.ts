@@ -40,10 +40,10 @@ describe('Background Service Worker Framework Tests', () => {
 
   it('should provide extension manifest data', () => {
     const manifest = chrome.runtime.getManifest();
-    
+
     expect(manifest).toBeDefined();
     expect(manifest.name).toBe('YTgify');
-    expect(manifest.version).toBe('1.0.0');
+    expect(manifest.version).toBe('1.0.9');
     expect(manifest.manifest_version).toBe(3);
   });
 

@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import PopupApp from '../../../src/popup/popup-modern';
 import { resetChromeMocks } from '../__mocks__/chrome-mocks';
+import manifest from '../../../manifest.json';
 
 // Mock CSS imports
 jest.mock('../../../src/popup/styles-modern.css', () => ({}));
@@ -821,6 +822,101 @@ describe('PopupApp Component', () => {
 
       // Footer should not appear
       expect(screen.queryByText(/Enjoying YTGify?/)).not.toBeInTheDocument();
+
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('Version Display', () => {
+    test('displays version number from manifest', async () => {
+      mockTabWithUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'Test Video - YouTube');
+
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText('v1.0.9')).toBeInTheDocument();
+      });
+    });
+
+    test('formats version with lowercase v prefix', async () => {
+      mockTabWithUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'Test Video - YouTube');
+
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        const versionElement = screen.getByText(/^v\d+\.\d+\.\d+$/);
+        expect(versionElement).toBeInTheDocument();
+        expect(versionElement.textContent).toBe('v1.0.9');
+      });
+    });
+
+    test('version is always visible on YouTube video page', async () => {
+      mockTabWithUrl('https://www.youtube.com/watch?v=test', 'Test Video - YouTube');
+
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/^v\d+/)).toBeInTheDocument();
+      });
+    });
+
+    test('version is always visible on YouTube Shorts page', async () => {
+      mockTabWithUrl('https://www.youtube.com/shorts/ABC', 'Short - YouTube');
+
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/^v\d+/)).toBeInTheDocument();
+      });
+    });
+
+    test('version is always visible on non-YouTube page', async () => {
+      mockTabWithUrl('https://www.example.com', 'Example Website');
+
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/^v\d+/)).toBeInTheDocument();
+      });
+    });
+
+    test('version matches manifest.json', async () => {
+      mockTabWithUrl('https://www.youtube.com/watch?v=test', 'Test - YouTube');
+
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        const versionText = screen.getByText(/^v\d+\.\d+\.\d+$/);
+        // Verify the displayed version matches the actual manifest.json
+        expect(versionText.textContent).toBe(`v${manifest.version}`);
+      });
+    });
+
+    test('handles getManifest error gracefully', async () => {
+      // Mock getManifest to throw error
+      (global as any).chrome.runtime.getManifest = jest.fn(() => {
+        throw new Error('Manifest error');
+      });
+
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      mockTabWithUrl('https://www.youtube.com/watch?v=test', 'Test - YouTube');
+      render(<PopupApp />);
+
+      await waitFor(() => {
+        expect(screen.getByText('YTGify')).toBeInTheDocument();
+      });
+
+      // Error should be logged
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Error loading version:',
+        expect.any(Error)
+      );
+
+      // Version should display empty (just 'v')
+      await waitFor(() => {
+        expect(screen.getByText('v')).toBeInTheDocument();
+      });
 
       consoleSpy.mockRestore();
     });

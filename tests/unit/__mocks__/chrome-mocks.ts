@@ -1,11 +1,13 @@
 /**
  * Comprehensive Chrome Extension API mocks for testing
- * 
+ *
  * This file provides Jest-compatible mocks for Chrome extension APIs
  * used throughout the YTgify extension.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
+import manifest from '../../../manifest.json';
 
 export interface MockChrome {
   runtime: any;
@@ -73,9 +75,9 @@ export function createChromeMock(): MockChrome {
       getURL: jest.fn((path: string) => `chrome-extension://mock-extension-id/${path}`),
       id: 'mock-extension-id',
       getManifest: jest.fn(() => ({
-        name: 'YTgify',
-        version: '1.0.0',
-        manifest_version: 3
+        name: manifest.name,
+        version: manifest.version,
+        manifest_version: manifest.manifest_version
       }))
     },
 
