@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-require-imports */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 /**
  * Generate OG Image for YTgify

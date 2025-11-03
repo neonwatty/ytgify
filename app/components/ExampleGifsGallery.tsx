@@ -12,10 +12,6 @@ export default function ExampleGifsGallery() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
 
-  const goToPrevious = () => {
-    setCurrentIndex((prev) => (prev === 0 ? EXAMPLE_GIFS.length - 1 : prev - 1));
-  };
-
   const goToNext = () => {
     setCurrentIndex((prev) => (prev === EXAMPLE_GIFS.length - 1 ? 0 : prev + 1));
   };
