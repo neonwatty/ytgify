@@ -1,18 +1,21 @@
 import Image from 'next/image';
+import { FIREFOX_ADDON_URL } from '@/lib/constants';
 
 export default function FirefoxStoreBadge() {
   return (
-    <div className="inline-block opacity-60">
-      <div className="relative">
-        <Image
-          src="/firefox-addons-badge.png"
-          alt="Get the Firefox Add-on"
-          width={172}
-          height={60}
-          className="h-20 sm:h-[90px] w-auto"
-        />
-        <p className="text-center text-sm text-white/70 mt-2 font-medium">Coming Soon</p>
-      </div>
-    </div>
+    <a
+      href={FIREFOX_ADDON_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-block hover:opacity-90 transition-opacity"
+    >
+      <Image
+        src="/firefox-addons-badge.png"
+        alt="Get the Firefox Add-on"
+        width={172}
+        height={60}
+        className="h-20 sm:h-[90px] w-auto"
+      />
+    </a>
   );
 }

@@ -21,6 +21,14 @@ test.describe('Landing Page Smoke Tests', () => {
     await expect(badges).toHaveCount(3);
   });
 
+  test('Firefox Add-on badge links correctly', async ({ page }) => {
+    await page.goto('/');
+    const badges = page.locator('a[href*="addons.mozilla.org"]');
+    await expect(badges.first()).toBeVisible();
+    // Verify we have multiple Firefox Add-on CTAs (after video, footer)
+    await expect(badges).toHaveCount(2);
+  });
+
   test('demo video iframe is present', async ({ page }) => {
     await page.goto('/');
     const iframe = page.locator('iframe[src*="youtube.com/embed"]');

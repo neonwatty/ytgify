@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Github, BookOpen } from 'lucide-react';
+import { FIREFOX_ADDON_URL } from '@/lib/constants';
 
 export default function SiteFooter() {
   const [currentYear, setCurrentYear] = useState(2025);
@@ -55,6 +56,14 @@ export default function SiteFooter() {
             className="text-[#a0a0a0] hover:text-white transition-colors"
           >
             Install Chrome Extension
+          </a>
+          <a
+            href={FIREFOX_ADDON_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#a0a0a0] hover:text-white transition-colors"
+          >
+            Install Firefox Add-on
           </a>
           <a
             href="https://github.com/neonwatty/ytgify/blob/main/docs/privacy-policy.md"
