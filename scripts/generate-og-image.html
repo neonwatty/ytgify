@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YTgify OG Image Generator</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #1a1a1a;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .og-image {
+      width: 1200px;
+      height: 630px;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a0a1a 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .gradient-bg {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 30% 50%, rgba(219, 39, 119, 0.15) 0%, transparent 50%),
+                  radial-gradient(circle at 70% 50%, rgba(147, 51, 234, 0.15) 0%, transparent 50%);
+    }
+
+    .content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 60px;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    .logo {
+      width: 120px;
+      height: 120px;
+    }
+
+    .brand-name {
+      font-size: 80px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ff0000 0%, #ff0066 50%, #9333ea 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -2px;
+    }
+
+    .tagline {
+      font-size: 42px;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 20px;
+      line-height: 1.3;
+    }
+
+    .subtitle {
+      font-size: 28px;
+      color: #a0a0a0;
+      font-weight: 400;
+    }
+
+    .decoration {
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #9333ea, #db2777);
+      opacity: 0.05;
+      filter: blur(100px);
+    }
+
+    .decoration-1 {
+      top: -100px;
+      left: -100px;
+    }
+
+    .decoration-2 {
+      bottom: -100px;
+      right: -100px;
+    }
+
+    .instructions {
+      margin-top: 40px;
+      padding: 20px;
+      background: #2a2a2a;
+      border-radius: 8px;
+      color: #ccc;
+      max-width: 800px;
+    }
+
+    .instructions h3 {
+      color: #fff;
+      margin-top: 0;
+    }
+
+    .instructions ol {
+      text-align: left;
+    }
+
+    .instructions code {
+      background: #1a1a1a;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: 'Monaco', 'Courier New', monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="og-image" id="og-image">
+    <div class="decoration decoration-1"></div>
+    <div class="decoration decoration-2"></div>
+    <div class="gradient-bg"></div>
+
+    <div class="content">
+      <div class="logo-container">
+        <svg class="logo" width="120" height="120" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="redPurpleGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#ff0000;stop-opacity:1" />
+              <stop offset="50%" style="stop-color:#ff0066;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+            </linearGradient>
+            <filter id="softGlow">
+              <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+              <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+          <circle cx="64" cy="64" r="45" fill="#0f0f0f"/>
+          <circle cx="64" cy="64" r="44" fill="none" stroke="url(#redPurpleGradient)" stroke-width="1" opacity="0.3"/>
+          <g transform="translate(68, 64)" filter="url(#softGlow)">
+            <clipPath id="g1"><rect x="-40" y="-32" width="80" height="11"/></clipPath>
+            <path d="M -30 -32 L 34 0 L -30 32 Z" fill="#ff0000" clip-path="url(#g1)"/>
+            <clipPath id="g2"><rect x="-40" y="-19" width="80" height="11"/></clipPath>
+            <path d="M -30 -32 L 34 0 L -30 32 Z" fill="#ff0066" clip-path="url(#g2)"/>
+            <clipPath id="g3"><rect x="-40" y="-6" width="80" height="11"/></clipPath>
+            <path d="M -30 -32 L 34 0 L -30 32 Z" fill="#cc3399" clip-path="url(#g3)"/>
+            <clipPath id="g4"><rect x="-40" y="7" width="80" height="11"/></clipPath>
+            <path d="M -30 -32 L 34 0 L -30 32 Z" fill="#9966cc" clip-path="url(#g4)"/>
+            <clipPath id="g5"><rect x="-40" y="20" width="80" height="12"/></clipPath>
+            <path d="M -30 -32 L 34 0 L -30 32 Z" fill="#764ba2" clip-path="url(#g5)"/>
+          </g>
+        </svg>
+        <div class="brand-name">YTgify</div>
+      </div>
+
+      <div class="tagline">
+        Free Animated GIF Maker
+      </div>
+
+      <div class="subtitle">
+        Convert YouTube Videos to GIFs in Seconds
+      </div>
+    </div>
+  </div>
+
+  <div class="instructions">
+    <h3>📸 How to Generate the OG Image</h3>
+    <ol>
+      <li>Open this HTML file in Chrome or Firefox</li>
+      <li>Open DevTools (F12 or Cmd+Option+I)</li>
+      <li>Run this command in the Console:
+        <pre><code>
+// Take screenshot of the OG image div
+const element = document.getElementById('og-image');
+const canvas = await html2canvas(element, {
+  width: 1200,
+  height: 630,
+  scale: 2,
+  backgroundColor: null
+});
+const link = document.createElement('a');
+link.download = 'og-image.png';
+link.href = canvas.toDataURL('image/png');
+link.click();
+        </code></pre>
+      </li>
+      <li><strong>OR use the automated script below</strong></li>
+    </ol>
+
+    <h3>🚀 Easier Method: Use Puppeteer Script</h3>
+    <p>I've created a script at <code>scripts/generate-og-image.js</code> that does this automatically.</p>
+    <p>Run: <code>node scripts/generate-og-image.js</code></p>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+    console.log('OG Image Generator Ready!');
+    console.log('The OG image preview is 1200x630px');
+    console.log('To save as PNG, you can use the browser\'s screenshot tool or run the Puppeteer script.');
+  </script>
+</body>
+</html>

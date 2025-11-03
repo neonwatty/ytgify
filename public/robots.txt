@@ -1,0 +1,9 @@
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://ytgify.com/sitemap.xml
+
+# Crawl-delay (optional, helps with server load)
+Crawl-delay: 1
