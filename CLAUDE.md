@@ -62,13 +62,14 @@ Real E2E tests cannot run in CI (YouTube blocks CI IPs). Run headless locally be
 Typed request/response pattern. Most processing happens in content script. Message types in `src/types/messages.ts` and `src/shared/messages.ts`. Use type guards for safe handling.
 
 ### Storage
-- **IndexedDB**: Primary storage (`YouTubeGifStore` database with `gifs`, `thumbnails`, `metadata` stores)
 - **chrome.storage.sync**: User preferences, button visibility
+- **chrome.storage.local**: Engagement tracking data
+- **IndexedDB**: Removed. GIFs download directly to user's Downloads folder (cleanup runs on extension update)
 
 ## Key Development Patterns
 
 ### GIF Creation Flow
-User opens wizard → collects parameters (time range, text, resolution, frame rate) → `gifProcessor.processVideoToGif()` orchestrates extraction/overlay/encoding/save → success screen with preview/download.
+User opens wizard → collects parameters (time range, text, resolution, frame rate) → `gifProcessor.processVideoToGif()` orchestrates extraction/overlay/encoding → success screen with preview/download. GIFs download directly to Downloads folder (no persistence in extension).
 
 ### YouTube Shorts
 Disabled due to technical limitations. Show user-friendly message when detected.
@@ -113,4 +114,4 @@ Run `npm run build:production` (strips localhost permissions). Test production b
 
 ## Known Limitations
 
-Shorts not supported. Max ~30s GIF duration. Chrome/Chromium only. Desktop only. Live streams not recommended.
+Shorts not supported. Max ~30s GIF duration. Chrome/Chromium only. Desktop only. Live streams not recommended. No GIF library in extension (GIFs download directly to Downloads folder).

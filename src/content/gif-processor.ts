@@ -762,59 +762,8 @@ export class ContentScriptGifProcessor {
     }
   }
 
-  /**
-   * Save GIF to IndexedDB
-   */
-  public async saveGifToStorage(blob: Blob, metadata: Record<string, unknown>): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const dbName = 'YouTubeGifStore';
-
-      const request = indexedDB.open(dbName, 3);
-
-      request.onerror = () => {
-        reject(createError('storage', 'Failed to open IndexedDB'));
-      };
-
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
-
-        if (!db.objectStoreNames.contains('gifs')) {
-          const gifsStore = db.createObjectStore('gifs', { keyPath: 'id' });
-          gifsStore.createIndex('createdAt', 'metadata.createdAt', { unique: false });
-        }
-      };
-
-      request.onsuccess = () => {
-        const db = request.result;
-        const transaction = db.transaction(['gifs'], 'readwrite');
-        const store = transaction.objectStore('gifs');
-
-        const gifData = {
-          id: metadata.id,
-          blob,
-          metadata: {
-            ...metadata,
-            createdAt: new Date().toISOString(),
-            url: window.location.href,
-            title: document.title,
-          },
-        };
-
-        const addRequest = store.add(gifData);
-
-        addRequest.onsuccess = () => {
-          logger.info('[ContentScriptGifProcessor] GIF saved to IndexedDB', {
-            id: (metadata as { id: string }).id,
-          });
-          resolve((metadata as { id: string }).id);
-        };
-
-        addRequest.onerror = () => {
-          reject(createError('storage', 'Failed to save GIF to IndexedDB'));
-        };
-      };
-    });
-  }
+  // GIF data is no longer persisted to IndexedDB
+  // Users download GIFs directly to their Downloads folder
 
   /**
    * Trigger download of GIF

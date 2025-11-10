@@ -40,6 +40,35 @@ chrome.runtime.onInstalled.addListener(
           sharedLogger.info('[Background] Engagement tracking initialized', {}, 'background');
         }
 
+        // Handle extension updates - clean up old IndexedDB data
+        if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
+          try {
+            const { databaseCleanup } = await import('@/shared/database-cleanup');
+
+            sharedLogger.info(
+              '[Background] Extension updated - cleaning up IndexedDB',
+              { version: chrome.runtime.getManifest().version },
+              'background'
+            );
+
+            await databaseCleanup.deleteDatabase();
+
+            sharedLogger.info('[Background] IndexedDB cleanup completed', {}, 'background');
+            sharedLogger.trackEvent('indexeddb_cleanup_completed', {
+              version: chrome.runtime.getManifest().version,
+            });
+          } catch (error) {
+            sharedLogger.error(
+              '[Background] Failed to cleanup IndexedDB during update',
+              {
+                error: error instanceof Error ? error.message : String(error),
+              },
+              'background'
+            );
+            // Don't throw - cleanup failure shouldn't block extension startup
+          }
+        }
+
         endTimer();
       } catch (error) {
         endTimer();

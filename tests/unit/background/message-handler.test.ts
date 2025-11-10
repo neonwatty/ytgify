@@ -75,33 +75,6 @@ describe('BackgroundMessageHandler', () => {
 
     // Set up Chrome API mock
     (global as any).chrome = chromeMock;
-    global.indexedDB = {
-      open: jest.fn().mockReturnValue({
-        onsuccess: null,
-        onerror: null,
-        onupgradeneeded: null,
-        result: {
-          transaction: jest.fn().mockReturnValue({
-            objectStore: jest.fn().mockReturnValue({
-              put: jest.fn().mockReturnValue({
-                onsuccess: null,
-                onerror: null,
-                result: undefined
-              }),
-              createIndex: jest.fn()
-            }),
-            oncomplete: null,
-            onerror: null
-          }),
-          createObjectStore: jest.fn().mockReturnValue({
-            createIndex: jest.fn()
-          }),
-          objectStoreNames: {
-            contains: jest.fn().mockReturnValue(false)
-          }
-        }
-      })
-    } as any;
 
     // Create message handler instance
     const options: MessageHandlerOptions = {
@@ -472,97 +445,6 @@ describe('BackgroundMessageHandler', () => {
             error: expect.stringContaining('too long')
           })
         );
-      });
-    });
-
-    describe('GIF save requests', () => {
-      const createSaveGifRequest = (): SaveGifRequest => ({
-        type: 'SAVE_GIF_REQUEST',
-        data: {
-          gifData: {
-            id: 'gif-123',
-            title: 'Test GIF',
-            blob: new Blob(['gif-data'], { type: 'image/gif' }),
-            thumbnailBlob: new Blob(['thumb-data'], { type: 'image/png' }),
-            metadata: {
-              fileSize: 1024,
-              duration: 5,
-              width: 480,
-              height: 360,
-              frameRate: 10,
-              youtubeUrl: 'https://www.youtube.com/watch?v=test',
-              createdAt: new Date()
-            },
-            tags: ['test', 'youtube', 'gif']
-          }
-        }
-      });
-
-      it('should handle GIF save request successfully', async () => {
-        const request = createSaveGifRequest();
-
-        // Mock successful IndexedDB save
-        const mockDBRequest = {
-          onsuccess: null as any,
-          onerror: null as any,
-          onupgradeneeded: null as any,
-          result: {
-            transaction: jest.fn().mockReturnValue({
-              objectStore: jest.fn().mockReturnValue({
-                put: jest.fn().mockReturnValue({
-                  onsuccess: null,
-                  onerror: null,
-                  result: undefined
-                })
-              }),
-              oncomplete: null as any,
-              onerror: null as any
-            }),
-            objectStoreNames: {
-              contains: jest.fn().mockReturnValue(true)
-            }
-          }
-        };
-
-        global.indexedDB = {
-          open: jest.fn().mockReturnValue(mockDBRequest)
-        } as any;
-
-        const returnValue = await messageHandler.handleMessage(request, mockSender, mockSendResponse);
-        expect(returnValue).toBe(true);
-
-        // Simulate successful transaction
-        setTimeout(() => {
-          if (mockDBRequest.onsuccess) {
-            mockDBRequest.onsuccess();
-          }
-
-          const transaction = mockDBRequest.result.transaction();
-          if (transaction.oncomplete) {
-            transaction.oncomplete();
-          }
-        }, 0);
-
-        // Wait for async completion
-        await new Promise(resolve => setTimeout(resolve, 10));
-      });
-
-      it('should handle IndexedDB not available', async () => {
-        const request = createSaveGifRequest();
-
-        // Mock IndexedDB not available
-        global.indexedDB = undefined as any;
-
-        await messageHandler.handleMessage(request, mockSender, mockSendResponse);
-
-        // Wait for async completion since handleSaveGifRequest runs in an async IIFE
-        await new Promise(resolve => setTimeout(resolve, 10));
-
-        expect(mockSendResponse).toHaveBeenCalledWith({
-          type: 'SAVE_GIF_RESPONSE',
-          success: false,
-          error: expect.any(String)
-        });
       });
     });
 

@@ -37,38 +37,6 @@ const mockChrome = {
 
 global.chrome = mockChrome as any;
 
-// Mock IndexedDB for GIF storage
-class MockIndexedDB {
-  private storage = new Map();
-
-  async open(_name: string, _version: number) {
-    return {
-      objectStore: (_storeName: string) => ({
-        add: async (data: any) => {
-          this.storage.set(data.id, data);
-          return data.id;
-        },
-        get: async (id: string) => {
-          return this.storage.get(id);
-        },
-        getAll: async () => {
-          return Array.from(this.storage.values());
-        },
-        delete: async (id: string) => {
-          return this.storage.delete(id);
-        }
-      })
-    };
-  }
-
-  clear() {
-    this.storage.clear();
-  }
-}
-
-const mockIndexedDB = new MockIndexedDB();
-global.indexedDB = { open: mockIndexedDB.open.bind(mockIndexedDB) } as any;
-
 describe('GIF Creation Workflow Integration', () => {
   let mockVideo: HTMLVideoElement;
   let mockCanvas: HTMLCanvasElement;
@@ -76,7 +44,6 @@ describe('GIF Creation Workflow Integration', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockIndexedDB.clear();
 
     // Mock video element
     mockVideo = {
@@ -334,15 +301,11 @@ describe('GIF Creation Workflow Integration', () => {
         tags: ['test', 'integration']
       };
 
-      const savedId = await saveGifToStorage(gifData);
-
-      // Step 7: Verify saved GIF
-      const retrievedGif = await getGifFromStorage(savedId);
-
-      expect(retrievedGif).toBeDefined();
-      expect(retrievedGif.id).toBe(savedId);
-      expect(retrievedGif.metadata.duration).toBe(5);
-      expect(retrievedGif.metadata.frameRate).toBe(15);
+      // Step 7: Verify GIF data structure (storage removed)
+      expect(gifData).toBeDefined();
+      expect(gifData.id).toBeDefined();
+      expect(gifData.metadata.duration).toBe(5);
+      expect(gifData.metadata.frameRate).toBe(15);
     });
 
     it('should handle workflow with text overlays', async () => {
@@ -432,8 +395,9 @@ describe('GIF Creation Workflow Integration', () => {
       const gifBlob = await encodeToGIF(processedFrames, settings);
       const gifData: GifData = createGifData(gifBlob, settings, selection);
 
-      const savedId = await saveGifToStorage(gifData);
-      expect(savedId).toBeDefined();
+      // Verify GIF data structure (storage removed)
+      expect(gifData).toBeDefined();
+      expect(gifData.id).toBeDefined();
     });
   });
 
@@ -488,15 +452,6 @@ describe('GIF Creation Workflow Integration', () => {
       (global as any).GIF = originalGIF;
     });
 
-    it('should handle storage failure', async () => {
-      const gifBlob = new Blob(['test'], { type: 'image/gif' });
-      const gifData = createGifData(gifBlob, {} as GifSettings, {} as TimelineSelection);
-
-      // Mock storage failure
-      (global.indexedDB as any).open = jest.fn().mockRejectedValue(new Error('Storage quota exceeded') as never);
-
-      await expect(saveGifToStorage(gifData)).rejects.toThrow('Storage quota exceeded');
-    });
   });
 
   describe('Performance Optimization', () => {
@@ -684,17 +639,6 @@ async function generateThumbnail(_firstFrame: any): Promise<Blob> {
   return new Blob(['thumbnail'], { type: 'image/png' });
 }
 
-async function saveGifToStorage(gifData: GifData): Promise<string> {
-  const db = await indexedDB.open('gif-storage', 1);
-  const store = (db as any).objectStore('gifs');
-  return await store.add(gifData);
-}
-
-async function getGifFromStorage(id: string): Promise<GifData> {
-  const db = await indexedDB.open('gif-storage', 1);
-  const store = (db as any).objectStore('gifs');
-  return await store.get(id);
-}
 
 function createGifData(gifBlob: Blob, settings: GifSettings, selection: TimelineSelection): GifData {
   return {
