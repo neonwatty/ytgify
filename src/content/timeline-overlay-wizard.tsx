@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { TimelineSelection, TextOverlay } from '@/types';
 import OverlayWizard from './overlay-wizard/OverlayWizard';
+import { BufferingStatus } from './gif-processor';
 
 interface TimelineOverlayWizardProps {
   videoDuration: number;
@@ -23,6 +24,7 @@ interface TimelineOverlayWizardProps {
     totalStages: number;
     progress: number;
     message: string;
+    bufferingStatus?: BufferingStatus;
   };
   gifData?: {
     dataUrl: string;

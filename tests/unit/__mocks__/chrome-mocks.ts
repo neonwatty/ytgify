@@ -78,7 +78,13 @@ export function createChromeMock(): MockChrome {
         name: manifest.name,
         version: manifest.version,
         manifest_version: manifest.manifest_version
-      }))
+      })),
+      OnInstalledReason: {
+        INSTALL: 'install',
+        UPDATE: 'update',
+        CHROME_UPDATE: 'chrome_update',
+        SHARED_MODULE_UPDATE: 'shared_module_update'
+      }
     },
 
     storage: {

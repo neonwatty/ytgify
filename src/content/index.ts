@@ -24,13 +24,13 @@ import {
   SuccessResponse,
   ErrorResponse,
 } from '@/types';
-import { GifData, GifSettings } from '@/types/storage';
+import { GifSettings } from '@/types/storage';
 import { youTubeDetector, YouTubeNavigationEvent } from './youtube-detector';
 import { injectionManager } from './injection-manager';
 import { extensionStateManager } from '@/shared';
 import { youTubeAPI, YouTubeAPIIntegration } from './youtube-api-integration';
 import { ContentScriptFrameExtractor, ContentFrameExtractionRequest } from './frame-extractor';
-import { gifProcessor } from './gif-processor';
+import { gifProcessor, BufferingStatus } from './gif-processor';
 import { playerIntegration } from './player-integration';
 import { playerController } from './player-controller';
 import { TimelineOverlayWrapper } from './timeline-overlay-wrapper';
@@ -54,7 +54,14 @@ class YouTubeGifMaker {
   private videoElement: HTMLVideoElement | null = null;
   private navigationUnsubscribe: (() => void) | null = null;
   private processingStatus:
-    | { stage: string; stageNumber: number; totalStages: number; progress: number; message: string }
+    | {
+        stage: string;
+        stageNumber: number;
+        totalStages: number;
+        progress: number;
+        message: string;
+        bufferingStatus?: BufferingStatus;
+      }
     | undefined = undefined;
   private isWizardMode = false;
   private wizardUpdateInterval: NodeJS.Timeout | null = null;
@@ -1377,6 +1384,7 @@ class YouTubeGifMaker {
             totalStages: stageInfo.totalStages,
             progress: stageInfo.progress,
             message: stageInfo.message,
+            bufferingStatus: stageInfo.bufferingStatus,
           };
           this.updateTimelineOverlay();
           this.log(
@@ -1394,6 +1402,7 @@ class YouTubeGifMaker {
               totalStages: stageInfo.totalStages,
               progress: stageInfo.progress,
               message: stageInfo.message,
+              bufferingStatus: stageInfo.bufferingStatus,
             },
             '*'
           );
@@ -1405,9 +1414,8 @@ class YouTubeGifMaker {
         metadata: result.metadata,
       });
 
-      // Save to IndexedDB
-
-      await gifProcessor.saveGifToStorage(result.blob, result.metadata);
+      // GIF storage removed - users download directly from popup
+      // No persistent storage in extension
 
       // Increment engagement tracker
       await engagementTracker.incrementGifCount();
@@ -1784,67 +1792,6 @@ class YouTubeGifMaker {
         })
       );
     }
-  }
-
-  // Save GIF directly to IndexedDB from content script
-  private async saveGifToIndexedDB(gifData: GifData): Promise<boolean> {
-    return new Promise((resolve) => {
-      try {
-        const dbName = 'YouTubeGifStore';
-        const request = indexedDB.open(dbName, 3);
-
-        request.onerror = () => {
-          this.log('error', '[Content] Failed to open IndexedDB');
-          resolve(false);
-        };
-
-        request.onupgradeneeded = (event) => {
-          const db = (event.target as IDBOpenDBRequest).result;
-
-          // Create stores if they don't exist
-          if (!db.objectStoreNames.contains('gifs')) {
-            const gifsStore = db.createObjectStore('gifs', { keyPath: 'id' });
-            gifsStore.createIndex('createdAt', 'metadata.createdAt', { unique: false });
-          }
-
-          if (!db.objectStoreNames.contains('thumbnails')) {
-            db.createObjectStore('thumbnails', { keyPath: 'gifId' });
-          }
-
-          if (!db.objectStoreNames.contains('metadata')) {
-            const metaStore = db.createObjectStore('metadata', { keyPath: 'id' });
-            metaStore.createIndex('youtubeUrl', 'youtubeUrl', { unique: false });
-          }
-        };
-
-        request.onsuccess = () => {
-          const db = request.result;
-          const transaction = db.transaction(['gifs'], 'readwrite');
-          const gifsStore = transaction.objectStore('gifs');
-
-          // Save GIF data
-          const gifRequest = gifsStore.put(gifData);
-
-          gifRequest.onsuccess = () => {
-            this.log('info', '[Content] GIF saved to IndexedDB successfully');
-            resolve(true);
-          };
-
-          gifRequest.onerror = () => {
-            this.log('error', '[Content] Failed to save GIF to store');
-            resolve(false);
-          };
-
-          transaction.onerror = () => {
-            this.log('error', '[Content] Transaction failed');
-            resolve(false);
-          };
-        };
-      } catch (error) {
-        this.log('error', '[Content] Exception in saveGifToIndexedDB', { error });
-        resolve(false);
-      }
-    });
   }
 
   // Download GIF

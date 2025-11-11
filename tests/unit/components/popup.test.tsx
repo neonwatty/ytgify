@@ -834,7 +834,7 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText('v1.0.9')).toBeInTheDocument();
+        expect(screen.getByText('v1.0.10')).toBeInTheDocument();
       });
     });
 
@@ -846,7 +846,7 @@ describe('PopupApp Component', () => {
       await waitFor(() => {
         const versionElement = screen.getByText(/^v\d+\.\d+\.\d+$/);
         expect(versionElement).toBeInTheDocument();
-        expect(versionElement.textContent).toBe('v1.0.9');
+        expect(versionElement.textContent).toBe('v1.0.10');
       });
     });
 

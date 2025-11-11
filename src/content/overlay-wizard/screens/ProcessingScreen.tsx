@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
 
+interface BufferingStatus {
+  isBuffering: boolean;
+  currentFrame: number;
+  totalFrames: number;
+  bufferedPercentage: number;
+  estimatedTimeRemaining: number;
+}
+
 interface ProcessingScreenProps {
   processingStatus?: {
     stage: string;
@@ -7,6 +15,7 @@ interface ProcessingScreenProps {
     totalStages: number;
     progress: number;
     message: string;
+    bufferingStatus?: BufferingStatus;
   };
   onComplete?: () => void;
   onError?: (error: string) => void;
@@ -18,6 +27,7 @@ const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
   onError: _onError,
 }) => {
   const [_dots, _setDots] = useState('');
+  const [lastBufferingStatus, setLastBufferingStatus] = useState<BufferingStatus | undefined>();
 
   // Animate dots for loading effect
   useEffect(() => {
@@ -26,6 +36,26 @@ const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
     }, 500);
     return () => clearInterval(interval);
   }, []);
+
+  // Persist buffering status to prevent flickering when updates are missing it
+  useEffect(() => {
+    if (processingStatus?.bufferingStatus) {
+      setLastBufferingStatus(processingStatus.bufferingStatus);
+      console.log('[ProcessingScreen] Buffering status received:', {
+        isBuffering: processingStatus.bufferingStatus.isBuffering,
+        currentFrame: processingStatus.bufferingStatus.currentFrame,
+        totalFrames: processingStatus.bufferingStatus.totalFrames,
+        bufferedPercentage: processingStatus.bufferingStatus.bufferedPercentage,
+      });
+    }
+  }, [processingStatus?.bufferingStatus]);
+
+  // Reset buffering status when leaving CAPTURING stage
+  useEffect(() => {
+    if (processingStatus?.stage && processingStatus.stage !== 'CAPTURING') {
+      setLastBufferingStatus(undefined);
+    }
+  }, [processingStatus?.stage]);
 
   // Check for completion
   useEffect(() => {
@@ -81,6 +111,7 @@ const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
             {stages.map((stage, index) => {
               let stageItemClass = '';
               let indicator = null;
+              const isStageCurrent = index + 1 === stageNumber;
 
               if (isError) {
                 // For error state, show failed indicator for current stage
@@ -105,7 +136,6 @@ const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
               } else {
                 // Normal progression
                 const isStageCompleted = index + 1 < stageNumber;
-                const isStageCurrent = index + 1 === stageNumber;
                 const _isStagePending = index + 1 > stageNumber;
 
                 if (isStageCompleted) {
@@ -120,6 +150,13 @@ const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
                 }
               }
 
+              const isCaptureStage = stage.key === 'CAPTURING';
+              const shouldShowProgress = isCaptureStage && isStageCurrent && !isError && !isCompleted;
+
+              // Use persisted buffering status to prevent flicker when updates don't include it
+              const bs = lastBufferingStatus;
+              const hasData = bs && bs.currentFrame !== undefined;
+
               return (
                 <div key={stage.key} className={`ytgif-stage-item ${stageItemClass}`}>
                   <div className="ytgif-stage-indicator">{indicator}</div>
@@ -127,6 +164,39 @@ const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
                     <span className="ytgif-stage-icon">{stage.icon}</span>
                     <span className="ytgif-stage-name">{stage.name}</span>
                   </div>
+
+                  {/* Always render during CAPTURING, use opacity to show/hide */}
+                  {shouldShowProgress && (
+                    <div
+                      className={`ytgif-inline-progress ${hasData ? 'ytgif-has-data' : 'ytgif-no-data'}`}
+                    >
+                      {hasData ? (
+                        <>
+                          <div className="ytgif-inline-progress-bar">
+                            <div
+                              className="ytgif-inline-progress-fill"
+                              style={{ width: `${(bs.currentFrame / bs.totalFrames) * 100}%` }}
+                            />
+                          </div>
+                          <div className="ytgif-inline-progress-info">
+                            <span className="ytgif-inline-frame-count">
+                              Frame {bs.currentFrame}/{bs.totalFrames}
+                            </span>
+                            {bs.estimatedTimeRemaining > 0 && (
+                              <>
+                                <span className="ytgif-inline-separator">·</span>
+                                <span className="ytgif-inline-eta">
+                                  ~{Math.ceil(bs.estimatedTimeRemaining)}s
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="ytgif-inline-progress-placeholder">Initializing...</div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}

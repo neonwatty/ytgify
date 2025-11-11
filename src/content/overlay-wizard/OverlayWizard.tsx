@@ -6,6 +6,7 @@ import QuickCaptureScreen from './screens/QuickCaptureScreen';
 import TextOverlayScreenV2 from './screens/TextOverlayScreenV2';
 import ProcessingScreen from './screens/ProcessingScreen';
 import SuccessScreen from './screens/SuccessScreen';
+import { BufferingStatus } from '../gif-processor';
 
 interface OverlayWizardProps {
   videoDuration: number;
@@ -28,6 +29,7 @@ interface OverlayWizardProps {
     totalStages: number;
     progress: number;
     message: string;
+    bufferingStatus?: BufferingStatus;
   };
   gifData?: {
     dataUrl: string;
