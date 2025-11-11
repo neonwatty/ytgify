@@ -754,7 +754,6 @@ describe('ProcessingScreen', () => {
       currentFrame: 25,
       totalFrames: 50,
       bufferedPercentage: 50,
-      networkSpeed: 'medium' as const,
       estimatedTimeRemaining: 5,
       ...overrides,
     });
@@ -1046,101 +1045,6 @@ describe('ProcessingScreen', () => {
       });
     });
 
-    describe('Network Speed Indicators', () => {
-      it('should display "Fast" network indicator', () => {
-        render(
-          <ProcessingScreen
-            processingStatus={{
-              stage: 'CAPTURING',
-              stageNumber: 1,
-              totalStages: 4,
-              progress: 50,
-              message: 'Capturing...',
-              bufferingStatus: createBufferingStatus({ networkSpeed: 'fast' }),
-            }}
-            onComplete={mockOnComplete}
-            onError={mockOnError}
-          />
-        );
-
-        expect(screen.getByText(/Fast/i)).toBeInTheDocument();
-      });
-
-      it('should display "Medium" network indicator', () => {
-        render(
-          <ProcessingScreen
-            processingStatus={{
-              stage: 'CAPTURING',
-              stageNumber: 1,
-              totalStages: 4,
-              progress: 50,
-              message: 'Capturing...',
-              bufferingStatus: createBufferingStatus({ networkSpeed: 'medium' }),
-            }}
-            onComplete={mockOnComplete}
-            onError={mockOnError}
-          />
-        );
-
-        expect(screen.getByText(/Medium/i)).toBeInTheDocument();
-      });
-
-      it('should display "Slow" network indicator', () => {
-        render(
-          <ProcessingScreen
-            processingStatus={{
-              stage: 'CAPTURING',
-              stageNumber: 1,
-              totalStages: 4,
-              progress: 50,
-              message: 'Capturing...',
-              bufferingStatus: createBufferingStatus({ networkSpeed: 'slow' }),
-            }}
-            onComplete={mockOnComplete}
-            onError={mockOnError}
-          />
-        );
-
-        expect(screen.getByText(/Slow/i)).toBeInTheDocument();
-      });
-
-      it('should apply correct CSS class for network speed', () => {
-        const { container, rerender } = render(
-          <ProcessingScreen
-            processingStatus={{
-              stage: 'CAPTURING',
-              stageNumber: 1,
-              totalStages: 4,
-              progress: 50,
-              message: 'Capturing...',
-              bufferingStatus: createBufferingStatus({ networkSpeed: 'fast' }),
-            }}
-            onComplete={mockOnComplete}
-            onError={mockOnError}
-          />
-        );
-
-        expect(container.querySelector('.ytgif-network-fast')).toBeInTheDocument();
-
-        rerender(
-          <ProcessingScreen
-            processingStatus={{
-              stage: 'CAPTURING',
-              stageNumber: 1,
-              totalStages: 4,
-              progress: 50,
-              message: 'Capturing...',
-              bufferingStatus: createBufferingStatus({ networkSpeed: 'slow' }),
-            }}
-            onComplete={mockOnComplete}
-            onError={mockOnError}
-          />
-        );
-
-        expect(container.querySelector('.ytgif-network-slow')).toBeInTheDocument();
-      });
-    });
-
     describe('ETA Display', () => {
       it('should round ETA to nearest second', () => {
         render(
@@ -1303,48 +1207,6 @@ describe('ProcessingScreen', () => {
         );
 
         expect(screen.queryByText(/Frame 25\/50/i)).not.toBeInTheDocument();
-      });
-    });
-
-    describe('Buffering Indicator', () => {
-      it('should show spinning icon when isBuffering=true', () => {
-        render(
-          <ProcessingScreen
-            processingStatus={{
-              stage: 'CAPTURING',
-              stageNumber: 1,
-              totalStages: 4,
-              progress: 50,
-              message: 'Capturing...',
-              bufferingStatus: createBufferingStatus({ isBuffering: true }),
-            }}
-            onComplete={mockOnComplete}
-            onError={mockOnError}
-          />
-        );
-
-        // Should show rotating icon (⟳) - use regex since it's in text node with other content
-        expect(screen.getByText(/⟳/i)).toBeInTheDocument();
-      });
-
-      it('should show solid icon when isBuffering=false', () => {
-        render(
-          <ProcessingScreen
-            processingStatus={{
-              stage: 'CAPTURING',
-              stageNumber: 1,
-              totalStages: 4,
-              progress: 50,
-              message: 'Capturing...',
-              bufferingStatus: createBufferingStatus({ isBuffering: false }),
-            }}
-            onComplete={mockOnComplete}
-            onError={mockOnError}
-          />
-        );
-
-        // Should show solid icon (●)
-        expect(screen.getByText('●')).toBeInTheDocument();
       });
     });
   });

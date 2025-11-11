@@ -5,7 +5,6 @@ interface BufferingStatus {
   currentFrame: number;
   totalFrames: number;
   bufferedPercentage: number;
-  networkSpeed: 'fast' | 'medium' | 'slow';
   estimatedTimeRemaining: number;
 }
 
@@ -46,7 +45,6 @@ const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
         isBuffering: processingStatus.bufferingStatus.isBuffering,
         currentFrame: processingStatus.bufferingStatus.currentFrame,
         totalFrames: processingStatus.bufferingStatus.totalFrames,
-        networkSpeed: processingStatus.bufferingStatus.networkSpeed,
         bufferedPercentage: processingStatus.bufferingStatus.bufferedPercentage,
       });
     }
@@ -183,17 +181,6 @@ const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
                           <div className="ytgif-inline-progress-info">
                             <span className="ytgif-inline-frame-count">
                               Frame {bs.currentFrame}/{bs.totalFrames}
-                            </span>
-                            <span className="ytgif-inline-separator">·</span>
-                            <span
-                              className={`ytgif-inline-network ytgif-network-${bs.networkSpeed}`}
-                            >
-                              {bs.isBuffering ? '⟳' : '●'}{' '}
-                              {bs.networkSpeed === 'fast'
-                                ? 'Fast'
-                                : bs.networkSpeed === 'medium'
-                                  ? 'Medium'
-                                  : 'Slow'}
                             </span>
                             {bs.estimatedTimeRemaining > 0 && (
                               <>

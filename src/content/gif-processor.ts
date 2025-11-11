@@ -83,7 +83,6 @@ export interface BufferingStatus {
   currentFrame: number;
   totalFrames: number;
   bufferedPercentage: number;
-  networkSpeed: 'fast' | 'medium' | 'slow';
   estimatedTimeRemaining: number;
 }
 
@@ -424,8 +423,6 @@ export class ContentScriptGifProcessor {
     let totalDuplicates = 0;
 
     // Buffering tracking (Phase 1.1 + Always-visible UI)
-    let networkSpeedEstimate: 'fast' | 'medium' | 'slow' = 'fast';
-    const frameWaitTimes: number[] = [];
     let frameCaptureStartTime = 0;
     let totalFrameCaptureTime = 0;
 
@@ -515,22 +512,6 @@ export class ContentScriptGifProcessor {
         if (attempts % 5 === 0 && attempts > 0) {
           // Send updates every 5 attempts (125ms intervals) instead of 10
           const pollDuration = performance.now() - pollStartTime;
-          const avgWaitTime =
-            frameWaitTimes.length > 0
-              ? frameWaitTimes.reduce((a, b) => a + b, 0) / frameWaitTimes.length
-              : pollDuration;
-
-          // Update network speed estimate based on wait times
-          if (frameWaitTimes.length > 2) {
-            if (avgWaitTime > 1000) {
-              networkSpeedEstimate = 'slow';
-            } else if (avgWaitTime > 300) {
-              networkSpeedEstimate = 'medium';
-            } else {
-              networkSpeedEstimate = 'fast';
-            }
-          }
-
           // Calculate buffered percentage for the target time
           const videoBufferedRanges = videoElement.buffered;
           let bufferedPercentage = 0;
@@ -568,7 +549,6 @@ export class ContentScriptGifProcessor {
               currentFrame: frames.length,
               totalFrames: frameCount,
               bufferedPercentage,
-              networkSpeed: networkSpeedEstimate,
               estimatedTimeRemaining: Math.ceil(estimatedRemainingSeconds),
             },
           });
@@ -604,12 +584,6 @@ export class ContentScriptGifProcessor {
 
       const seekDuration = performance.now() - seekStartTime;
       const actualTime = videoElement.currentTime;
-
-      // Track wait time for network speed estimation (Phase 1.1)
-      frameWaitTimes.push(seekDuration);
-      if (frameWaitTimes.length > 10) {
-        frameWaitTimes.shift(); // Keep only recent 10 frames
-      }
 
       if (Math.abs(actualTime - captureTime) > 0.1) {
         logger.warn(
@@ -774,17 +748,6 @@ export class ContentScriptGifProcessor {
       totalFrameCaptureTime += thisFrameTime;
       const averageFrameTime = totalFrameCaptureTime / frames.length;
 
-      // Update network speed estimate based on average frame time
-      if (frames.length > 2) {
-        if (averageFrameTime < 100) {
-          networkSpeedEstimate = 'fast';
-        } else if (averageFrameTime < 500) {
-          networkSpeedEstimate = 'medium';
-        } else {
-          networkSpeedEstimate = 'slow';
-        }
-      }
-
       // Calculate ETA based on average frame time
       const remainingFrames = frameCount - frames.length;
       const estimatedRemainingSeconds = (remainingFrames * averageFrameTime) / 1000;
@@ -818,7 +781,6 @@ export class ContentScriptGifProcessor {
           currentFrame: frames.length,
           totalFrames: frameCount,
           bufferedPercentage,
-          networkSpeed: networkSpeedEstimate,
           estimatedTimeRemaining: Math.ceil(estimatedRemainingSeconds),
         },
       });

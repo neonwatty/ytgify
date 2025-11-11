@@ -5,6 +5,7 @@ import { logger } from '@/lib/logger';
 import { initializeMessageBus } from '@/shared/message-bus';
 import { sharedLogger, sharedErrorHandler, extensionStateManager } from '@/shared';
 import { engagementTracker } from '@/shared/engagement-tracker';
+import { databaseCleanup } from '@/shared/database-cleanup';
 
 // Service Worker lifecycle events with enhanced logging and error handling
 chrome.runtime.onInstalled.addListener(
@@ -42,30 +43,73 @@ chrome.runtime.onInstalled.addListener(
 
         // Handle extension updates - clean up old IndexedDB data
         if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
-          try {
-            const { databaseCleanup } = await import('@/shared/database-cleanup');
+          // Skip cleanup if this is a development reload (no previous version means fresh load)
+          const previousVersion = details.previousVersion;
 
+          if (!previousVersion) {
             sharedLogger.info(
-              '[Background] Extension updated - cleaning up IndexedDB',
+              '[Background] Skipping IndexedDB cleanup - no previous version (development reload)',
               { version: chrome.runtime.getManifest().version },
               'background'
             );
+          } else {
+            try {
+              // Check if database exists first
+              const dbExists = await databaseCleanup.databaseExists();
 
-            await databaseCleanup.deleteDatabase();
+              if (!dbExists) {
+                sharedLogger.info(
+                  '[Background] No IndexedDB to cleanup - database does not exist',
+                  { version: chrome.runtime.getManifest().version, previousVersion },
+                  'background'
+                );
+              } else {
+                sharedLogger.info(
+                  '[Background] Extension updated - cleaning up IndexedDB',
+                  { version: chrome.runtime.getManifest().version, previousVersion },
+                  'background'
+                );
 
-            sharedLogger.info('[Background] IndexedDB cleanup completed', {}, 'background');
-            sharedLogger.trackEvent('indexeddb_cleanup_completed', {
-              version: chrome.runtime.getManifest().version,
-            });
-          } catch (error) {
-            sharedLogger.error(
-              '[Background] Failed to cleanup IndexedDB during update',
-              {
-                error: error instanceof Error ? error.message : String(error),
-              },
-              'background'
-            );
-            // Don't throw - cleanup failure shouldn't block extension startup
+                const deleted = await databaseCleanup.deleteDatabase();
+
+                if (deleted) {
+                  sharedLogger.info(
+                    '[Background] IndexedDB cleanup completed successfully',
+                    {},
+                    'background'
+                  );
+                  sharedLogger.trackEvent('indexeddb_cleanup_completed', {
+                    version: chrome.runtime.getManifest().version,
+                    previousVersion,
+                  });
+                } else {
+                  sharedLogger.warn(
+                    '[Background] IndexedDB cleanup returned false',
+                    {},
+                    'background'
+                  );
+                }
+              }
+            } catch (error) {
+              // Improved error serialization
+              const errorMessage =
+                error instanceof Error
+                  ? `${error.name}: ${error.message}`
+                  : String(error);
+
+              sharedLogger.error(
+                `[Background] Failed to cleanup IndexedDB during update: ${errorMessage}`,
+                {
+                  errorType: error instanceof Error ? error.name : typeof error,
+                  errorMessage: error instanceof Error ? error.message : String(error),
+                  errorStack: error instanceof Error ? error.stack : undefined,
+                  version: chrome.runtime.getManifest().version,
+                  previousVersion,
+                },
+                'background'
+              );
+              // Don't throw - cleanup failure shouldn't block extension startup
+            }
           }
         }
 
