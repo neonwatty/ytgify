@@ -1772,6 +1772,124 @@
   40% { opacity: 1; }
 }
 
+/* Inline Progress Bar - Integrated into Stage Item (Anti-Flicker) */
+.ytgif-inline-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  margin-top: 8px;
+  padding-left: 36px;
+  min-height: 28px; /* Reserve space - prevents layout shift */
+  opacity: 1;
+  transition: opacity 0.2s ease;
+  animation: ytgif-inline-progress-fadein 0.3s ease;
+}
+
+/* Fade in on first appearance */
+@keyframes ytgif-inline-progress-fadein {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Hide when no data, but keep in DOM to prevent flicker */
+.ytgif-inline-progress.ytgif-no-data {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Placeholder while waiting for first frame */
+.ytgif-inline-progress-placeholder {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+  padding-left: 0;
+}
+
+/* Progress Bar */
+.ytgif-inline-progress-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.ytgif-inline-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);
+  border-radius: 2px;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: width;
+}
+
+/* Info Line - All elements inline */
+.ytgif-inline-progress-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ytgif-inline-frame-count {
+  font-family: 'Courier New', monospace;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.ytgif-inline-separator {
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 300;
+}
+
+/* Network Speed Indicator */
+.ytgif-inline-network {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.ytgif-inline-network.ytgif-network-fast {
+  color: #4caf50;
+}
+
+.ytgif-inline-network.ytgif-network-medium {
+  color: #ff9800;
+}
+
+.ytgif-inline-network.ytgif-network-slow {
+  color: #f44336;
+}
+
+.ytgif-inline-eta {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+}
+
+/* Responsive handling */
+@media (max-width: 380px) {
+  .ytgif-inline-progress-info {
+    font-size: 10px;
+    gap: 6px;
+  }
+
+  .ytgif-inline-progress {
+    padding-left: 32px;
+  }
+}
+
 /* Screen 5: Feedback - #764ba2 theme */
 .ytgif-feedback-screen .ytgif-button-primary {
   background: linear-gradient(135deg, #764ba2 0%, #5a3980 100%);

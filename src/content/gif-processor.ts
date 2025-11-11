@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 import { createError } from '@/lib/errors';
 import { encodeFrames, FrameData as EncoderFrameData, EncodingOptions } from '@/lib/encoders';
 import { TextOverlay } from '@/types';
+import { metricsCollector } from '@/monitoring/metrics-collector';
 
 /**
  * Compare two canvas frames to detect if they are similar/duplicate
@@ -77,6 +78,15 @@ interface GifProcessingResult {
   };
 }
 
+export interface BufferingStatus {
+  isBuffering: boolean;
+  currentFrame: number;
+  totalFrames: number;
+  bufferedPercentage: number;
+  networkSpeed: 'fast' | 'medium' | 'slow';
+  estimatedTimeRemaining: number;
+}
+
 export interface StageProgressInfo {
   stage: string;
   stageNumber: number;
@@ -84,6 +94,7 @@ export interface StageProgressInfo {
   stageName: string;
   message: string;
   progress: number;
+  bufferingStatus?: BufferingStatus;
 }
 
 export class ContentScriptGifProcessor {
@@ -407,10 +418,16 @@ export class ContentScriptGifProcessor {
 
     const frames: HTMLCanvasElement[] = [];
     let consecutiveDuplicates = 0;
-    // Adaptive threshold: ~1 second of duplicates based on frame rate
-    // Minimum 5 frames, maximum 30 frames
-    const MAX_CONSECUTIVE_DUPLICATES = Math.max(5, Math.min(30, Math.ceil(frameRate)));
+    // Adaptive threshold: ~2 seconds of duplicates based on frame rate
+    // Minimum 10 frames, maximum 40 frames (increased for better buffering tolerance)
+    const MAX_CONSECUTIVE_DUPLICATES = Math.max(10, Math.min(40, Math.ceil(frameRate * 2)));
     let totalDuplicates = 0;
+
+    // Buffering tracking (Phase 1.1 + Always-visible UI)
+    let networkSpeedEstimate: 'fast' | 'medium' | 'slow' = 'fast';
+    const frameWaitTimes: number[] = [];
+    let frameCaptureStartTime = 0;
+    let totalFrameCaptureTime = 0;
 
     // Store original state
     const originalTime = videoElement.currentTime;
@@ -421,6 +438,9 @@ export class ContentScriptGifProcessor {
 
     for (let i = 0; i < frameCount; i++) {
       const captureTime = startTime + i * frameInterval;
+
+      // Start timing this frame capture (always-visible UI)
+      frameCaptureStartTime = performance.now();
 
       logger.debug(
         `[ContentScriptGifProcessor] Seeking to ${captureTime.toFixed(2)}s for frame ${i + 1}`
@@ -440,6 +460,7 @@ export class ContentScriptGifProcessor {
       const maxAttempts = 80; // 80 * 25ms = 2000ms max wait (increased for slow connections)
       let lastCheckedTime = videoElement.currentTime;
       let lastReadyState = videoElement.readyState;
+      const pollStartTime = performance.now();
 
       // Keep polling until either:
       // 1. We're close to the target time AND video has buffered data, OR
@@ -489,6 +510,70 @@ export class ContentScriptGifProcessor {
 
         lastCheckedTime = currentVideoTime;
         lastReadyState = currentReadyState;
+
+        // Send buffering status update on EVERY poll attempt (Always-visible UI)
+        if (attempts % 5 === 0 && attempts > 0) {
+          // Send updates every 5 attempts (125ms intervals) instead of 10
+          const pollDuration = performance.now() - pollStartTime;
+          const avgWaitTime =
+            frameWaitTimes.length > 0
+              ? frameWaitTimes.reduce((a, b) => a + b, 0) / frameWaitTimes.length
+              : pollDuration;
+
+          // Update network speed estimate based on wait times
+          if (frameWaitTimes.length > 2) {
+            if (avgWaitTime > 1000) {
+              networkSpeedEstimate = 'slow';
+            } else if (avgWaitTime > 300) {
+              networkSpeedEstimate = 'medium';
+            } else {
+              networkSpeedEstimate = 'fast';
+            }
+          }
+
+          // Calculate buffered percentage for the target time
+          const videoBufferedRanges = videoElement.buffered;
+          let bufferedPercentage = 0;
+          for (let bi = 0; bi < videoBufferedRanges.length; bi++) {
+            if (
+              videoBufferedRanges.start(bi) <= captureTime &&
+              videoBufferedRanges.end(bi) >= captureTime
+            ) {
+              const nextFrameTime = startTime + (i + 1) * frameInterval;
+              if (videoBufferedRanges.end(bi) >= nextFrameTime) {
+                bufferedPercentage = 100;
+              } else {
+                const remaining = videoBufferedRanges.end(bi) - captureTime;
+                bufferedPercentage = Math.floor((remaining / frameInterval) * 100);
+              }
+              break;
+            }
+          }
+
+          // Estimate remaining time based on average frame time (including this wait)
+          const estimatedFrameTime =
+            totalFrameCaptureTime > 0 ? totalFrameCaptureTime / frames.length : pollDuration;
+          const remainingFrames = frameCount - frames.length;
+          const estimatedRemainingSeconds = (remainingFrames * estimatedFrameTime) / 1000;
+
+          this.progressCallback?.({
+            stage: 'CAPTURING',
+            stageNumber: 1,
+            totalStages: 4,
+            stageName: 'Capturing Frames',
+            message: `Waiting for frame ${i + 1}/${frameCount} to buffer...`,
+            progress: this.getStageProgress('CAPTURING'),
+            bufferingStatus: {
+              isBuffering: true, // Actively waiting for buffer
+              currentFrame: frames.length,
+              totalFrames: frameCount,
+              bufferedPercentage,
+              networkSpeed: networkSpeedEstimate,
+              estimatedTimeRemaining: Math.ceil(estimatedRemainingSeconds),
+            },
+          });
+        }
+
         await new Promise((resolve) => setTimeout(resolve, 25));
         attempts++;
       }
@@ -503,17 +588,28 @@ export class ContentScriptGifProcessor {
       // Additional wait to ensure frame is decoded and rendered
       // This needs to be longer for seeks to non-keyframe positions or slow buffering
       const seekDistance = Math.abs(captureTime - previousTime);
-      let additionalDelay = seekDistance > 2 ? 150 : 100; // Longer delay for longer seeks
+      let additionalDelay = seekDistance > 2 ? 200 : 150; // Longer delay for longer seeks (increased)
 
       // Extra delay if readyState indicates potential buffering issues
       if (videoElement.readyState < 3) {
-        additionalDelay += 100; // Add extra time when buffering
+        additionalDelay += 200; // Add extra time when buffering (increased from 100ms)
+      }
+
+      // Additional delay for first few frames to give video decoder time to initialize
+      if (i < 3) {
+        additionalDelay += 100;
       }
 
       await new Promise((resolve) => setTimeout(resolve, additionalDelay));
 
       const seekDuration = performance.now() - seekStartTime;
       const actualTime = videoElement.currentTime;
+
+      // Track wait time for network speed estimation (Phase 1.1)
+      frameWaitTimes.push(seekDuration);
+      if (frameWaitTimes.length > 10) {
+        frameWaitTimes.shift(); // Keep only recent 10 frames
+      }
 
       if (Math.abs(actualTime - captureTime) > 0.1) {
         logger.warn(
@@ -558,13 +654,66 @@ export class ContentScriptGifProcessor {
             );
           }
 
-          // Try one more aggressive seek attempt if we have a duplicate
-          if (Math.abs(videoElement.currentTime - captureTime) > 0.01) {
-            logger.info(`[ContentScriptGifProcessor] Attempting recovery seek for frame ${i + 1}`);
+          // Multi-strategy retry system (Phase 1.2)
+          // Try recovery attempt on any duplicate (not just when time is wrong)
+          // This helps when video is at correct time but frame hasn't decoded yet
+          if (consecutiveDuplicates >= 2) {
+            // Only start recovery after 2 duplicates to avoid unnecessary retries
+            logger.info(
+              `[ContentScriptGifProcessor] Attempting recovery for frame ${i + 1} (duplicate ${consecutiveDuplicates})`
+            );
 
-            // Try nudging forward slightly
-            videoElement.currentTime = captureTime + 0.001;
-            await new Promise((resolve) => setTimeout(resolve, 200));
+            // Define retry strategies
+            const retryStrategies = [
+              {
+                name: 'time-nudge-small',
+                delay: 300,
+                apply: () => {
+                  const timeOffset =
+                    Math.abs(videoElement.currentTime - captureTime) > 0.01 ? 0.001 : 0.01;
+                  videoElement.currentTime = captureTime + timeOffset;
+                },
+              },
+              {
+                name: 'buffer-wait',
+                delay: 500,
+                apply: () => {
+                  // Re-seek to same position to trigger buffering
+                  videoElement.currentTime = captureTime;
+                },
+              },
+              {
+                name: 'time-nudge-large',
+                delay: 400,
+                apply: () => {
+                  // Larger nudge for stubborn cases
+                  videoElement.currentTime = captureTime + 0.05;
+                },
+              },
+              {
+                name: 'backwards-seek',
+                delay: 500,
+                apply: () => {
+                  // Seek backwards then forward to clear decoder state
+                  videoElement.currentTime = Math.max(0, captureTime - 0.5);
+                  setTimeout(() => {
+                    videoElement.currentTime = captureTime;
+                  }, 100);
+                },
+              },
+            ];
+
+            // Try strategies based on how many duplicates we've seen
+            const strategyIndex = Math.min(consecutiveDuplicates - 2, retryStrategies.length - 1);
+            const strategy = retryStrategies[strategyIndex];
+
+            logger.info(
+              `[ContentScriptGifProcessor] Trying recovery strategy: ${strategy.name} (attempt ${consecutiveDuplicates})`
+            );
+
+            // Apply strategy
+            strategy.apply();
+            await new Promise((resolve) => setTimeout(resolve, strategy.delay));
 
             // Clear and reuse recovery canvas for the recovery attempt
             this.recoveryCtx!.clearRect(0, 0, actualWidth, actualHeight);
@@ -573,17 +722,31 @@ export class ContentScriptGifProcessor {
             // Check if recovery worked
             if (!areCanvasFramesSimilar(this.recoveryCanvas!, lastFrame)) {
               logger.info(
-                `[ContentScriptGifProcessor] Recovery successful! Now at ${videoElement.currentTime.toFixed(3)}s`
+                `[ContentScriptGifProcessor] Recovery successful with ${strategy.name}! Now at ${videoElement.currentTime.toFixed(3)}s`
               );
               // Copy recovery canvas content to main canvas
               this.mainCtx!.clearRect(0, 0, actualWidth, actualHeight);
               this.mainCtx!.drawImage(this.recoveryCanvas!, 0, 0);
               isDuplicate = false;
               consecutiveDuplicates = 0; // Reset counter on successful recovery
+
+              // Record successful recovery in telemetry (Phase 1.3)
+              metricsCollector.recordUserAction('recovery-success', {
+                frameNumber: i + 1,
+                strategy: strategy.name,
+                consecutiveDuplicates: consecutiveDuplicates,
+              });
             } else {
               logger.warn(
-                `[ContentScriptGifProcessor] Recovery failed, still stuck at ${videoElement.currentTime.toFixed(3)}s`
+                `[ContentScriptGifProcessor] Recovery strategy ${strategy.name} failed (attempt ${consecutiveDuplicates}), still stuck at ${videoElement.currentTime.toFixed(3)}s`
               );
+
+              // Record failed recovery in telemetry (Phase 1.3)
+              metricsCollector.recordUserAction('recovery-failed', {
+                frameNumber: i + 1,
+                strategy: strategy.name,
+                consecutiveDuplicates: consecutiveDuplicates,
+              });
             }
           }
         } else {
@@ -604,6 +767,61 @@ export class ContentScriptGifProcessor {
       frameCtx.drawImage(this.mainCanvas!, 0, 0);
 
       frames.push(frameCanvas);
+
+      // Calculate frame capture metrics and send buffering status (Always-visible UI)
+      const frameCaptureEndTime = performance.now();
+      const thisFrameTime = frameCaptureEndTime - frameCaptureStartTime;
+      totalFrameCaptureTime += thisFrameTime;
+      const averageFrameTime = totalFrameCaptureTime / frames.length;
+
+      // Update network speed estimate based on average frame time
+      if (frames.length > 2) {
+        if (averageFrameTime < 100) {
+          networkSpeedEstimate = 'fast';
+        } else if (averageFrameTime < 500) {
+          networkSpeedEstimate = 'medium';
+        } else {
+          networkSpeedEstimate = 'slow';
+        }
+      }
+
+      // Calculate ETA based on average frame time
+      const remainingFrames = frameCount - frames.length;
+      const estimatedRemainingSeconds = (remainingFrames * averageFrameTime) / 1000;
+
+      // Calculate buffered percentage
+      const videoBuffered = videoElement.buffered;
+      let bufferedPercentage = 0;
+      for (let bi = 0; bi < videoBuffered.length; bi++) {
+        if (videoBuffered.start(bi) <= captureTime && videoBuffered.end(bi) >= captureTime) {
+          const nextFrameTime = startTime + (i + 1) * frameInterval;
+          if (videoBuffered.end(bi) >= nextFrameTime) {
+            bufferedPercentage = 100;
+          } else {
+            const remaining = videoBuffered.end(bi) - captureTime;
+            bufferedPercentage = Math.floor((remaining / frameInterval) * 100);
+          }
+          break;
+        }
+      }
+
+      // Send buffering status after successful frame capture (not actively buffering)
+      this.progressCallback?.({
+        stage: 'CAPTURING',
+        stageNumber: 1,
+        totalStages: 4,
+        stageName: 'Capturing Frames',
+        message: `Captured frame ${frames.length}/${frameCount}`,
+        progress: this.getStageProgress('CAPTURING'),
+        bufferingStatus: {
+          isBuffering: false, // Normal capture, not waiting
+          currentFrame: frames.length,
+          totalFrames: frameCount,
+          bufferedPercentage,
+          networkSpeed: networkSpeedEstimate,
+          estimatedTimeRemaining: Math.ceil(estimatedRemainingSeconds),
+        },
+      });
 
       // Export frame data for verification (in dev mode)
       if (typeof window !== 'undefined') {

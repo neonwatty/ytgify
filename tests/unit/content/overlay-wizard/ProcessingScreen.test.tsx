@@ -274,7 +274,7 @@ describe('ProcessingScreen', () => {
 
       expect(screen.getByText('Creating Your GIF')).toBeInTheDocument();
       expect(screen.getByText('Stage 1 of 4')).toBeInTheDocument();
-      expect(screen.getByText('Initializing...')).toBeInTheDocument();
+      expect(screen.getAllByText('Initializing...')[0]).toBeInTheDocument();
     });
 
     it('should handle partial processingStatus', () => {
@@ -552,7 +552,7 @@ describe('ProcessingScreen', () => {
       );
 
       // Component uses || operator, so empty string defaults to 'Initializing...'
-      expect(screen.getByText('Initializing...')).toBeInTheDocument();
+      expect(screen.getAllByText('Initializing...')[0]).toBeInTheDocument();
 
       // Test with undefined message (should use default)
       rerender(
@@ -569,7 +569,7 @@ describe('ProcessingScreen', () => {
         />
       );
 
-      expect(screen.getByText('Initializing...')).toBeInTheDocument();
+      expect(screen.getAllByText('Initializing...')[0]).toBeInTheDocument();
     });
 
     it('should not call onComplete multiple times for same progress', async () => {
@@ -745,6 +745,607 @@ describe('ProcessingScreen', () => {
       // Should render final state correctly
       expect(screen.getByText('Stage: FINALIZING')).toBeInTheDocument();
       expect(screen.getByText('Stage 4 of 4')).toBeInTheDocument();
+    });
+  });
+
+  describe('Buffering Status Display (Phase 1.1)', () => {
+    const createBufferingStatus = (overrides = {}) => ({
+      isBuffering: true,
+      currentFrame: 25,
+      totalFrames: 50,
+      bufferedPercentage: 50,
+      networkSpeed: 'medium' as const,
+      estimatedTimeRemaining: 5,
+      ...overrides,
+    });
+
+    describe('Inline Progress Bar', () => {
+      it('should render inline progress bar during CAPTURING stage with buffering status', () => {
+        render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 50,
+              message: 'Capturing frames...',
+              bufferingStatus: createBufferingStatus(),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        // Should show frame count
+        expect(screen.getByText(/Frame 25\/50/i)).toBeInTheDocument();
+      });
+
+      it('should display current frame and total frames', () => {
+        render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 30,
+              message: 'Capturing...',
+              bufferingStatus: createBufferingStatus({ currentFrame: 15, totalFrames: 50 }),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        expect(screen.getByText('Frame 15/50')).toBeInTheDocument();
+      });
+
+      it('should show progress fill based on frame ratio', () => {
+        const { container } = render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 50,
+              message: 'Capturing...',
+              bufferingStatus: createBufferingStatus({ currentFrame: 25, totalFrames: 100 }),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        // Progress fill should be 25% width (25/100)
+        const progressFill = container.querySelector('.ytgif-inline-progress-fill');
+        expect(progressFill).toHaveStyle({ width: '25%' });
+      });
+
+      it('should show ETA when estimatedTimeRemaining > 0', () => {
+        render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 40,
+              message: 'Capturing...',
+              bufferingStatus: createBufferingStatus({ estimatedTimeRemaining: 7.3 }),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        // Should round to 8s
+        expect(screen.getByText(/~8s/i)).toBeInTheDocument();
+      });
+
+      it('should hide ETA when estimatedTimeRemaining is 0', () => {
+        render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 40,
+              message: 'Capturing...',
+              bufferingStatus: createBufferingStatus({ estimatedTimeRemaining: 0 }),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        expect(screen.queryByText(/~\ds/i)).not.toBeInTheDocument();
+      });
+
+      it('should display "Initializing..." placeholder when no buffering data', () => {
+        render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 10,
+              message: 'Starting...',
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        expect(screen.getByText('Initializing...')).toBeInTheDocument();
+      });
+    });
+
+    describe('State Persistence', () => {
+      it('should persist bufferingStatus in component state', () => {
+        const { rerender } = render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 50,
+              message: 'Capturing...',
+              bufferingStatus: createBufferingStatus({ currentFrame: 25, totalFrames: 50 }),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        expect(screen.getByText('Frame 25/50')).toBeInTheDocument();
+
+        // Rerender without bufferingStatus
+        rerender(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 52,
+              message: 'Capturing...',
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        // Should still show last known frame count
+        expect(screen.getByText('Frame 25/50')).toBeInTheDocument();
+      });
+
+      it('should update persisted status when new bufferingStatus provided', () => {
+        const { rerender } = render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 50,
+              message: 'Capturing...',
+              bufferingStatus: createBufferingStatus({ currentFrame: 25, totalFrames: 50 }),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        expect(screen.getByText('Frame 25/50')).toBeInTheDocument();
+
+        // Update with new buffering status
+        rerender(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 60,
+              message: 'Capturing...',
+              bufferingStatus: createBufferingStatus({ currentFrame: 30, totalFrames: 50 }),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        // Should show updated frame count
+        expect(screen.getByText('Frame 30/50')).toBeInTheDocument();
+      });
+
+      it('should clear lastBufferingStatus when leaving CAPTURING stage', () => {
+        const { rerender } = render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 50,
+              message: 'Capturing...',
+              bufferingStatus: createBufferingStatus(),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        expect(screen.getByText(/Frame 25\/50/i)).toBeInTheDocument();
+
+        // Move to ENCODING stage
+        rerender(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'ENCODING',
+              stageNumber: 3,
+              totalStages: 4,
+              progress: 75,
+              message: 'Encoding...',
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        // Buffering status should not be visible
+        expect(screen.queryByText(/Frame 25\/50/i)).not.toBeInTheDocument();
+      });
+
+      it('should prevent flickering by showing persisted status during gaps', () => {
+        const { rerender } = render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 40,
+              message: 'Capturing...',
+              bufferingStatus: createBufferingStatus({ currentFrame: 20, totalFrames: 50 }),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        // Rapid updates with alternating bufferingStatus
+        rerender(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 42,
+              message: 'Capturing...',
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        // Should still show last frame count without flickering to "Initializing..."
+        expect(screen.getByText('Frame 20/50')).toBeInTheDocument();
+        expect(screen.queryByText('Initializing...')).not.toBeInTheDocument();
+      });
+
+      it('should show "Initializing..." only when no buffering data ever received', () => {
+        render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 5,
+              message: 'Starting capture...',
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        expect(screen.getByText('Initializing...')).toBeInTheDocument();
+      });
+    });
+
+    describe('Network Speed Indicators', () => {
+      it('should display "Fast" network indicator', () => {
+        render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 50,
+              message: 'Capturing...',
+              bufferingStatus: createBufferingStatus({ networkSpeed: 'fast' }),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        expect(screen.getByText(/Fast/i)).toBeInTheDocument();
+      });
+
+      it('should display "Medium" network indicator', () => {
+        render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 50,
+              message: 'Capturing...',
+              bufferingStatus: createBufferingStatus({ networkSpeed: 'medium' }),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        expect(screen.getByText(/Medium/i)).toBeInTheDocument();
+      });
+
+      it('should display "Slow" network indicator', () => {
+        render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 50,
+              message: 'Capturing...',
+              bufferingStatus: createBufferingStatus({ networkSpeed: 'slow' }),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        expect(screen.getByText(/Slow/i)).toBeInTheDocument();
+      });
+
+      it('should apply correct CSS class for network speed', () => {
+        const { container, rerender } = render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 50,
+              message: 'Capturing...',
+              bufferingStatus: createBufferingStatus({ networkSpeed: 'fast' }),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        expect(container.querySelector('.ytgif-network-fast')).toBeInTheDocument();
+
+        rerender(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 50,
+              message: 'Capturing...',
+              bufferingStatus: createBufferingStatus({ networkSpeed: 'slow' }),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        expect(container.querySelector('.ytgif-network-slow')).toBeInTheDocument();
+      });
+    });
+
+    describe('ETA Display', () => {
+      it('should round ETA to nearest second', () => {
+        render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 50,
+              message: 'Capturing...',
+              bufferingStatus: createBufferingStatus({ estimatedTimeRemaining: 4.7 }),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        expect(screen.getByText(/~5s/i)).toBeInTheDocument();
+      });
+
+      it('should handle sub-second ETAs', () => {
+        render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 90,
+              message: 'Capturing...',
+              bufferingStatus: createBufferingStatus({ estimatedTimeRemaining: 0.3 }),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        // Should round up to 1s
+        expect(screen.getByText(/~1s/i)).toBeInTheDocument();
+      });
+
+      it('should handle long ETAs', () => {
+        render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 20,
+              message: 'Capturing...',
+              bufferingStatus: createBufferingStatus({ estimatedTimeRemaining: 45.2 }),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        // Math.ceil(45.2) = 46
+        expect(screen.getByText(/~46s/i)).toBeInTheDocument();
+      });
+    });
+
+    describe('Stage-Specific Rendering', () => {
+      it('should only show buffering UI during CAPTURING stage', () => {
+        const { rerender } = render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 25,
+              message: 'Capturing...',
+              bufferingStatus: createBufferingStatus(),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        // Should show buffering UI in CAPTURING
+        expect(screen.getByText(/Frame 25\/50/i)).toBeInTheDocument();
+
+        // Test all other stages - buffering UI should not be visible
+        const stages = [
+          { stage: 'ANALYZING', stageNumber: 2 },
+          { stage: 'ENCODING', stageNumber: 3 },
+          { stage: 'FINALIZING', stageNumber: 4 },
+        ];
+
+        stages.forEach(({ stage, stageNumber }) => {
+          rerender(
+            <ProcessingScreen
+              processingStatus={{
+                stage,
+                stageNumber,
+                totalStages: 4,
+                progress: 25 * stageNumber,
+                message: `${stage}...`,
+                bufferingStatus: createBufferingStatus(), // Still providing data
+              }}
+              onComplete={mockOnComplete}
+              onError={mockOnError}
+            />
+          );
+
+          // Buffering UI should not render
+          expect(screen.queryByText(/Frame 25\/50/i)).not.toBeInTheDocument();
+        });
+      });
+
+      it('should not show buffering UI in ERROR or COMPLETED states', () => {
+        const { rerender } = render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 25,
+              message: 'Capturing...',
+              bufferingStatus: createBufferingStatus(),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        expect(screen.getByText(/Frame 25\/50/i)).toBeInTheDocument();
+
+        // Test ERROR state
+        rerender(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'ERROR',
+              stageNumber: 2,
+              totalStages: 4,
+              progress: 0,
+              message: 'Error occurred',
+              bufferingStatus: createBufferingStatus(),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        expect(screen.queryByText(/Frame 25\/50/i)).not.toBeInTheDocument();
+
+        // Test COMPLETED state
+        rerender(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'COMPLETED',
+              stageNumber: 4,
+              totalStages: 4,
+              progress: 100,
+              message: 'Complete!',
+              bufferingStatus: createBufferingStatus(),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        expect(screen.queryByText(/Frame 25\/50/i)).not.toBeInTheDocument();
+      });
+    });
+
+    describe('Buffering Indicator', () => {
+      it('should show spinning icon when isBuffering=true', () => {
+        render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 50,
+              message: 'Capturing...',
+              bufferingStatus: createBufferingStatus({ isBuffering: true }),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        // Should show rotating icon (⟳) - use regex since it's in text node with other content
+        expect(screen.getByText(/⟳/i)).toBeInTheDocument();
+      });
+
+      it('should show solid icon when isBuffering=false', () => {
+        render(
+          <ProcessingScreen
+            processingStatus={{
+              stage: 'CAPTURING',
+              stageNumber: 1,
+              totalStages: 4,
+              progress: 50,
+              message: 'Capturing...',
+              bufferingStatus: createBufferingStatus({ isBuffering: false }),
+            }}
+            onComplete={mockOnComplete}
+            onError={mockOnError}
+          />
+        );
+
+        // Should show solid icon (●)
+        expect(screen.getByText('●')).toBeInTheDocument();
+      });
     });
   });
 });

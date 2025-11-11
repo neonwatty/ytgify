@@ -30,7 +30,7 @@ import { injectionManager } from './injection-manager';
 import { extensionStateManager } from '@/shared';
 import { youTubeAPI, YouTubeAPIIntegration } from './youtube-api-integration';
 import { ContentScriptFrameExtractor, ContentFrameExtractionRequest } from './frame-extractor';
-import { gifProcessor } from './gif-processor';
+import { gifProcessor, BufferingStatus } from './gif-processor';
 import { playerIntegration } from './player-integration';
 import { playerController } from './player-controller';
 import { TimelineOverlayWrapper } from './timeline-overlay-wrapper';
@@ -54,7 +54,14 @@ class YouTubeGifMaker {
   private videoElement: HTMLVideoElement | null = null;
   private navigationUnsubscribe: (() => void) | null = null;
   private processingStatus:
-    | { stage: string; stageNumber: number; totalStages: number; progress: number; message: string }
+    | {
+        stage: string;
+        stageNumber: number;
+        totalStages: number;
+        progress: number;
+        message: string;
+        bufferingStatus?: BufferingStatus;
+      }
     | undefined = undefined;
   private isWizardMode = false;
   private wizardUpdateInterval: NodeJS.Timeout | null = null;
@@ -1377,6 +1384,7 @@ class YouTubeGifMaker {
             totalStages: stageInfo.totalStages,
             progress: stageInfo.progress,
             message: stageInfo.message,
+            bufferingStatus: stageInfo.bufferingStatus,
           };
           this.updateTimelineOverlay();
           this.log(
@@ -1394,6 +1402,7 @@ class YouTubeGifMaker {
               totalStages: stageInfo.totalStages,
               progress: stageInfo.progress,
               message: stageInfo.message,
+              bufferingStatus: stageInfo.bufferingStatus,
             },
             '*'
           );

@@ -238,15 +238,15 @@ export class MetricsCollector {
 
   public recordUserAction(action: string, details?: Record<string, unknown>): void {
     if (!this.privacySettings.collectAnalytics) return;
-    
+
     const userAction: UserAction = {
       timestamp: Date.now(),
       action,
       details: this.privacySettings.anonymizeData ? this.anonymizeDetails(details) : details
     };
-    
+
     this.userActions.push(userAction);
-    
+
     // Maintain max user actions
     if (this.userActions.length > this.MAX_USER_ACTIONS) {
       this.userActions.shift();
@@ -422,10 +422,10 @@ export class MetricsCollector {
   } {
     const metrics = this.getMetrics();
     const performanceReport = performanceTracker.generateReport();
-    
+
     const duration = metrics.endTime - metrics.startTime;
     const durationMinutes = Math.floor(duration / 60000);
-    
+
     const stats = {
       'Session Duration': `${durationMinutes} minutes`,
       'GIFs Created': metrics.totalGifsCreated,
@@ -434,11 +434,11 @@ export class MetricsCollector {
       'Peak Memory Usage': `${Math.round(metrics.peakMemoryUsage)}MB`,
       'Success Rate': `${Math.round(performanceReport.summary.successRate)}%`
     };
-    
+
     const summary = metrics.totalGifsCreated > 0
       ? `You've created ${metrics.totalGifsCreated} GIF${metrics.totalGifsCreated > 1 ? 's' : ''} in ${durationMinutes} minutes!`
       : 'Start creating GIFs to see your performance stats!';
-    
+
     return {
       summary,
       stats,
