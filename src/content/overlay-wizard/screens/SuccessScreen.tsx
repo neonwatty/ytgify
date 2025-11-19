@@ -7,6 +7,7 @@ interface SuccessScreenProps {
   onBack?: () => void;
   onFeedback?: () => void;
   onClose?: () => void;
+  onUploadToCloud?: () => void;
   gifSize?: number;
   gifDataUrl?: string;
   gifMetadata?: {
@@ -15,6 +16,9 @@ interface SuccessScreenProps {
     duration: number;
     frameCount?: number;
   };
+  // Phase 2: Cloud upload status
+  uploadStatus?: 'uploading' | 'success' | 'failed' | 'disabled';
+  uploadError?: string;
 }
 
 const SuccessScreen: React.FC<SuccessScreenProps> = ({
@@ -22,9 +26,12 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
   onBack,
   onFeedback,
   onClose: _onClose,
+  onUploadToCloud,
   gifSize,
   gifDataUrl,
   gifMetadata,
+  uploadStatus,
+  uploadError,
 }) => {
   const [showFooter, setShowFooter] = React.useState(false);
 
@@ -57,6 +64,64 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  // Phase 2: Render upload status indicator
+  const renderUploadStatus = () => {
+    if (!uploadStatus) return null;
+
+    const statusConfig = {
+      uploading: {
+        icon: (
+          <svg className="ytgif-spinner" width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.25" />
+            <path
+              d="M12 2a10 10 0 0110 10"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
+          </svg>
+        ),
+        text: 'Uploading to cloud...',
+        className: 'ytgif-upload-status-uploading',
+      },
+      success: {
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981">
+            <circle cx="12" cy="12" r="10" strokeWidth="2" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4" />
+          </svg>
+        ),
+        text: 'Uploaded to ytgify!',
+        className: 'ytgif-upload-status-success',
+      },
+      failed: {
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b">
+            <circle cx="12" cy="12" r="10" strokeWidth="2" />
+            <path strokeLinecap="round" strokeWidth="2" d="M12 8v4m0 4h.01" />
+          </svg>
+        ),
+        text: uploadError || 'Upload failed - saved locally',
+        className: 'ytgif-upload-status-failed',
+      },
+      disabled: {
+        icon: null,
+        text: '',
+        className: '',
+      },
+    };
+
+    const config = statusConfig[uploadStatus];
+    if (!config.text) return null;
+
+    return (
+      <div className={`ytgif-upload-status ${config.className}`}>
+        {config.icon}
+        <span>{config.text}</span>
+      </div>
+    );
   };
 
   return (
@@ -98,6 +163,9 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
           {!gifDataUrl && gifSize && <p className="ytgif-gif-size">Size: {formatSize(gifSize)}</p>}
         </div>
 
+        {/* Phase 2: Cloud Upload Status */}
+        {renderUploadStatus()}
+
         {/* Success Actions */}
         <div className="ytgif-success-actions">
           <button className="ytgif-button-secondary" onClick={onBack}>
@@ -120,6 +188,17 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
             </svg>
             Download GIF
           </button>
+
+          {uploadStatus === 'disabled' && onUploadToCloud && (
+            <button className="ytgif-button-primary" onClick={onUploadToCloud}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" strokeWidth="2" />
+                <polyline points="16 12 12 8 8 12" strokeWidth="2" />
+                <line x1="12" y1="8" x2="12" y2="20" strokeWidth="2" />
+              </svg>
+              Upload to Cloud
+            </button>
+          )}
         </div>
 
         {/* Stay Connected Action */}

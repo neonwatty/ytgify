@@ -4,6 +4,9 @@ import { createError } from '@/lib/errors';
 import { encodeFrames, FrameData as EncoderFrameData, EncodingOptions } from '@/lib/encoders';
 import { TextOverlay } from '@/types';
 import { metricsCollector } from '@/monitoring/metrics-collector';
+import { StorageAdapter } from '@/lib/storage/storage-adapter';
+import { apiClient } from '@/lib/api/api-client';
+import type { UploadGifParams, UploadedGif } from '@/types/auth';
 
 /**
  * Compare two canvas frames to detect if they are similar/duplicate
@@ -74,6 +77,7 @@ interface GifProcessingResult {
     frameCount: number;
     width: number;
     height: number;
+    fps: number; // Phase 2: Added for backend upload
     id: string;
   };
 }
@@ -306,6 +310,7 @@ export class ContentScriptGifProcessor {
         frameCount: frames.length,
         width: frames[0]?.width || 320,
         height: frames[0]?.height || 240,
+        fps: options.frameRate || 5, // Phase 2: Added for backend upload
         id: `gif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       };
 
@@ -972,6 +977,116 @@ export class ContentScriptGifProcessor {
         }
       }
     );
+  }
+
+  /**
+   * Phase 2: Save GIF with optional cloud upload
+   *
+   * Progressive enhancement strategy:
+   * 1. ALWAYS download to Downloads folder first (never fails)
+   * 2. OPTIONALLY upload to cloud if user is authenticated
+   * 3. Return status of both operations
+   *
+   * @param blob - GIF blob to save
+   * @param metadata - GIF metadata from processing
+   * @param uploadParams - Parameters for cloud upload (title, YouTube URL, etc.)
+   * @returns Promise with download and upload status
+   */
+  public async saveGifWithCloudUpload(
+    blob: Blob,
+    metadata: {
+      fps: number;
+      duration: number;
+      width: number;
+      height: number;
+      frameCount: number;
+      fileSize: number;
+      id: string;
+    },
+    uploadParams: {
+      title: string;
+      youtubeUrl: string;
+      timestampStart: number;
+      timestampEnd: number;
+      youtubeVideoTitle?: string;
+      youtubeChannelName?: string;
+      description?: string;
+    },
+    forceUpload: boolean = false
+  ): Promise<{
+    downloadSuccess: boolean;
+    uploadSuccess: boolean;
+    uploadedGif?: UploadedGif;
+    uploadError?: string;
+  }> {
+    // Step 1: ALWAYS download to Downloads folder first
+    const filename = `${uploadParams.title}-${Date.now()}.gif`;
+    await this.downloadGif(blob, filename);
+    logger.info('[ContentScriptGifProcessor] ✅ GIF saved to Downloads folder', { filename });
+
+    // Step 2: Check if user is authenticated
+    const isAuthenticated = await StorageAdapter.isAuthenticated();
+
+    if (!isAuthenticated) {
+      logger.info('[ContentScriptGifProcessor] User not authenticated, skipping cloud upload');
+      return {
+        downloadSuccess: true,
+        uploadSuccess: false,
+      };
+    }
+
+    // Step 3: Get user preferences
+    const preferences = await StorageAdapter.getAuthPreferences();
+
+    // Check upload preferences (skip if forceUpload is true - manual upload via button)
+    if (!forceUpload && preferences.autoUpload === false) {
+      logger.info('[ContentScriptGifProcessor] Auto-upload disabled in preferences');
+      return {
+        downloadSuccess: true,
+        uploadSuccess: false,
+      };
+    }
+
+    // Step 4: Attempt cloud upload
+    try {
+      logger.info('[ContentScriptGifProcessor] 📤 Uploading GIF to cloud...', {
+        title: uploadParams.title,
+        size: blob.size,
+      });
+
+      const uploadGifParams: UploadGifParams = {
+        file: blob,
+        title: uploadParams.title,
+        youtubeUrl: uploadParams.youtubeUrl,
+        timestampStart: uploadParams.timestampStart,
+        timestampEnd: uploadParams.timestampEnd,
+        youtubeVideoTitle: uploadParams.youtubeVideoTitle,
+        youtubeChannelName: uploadParams.youtubeChannelName,
+        description: uploadParams.description,
+        privacy: preferences.defaultPrivacy || 'public_access',
+      };
+
+      const uploadedGif = await apiClient.uploadGif(uploadGifParams);
+
+      logger.info('[ContentScriptGifProcessor] ✅ GIF uploaded to cloud', {
+        gifId: uploadedGif.id,
+        fileUrl: uploadedGif.file_url,
+      });
+
+      return {
+        downloadSuccess: true,
+        uploadSuccess: true,
+        uploadedGif,
+      };
+    } catch (error) {
+      logger.error('[ContentScriptGifProcessor] ⚠️ Cloud upload failed', { error });
+
+      return {
+        downloadSuccess: true,
+        uploadSuccess: false,
+        uploadError: error instanceof Error ? error.message : 'Unknown upload error',
+      };
+    }
   }
 }
 

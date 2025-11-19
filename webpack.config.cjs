@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
@@ -26,7 +27,7 @@ module.exports = (env, argv) => {
         {
           test: /\.tsx?$/,
           use: 'ts-loader',
-          exclude: /node_modules/,
+          exclude: [/node_modules/, /tests/],
         },
         {
           test: /\.css$/,
@@ -51,6 +52,13 @@ module.exports = (env, argv) => {
       },
     },
     plugins: [
+      new webpack.DefinePlugin({
+        'process.env.NODE_ENV': JSON.stringify(isProduction ? 'production' : 'development'),
+        'process.env': JSON.stringify({}),
+      }),
+      new webpack.ProvidePlugin({
+        process: 'process/browser',
+      }),
       new MiniCssExtractPlugin({
         filename: '[name].css',
       }),

@@ -29,7 +29,7 @@ export class TextOverlayPage {
     this.container = page.locator('.ytgif-text-overlay-screen');
     this.textInput = page.locator('input[placeholder*="text"], textarea[placeholder*="text"]');
     this.addButton = page.locator('button:has-text("Add"), button:has-text("Add Text")');
-    this.skipButton = page.locator('button:has-text("Skip")');
+    this.skipButton = page.locator('.ytgif-overlay-wizard button:has-text("Skip This Step"), .ytgif-text-overlay-screen button:has-text("Skip This Step"), button.ytgif-button-secondary:has-text("Skip")');
     this.nextButton = page.locator('.ytgif-button-primary, button:has-text("Create GIF"), button:has-text("Generate")');
     this.backButton = page.locator('.ytgif-back-button, button:has-text("Back")');
     this.preview = page.locator('.ytgif-text-preview, .preview-container');

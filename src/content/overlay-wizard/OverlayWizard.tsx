@@ -22,6 +22,7 @@ interface OverlayWizardProps {
     frameRate?: number
   ) => void;
   onSeekTo?: (time: number) => void;
+  onUploadToCloud?: () => void;
   isCreating?: boolean;
   processingStatus?: {
     stage: string;
@@ -35,6 +36,9 @@ interface OverlayWizardProps {
     dataUrl: string;
     size: number;
     metadata: unknown;
+    // Phase 2: Cloud upload status
+    uploadStatus?: 'uploading' | 'success' | 'failed' | 'disabled';
+    uploadError?: string;
   };
 }
 
@@ -47,6 +51,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   onClose,
   onCreateGif,
   onSeekTo,
+  onUploadToCloud,
   isCreating: _isCreating = false,
   processingStatus,
   gifData,
@@ -112,6 +117,9 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
               frameCount?: number;
             }
           | undefined,
+        // Phase 2: Upload status
+        uploadStatus: gifData.uploadStatus,
+        uploadError: gifData.uploadError,
       };
 
       setScreenData(newData);
@@ -264,6 +272,11 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
               gifSize={data.gifSize}
               gifDataUrl={data.gifDataUrl}
               gifMetadata={data.gifMetadata}
+              uploadStatus={
+                data.uploadStatus as 'uploading' | 'success' | 'failed' | 'disabled' | undefined
+              }
+              uploadError={data.uploadError as string | undefined}
+              onUploadToCloud={onUploadToCloud}
             />
           )}
 

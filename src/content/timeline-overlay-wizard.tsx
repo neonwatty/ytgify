@@ -17,6 +17,7 @@ interface TimelineOverlayWizardProps {
     frameRate?: number
   ) => void;
   onSeekTo?: (time: number) => void;
+  onUploadToCloud?: () => void;
   isCreating?: boolean;
   processingStatus?: {
     stage: string;
@@ -30,6 +31,9 @@ interface TimelineOverlayWizardProps {
     dataUrl: string;
     size: number;
     metadata: Record<string, unknown>;
+    // Phase 2: Cloud upload status
+    uploadStatus?: 'uploading' | 'success' | 'failed' | 'disabled';
+    uploadError?: string;
   };
 }
 
@@ -42,6 +46,7 @@ export const TimelineOverlayWizard: React.FC<TimelineOverlayWizardProps> = ({
   onClose,
   onCreateGif,
   onSeekTo,
+  onUploadToCloud,
   isCreating = false,
   processingStatus,
   gifData,
@@ -71,6 +76,7 @@ export const TimelineOverlayWizard: React.FC<TimelineOverlayWizardProps> = ({
       onClose={onClose}
       onCreateGif={handleCreateGif}
       onSeekTo={onSeekTo}
+      onUploadToCloud={onUploadToCloud}
       isCreating={isCreating}
       processingStatus={processingStatus}
       gifData={gifData}
