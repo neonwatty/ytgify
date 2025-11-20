@@ -4,9 +4,17 @@ import '@testing-library/jest-dom';
 import PopupApp from '../../../src/popup/popup-modern';
 import { resetChromeMocks } from '../__mocks__/chrome-mocks';
 import manifest from '../../../manifest.json';
+import * as links from '../../../src/constants/links';
 
 // Mock CSS imports
 jest.mock('../../../src/popup/styles-modern.css', () => ({}));
+
+// Mock links module
+jest.mock('../../../src/constants/links', () => ({
+  openExternalLink: jest.fn(),
+  getReviewLink: jest.fn(() => 'https://chromewebstore.google.com/detail/ytgify/mock-id/reviews'),
+  getGitHubStarLink: jest.fn(() => 'https://github.com/neonwatty/ytgify'),
+}));
 
 describe('PopupApp Component', () => {
   beforeEach(() => {
@@ -791,9 +799,11 @@ describe('PopupApp Component', () => {
       const reviewLink = screen.getByText('Leave us a review!');
       fireEvent.click(reviewLink);
 
-      // Verify chrome.tabs.create was called
+      // Verify openExternalLink was called with review URL
       await waitFor(() => {
-        expect((global as any).chrome.tabs.create).toHaveBeenCalled();
+        expect(links.openExternalLink).toHaveBeenCalledWith(
+          'https://chromewebstore.google.com/detail/ytgify/mock-id/reviews'
+        );
       });
     });
 
@@ -834,7 +844,7 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText('v1.0.10')).toBeInTheDocument();
+        expect(screen.getByText('v1.0.11')).toBeInTheDocument();
       });
     });
 
@@ -846,7 +856,7 @@ describe('PopupApp Component', () => {
       await waitFor(() => {
         const versionElement = screen.getByText(/^v\d+\.\d+\.\d+$/);
         expect(versionElement).toBeInTheDocument();
-        expect(versionElement.textContent).toBe('v1.0.10');
+        expect(versionElement.textContent).toBe('v1.0.11');
       });
     });
 
@@ -922,34 +932,26 @@ describe('PopupApp Component', () => {
     });
   });
 
-  describe('Stay Connected Button', () => {
-    beforeEach(() => {
-      // Mock chrome.tabs.sendMessage
-      (global as any).chrome.tabs.sendMessage = jest.fn((tabId, message, callback) => {
-        if (callback) callback({ success: true });
-        return Promise.resolve({ success: true });
-      });
-    });
-
-    test('Stay Connected button renders on YouTube video page', async () => {
+  describe('Join Discord Button', () => {
+    test('Join Discord button renders on YouTube video page', async () => {
       mockTabWithUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'Sample Video - YouTube');
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Stay Connected/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Join Discord/i })).toBeInTheDocument();
       });
     });
 
-    test('Stay Connected button renders on YouTube Shorts page', async () => {
+    test('Join Discord button renders on YouTube Shorts page', async () => {
       mockTabWithUrl('https://www.youtube.com/shorts/ABC123', 'Short Video - YouTube');
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Stay Connected/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Join Discord/i })).toBeInTheDocument();
       });
     });
 
-    test('Stay Connected button does NOT render on non-YouTube pages', async () => {
+    test('Join Discord button does NOT render on non-YouTube pages', async () => {
       mockTabWithUrl('https://www.example.com', 'Example Website');
       render(<PopupApp />);
 
@@ -957,89 +959,45 @@ describe('PopupApp Component', () => {
         expect(screen.getByText('No Video Found')).toBeInTheDocument();
       });
 
-      expect(screen.queryByRole('button', { name: /Stay Connected/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Join Discord/i })).not.toBeInTheDocument();
     });
 
-    test('Stay Connected button shows subtitle text', async () => {
+    test('Join Discord button shows subtitle text', async () => {
       mockTabWithUrl('https://www.youtube.com/watch?v=test', 'Test - YouTube');
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText('Reviews, Feedback, & Updates')).toBeInTheDocument();
+        expect(screen.getByText('Community Support & Updates')).toBeInTheDocument();
       });
     });
 
-    test('clicking Stay Connected button sends SHOW_NEWSLETTER_WIZARD message', async () => {
+    test('clicking Join Discord button opens Discord link', async () => {
       mockTabWithUrl('https://www.youtube.com/watch?v=test', 'Test - YouTube');
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Stay Connected/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Join Discord/i })).toBeInTheDocument();
       });
 
-      const stayConnectedButton = screen.getByRole('button', { name: /Stay Connected/i });
-      fireEvent.click(stayConnectedButton);
+      const discordButton = screen.getByRole('button', { name: /Join Discord/i });
+      fireEvent.click(discordButton);
 
       await waitFor(() => {
-        expect((global as any).chrome.tabs.sendMessage).toHaveBeenCalledWith(
-          1, // tab ID
-          { type: 'SHOW_NEWSLETTER_WIZARD' }
-        );
+        expect(links.openExternalLink).toHaveBeenCalledWith('https://discord.gg/8EUxqR93');
       });
     });
 
-    test('popup closes after clicking Stay Connected button', async () => {
+    test('Join Discord button has correct Discord icon', async () => {
       mockTabWithUrl('https://www.youtube.com/watch?v=test', 'Test - YouTube');
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Stay Connected/i })).toBeInTheDocument();
-      });
-
-      const stayConnectedButton = screen.getByRole('button', { name: /Stay Connected/i });
-      fireEvent.click(stayConnectedButton);
-
-      await waitFor(() => {
-        expect((global as any).window.close).toHaveBeenCalled();
-      });
-    });
-
-    test('handles error when sendMessage fails', async () => {
-      const consoleError = jest.spyOn(console, 'error').mockImplementation();
-      (global as any).chrome.tabs.sendMessage = jest.fn(() => {
-        throw new Error('Tab not found');
-      });
-
-      mockTabWithUrl('https://www.youtube.com/watch?v=test', 'Test - YouTube');
-      render(<PopupApp />);
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Stay Connected/i })).toBeInTheDocument();
-      });
-
-      const stayConnectedButton = screen.getByRole('button', { name: /Stay Connected/i });
-      fireEvent.click(stayConnectedButton);
-
-      await waitFor(() => {
-        expect(consoleError).toHaveBeenCalledWith(
-          'Failed to show newsletter wizard:',
-          expect.any(Error)
-        );
-      });
-
-      consoleError.mockRestore();
-    });
-
-    test('Stay Connected button has correct icon', async () => {
-      mockTabWithUrl('https://www.youtube.com/watch?v=test', 'Test - YouTube');
-      render(<PopupApp />);
-
-      await waitFor(() => {
-        const button = screen.getByRole('button', { name: /Stay Connected/i });
+        const button = screen.getByRole('button', { name: /Join Discord/i });
         const svg = button.querySelector('svg');
         expect(svg).toBeInTheDocument();
         expect(svg).toHaveAttribute('width', '20');
         expect(svg).toHaveAttribute('height', '20');
+        expect(svg).toHaveAttribute('fill', 'currentColor');
       });
     });
   });

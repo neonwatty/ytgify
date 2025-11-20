@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { TimelineSelection, TextOverlay } from '@/types';
 import { useOverlayNavigation } from './hooks/useOverlayNavigation';
-import FeedbackScreen from './screens/FeedbackScreen';
 import QuickCaptureScreen from './screens/QuickCaptureScreen';
 import TextOverlayScreenV2 from './screens/TextOverlayScreenV2';
 import ProcessingScreen from './screens/ProcessingScreen';
@@ -158,7 +157,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   };
 
   // Progress dots for navigation indicator
-  const screens = ['capture', 'text', 'processing', 'success', 'feedback'];
+  const screens = ['capture', 'text', 'processing', 'success'];
   const currentIndex =
     currentScreen === 'quick-capture'
       ? 0
@@ -168,9 +167,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
           ? 2
           : currentScreen === 'success'
             ? 3
-            : currentScreen === 'feedback'
-              ? 4
-              : 0;
+            : 0;
 
   // Debug logging
   React.useEffect(() => {}, [currentScreen]);
@@ -256,24 +253,10 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
                 // Go back to quick capture screen to create another GIF
                 goToScreen('quick-capture');
               }}
-              onFeedback={() => {
-                // Go to feedback screen
-                goToScreen('feedback');
-              }}
               onClose={onClose}
               gifSize={data.gifSize}
               gifDataUrl={data.gifDataUrl}
               gifMetadata={data.gifMetadata}
-            />
-          )}
-
-          {currentScreen === 'feedback' && (
-            <FeedbackScreen
-              onBack={() => {
-                // Go back to success screen
-                goToScreen('success');
-              }}
-              onClose={onClose}
             />
           )}
         </div>
