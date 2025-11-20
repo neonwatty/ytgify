@@ -24,13 +24,11 @@ jest.mock('../../../../src/shared/engagement-tracker', () => ({
 describe('SuccessScreen', () => {
   const mockOnDownload = jest.fn();
   const mockOnBack = jest.fn();
-  const mockOnFeedback = jest.fn();
   const mockOnClose = jest.fn();
 
   const defaultProps = {
     onDownload: mockOnDownload,
     onBack: mockOnBack,
-    onFeedback: mockOnFeedback,
     onClose: mockOnClose,
   };
 
@@ -180,10 +178,10 @@ describe('SuccessScreen', () => {
       expect(svg).toBeInTheDocument();
     });
 
-    it('should render Stay Connected button with correct structure', () => {
+    it('should render Join Discord button with correct structure', () => {
       render(<SuccessScreen {...defaultProps} />);
 
-      const feedbackButton = screen.getByText('Stay Connected').closest('button');
+      const feedbackButton = screen.getByText('Join Discord').closest('button');
       expect(feedbackButton).toBeInTheDocument();
       expect(feedbackButton).toHaveClass('ytgif-button-secondary');
 
@@ -363,7 +361,6 @@ describe('SuccessScreen', () => {
       const allProps = {
         onDownload: mockOnDownload,
         onBack: mockOnBack,
-        onFeedback: mockOnFeedback,
         onClose: mockOnClose,
         gifSize: 1024576,
         gifDataUrl: 'data:image/gif;base64,test',
@@ -379,7 +376,6 @@ describe('SuccessScreen', () => {
           <SuccessScreen
             onDownload={undefined}
             onBack={undefined}
-            onFeedback={undefined}
             onClose={undefined}
           />
         )
@@ -424,7 +420,7 @@ describe('SuccessScreen', () => {
       expect(screen.getByText('GIF Created Successfully!')).toBeInTheDocument();
       expect(screen.getByText('Back')).toBeInTheDocument();
       expect(screen.getByText('Download GIF')).toBeInTheDocument();
-      expect(screen.getByText('Stay Connected')).toBeInTheDocument();
+      expect(screen.getByText('Join Discord')).toBeInTheDocument();
     });
 
     it('should only show frame count when gifMetadata.frameCount exists', () => {
@@ -525,7 +521,6 @@ describe('SuccessScreen', () => {
       const functionProps = {
         onDownload: jest.fn(),
         onBack: jest.fn(),
-        onFeedback: jest.fn(),
         onClose: jest.fn(),
       };
 
@@ -605,13 +600,13 @@ describe('SuccessScreen', () => {
       expect(mockOnBack).toHaveBeenCalledTimes(1);
     });
 
-    it('should call onFeedback when Stay Connected button is clicked', () => {
+    it('should open Discord link when Join Discord button is clicked', () => {
       render(<SuccessScreen {...defaultProps} />);
 
-      const feedbackButton = screen.getByText('Stay Connected');
-      fireEvent.click(feedbackButton);
+      const discordButton = screen.getByText('Join Discord');
+      fireEvent.click(discordButton);
 
-      expect(mockOnFeedback).toHaveBeenCalledTimes(1);
+      expect(links.openExternalLink).toHaveBeenCalledWith('https://discord.gg/8EUxqR93');
     });
 
     it('should not error when onDownload is undefined', () => {
@@ -626,13 +621,6 @@ describe('SuccessScreen', () => {
 
       const backButton = screen.getByText('Back');
       expect(() => fireEvent.click(backButton)).not.toThrow();
-    });
-
-    it('should not error when onFeedback is undefined', () => {
-      render(<SuccessScreen {...defaultProps} onFeedback={undefined} />);
-
-      const feedbackButton = screen.getByText('Stay Connected');
-      expect(() => fireEvent.click(feedbackButton)).not.toThrow();
     });
 
     it('should handle rapid clicks appropriately', () => {
@@ -651,11 +639,11 @@ describe('SuccessScreen', () => {
 
       fireEvent.click(screen.getByText('Back'));
       fireEvent.click(screen.getByText('Download GIF'));
-      fireEvent.click(screen.getByText('Stay Connected'));
+      fireEvent.click(screen.getByText('Join Discord'));
 
       expect(mockOnBack).toHaveBeenCalledTimes(1);
       expect(mockOnDownload).toHaveBeenCalledTimes(1);
-      expect(mockOnFeedback).toHaveBeenCalledTimes(1);
+      expect(links.openExternalLink).toHaveBeenCalledWith('https://discord.gg/8EUxqR93');
     });
 
     it('should handle event propagation correctly', () => {
@@ -932,7 +920,6 @@ describe('SuccessScreen', () => {
           <SuccessScreen
             onDownload={null as any}
             onBack={null as any}
-            onFeedback={null as any}
             onClose={null as any}
             gifSize={null as any}
             gifDataUrl={null as any}
@@ -1045,16 +1032,16 @@ describe('SuccessScreen', () => {
   });
 
   describe('Bottom Action Buttons', () => {
-    it('should render Stay Connected button', () => {
+    it('should render Join Discord button', () => {
       render(<SuccessScreen {...defaultProps} />);
-      expect(screen.getByText('Stay Connected')).toBeInTheDocument();
+      expect(screen.getByText('Join Discord')).toBeInTheDocument();
     });
 
     it('should render only one bottom action button', () => {
       const { container } = render(<SuccessScreen {...defaultProps} />);
       const buttons = container.querySelectorAll('.ytgif-success-bottom-actions button');
       expect(buttons.length).toBe(1);
-      expect(buttons[0].textContent).toContain('Stay Connected');
+      expect(buttons[0].textContent).toContain('Join Discord');
     });
   });
 

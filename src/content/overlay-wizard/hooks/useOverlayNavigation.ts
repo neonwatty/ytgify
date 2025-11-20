@@ -6,8 +6,7 @@ type OverlayScreenType =
   | 'quick-capture'
   | 'text-overlay'
   | 'processing'
-  | 'success'
-  | 'feedback';
+  | 'success';
 
 interface ScreenData {
   startTime?: number;
