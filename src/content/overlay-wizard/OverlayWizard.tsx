@@ -235,6 +235,11 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
                 console.error('GIF creation error:', error);
                 // Could show error screen or message
               }}
+              onBack={goBack}
+              onCancel={() => {
+                // Request the content script to cancel processing
+                window.dispatchEvent(new CustomEvent('ytgif-cancel-processing'));
+              }}
             />
           )}
 

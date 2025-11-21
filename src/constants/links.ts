@@ -12,6 +12,7 @@ export const LINKS = {
 
   // Social
   TWITTER_PROFILE: 'https://x.com/neonwatty',
+  DISCORD_INVITE: 'https://discord.gg/8EUxqR93',
 
   // Documentation
   DOCS_USER_GUIDE: 'https://github.com/neonwatty/ytgify#user-guide'
@@ -39,4 +40,9 @@ export function getReviewLink(): string {
 // Helper to get GitHub star link
 export function getGitHubStarLink(): string {
   return LINKS.GITHUB_REPO;
+}
+
+// Helper to get Discord invite link
+export function getDiscordLink(): string {
+  return LINKS.DISCORD_INVITE;
 }

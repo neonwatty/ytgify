@@ -1,7 +1,14 @@
 import React from 'react';
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import ProcessingScreen from '../../../../src/content/overlay-wizard/screens/ProcessingScreen';
+import * as links from '../../../../src/constants/links';
+
+// Mock the links module
+jest.mock('../../../../src/constants/links', () => ({
+  openExternalLink: jest.fn(),
+  getDiscordLink: jest.fn(() => 'https://discord.gg/8EUxqR93'),
+}));
 
 describe('ProcessingScreen', () => {
   const mockOnComplete = jest.fn();
@@ -179,6 +186,65 @@ describe('ProcessingScreen', () => {
 
       const loadingDots = screen.queryByTestId('loading-dots');
       expect(loadingDots).not.toBeInTheDocument();
+    });
+
+    it('should display Discord help button on error', () => {
+      render(
+        <ProcessingScreen
+          processingStatus={{
+            stage: 'ERROR',
+            stageNumber: 2,
+            totalStages: 4,
+            progress: 0,
+            message: 'Failed to process GIF',
+          }}
+          onComplete={mockOnComplete}
+          onError={mockOnError}
+        />
+      );
+
+      expect(screen.getByText('Need help? Join our Discord community for support.')).toBeInTheDocument();
+      expect(screen.getByText('Get Help on Discord')).toBeInTheDocument();
+    });
+
+    it('should not display Discord help button during normal processing', () => {
+      render(
+        <ProcessingScreen
+          processingStatus={{
+            stage: 'CAPTURING',
+            stageNumber: 1,
+            totalStages: 4,
+            progress: 25,
+            message: 'Capturing frames...',
+          }}
+          onComplete={mockOnComplete}
+          onError={mockOnError}
+        />
+      );
+
+      expect(screen.queryByText('Need help? Join our Discord community for support.')).not.toBeInTheDocument();
+      expect(screen.queryByText('Get Help on Discord')).not.toBeInTheDocument();
+    });
+
+    it('should open Discord link when button is clicked', () => {
+      render(
+        <ProcessingScreen
+          processingStatus={{
+            stage: 'ERROR',
+            stageNumber: 2,
+            totalStages: 4,
+            progress: 0,
+            message: 'Failed to process GIF',
+          }}
+          onComplete={mockOnComplete}
+          onError={mockOnError}
+        />
+      );
+
+      const discordButton = screen.getByText('Get Help on Discord');
+      fireEvent.click(discordButton);
+
+      expect(links.openExternalLink).toHaveBeenCalledWith('https://discord.gg/8EUxqR93');
     });
   });
 

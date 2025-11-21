@@ -88,6 +88,11 @@ class YouTubeGifMaker {
       }
     });
 
+    // Listen for cancel processing event from wizard
+    window.addEventListener('ytgif-cancel-processing', () => {
+      this.handleCancelProcessing();
+    });
+
     // openGifWizard functionality is available via keyboard shortcuts and GIF button
     // No script injection needed - removed for Chrome Web Store compliance
   }
@@ -996,6 +1001,25 @@ class YouTubeGifMaker {
     }
 
     return compactSelectors.some((selector) => document.querySelector(selector) !== null);
+  }
+
+  private handleCancelProcessing() {
+    this.log('info', '[Content] Cancelling GIF processing');
+
+    // Abort the gif processor
+    gifProcessor.abortProcessing();
+
+    // Reset state
+    this.isCreatingGif = false;
+    this.processingStatus = undefined;
+    this.createdGifData = undefined;
+
+    // Dispatch state change event
+    window.dispatchEvent(
+      new CustomEvent('ytgif-creating-state', {
+        detail: { isCreating: false },
+      })
+    );
   }
 
   private async handleCreateGif(

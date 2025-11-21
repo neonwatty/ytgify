@@ -16,7 +16,7 @@ interface TextOverlayScreenProps {
 
 const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
   startTime,
-  endTime,
+  endTime: _endTime,
   videoElement,
   resolution = '144p',
   onConfirm,
@@ -68,6 +68,7 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
   const [showBottomAdvanced, setShowBottomAdvanced] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [videoFrameUrl, setVideoFrameUrl] = useState<string | null>(null);
+  const captureAttemptedRef = useRef(false);
 
   const handleAddText = useCallback(() => {
     const overlays: TextOverlay[] = [];
@@ -111,15 +112,24 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
 
   // Capture video frame for preview background
   useEffect(() => {
-    if (videoElement && canvasRef.current) {
+    // Reset capture flag when component mounts
+    captureAttemptedRef.current = false;
+    setVideoFrameUrl(null);
+  }, []);
+
+  useEffect(() => {
+    if (videoElement && canvasRef.current && !captureAttemptedRef.current) {
+      captureAttemptedRef.current = true;
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
+
       if (ctx) {
         // Use the start time for consistency with QuickCaptureScreen
         const frameTime = startTime;
 
-        // Store original time to restore later
+        // Store original time and play state to restore later
         const originalTime = videoElement.currentTime;
+        const wasPaused = videoElement.paused;
 
         // Set canvas size to match target GIF dimensions
         canvas.width = gifDimensions.width;
@@ -134,40 +144,75 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
             setVideoFrameUrl(frameUrl);
           } catch (error) {
             console.error('[TextOverlayScreenV2] Error capturing frame:', error);
+            // Set a fallback empty frame to stop showing loading state
+            captureAttemptedRef.current = false;
           }
 
-          // Restore original time after a short delay
+          // Restore original state after a short delay
           setTimeout(() => {
             videoElement.currentTime = originalTime;
+            // Restore play state
+            if (!wasPaused) {
+              videoElement.play().catch(() => {
+                // Ignore play errors
+              });
+            }
           }, 100);
         };
 
         // Seek to the frame time and capture
         const performCapture = () => {
+          // Pause video before seeking to ensure reliable frame capture
+          if (!videoElement.paused) {
+            videoElement.pause();
+          }
+
           videoElement.currentTime = frameTime;
 
-          // Use requestAnimationFrame to ensure the frame is rendered
+          // Use requestAnimationFrame with timeout fallback
+          const timeoutId: number = window.setTimeout(() => {
+            console.warn('[TextOverlayScreenV2] Frame capture timeout, attempting anyway');
+            if (rafId) {
+              cancelAnimationFrame(rafId);
+            }
+            // Try capturing anyway
+            captureFrame();
+          }, 2000);
+          let rafId: number;
+
           const checkAndCapture = () => {
             if (Math.abs(videoElement.currentTime - frameTime) < 0.1) {
               // We're close enough to the target time
+              clearTimeout(timeoutId);
               requestAnimationFrame(() => {
                 captureFrame();
               });
-            } else {
-              // Keep checking
-              requestAnimationFrame(checkAndCapture);
+            } else if (videoElement.readyState >= 2) {
+              // Video has data but hasn't seeked yet, keep checking
+              rafId = requestAnimationFrame(checkAndCapture);
             }
           };
 
           // Start checking after a small delay
-          setTimeout(checkAndCapture, 100);
+          setTimeout(() => {
+            if (videoElement.readyState >= 2) {
+              checkAndCapture();
+            } else {
+              // Video not ready, wait for loadeddata event
+              const onLoadedData = () => {
+                checkAndCapture();
+                videoElement.removeEventListener('loadeddata', onLoadedData);
+              };
+              videoElement.addEventListener('loadeddata', onLoadedData);
+            }
+          }, 50);
         };
 
         // Perform the capture
         performCapture();
       }
     }
-  }, [videoElement, startTime, endTime, gifDimensions.width, gifDimensions.height]);
+  }, [videoElement, startTime, gifDimensions.width, gifDimensions.height]);
 
   return (
     <div className="ytgif-wizard-screen ytgif-text-overlay-screen">
