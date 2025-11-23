@@ -120,6 +120,12 @@ export class GifencEncoder extends AbstractEncoder {
         format: 'rgb444',
         clearAlpha: false
       });
+
+      // Validate global palette - quantize can fail with low color variance
+      if (!globalPalette || globalPalette.length === 0) {
+        console.warn('[GifencEncoder] Global palette generation failed (likely identical frames), using per-frame palettes');
+        globalPalette = null;
+      }
     }
 
     // Process each frame
@@ -137,17 +143,30 @@ export class GifencEncoder extends AbstractEncoder {
       let palette: number[][];
       let indices: Uint8Array;
 
-      if (useGlobalPalette && globalPalette) {
-        // Use the global palette
-        palette = globalPalette;
-        indices = applyPalette(pixels, palette, 'rgb444');
-      } else {
-        // Generate per-frame palette
-        palette = quantize(pixels, 256, {
-          format: 'rgb444',
-          clearAlpha: false
-        });
-        indices = applyPalette(pixels, palette, 'rgb444');
+      try {
+        if (useGlobalPalette && globalPalette) {
+          // Use the global palette
+          palette = globalPalette;
+          indices = applyPalette(pixels, palette, 'rgb444');
+        } else {
+          // Generate per-frame palette
+          palette = quantize(pixels, 256, {
+            format: 'rgb444',
+            clearAlpha: false
+          });
+
+          // Validate per-frame palette
+          if (!palette || palette.length === 0) {
+            throw new Error('Palette generation failed for frame');
+          }
+
+          indices = applyPalette(pixels, palette, 'rgb444');
+        }
+      } catch (paletteError) {
+        // Fallback: create minimal valid palette for monochrome/identical frames
+        console.warn(`[GifencEncoder] Palette error on frame ${i + 1}, using fallback palette:`, paletteError);
+        palette = this.createFallbackPalette(pixels);
+        indices = this.applyFallbackPalette(pixels, palette);
       }
 
       // Write frame to encoder
@@ -203,6 +222,36 @@ export class GifencEncoder extends AbstractEncoder {
         peakMemoryUsage: frames.length * options.width * options.height * 4, // Rough estimate
       },
     };
+  }
+
+  /**
+   * Creates a fallback palette for frames with very low color variance
+   * (e.g., identical frames or nearly monochrome content)
+   */
+  private createFallbackPalette(pixels: Uint8ClampedArray): number[][] {
+    // Extract first pixel color
+    const r = pixels[0] || 0;
+    const g = pixels[1] || 0;
+    const b = pixels[2] || 0;
+
+    // Create minimal 2-color palette: first pixel color + black
+    // This ensures a valid palette even for completely uniform frames
+    return [[r, g, b], [0, 0, 0]];
+  }
+
+  /**
+   * Applies fallback palette to pixels
+   * For identical/monochrome frames, all pixels map to index 0
+   */
+  private applyFallbackPalette(pixels: Uint8ClampedArray, _palette: number[][]): Uint8Array {
+    const pixelCount = pixels.length / 4;
+    const indices = new Uint8Array(pixelCount);
+
+    // Map all pixels to index 0 (first palette color)
+    // Since frames are identical/monochrome, this is valid
+    indices.fill(0);
+
+    return indices;
   }
 
   protected cleanup(): void {

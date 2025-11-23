@@ -99,6 +99,15 @@ const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
     }
   };
 
+  const handleCancelClick = () => {
+    if (!isError && !isCompleted && onCancel) {
+      onCancel();
+    }
+    if (onBack) {
+      onBack();
+    }
+  };
+
   const handleDiscordClick = () => {
     openExternalLink(getDiscordLink());
   };
@@ -258,6 +267,14 @@ const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
               </div>
             )}
           </div>
+
+          {!isError && !isCompleted && (
+            <div className="ytgif-processing-actions">
+              <button className="ytgif-cancel-button" onClick={handleCancelClick}>
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

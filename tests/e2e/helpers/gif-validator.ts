@@ -54,43 +54,61 @@ export async function extractGifMetadata(filePath: string): Promise<GifMetadata>
   const globalColorTableSize = hasGlobalColorTable ? 2 ** ((packedFields & 0x07) + 1) : 0;
   const globalColorTableBytes = globalColorTableSize * 3;
 
-  // Count frames by looking for image separator (0x2C)
+  // Parse blocks in order so we handle local color tables and real GCE blocks
   let frameCount = 0;
-  // Start after header, logical screen descriptor, AND global color table (if present)
-  let position = 13 + globalColorTableBytes;
+  let totalDelayCs = 0;
+  let position = 13 + globalColorTableBytes; // start after header + GCT
 
   while (position < buffer.length) {
     const byte = buffer[position];
 
     if (byte === 0x21) { // Extension introducer
-      // Skip extension blocks
-      position += 2; // Skip extension label
+      const label = buffer[position + 1];
+
+      // Graphic Control Extension contains per-frame delay
+      if (label === 0xF9) {
+        const blockSize = buffer[position + 2] ?? 0;
+        if (blockSize >= 4 && position + 4 < buffer.length) {
+          const delay = buffer.readUInt16LE(position + 4); // Delay in 1/100ths of a second
+          totalDelayCs += delay;
+        }
+        // Skip introducer + label + block size + payload + terminator
+        position += 2 + 1 + blockSize + 1;
+        continue;
+      }
+
+      // Skip other extension blocks (application/comment/plain text)
+      position += 2; // introducer + label
       let blockSize = buffer[position];
-      while (blockSize > 0) {
+      while (blockSize > 0 && position < buffer.length) {
         position += blockSize + 1;
-        if (position >= buffer.length) break;
         blockSize = buffer[position];
       }
-      position++; // Skip block terminator
+      position++; // block terminator
     } else if (byte === 0x2C) { // Image separator
       frameCount++;
       position++; // Move past separator
 
-      // Skip image descriptor (9 bytes)
-      position += 9;
+      // Image descriptor: left(2) top(2) width(2) height(2) packed(1)
+      position += 8;
+      const packed = buffer[position];
+      position++;
 
-      // Skip image data
-      const lzwMinimum = buffer[position];
-      position++; // LZW minimum code size
+      // Local color table (if present)
+      const hasLocalColorTable = (packed & 0x80) !== 0;
+      const localColorTableBytes = hasLocalColorTable ? 3 * 2 ** ((packed & 0x07) + 1) : 0;
+      position += localColorTableBytes;
 
-      // Skip sub-blocks
+      // LZW minimum code size
+      position++;
+
+      // Image data sub-blocks
       let subBlockSize = buffer[position];
-      while (subBlockSize > 0) {
+      while (subBlockSize > 0 && position < buffer.length) {
         position += subBlockSize + 1;
-        if (position >= buffer.length) break;
         subBlockSize = buffer[position];
       }
-      position++; // Skip block terminator
+      position++; // block terminator
     } else if (byte === 0x3B) { // Trailer (end of file)
       break;
     } else {
@@ -101,25 +119,8 @@ export async function extractGifMetadata(filePath: string): Promise<GifMetadata>
   // Get file size
   const stats = await fs.stat(filePath);
 
-  // Estimate duration and FPS (this is approximate without parsing timing info)
-  // For accurate timing, we'd need to parse Graphic Control Extensions
-  let totalDelay = 0;
-  position = 13 + globalColorTableBytes;
-
-  while (position < buffer.length - 1) {
-    if (buffer[position] === 0x21 && buffer[position + 1] === 0xF9) {
-      // Found Graphic Control Extension
-      position += 3; // Skip to delay time
-      const delay = buffer.readUInt16LE(position + 1); // Delay in 1/100ths of a second
-      totalDelay += delay;
-      position += 5;
-    } else {
-      position++;
-    }
-  }
-
-  const duration = totalDelay / 100; // Convert to seconds
-  const fps = frameCount > 0 && duration > 0 ? frameCount / duration : 0;
+  const duration = totalDelayCs / 100; // Convert to seconds
+  const fps = frameCount > 0 && duration > 0 ? parseFloat((frameCount / duration).toFixed(2)) : 0;
 
   return {
     width,
@@ -263,7 +264,7 @@ export async function validateGifDataUrl(
   const buffer = Buffer.from(base64Data, 'base64');
 
   // Save temporarily for analysis
-  const tempPath = path.join(__dirname, '..', '..', 'temp', `temp-gif-${Date.now()}.gif`);
+  const tempPath = path.join(process.cwd(), 'tests', 'temp', `temp-gif-${Date.now()}.gif`);
   await fs.mkdir(path.dirname(tempPath), { recursive: true });
   await fs.writeFile(tempPath, buffer);
 
@@ -297,8 +298,18 @@ export async function validateTextOverlay(
   gifElement: string,
   expectedText: string[]
 ): Promise<{ hasText: boolean; confidence: number }> {
-  // Take screenshot of GIF preview
-  const screenshot = await page.locator(gifElement).screenshot();
+  // Wait for the preview image to be loaded and ready, then screenshot it
+  const preview = page.locator(gifElement).first();
+  await page.waitForFunction(
+    (selector) => {
+      const el = document.querySelector(selector) as HTMLImageElement | null;
+      return !!el && el.complete && el.naturalWidth > 0 && el.naturalHeight > 0;
+    },
+    gifElement,
+    { timeout: 30000 }
+  );
+  await preview.scrollIntoViewIfNeeded();
+  const screenshot = await preview.screenshot({ timeout: 30000 });
 
   // In a real implementation, you'd use OCR here (like Tesseract.js)
   // For now, we'll do a simple check based on image characteristics

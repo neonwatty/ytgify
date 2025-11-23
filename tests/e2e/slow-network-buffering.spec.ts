@@ -13,7 +13,11 @@ import { NETWORK_PROFILES, applyNetworkProfile, logNetworkProfile } from '../e2e
  * User reported GIF creation stopping at 2/6 seconds with slow network
  */
 test.describe('Real E2E: Slow Network Buffering', () => {
-  test.skip(({ browserName }) => browserName !== 'chromium', 'Chromium only');
+  // These scenarios are opt-in due to long run times and external network requirements.
+  test.skip(
+    ({ browserName }) => browserName !== 'chromium' || process.env.RUN_SLOW_NETWORK !== 'true',
+    'Chromium only and requires RUN_SLOW_NETWORK=true to enable'
+  );
 
   test('Handle slow network with throttling - user reported scenario', async ({
     page,

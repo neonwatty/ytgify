@@ -24,7 +24,6 @@ test.describe('YouTube Layout Integrity', () => {
 
     const videos = await page.$$('ytd-rich-item-renderer, ytd-grid-video-renderer');
     expect(videos.length).toBeGreaterThan(0);
-    console.log(`✅ Found ${videos.length} videos on channel page`);
 
     // Verify videos are visible and have reasonable dimensions
     const videoDimensions = await page.$$eval(
@@ -50,8 +49,6 @@ test.describe('YouTube Layout Integrity', () => {
       expect(dim.height).toBeGreaterThan(100);
       expect(dim.display).not.toBe('none');
     });
-
-    console.log(`✅ Channel videos page layout intact - all videos visible and properly sized`);
   });
 
 
@@ -66,7 +63,6 @@ test.describe('YouTube Layout Integrity', () => {
 
     const results = await page.$$('ytd-video-renderer');
     expect(results.length).toBeGreaterThan(0);
-    console.log(`✅ Found ${results.length} search results`);
 
     // Verify search results have proper layout
     const resultLayouts = await page.$$eval('ytd-video-renderer', (elements) => {
@@ -83,7 +79,5 @@ test.describe('YouTube Layout Integrity', () => {
       expect(layout.visible).toBe(true);
       expect(layout.width).toBeGreaterThan(500);
     });
-
-    console.log(`✅ Search results layout intact`);
   });
 });

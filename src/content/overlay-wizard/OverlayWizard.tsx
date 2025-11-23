@@ -46,12 +46,12 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   onClose,
   onCreateGif,
   onSeekTo,
-  isCreating: _isCreating = false,
+  isCreating = false,
   processingStatus,
   gifData,
 }) => {
   const navigation = useOverlayNavigation('quick-capture');
-  const { currentScreen, data, goToScreen, goBack, setScreenData } = navigation;
+  const { currentScreen, data, goToScreen, goBack, setScreenData, previousScreen } = navigation;
 
   // Initialize with video data
   useEffect(() => {
@@ -125,6 +125,39 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     }
   }, [gifData, currentScreen, setScreenData, goToScreen]);
 
+  // If processing was cancelled (isCreating flips to false) while on processing screen,
+  // return to the previous step so the UI doesn't get stuck.
+  React.useEffect(() => {
+    if (currentScreen === 'processing' && !isCreating) {
+      if (gifData?.dataUrl) {
+        goToScreen('success');
+        return;
+      }
+
+      if (previousScreen) {
+        goBack();
+      } else {
+        goToScreen('quick-capture');
+      }
+    }
+  }, [currentScreen, gifData, goBack, goToScreen, isCreating, previousScreen]);
+
+  // Listen for explicit cancel events from the content script
+  React.useEffect(() => {
+    const handler = () => {
+      if (currentScreen === 'processing') {
+        if (previousScreen) {
+          goBack();
+        } else {
+          goToScreen('quick-capture');
+        }
+      }
+    };
+
+    window.addEventListener('ytgif-processing-cancelled', handler);
+    return () => window.removeEventListener('ytgif-processing-cancelled', handler);
+  }, [currentScreen, goBack, goToScreen, previousScreen]);
+
   // Add handlers for text overlay screen
   const handleConfirmTextOverlay = (overlays: TextOverlay[]) => {
     setScreenData({ textOverlays: overlays });
@@ -135,8 +168,13 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     };
 
     console.log('[OverlayWizard] handleCreateGif - frameRate:', data.frameRate);
-    onCreateGif(selection, overlays, data.resolution, data.frameRate);
-    goToScreen('processing');
+    goToScreen('processing'); // Show processing screen immediately for better UX/resilience
+    try {
+      onCreateGif(selection, overlays, data.resolution, data.frameRate);
+    } catch (error) {
+      console.error('[OverlayWizard] onCreateGif failed:', error);
+      goToScreen('quick-capture');
+    }
   };
 
   const handleSkipTextOverlay = () => {
@@ -152,8 +190,13 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
       resolution: data.resolution,
       frameRate: data.frameRate,
     });
-    onCreateGif(selection, [], data.resolution, data.frameRate);
-    goToScreen('processing');
+    goToScreen('processing'); // Ensure processing screen mounts even if processing is slow
+    try {
+      onCreateGif(selection, [], data.resolution, data.frameRate);
+    } catch (error) {
+      console.error('[OverlayWizard] onCreateGif failed:', error);
+      goToScreen('quick-capture');
+    }
   };
 
   // Progress dots for navigation indicator

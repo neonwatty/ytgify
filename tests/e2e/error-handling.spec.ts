@@ -1,38 +1,31 @@
 import { test, expect } from './fixtures';
-import { Page, BrowserContext } from '@playwright/test';
 import { YouTubePage } from './page-objects/YouTubePage';
 import { GifWizard } from './page-objects/GifWizard';
 import { QuickCapturePage } from './page-objects/QuickCapturePage';
 import { TextOverlayPage } from './page-objects/TextOverlayPage';
 import { ProcessingPage } from './page-objects/ProcessingPage';
+import { SuccessPage } from './page-objects/SuccessPage';
 import { TEST_VIDEOS } from './helpers/test-videos';
 import { waitForExtensionReady, handleYouTubeCookieConsent } from './helpers/extension-helpers';
 
 test.describe('Error Handling and Edge Cases', () => {
-  let page: Page;
-  let context: BrowserContext;
   let youtube: YouTubePage;
   let wizard: GifWizard;
   let quickCapture: QuickCapturePage;
   let textOverlay: TextOverlayPage;
   let processing: ProcessingPage;
+  let success: SuccessPage;
 
-  test.beforeEach(async ({ browser }) => {
-    context = await browser.newContext();
-    page = await context.newPage();
-
+  test.beforeEach(async ({ page }) => {
     youtube = new YouTubePage(page);
     wizard = new GifWizard(page);
     quickCapture = new QuickCapturePage(page);
     textOverlay = new TextOverlayPage(page);
     processing = new ProcessingPage(page);
+    success = new SuccessPage(page);
   });
 
-  test.afterEach(async () => {
-    await context.close();
-  });
-
-  test('Extension does not inject on non-YouTube pages', async () => {
+  test('Extension does not inject on non-YouTube pages', async ({ page }) => {
     // Navigate to a non-YouTube page
     await page.goto('https://www.google.com');
     await page.waitForTimeout(3000);
@@ -46,7 +39,7 @@ test.describe('Error Handling and Edge Cases', () => {
     expect(extensionElements.length).toBe(0);
   });
 
-  test('Handle very short selection (< 1 second)', async () => {
+  test('Handle very short selection (< 1 second)', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -62,7 +55,7 @@ test.describe('Error Handling and Edge Cases', () => {
     expect(duration).toBeGreaterThanOrEqual(1); // Minimum 1 second
   });
 
-  test('Handle maximum duration limit (10 seconds)', async () => {
+  test('Handle maximum duration limit (10 seconds)', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.rickRoll.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -78,7 +71,7 @@ test.describe('Error Handling and Edge Cases', () => {
     expect(duration).toBeLessThanOrEqual(10);
   });
 
-  test('Handle empty text overlay submission', async () => {
+  test('Handle empty text overlay submission', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -97,7 +90,7 @@ test.describe('Error Handling and Edge Cases', () => {
     expect(overlayCount).toBe(0);
   });
 
-  test('Handle very long text overlay', async () => {
+  test('Handle very long text overlay', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -117,9 +110,12 @@ test.describe('Error Handling and Edge Cases', () => {
     expect(overlays.length).toBeGreaterThan(0);
     // Text should be handled gracefully (truncated or wrapped)
     expect(overlays[0].length).toBeLessThanOrEqual(500);
+
+    // Proceed to processing
+    await textOverlay.clickNext();
   });
 
-  test('Cancel during processing', async () => {
+  test('Cancel during processing', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -143,7 +139,7 @@ test.describe('Error Handling and Edge Cases', () => {
     expect(processingVisible).toBe(false);
   });
 
-  test('Handle video pause/play during capture', async () => {
+  test('Handle video pause/play during capture', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -164,7 +160,7 @@ test.describe('Error Handling and Edge Cases', () => {
     // Optionally check if video resumes (depends on implementation)
   });
 
-  test('Handle network interruption simulation', async () => {
+  test('Handle network interruption simulation', async ({ page, context }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -177,22 +173,26 @@ test.describe('Error Handling and Edge Cases', () => {
     await textOverlay.waitForScreen();
     await textOverlay.clickSkip();
 
-    // Simulate offline mode during processing
-    await context.setOffline(true);
-
     await processing.waitForScreen();
 
-    // Wait for error or timeout
-    await page.waitForTimeout(5000);
+    // Simulate offline mode during processing
+    // GIF processing is entirely local (no network required), so this should not affect it
+    await context.setOffline(true);
+
+    // Wait for processing to complete - should succeed despite offline mode
+    await processing.waitForCompletion(60000);
+
+    await success.waitForScreen();
 
     // Restore connection
     await context.setOffline(false);
 
-    // Check if error is handled gracefully
-    // (Implementation specific - might show error message or retry)
+    // Verify GIF was created successfully
+    const gifSrc = await success.getGifSrc();
+    expect(gifSrc).toBeTruthy();
   });
 
-  test('Rapid navigation stress test', async () => {
+  test('Rapid navigation stress test', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -214,7 +214,7 @@ test.describe('Error Handling and Edge Cases', () => {
     expect(nextEnabled).toBe(true);
   });
 
-  test('Multiple text overlays limit', async () => {
+  test('Multiple text overlays limit', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -225,18 +225,19 @@ test.describe('Error Handling and Edge Cases', () => {
 
     await textOverlay.waitForScreen();
 
-    // Try to add many overlays
-    for (let i = 0; i < 10; i++) {
-      await textOverlay.addTextOverlay(`Text ${i}`, 'middle', 'minimal');
-    }
+    // TextOverlayScreenV2 only supports 2 overlays (top + bottom)
+    // Test that both work correctly
+    await textOverlay.addTextOverlay('Top Text', 'top', 'meme');
+    await textOverlay.addTextOverlay('Bottom Text', 'bottom', 'meme');
 
-    // Should handle limit gracefully
-    const overlayCount = await textOverlay.getOverlayCount();
-    expect(overlayCount).toBeGreaterThan(0);
-    expect(overlayCount).toBeLessThanOrEqual(10); // Reasonable limit
+    // Should have exactly 2 overlays
+    const overlays = await textOverlay.getOverlayTexts();
+    expect(overlays.length).toBe(2);
+    expect(overlays[0]).toBe('Top Text');
+    expect(overlays[1]).toBe('Bottom Text');
   });
 
-  test('Handle video end boundary', async () => {
+  test('Handle video end boundary', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url); // 19 seconds
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -252,7 +253,7 @@ test.describe('Error Handling and Edge Cases', () => {
     expect(timeRange.end).toBeLessThanOrEqual(19);
   });
 
-  test('Concurrent wizard instances prevention', async () => {
+  test('Concurrent wizard instances prevention', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -269,7 +270,7 @@ test.describe('Error Handling and Edge Cases', () => {
     expect(wizardCount).toBe(1);
   });
 
-  test('Handle special characters in text overlay', async () => {
+  test('Handle special characters in text overlay', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);

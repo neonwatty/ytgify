@@ -54,6 +54,7 @@ async function globalSetup(config: FullConfig) {
   }
 
   console.log('✅ Global setup complete');
+  console.log('⚠️  Note: Button visibility defaults to hidden - tests must enable it per-page');
 }
 
 export default globalSetup;

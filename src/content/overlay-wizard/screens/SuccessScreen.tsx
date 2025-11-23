@@ -72,7 +72,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
       <div className="ytgif-wizard-content">
         {/* GIF Preview */}
         {gifDataUrl && (
-          <div className="ytgif-success-preview">
+          <div className="ytgif-success-preview ytgif-gif-preview">
             <img src={gifDataUrl} alt="Created GIF" className="ytgif-success-preview-image" />
             {gifMetadata && (
               <div className="ytgif-success-metadata">

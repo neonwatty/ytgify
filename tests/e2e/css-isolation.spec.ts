@@ -74,20 +74,15 @@ test.describe('CSS Isolation', () => {
 
     // Verify elements have their expected styles (not reset by Preflight)
     expect(elementStyles.body).toBeDefined();
-    console.log(`✅ Body styles intact - margin: ${elementStyles.body.margin}`);
 
     if (elementStyles.videoTitle) {
       expect(elementStyles.videoTitle.hasReasonableSize).toBe(true);
       expect(elementStyles.videoTitle.display).not.toBe('none');
-      console.log(`✅ Video title has proper styles - font-size: ${elementStyles.videoTitle.fontSize}`);
     }
 
     if (elementStyles.grid) {
       expect(elementStyles.grid.display).not.toBe('none');
-      console.log(`✅ Grid styles intact - display: ${elementStyles.grid.display}`);
     }
-
-    console.log('✅ No global CSS resets detected - YouTube styles preserved');
   });
 
   test('Extension CSS is scoped to extension elements', async ({ page }) => {
@@ -146,12 +141,7 @@ test.describe('CSS Isolation', () => {
     });
 
     // Should not have any unscoped global selectors
-    if (unscopedRules.length > 0) {
-      console.log(`⚠️ Found potentially problematic CSS rules:`, unscopedRules);
-    }
-
     expect(unscopedRules.length).toBe(0);
-    console.log('✅ All extension CSS is properly scoped');
   });
 
   test('Tailwind utilities work for extension elements', async ({ page }) => {
@@ -194,12 +184,6 @@ test.describe('CSS Isolation', () => {
         return results;
       });
 
-      if (extensionStyles.length > 0) {
-        console.log(`✅ Found ${extensionStyles.length} extension elements with Tailwind classes`);
-        console.log('Sample:', extensionStyles[0]);
-      }
-    } else {
-      console.log('⚠️ Extension button not found, skipping Tailwind utility test');
     }
   });
 
@@ -247,7 +231,6 @@ test.describe('CSS Isolation', () => {
       if (styles) {
         expect(styles.visible).toBe(true);
         expect(styles.display).not.toBe('none');
-        console.log(`✅ ${key} element unaffected - display: ${styles.display}`);
       }
     });
   });
@@ -305,11 +288,6 @@ test.describe('CSS Isolation', () => {
     });
 
     // Should not find any Preflight rules
-    if (hasPreflightRules.length > 0) {
-      console.log('⚠️ Found Preflight CSS rules:', hasPreflightRules);
-    }
-
     expect(hasPreflightRules.length).toBe(0);
-    console.log('✅ Confirmed: No Tailwind Preflight CSS present');
   });
 });

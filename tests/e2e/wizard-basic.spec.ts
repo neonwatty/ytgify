@@ -246,7 +246,7 @@ test.describe('Basic Wizard Test with Extension', () => {
           { timeout: 45000, polling: 500 }
         );
       } catch (e) {
-        console.log('Timeout waiting for success screen');
+        // Timeout waiting for success screen
       }
 
       // Check if we reached success screen
@@ -473,7 +473,7 @@ test.describe('Basic Wizard Test with Extension', () => {
           { timeout: 45000, polling: 500 }
         );
       } catch (e) {
-        console.log('Timeout waiting for GIF processing completion');
+        // Timeout waiting for GIF processing completion
       }
 
       // Check for success screen and GIF output
@@ -494,9 +494,6 @@ test.describe('Basic Wizard Test with Extension', () => {
         const isValidDataUrl = successInfo.gifSrc.startsWith('data:image/gif');
         const isValidBlobUrl = successInfo.gifSrc.startsWith('blob:');
         expect(isValidDataUrl || isValidBlobUrl).toBe(true);
-
-        // Log success for debugging
-        console.log(`✅ Successfully created GIF with 480p resolution: ${successInfo.gifSrc.substring(0, 50)}...`);
       }
     }
   });
@@ -662,7 +659,7 @@ test.describe('Basic Wizard Test with Extension', () => {
           { timeout: 45000, polling: 500 }
         );
       } catch (e) {
-        console.log('Timeout waiting for GIF processing completion');
+        // Timeout waiting for GIF processing completion
       }
 
       // Check for success screen and GIF output
@@ -683,9 +680,6 @@ test.describe('Basic Wizard Test with Extension', () => {
         const isValidDataUrl = successInfo.gifSrc.startsWith('data:image/gif');
         const isValidBlobUrl = successInfo.gifSrc.startsWith('blob:');
         expect(isValidDataUrl || isValidBlobUrl).toBe(true);
-
-        // Log success for debugging
-        console.log(`✅ Successfully created GIF with 15 fps: ${successInfo.gifSrc.substring(0, 50)}...`);
       }
     }
   });
@@ -724,11 +718,6 @@ test.describe('Basic Wizard Test with Extension', () => {
       const duration = timeRange.end - timeRange.start;
       expect(duration).toBeGreaterThan(0);
       expect(duration).toBeLessThanOrEqual(30); // Should be reasonable duration
-
-      console.log(`✅ GIF length interface working - Current selection: ${duration.toFixed(1)}s (${timeRange.start.toFixed(1)}s - ${timeRange.end.toFixed(1)}s)`);
-    } else {
-      // If timeline handles aren't available, just verify the timeline interface exists
-      console.log(`⚠️ Timeline handles not found, but timeline interface exists`);
     }
 
     // Check for any time-related display elements
@@ -759,7 +748,7 @@ test.describe('Basic Wizard Test with Extension', () => {
       );
       initialTimeRange = await Promise.race([timeRangePromise, timeoutPromise]) as any;
     } catch (e) {
-      console.log('⚠️ Initial time range not accessible, continuing with navigation test');
+      // Initial time range not accessible, continuing with navigation test
     }
 
     // Navigate to next screen
@@ -794,9 +783,8 @@ test.describe('Basic Wizard Test with Extension', () => {
           const persistedTimeRange = await quickCapture.getTimeRangeValues();
           expect(persistedTimeRange.start).toBeGreaterThanOrEqual(0);
           expect(persistedTimeRange.end).toBeGreaterThan(persistedTimeRange.start);
-          console.log(`✅ Time range persisted through navigation: ${(persistedTimeRange.end - persistedTimeRange.start).toFixed(1)}s`);
         } catch (e) {
-          console.log('⚠️ Time range not accessible after navigation, but timeline interface exists');
+          // Time range not accessible after navigation, but timeline interface exists
         }
       }
     }
@@ -833,10 +821,8 @@ test.describe('Basic Wizard Test with Extension', () => {
       const selectedDuration = selectedTimeRange.end - selectedTimeRange.start;
       expect(selectedDuration).toBeCloseTo(3, 1);
       timeRangeSet = true;
-      console.log(`✅ Successfully set time range to 3 seconds`);
     } catch (e) {
-      console.log('⚠️ Could not set specific time range, using default selection');
-      // Continue with default selection - this is still a valid test
+      // Could not set specific time range, using default selection - this is still a valid test
     }
 
     // Continue through wizard
@@ -879,7 +865,7 @@ test.describe('Basic Wizard Test with Extension', () => {
           { timeout: 45000, polling: 500 }
         );
       } catch (e) {
-        console.log('Timeout waiting for GIF processing completion');
+        // Timeout waiting for GIF processing completion
       }
 
       // Check for success screen and GIF output
@@ -900,10 +886,6 @@ test.describe('Basic Wizard Test with Extension', () => {
         const isValidDataUrl = successInfo.gifSrc.startsWith('data:image/gif');
         const isValidBlobUrl = successInfo.gifSrc.startsWith('blob:');
         expect(isValidDataUrl || isValidBlobUrl).toBe(true);
-
-        // Log success for debugging
-        const durationNote = timeRangeSet ? ' with 3-second duration' : ' with default duration';
-        console.log(`✅ Successfully created GIF${durationNote}: ${successInfo.gifSrc.substring(0, 50)}...`);
       }
     }
   });
@@ -963,7 +945,6 @@ test.describe('Basic Wizard Test with Extension', () => {
 
       // Should be close to 15 fps
       expect(actualFps).toBeCloseTo(15, 1);
-      console.log(`✅ Frame rate verification: Expected 15 fps, got ${actualFps.toFixed(1)} fps`);
     }
   });
 
@@ -1004,15 +985,6 @@ test.describe('Basic Wizard Test with Extension', () => {
     });
 
     if (debugFrames.length > 0) {
-      const duplicates = debugFrames.filter((f: any) => f.isDuplicate);
-      console.log(`📊 Frame analysis: ${debugFrames.length} frames total, ${duplicates.length} marked as duplicates`);
-
-      // Log any duplicate detection
-      if (duplicates.length > 0) {
-        console.log(`⚠️ Duplicate frames detected and handled at positions:`,
-          duplicates.map((f: any) => f.frameNumber).join(', '));
-      }
-
       // Test passes if frames were captured (duplicate handling is automatic)
       expect(debugFrames.length).toBeGreaterThan(0);
     }
@@ -1076,9 +1048,6 @@ test.describe('Basic Wizard Test with Extension', () => {
       // Aspect ratio should be preserved (within 5% tolerance)
       const ratioDifference = Math.abs(videoAspectRatio - gifAspectRatio) / videoAspectRatio;
       expect(ratioDifference).toBeLessThan(0.05);
-
-      console.log(`✅ Aspect ratio preserved: Video ${videoAspectRatio.toFixed(2)}, GIF ${gifAspectRatio.toFixed(2)}`);
-      console.log(`   Dimensions: ${frame.width}x${frame.height}`);
     }
   });
 
@@ -1118,8 +1087,6 @@ test.describe('Basic Wizard Test with Extension', () => {
     // Continue through wizard
     await page.click('.ytgif-button-primary');
     await page.waitForTimeout(1000);
-
-    console.log('✅ Successfully set custom start time using input field');
   });
 
   test('Start time input validation works in E2E flow', async ({ page, context: _context, extensionId: _extensionId }) => {
@@ -1150,7 +1117,6 @@ test.describe('Basic Wizard Test with Extension', () => {
     if (errorMessage) {
       const errorText = await errorMessage.textContent();
       expect(errorText).toBeTruthy();
-      console.log(`✅ Validation error displayed: ${errorText}`);
 
       // Input valid start time
       await startTimeInput!.fill('0:01');
@@ -1160,9 +1126,6 @@ test.describe('Basic Wizard Test with Extension', () => {
       // Error should clear
       const errorAfter = await page.$('.ytgif-time-input-error-message');
       expect(errorAfter).toBeFalsy();
-      console.log('✅ Error cleared after valid input');
-    } else {
-      console.log('⚠️ Error message not displayed or input rejected invalid value correctly');
     }
   });
 
@@ -1186,7 +1149,6 @@ test.describe('Basic Wizard Test with Extension', () => {
       await startTimeInput.fill('0:01');
       await startTimeInput.press('Enter');
       await page.waitForTimeout(500);
-      console.log('✅ Set start time to 0:01');
     }
 
     // Continue through wizard
@@ -1222,7 +1184,7 @@ test.describe('Basic Wizard Test with Extension', () => {
           { timeout: 45000, polling: 500 }
         );
       } catch (e) {
-        console.log('Timeout waiting for GIF processing completion');
+        // Timeout waiting for GIF processing completion
       }
 
       // Check for success
@@ -1241,7 +1203,6 @@ test.describe('Basic Wizard Test with Extension', () => {
         const isValidDataUrl = successInfo.gifSrc.startsWith('data:image/gif');
         const isValidBlobUrl = successInfo.gifSrc.startsWith('blob:');
         expect(isValidDataUrl || isValidBlobUrl).toBe(true);
-        console.log('✅ Successfully created GIF with custom start time');
       }
     }
   });
