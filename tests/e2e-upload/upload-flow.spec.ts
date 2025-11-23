@@ -285,8 +285,16 @@ test.describe('Phase 2: GIF Cloud Upload E2E Tests', () => {
     context,
     testUser,
     mockServerUrl,
+    useRealBackend,
   }) => {
     test.setTimeout(120000);
+
+    // Skip this test in real backend mode (requires route interception to force failure)
+    if (useRealBackend) {
+      console.log('[Test] Skipping upload failure test in real backend mode');
+      test.skip();
+      return;
+    }
 
     console.log('[Test] Starting upload failure test...');
 
@@ -470,8 +478,16 @@ test.describe('Phase 2: GIF Cloud Upload E2E Tests', () => {
     context,
     testUser,
     mockServerUrl,
+    useRealBackend,
   }) => {
     test.setTimeout(120000);
+
+    // Skip this test in real backend mode (requires route interception to force 401)
+    if (useRealBackend) {
+      console.log('[Test] Skipping token expiration test in real backend mode');
+      test.skip();
+      return;
+    }
 
     console.log('[Test] Starting token expiration test...');
 

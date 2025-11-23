@@ -229,3 +229,33 @@ export interface GifMetadata {
   frameCount: number;
   fileSize: number; // bytes
 }
+
+// ========================================
+// Phase 3: Social Features Types
+// ========================================
+
+/**
+ * Pagination metadata for list responses
+ */
+export interface Pagination {
+  page: number;
+  per_page: number;
+  total: number;
+}
+
+/**
+ * GIF list API response (for /api/v1/gifs, /api/v1/feed/*, etc.)
+ */
+export interface GifListResponse {
+  gifs: UploadedGif[];
+  pagination: Pagination;
+}
+
+/**
+ * Like/unlike API response
+ */
+export interface LikeResponse {
+  message: string;
+  liked: boolean;
+  like_count: number;
+}

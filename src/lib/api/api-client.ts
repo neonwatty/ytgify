@@ -24,6 +24,8 @@ import type {
   UploadGifParams,
   UploadGifResponse,
   UploadedGif,
+  GifListResponse,
+  LikeResponse,
 } from '@/types/auth';
 
 /**
@@ -31,6 +33,9 @@ import type {
  */
 export class YtgifyApiClient {
   private baseURL: string;
+
+  // Mutex to prevent concurrent token refresh requests (race condition fix)
+  private static refreshInProgress: Promise<string> | null = null;
 
   constructor() {
     // Use environment-specific API base URL
@@ -182,10 +187,40 @@ export class YtgifyApiClient {
    * Returns new token with extended expiration
    */
   async refreshToken(): Promise<string> {
+    // Check if a refresh is already in progress (mutex pattern to prevent race conditions)
+    if (YtgifyApiClient.refreshInProgress) {
+      console.log('[ApiClient] Token refresh already in progress, waiting...');
+      return YtgifyApiClient.refreshInProgress;
+    }
+
+    // Create new refresh promise and store it as mutex
+    YtgifyApiClient.refreshInProgress = this._performTokenRefresh();
+
+    try {
+      const token = await YtgifyApiClient.refreshInProgress;
+      return token;
+    } finally {
+      // Always clear the mutex, even if refresh failed
+      YtgifyApiClient.refreshInProgress = null;
+    }
+  }
+
+  /**
+   * Internal method that performs the actual token refresh
+   * Called by refreshToken() with mutex protection
+   */
+  private async _performTokenRefresh(): Promise<string> {
+    // Capture auth state BEFORE making request to prevent race conditions
+    const currentAuthState = await StorageAdapter.getAuthState();
+
+    if (!currentAuthState || !currentAuthState.token) {
+      throw new AuthError('No auth state to refresh');
+    }
+
     try {
       const response = await this.authenticatedRequest('/auth/refresh', {
         method: 'POST',
-      });
+      }, true); // Pass true to skip expiration check (avoid recursion)
 
       const data: TokenRefreshResponse = await response.json();
 
@@ -193,9 +228,21 @@ export class YtgifyApiClient {
       const decoded = this.decodeToken(data.token);
 
       // Update auth state with new token
-      const authState = await StorageAdapter.getAuthState();
+      // Re-fetch to ensure we have latest state, but create new if missing
+      let authState = await StorageAdapter.getAuthState();
 
-      if (authState) {
+      if (!authState) {
+        console.warn('[ApiClient] ⚠️ Auth state cleared during refresh, recreating...');
+        // Recreate auth state with new token
+        const newAuthState = {
+          token: data.token,
+          expiresAt: decoded.exp * 1000,
+          userId: decoded.sub,
+          userProfile: null,
+        };
+        await StorageAdapter.saveAuthState(newAuthState);
+      } else {
+        // Update existing auth state
         authState.token = data.token;
         authState.expiresAt = decoded.exp * 1000;
         await StorageAdapter.saveAuthState(authState);
@@ -253,85 +300,275 @@ export class YtgifyApiClient {
     try {
       console.log('[ApiClient] 📤 Uploading GIF:', params.title);
 
-      // Build FormData for multipart upload
-      const formData = new FormData();
+      // Helper to build fresh FormData (needed for retries since FormData streams are consumed)
+      const buildFormData = (): FormData => {
+        const formData = new FormData();
 
-      // Required fields
-      formData.append('gif[file]', params.file, 'ytgify.gif');
-      formData.append('gif[title]', params.title);
-      formData.append('gif[youtube_video_url]', params.youtubeUrl);
-      formData.append('gif[youtube_timestamp_start]', params.timestampStart.toString());
-      formData.append('gif[youtube_timestamp_end]', params.timestampEnd.toString());
+        // Required fields
+        formData.append('gif[file]', params.file, 'ytgify.gif');
+        formData.append('gif[title]', params.title);
+        formData.append('gif[youtube_video_url]', params.youtubeUrl);
+        formData.append('gif[youtube_timestamp_start]', params.timestampStart.toString());
+        formData.append('gif[youtube_timestamp_end]', params.timestampEnd.toString());
 
-      // Optional fields
-      if (params.description) {
-        formData.append('gif[description]', params.description);
-      }
+        // Optional fields
+        if (params.description) {
+          formData.append('gif[description]', params.description);
+        }
 
-      if (params.privacy) {
-        formData.append('gif[privacy]', params.privacy);
-      } else {
-        formData.append('gif[privacy]', 'public_access'); // Default
-      }
+        if (params.privacy) {
+          formData.append('gif[privacy]', params.privacy);
+        } else {
+          formData.append('gif[privacy]', 'public_access'); // Default
+        }
 
-      if (params.youtubeVideoTitle) {
-        formData.append('gif[youtube_video_title]', params.youtubeVideoTitle);
-      }
+        if (params.youtubeVideoTitle) {
+          formData.append('gif[youtube_video_title]', params.youtubeVideoTitle);
+        }
 
-      if (params.youtubeChannelName) {
-        formData.append('gif[youtube_channel_name]', params.youtubeChannelName);
-      }
+        if (params.youtubeChannelName) {
+          formData.append('gif[youtube_channel_name]', params.youtubeChannelName);
+        }
 
-      // Text overlay
-      if (params.hasTextOverlay) {
-        formData.append('gif[has_text_overlay]', 'true');
-        if (params.textOverlayData) {
-          formData.append('gif[text_overlay_data]', params.textOverlayData);
+        // Text overlay
+        if (params.hasTextOverlay) {
+          formData.append('gif[has_text_overlay]', 'true');
+          if (params.textOverlayData) {
+            formData.append('gif[text_overlay_data]', params.textOverlayData);
+          }
+        }
+
+        // Social features (Phase 3)
+        if (params.parentGifId) {
+          formData.append('gif[parent_gif_id]', params.parentGifId);
+        }
+
+        if (params.hashtagNames && params.hashtagNames.length > 0) {
+          params.hashtagNames.forEach((tag) => {
+            formData.append('gif[hashtag_names][]', tag);
+          });
+        }
+
+        return formData;
+      };
+
+      // Upload with retry (handles rate limiting)
+      // Must recreate FormData on each attempt since body streams are consumed
+      let attempts = 0;
+      const maxRetries = 3;
+      let lastError: Error | undefined;
+
+      while (attempts < maxRetries) {
+        try {
+          const formData = buildFormData();
+          const response = await this.authenticatedRequest('/gifs', {
+            method: 'POST',
+            body: formData,
+            // Don't set Content-Type - browser sets with boundary for FormData
+          });
+
+          // Handle 429 Rate Limited
+          if (response.status === 429) {
+            const retryAfter = this.getRetryAfter(response);
+            console.warn(`[ApiClient] ⏱️ Rate limited. Retrying after ${retryAfter}s`);
+
+            // Notify user via message (best-effort)
+            try {
+              chrome.runtime.sendMessage({
+                type: 'RATE_LIMITED',
+                retryAfter,
+              });
+            } catch (err) {
+              console.debug('[ApiClient] Could not send rate limit message:', err);
+            }
+
+            // Wait for retry period
+            await this.sleep(retryAfter * 1000);
+            attempts++;
+            continue;
+          }
+
+          // Success or non-retryable error - process response
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new APIError(
+              errorData.error || errorData.message || 'GIF upload failed',
+              response.status
+            );
+          }
+
+          const data: UploadGifResponse = await response.json();
+
+          // Convert relative paths to absolute URLs
+          const baseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
+          if (data.gif.file_url && !data.gif.file_url.startsWith('http')) {
+            data.gif.file_url = `${baseUrl}${data.gif.file_url}`;
+          }
+          if (data.gif.thumbnail_url && !data.gif.thumbnail_url.startsWith('http')) {
+            data.gif.thumbnail_url = `${baseUrl}${data.gif.thumbnail_url}`;
+          }
+
+          console.log('[ApiClient] ✅ GIF uploaded successfully:', data.gif.id);
+          return data.gif;
+        } catch (error) {
+          if (error instanceof AuthError) {
+            // Don't retry auth errors
+            throw error;
+          }
+
+          lastError = error as Error;
+          attempts++;
+
+          if (attempts >= maxRetries) {
+            break;
+          }
+
+          // Exponential backoff for network errors
+          const backoff = Math.pow(2, attempts) * 1000;
+          console.warn(`[ApiClient] ⏱️ Request failed. Retrying in ${backoff}ms...`);
+          await this.sleep(backoff);
         }
       }
 
-      // Social features (Phase 3)
-      if (params.parentGifId) {
-        formData.append('gif[parent_gif_id]', params.parentGifId);
+      // All retries exhausted
+      throw lastError || new Error(`Max retries (${maxRetries}) exceeded`);
+    } catch (error) {
+      console.error('[ApiClient] ❌ GIF upload failed:', error);
+      throw error;
+    }
+  }
+
+  // ========================================
+  // Phase 3: Social Features Methods
+  // ========================================
+
+  /**
+   * Get user's GIFs
+   * Fetches GIFs uploaded by the current user
+   *
+   * @param page - Page number (default: 1)
+   * @param perPage - Results per page (default: 20)
+   * @returns GIF list with pagination
+   */
+  async getMyGifs(page: number = 1, perPage: number = 20): Promise<GifListResponse> {
+    try {
+      const authState = await StorageAdapter.getAuthState();
+      if (!authState || !authState.userId) {
+        throw new AuthError('Not authenticated');
       }
 
-      if (params.hashtagNames && params.hashtagNames.length > 0) {
-        params.hashtagNames.forEach((tag) => {
-          formData.append('gif[hashtag_names][]', tag);
-        });
-      }
+      console.log('[ApiClient] 📋 Fetching my GIFs...');
 
-      // Upload with retry (handles rate limiting)
-      const response = await this.authenticatedRequestWithRetry('/gifs', {
-        method: 'POST',
-        body: formData,
-        // Don't set Content-Type - browser sets with boundary for FormData
+      const params = new URLSearchParams({
+        user_id: authState.userId,
+        page: page.toString(),
+        per_page: perPage.toString(),
       });
+
+      const response = await this.authenticatedRequestWithRetry(
+        `/gifs?${params.toString()}`,
+        {
+          method: 'GET',
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new APIError(
-          errorData.error || errorData.message || 'GIF upload failed',
+          errorData.error || 'Failed to fetch GIFs',
           response.status
         );
       }
 
-      const data: UploadGifResponse = await response.json();
+      const data: GifListResponse = await response.json();
 
-      // Convert relative paths to absolute URLs
-      const baseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
-      if (data.gif.file_url && !data.gif.file_url.startsWith('http')) {
-        data.gif.file_url = `${baseUrl}${data.gif.file_url}`;
-      }
-      if (data.gif.thumbnail_url && !data.gif.thumbnail_url.startsWith('http')) {
-        data.gif.thumbnail_url = `${baseUrl}${data.gif.thumbnail_url}`;
-      }
+      console.log('[ApiClient] ✅ Fetched', data.gifs.length, 'GIFs');
 
-      console.log('[ApiClient] ✅ GIF uploaded successfully:', data.gif.id);
-
-      return data.gif;
+      return data;
     } catch (error) {
-      console.error('[ApiClient] ❌ GIF upload failed:', error);
+      console.error('[ApiClient] ❌ Failed to fetch my GIFs:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get trending GIFs
+   * Fetches popular GIFs from the feed
+   *
+   * @param page - Page number (default: 1)
+   * @param perPage - Results per page (default: 20)
+   * @returns GIF list with pagination
+   */
+  async getTrendingGifs(page: number = 1, perPage: number = 20): Promise<GifListResponse> {
+    try {
+      console.log('[ApiClient] 🔥 Fetching trending GIFs...');
+
+      const params = new URLSearchParams({
+        page: page.toString(),
+        per_page: perPage.toString(),
+      });
+
+      const response = await this.authenticatedRequestWithRetry(
+        `/feed/trending?${params.toString()}`,
+        {
+          method: 'GET',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new APIError(
+          errorData.error || 'Failed to fetch trending GIFs',
+          response.status
+        );
+      }
+
+      const data: GifListResponse = await response.json();
+
+      console.log('[ApiClient] ✅ Fetched', data.gifs.length, 'trending GIFs');
+
+      return data;
+    } catch (error) {
+      console.error('[ApiClient] ❌ Failed to fetch trending GIFs:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Toggle like on a GIF
+   * If GIF is already liked, unlikes it. If not liked, likes it.
+   *
+   * @param gifId - GIF UUID to like/unlike
+   * @returns Like response with new like count
+   */
+  async toggleLike(gifId: string): Promise<LikeResponse> {
+    try {
+      console.log('[ApiClient] ❤️ Toggling like for GIF:', gifId);
+
+      const response = await this.authenticatedRequestWithRetry(
+        `/gifs/${gifId}/likes`,
+        {
+          method: 'POST',
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new APIError(
+          errorData.error || 'Failed to toggle like',
+          response.status
+        );
+      }
+
+      const data: LikeResponse = await response.json();
+
+      console.log(
+        `[ApiClient] ✅ Like ${data.liked ? 'added' : 'removed'} - new count: ${data.like_count}`
+      );
+
+      return data;
+    } catch (error) {
+      console.error('[ApiClient] ❌ Failed to toggle like:', error);
       throw error;
     }
   }
@@ -363,28 +600,45 @@ export class YtgifyApiClient {
 
   /**
    * Make authenticated request with automatic error handling
+   * @param skipExpirationCheck - Set to true to skip token refresh (used internally by refreshToken)
    */
-  async authenticatedRequest(endpoint: string, options: RequestInit = {}): Promise<Response> {
+  async authenticatedRequest(
+    endpoint: string,
+    options: RequestInit = {},
+    skipExpirationCheck: boolean = false,
+    attemptedRefreshOn401: boolean = false
+  ): Promise<Response> {
     const authState = await StorageAdapter.getAuthState();
 
     if (!authState || !authState.token) {
       throw new AuthError('Not authenticated');
     }
 
-    // Check if token is expired
-    const now = Date.now();
-    if (now >= authState.expiresAt) {
-      // Token expired, try to refresh
-      console.log('[ApiClient] Token expired, attempting refresh...');
+    // Check if token is expired or expiring soon (unless skipping check)
+    if (!skipExpirationCheck) {
+      const now = Date.now();
+      const REFRESH_THRESHOLD = 5 * 60 * 1000; // 5 minutes in milliseconds
+      const timeUntilExpiry = authState.expiresAt - now;
 
-      try {
-        await this.refreshToken();
-        // Retry with new token
-        return this.authenticatedRequest(endpoint, options);
-      } catch (error) {
-        // Refresh failed, clear auth
-        await StorageAdapter.clearAllAuthData();
-        throw new AuthError('Session expired. Please login again.');
+      // Refresh if token is expired OR will expire within 5 minutes
+      if (timeUntilExpiry < REFRESH_THRESHOLD) {
+        const minutesRemaining = Math.max(0, Math.floor(timeUntilExpiry / 1000 / 60));
+
+        if (timeUntilExpiry < 0) {
+          console.log('[ApiClient] Token expired, attempting refresh...');
+        } else {
+          console.log(`[ApiClient] Token expires in ${minutesRemaining} minute(s), refreshing proactively...`);
+        }
+
+        try {
+          await this.refreshToken();
+          // Retry with new token - pass skipExpirationCheck to prevent infinite recursion
+          return this.authenticatedRequest(endpoint, options, true, false);
+        } catch (error) {
+          // Refresh failed, clear auth
+          await StorageAdapter.clearAllAuthData();
+          throw new AuthError('Session expired. Please login again.');
+        }
       }
     }
 
@@ -404,11 +658,40 @@ export class YtgifyApiClient {
       headers,
     });
 
-    // Handle 401 Unauthorized (token invalid or revoked)
+    // Handle 401 Unauthorized with refresh-and-retry logic
+    // BUT: Don't attempt refresh if skipExpirationCheck is true (we're already IN a refresh call)
     if (response.status === 401) {
-      console.warn('[ApiClient] 401 Unauthorized - clearing auth state');
-      await StorageAdapter.clearAllAuthData();
-      throw new AuthError('Authentication failed. Please login again.');
+      // If skipExpirationCheck is true, we're IN the refresh flow - don't retry, just fail
+      if (skipExpirationCheck) {
+        console.warn('[ApiClient] 401 during refresh request - auth failed');
+        await StorageAdapter.clearAllAuthData();
+        throw new AuthError('Token refresh failed. Please login again.');
+      }
+
+      // Only attempt refresh ONCE to prevent infinite loops
+      if (!attemptedRefreshOn401) {
+        console.warn('[ApiClient] 401 Unauthorized - attempting token refresh...');
+
+        try {
+          // Refresh token
+          await this.refreshToken();
+          console.log('[ApiClient] Token refreshed successfully, retrying request...');
+
+          // Retry original request with new token
+          // Pass attemptedRefreshOn401=true to prevent infinite retry loop
+          return this.authenticatedRequest(endpoint, options, true, true);
+        } catch (refreshError) {
+          // Refresh failed - now we clear auth state
+          console.error('[ApiClient] Token refresh failed after 401:', refreshError);
+          await StorageAdapter.clearAllAuthData();
+          throw new AuthError('Session expired. Please login again.');
+        }
+      } else {
+        // Already tried refresh, still getting 401 - clear auth
+        console.warn('[ApiClient] 401 Unauthorized after refresh attempt - clearing auth state');
+        await StorageAdapter.clearAllAuthData();
+        throw new AuthError('Authentication failed. Please login again.');
+      }
     }
 
     return response;
@@ -434,11 +717,15 @@ export class YtgifyApiClient {
 
           console.warn(`[ApiClient] ⏱️ Rate limited. Retrying after ${retryAfter}s`);
 
-          // Notify user via message
-          chrome.runtime.sendMessage({
-            type: 'RATE_LIMITED',
-            retryAfter,
-          });
+          // Notify user via message (best-effort, don't fail if unavailable)
+          try {
+            chrome.runtime.sendMessage({
+              type: 'RATE_LIMITED',
+              retryAfter,
+            });
+          } catch (err) {
+            console.debug('[ApiClient] Could not send rate limit message:', err);
+          }
 
           // Wait for retry period
           await this.sleep(retryAfter * 1000);

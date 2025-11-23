@@ -5,7 +5,7 @@
   "description": "Turn your favorite YouTube moments into shareable GIFs.",
   "author": "Jeremy Watt",
   "homepage_url": "https://github.com/neonwatty/ytgify",
-  "permissions": ["storage", "tabs", "activeTab", "downloads"],
+  "permissions": ["storage", "tabs", "activeTab", "downloads", "notifications"],
   "host_permissions": ["https://*.youtube.com/*", "http://localhost:*/*", "http://127.0.0.1:*/*"],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"

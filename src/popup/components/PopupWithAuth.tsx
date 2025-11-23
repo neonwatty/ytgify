@@ -4,12 +4,14 @@
  * Wrapper for popup that adds authentication UI
  * Shows AuthView or UserProfileView based on auth state
  * Phase 1: JWT Authentication
+ * Phase 3: Added TrendingView
  */
 
 import React, { useEffect, useState } from 'react';
 import { StorageAdapter } from '@/lib/storage/storage-adapter';
 import { AuthView } from './AuthView';
 import { UserProfileView } from './UserProfileView';
+import { TrendingView } from './TrendingView';
 import PopupApp from '../popup-modern';
 
 /**
@@ -20,6 +22,8 @@ export const PopupWithAuth: React.FC = () => {
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuthSection, setShowAuthSection] = useState(false);
+  const [showTrendingSection, setShowTrendingSection] = useState(false);
+  const [showSessionExpiredBanner, setShowSessionExpiredBanner] = useState(false);
 
   useEffect(() => {
     checkAuthStatus();
@@ -28,6 +32,7 @@ export const PopupWithAuth: React.FC = () => {
     const handleMessage = (message: any) => {
       if (message.type === 'TOKEN_EXPIRED') {
         setIsAuthenticated(false);
+        setShowSessionExpiredBanner(true);
       }
     };
 
@@ -62,6 +67,12 @@ export const PopupWithAuth: React.FC = () => {
 
   const toggleAuthSection = () => {
     setShowAuthSection(!showAuthSection);
+    setShowTrendingSection(false);
+  };
+
+  const toggleTrendingSection = () => {
+    setShowTrendingSection(!showTrendingSection);
+    setShowAuthSection(false);
   };
 
   // Loading state while checking auth
@@ -80,6 +91,46 @@ export const PopupWithAuth: React.FC = () => {
           }}
         />
         <p style={{ marginTop: '16px', color: '#666', fontSize: '14px' }}>Loading...</p>
+      </div>
+    );
+  }
+
+  // If showing trending section
+  if (showTrendingSection) {
+    return (
+      <div style={{ width: '360px' }}>
+        {/* Header with back button */}
+        <div
+          style={{
+            padding: '12px 16px',
+            borderBottom: '1px solid #e5e7eb',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+          }}
+        >
+          <button
+            onClick={toggleTrendingSection}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '4px',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h2 style={{ fontSize: '16px', fontWeight: '600', flex: 1 }}>
+            Trending
+          </h2>
+        </div>
+
+        {/* Trending content */}
+        <TrendingView />
       </div>
     );
   }
@@ -131,10 +182,80 @@ export const PopupWithAuth: React.FC = () => {
   // Main popup UI with auth button
   return (
     <div style={{ width: '360px' }}>
+      {/* Session Expired Banner */}
+      {showSessionExpiredBanner && (
+        <div
+          style={{
+            backgroundColor: '#fef2f2',
+            borderBottom: '1px solid #fecaca',
+            padding: '12px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', flex: 1 }}>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#dc2626"
+              style={{ flexShrink: 0, marginTop: '2px' }}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <div style={{ flex: 1 }}>
+              <p
+                style={{
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  color: '#991b1b',
+                  marginBottom: '4px',
+                }}
+              >
+                Session Expired
+              </p>
+              <p style={{ fontSize: '12px', color: '#7f1d1d', lineHeight: '1.4' }}>
+                Please sign in again to upload GIFs to your account
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowSessionExpiredBanner(false)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '4px',
+              color: '#991b1b',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+            aria-label="Dismiss"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Main popup content */}
       <PopupApp />
 
-      {/* Auth Section Toggle */}
+      {/* Auth & Community Section Toggle */}
       <div
         style={{
           borderTop: '1px solid #e5e7eb',
@@ -142,6 +263,40 @@ export const PopupWithAuth: React.FC = () => {
           backgroundColor: '#f9fafb',
         }}
       >
+        {/* Browse Trending Button */}
+        <button
+          onClick={toggleTrendingSection}
+          data-testid="browse-trending-button"
+          style={{
+            width: '100%',
+            padding: '12px',
+            fontSize: '14px',
+            fontWeight: '600',
+            color: '#fff',
+            backgroundColor: '#ef4444',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            transition: 'background-color 0.2s',
+            marginBottom: '8px',
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+            />
+          </svg>
+          <span>Browse Trending</span>
+        </button>
+
+        {/* Auth Toggle */}
         {isAuthenticated ? (
           <button
             onClick={toggleAuthSection}

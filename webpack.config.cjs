@@ -70,11 +70,46 @@ module.exports = (env, argv) => {
       }),
       new CopyPlugin({
         patterns: [
-          { 
+          {
             from: 'manifest.json',
             to: 'manifest.json',
+            transform(content) {
+              const manifest = JSON.parse(content.toString());
+
+              // Strip localhost permissions in production
+              if (isProduction) {
+                // Remove localhost from host_permissions
+                if (manifest.host_permissions) {
+                  manifest.host_permissions = manifest.host_permissions.filter(
+                    (permission) => !permission.includes('localhost') && !permission.includes('127.0.0.1')
+                  );
+                }
+
+                // Remove localhost from content_scripts matches
+                if (manifest.content_scripts) {
+                  manifest.content_scripts = manifest.content_scripts.map((script) => ({
+                    ...script,
+                    matches: script.matches.filter(
+                      (match) => !match.includes('localhost') && !match.includes('127.0.0.1')
+                    ),
+                  }));
+                }
+
+                // Remove localhost from web_accessible_resources
+                if (manifest.web_accessible_resources) {
+                  manifest.web_accessible_resources = manifest.web_accessible_resources.map((resource) => ({
+                    ...resource,
+                    matches: resource.matches.filter(
+                      (match) => !match.includes('localhost') && !match.includes('127.0.0.1')
+                    ),
+                  }));
+                }
+              }
+
+              return JSON.stringify(manifest, null, 2);
+            },
           },
-          { 
+          {
             from: 'icons',
             to: 'icons',
             noErrorOnMissing: true,

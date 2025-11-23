@@ -216,6 +216,169 @@ describe('YtgifyApiClient', () => {
       await expect(apiClient.refreshToken()).rejects.toThrow();
       expect(StorageAdapter.clearAllAuthData).toHaveBeenCalled();
     });
+
+    it('should handle concurrent refresh requests with mutex', async () => {
+      const newToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXItaWQiLCJqdGkiOiJuZXctanRpIiwiZXhwIjoxODAwfQ.test';
+
+      (StorageAdapter.getAuthState as jest.Mock).mockResolvedValue({
+        token: mockJWT,
+        expiresAt: Date.now() + 900000,
+        userId: 'test-user-id',
+        userProfile: mockUserProfile,
+      });
+
+      // Simulate slow refresh to test concurrency
+      (fetch as jest.Mock).mockImplementation(
+        () =>
+          new Promise((resolve) =>
+            setTimeout(
+              () =>
+                resolve({
+                  ok: true,
+                  status: 200,
+                  json: async () => ({
+                    message: 'Token refreshed',
+                    token: newToken,
+                  }),
+                }),
+              100
+            )
+          )
+      );
+
+      // Start 3 concurrent refresh requests
+      const promise1 = apiClient.refreshToken();
+      const promise2 = apiClient.refreshToken();
+      const promise3 = apiClient.refreshToken();
+
+      // All should resolve to the same token
+      const [token1, token2, token3] = await Promise.all([promise1, promise2, promise3]);
+
+      expect(token1).toBe(newToken);
+      expect(token2).toBe(newToken);
+      expect(token3).toBe(newToken);
+
+      // Should only have made ONE fetch call (mutex prevented duplicates)
+      expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('should clear mutex after successful refresh', async () => {
+      const newToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXItaWQiLCJqdGkiOiJuZXctanRpIiwiZXhwIjoxODAwfQ.test';
+
+      (StorageAdapter.getAuthState as jest.Mock).mockResolvedValue({
+        token: mockJWT,
+        expiresAt: Date.now() + 900000,
+        userId: 'test-user-id',
+        userProfile: mockUserProfile,
+      });
+      (fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          message: 'Token refreshed',
+          token: newToken,
+        }),
+      });
+
+      // First refresh
+      await apiClient.refreshToken();
+
+      // Reset fetch mock to track second call
+      (fetch as jest.Mock).mockClear();
+
+      // Second refresh should create new request (mutex cleared)
+      await apiClient.refreshToken();
+
+      expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('should clear mutex after failed refresh', async () => {
+      (StorageAdapter.getAuthState as jest.Mock).mockResolvedValue({
+        token: mockJWT,
+        expiresAt: Date.now() + 900000,
+        userId: 'test-user-id',
+        userProfile: mockUserProfile,
+      });
+      (fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Token expired' }),
+      });
+
+      // First refresh fails
+      await expect(apiClient.refreshToken()).rejects.toThrow();
+
+      // Reset mocks
+      (fetch as jest.Mock).mockClear();
+      (StorageAdapter.getAuthState as jest.Mock).mockResolvedValue({
+        token: mockJWT,
+        expiresAt: Date.now() + 900000,
+        userId: 'test-user-id',
+        userProfile: mockUserProfile,
+      });
+
+      // Second refresh should be able to proceed (mutex cleared after failure)
+      await expect(apiClient.refreshToken()).rejects.toThrow();
+
+      expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle race condition with multiple simultaneous API calls triggering refresh', async () => {
+      const newToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXItaWQiLCJqdGkiOiJuZXctanRpIiwiZXhwIjoxODAwfQ.test';
+
+      // Simulate token that's about to expire (triggers proactive refresh)
+      const expiringToken = {
+        token: mockJWT,
+        expiresAt: Date.now() + (4 * 60 * 1000), // Expires in 4 minutes (< 5 minute threshold)
+        userId: 'test-user-id',
+        userProfile: mockUserProfile,
+      };
+
+      (StorageAdapter.getAuthState as jest.Mock).mockResolvedValue(expiringToken);
+
+      let refreshCallCount = 0;
+
+      (fetch as jest.Mock).mockImplementation((url) => {
+        if (url.includes('/auth/refresh')) {
+          refreshCallCount++;
+          return new Promise((resolve) =>
+            setTimeout(
+              () =>
+                resolve({
+                  ok: true,
+                  status: 200,
+                  json: async () => ({
+                    message: 'Token refreshed',
+                    token: newToken,
+                  }),
+                }),
+              50
+            )
+          );
+        } else {
+          // Other API calls (like getCurrentUser)
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({ user: mockUserProfile }),
+          });
+        }
+      });
+
+      // Simulate 5 simultaneous API calls that each need token refresh
+      const calls = [
+        apiClient.getCurrentUser(),
+        apiClient.getCurrentUser(),
+        apiClient.getCurrentUser(),
+        apiClient.getCurrentUser(),
+        apiClient.getCurrentUser(),
+      ];
+
+      await Promise.all(calls);
+
+      // Should only have refreshed once despite 5 concurrent calls
+      expect(refreshCallCount).toBe(1);
+    });
   });
 
   describe('Get Current User', () => {

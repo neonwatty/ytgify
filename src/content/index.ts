@@ -128,14 +128,14 @@ class YouTubeGifMaker {
     this.log('debug', '[Content] CSS removed');
   }
 
-  private init() {
+  private async init() {
     this.setupMessageListener();
     this.setupNavigationListener();
     this.setupOverlayStateListeners();
     this.setupCleanupManager();
     this.setupThemeSystem();
     this.setupStorageListener();
-    this.loadButtonVisibility();
+    await this.loadButtonVisibility(); // Wait for button visibility to load from storage
     this.setupInjectionSystem();
     this.setupFrameExtraction();
     this.findVideoElement();
@@ -1559,27 +1559,41 @@ class YouTubeGifMaker {
    * Called when user clicks "Upload to Cloud" button in success screen
    */
   public triggerCloudUpload = async (): Promise<void> => {
-    // Verify we have the necessary data
-    if (!this.currentGifBlob || !this.currentGifSelection || !this.createdGifData) {
-      this.log('error', '[Content] Cannot upload: missing blob or selection data');
-      return;
+    try {
+      // Verify we have the necessary data
+      if (!this.currentGifBlob || !this.currentGifSelection || !this.createdGifData) {
+        this.log('error', '[Content] Cannot upload: missing blob or selection data');
+        return;
+      }
+
+      // Update status to uploading (create new object for React to detect change)
+      this.createdGifData = {
+        ...this.createdGifData,
+        uploadStatus: 'uploading',
+      };
+      this.log('info', '[Content] Upload status changed to uploading');
+      this.updateTimelineOverlay();
+
+      // Trigger the upload with forceUpload=true to bypass autoUpload preference check
+      await this.handleCloudUpload(
+        this.currentGifBlob,
+        this.createdGifData.metadata,
+        this.currentGifSelection,
+        true // forceUpload: manual upload via button, ignore autoUpload preference
+      );
+    } catch (error) {
+      this.log('error', '[Content] Upload trigger failed', { error });
+
+      // Ensure UI shows failed state even if handleCloudUpload doesn't catch it
+      if (this.createdGifData) {
+        this.createdGifData = {
+          ...this.createdGifData,
+          uploadStatus: 'failed',
+          uploadError: error instanceof Error ? error.message : 'Upload failed',
+        };
+        this.updateTimelineOverlay();
+      }
     }
-
-    // Update status to uploading (create new object for React to detect change)
-    this.createdGifData = {
-      ...this.createdGifData,
-      uploadStatus: 'uploading',
-    };
-    this.log('info', '[Content] Upload status changed to uploading');
-    this.updateTimelineOverlay();
-
-    // Trigger the upload with forceUpload=true to bypass autoUpload preference check
-    await this.handleCloudUpload(
-      this.currentGifBlob,
-      this.createdGifData.metadata,
-      this.currentGifSelection,
-      true // forceUpload: manual upload via button, ignore autoUpload preference
-    );
   };
 
   /**

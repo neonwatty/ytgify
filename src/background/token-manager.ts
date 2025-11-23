@@ -139,6 +139,17 @@ export class TokenManager {
    */
   private static async notifyTokenExpired(): Promise<void> {
     try {
+      // Show Chrome notification to user
+      if (chrome.notifications) {
+        chrome.notifications.create({
+          type: 'basic',
+          iconUrl: '/icons/icon128.png',
+          title: 'YTGify Session Expired',
+          message: 'Please sign in again to upload GIFs to your account.',
+          priority: 2,
+        });
+      }
+
       // Send message to all tabs (content scripts)
       const tabs = await chrome.tabs.query({});
 

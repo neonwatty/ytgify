@@ -35,6 +35,8 @@
     "test:e2e:upload:headed": "HEADED=true playwright test --config tests/playwright-upload.config.ts",
     "test:e2e:upload:debug": "HEADED=true playwright test --config tests/playwright-upload.config.ts --debug",
     "test:e2e:upload:ui": "playwright test --config tests/playwright-upload.config.ts --ui",
+    "test:e2e:upload:real": "REAL_BACKEND=true playwright test --config tests/playwright-upload.config.ts",
+    "test:e2e:upload:real:headed": "REAL_BACKEND=true HEADED=true playwright test --config tests/playwright-upload.config.ts",
     "generate:test-videos": "cd tests/e2e-mock/fixtures/videos && chmod +x generate-test-videos.sh && ./generate-test-videos.sh",
     "test:layout": "HEADLESS=true playwright test --config tests/playwright.config.ts tests/e2e/youtube-layout-integrity.spec.ts tests/e2e/css-isolation.spec.ts",
     "test:layout:headed": "playwright test --config tests/playwright.config.ts tests/e2e/youtube-layout-integrity.spec.ts tests/e2e/css-isolation.spec.ts --headed",
