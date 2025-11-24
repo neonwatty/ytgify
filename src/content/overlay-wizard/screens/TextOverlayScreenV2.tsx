@@ -18,6 +18,7 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
   startTime,
   endTime: _endTime,
   videoElement,
+  textOverlays,
   resolution = '144p',
   onConfirm,
   onSkip,
@@ -68,6 +69,27 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
   const [showBottomAdvanced, setShowBottomAdvanced] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [videoFrameUrl, setVideoFrameUrl] = useState<string | null>(null);
+
+  // Initialize text state from textOverlays prop when navigating back
+  useEffect(() => {
+    if (textOverlays && textOverlays.length > 0) {
+      // Find top and bottom overlays
+      const topOverlay = textOverlays.find(o => o.position.y < 50);
+      const bottomOverlay = textOverlays.find(o => o.position.y >= 50);
+
+      if (topOverlay) {
+        setTopText(topOverlay.text);
+        setTopFontSize(topOverlay.fontSize || fontSizeRange.default);
+        setTopTextColor(topOverlay.color || '#FFFFFF');
+      }
+
+      if (bottomOverlay) {
+        setBottomText(bottomOverlay.text);
+        setBottomFontSize(bottomOverlay.fontSize || fontSizeRange.default);
+        setBottomTextColor(bottomOverlay.color || '#FFFFFF');
+      }
+    }
+  }, [textOverlays, fontSizeRange.default]);
 
   const handleAddText = useCallback(() => {
     const overlays: TextOverlay[] = [];

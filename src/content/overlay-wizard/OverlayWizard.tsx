@@ -53,6 +53,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   const navigation = useOverlayNavigation('quick-capture');
   const { currentScreen, data, goToScreen, goBack, setScreenData, previousScreen } = navigation;
 
+
   // Initialize with video data
   useEffect(() => {
     setScreenData({
@@ -125,22 +126,15 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     }
   }, [gifData, currentScreen, setScreenData, goToScreen]);
 
-  // If processing was cancelled (isCreating flips to false) while on processing screen,
-  // return to the previous step so the UI doesn't get stuck.
+  // Auto-navigate to success when GIF data is available
   React.useEffect(() => {
-    if (currentScreen === 'processing' && !isCreating) {
-      if (gifData?.dataUrl) {
-        goToScreen('success');
-        return;
-      }
-
-      if (previousScreen) {
-        goBack();
-      } else {
-        goToScreen('quick-capture');
-      }
+    if (currentScreen === 'processing' && gifData?.dataUrl) {
+      goToScreen('success');
     }
-  }, [currentScreen, gifData, goBack, goToScreen, isCreating, previousScreen]);
+  }, [currentScreen, gifData, goToScreen]);
+
+  // Handle processing cancellation via explicit event (not via isCreating state)
+  // This prevents interference with normal back navigation which also sets isCreating to false
 
   // Listen for explicit cancel events from the content script
   React.useEffect(() => {

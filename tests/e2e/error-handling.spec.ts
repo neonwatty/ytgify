@@ -115,6 +115,58 @@ test.describe('Error Handling and Edge Cases', () => {
     await textOverlay.clickNext();
   });
 
+  test('Back button navigates from processing to text overlay', async ({ page }) => {
+    await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
+    await handleYouTubeCookieConsent(page);
+    await waitForExtensionReady(page);
+
+    await youtube.openGifWizard();
+    await quickCapture.waitForScreen();
+    await quickCapture.setTimeRange(0, 3);
+    await quickCapture.clickNext();
+
+    await textOverlay.waitForScreen();
+    await textOverlay.addTextOverlay('Test Text', 'top', 'meme');
+    await textOverlay.clickNext();
+
+    // Now on processing screen
+    await processing.waitForScreen();
+
+    // Wait a moment for processing to start
+    await page.waitForTimeout(1000);
+
+    // Click back button in the processing screen header
+    const backButton = page.locator('.ytgif-processing-screen .ytgif-back-button');
+    await backButton.click();
+
+    // Wait a moment for navigation
+    await page.waitForTimeout(500);
+
+    // Debug: Check what screens are visible
+    const processingVisible = await page.locator('.ytgif-processing-screen').isVisible();
+    const textOverlayVisible = await page.locator('.ytgif-text-overlay-screen').isVisible();
+    const quickCaptureVisible = await page.locator('.ytgif-quick-capture-screen').isVisible();
+    const wizardVisible = await page.locator('.ytgif-overlay-wizard').isVisible();
+
+    console.log('After back click:',  {
+      wizardVisible,
+      processingVisible,
+      textOverlayVisible,
+      quickCaptureVisible
+    });
+
+    // Should navigate back to text overlay screen (not close wizard)
+    await textOverlay.waitForScreen();
+
+    // Verify wizard is still open
+    expect(wizardVisible).toBe(true);
+
+    // Verify text overlay data is preserved
+    const overlays = await textOverlay.getOverlayTexts();
+    expect(overlays.length).toBe(1);
+    expect(overlays[0]).toBe('Test Text');
+  });
+
   test('Handle video pause/play during capture', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
