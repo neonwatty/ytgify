@@ -69,6 +69,7 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
   const [showBottomAdvanced, setShowBottomAdvanced] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [videoFrameUrl, setVideoFrameUrl] = useState<string | null>(null);
+  const isProcessingRef = useRef(false);
 
   // Initialize text state from textOverlays prop when navigating back
   useEffect(() => {
@@ -92,6 +93,13 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
   }, [textOverlays, fontSizeRange.default]);
 
   const handleAddText = useCallback(() => {
+    // Prevent duplicate calls while processing
+    if (isProcessingRef.current) {
+      return;
+    }
+
+    isProcessingRef.current = true;
+
     const overlays: TextOverlay[] = [];
 
     // Add top text if present
@@ -127,6 +135,11 @@ const TextOverlayScreenV2: React.FC<TextOverlayScreenProps> = ({
     }
 
     onConfirm(overlays);
+
+    // Reset flag after a short delay to allow for legitimate re-calls
+    setTimeout(() => {
+      isProcessingRef.current = false;
+    }, 1000);
   }, [topText, topFontSize, topTextColor, bottomText, bottomFontSize, bottomTextColor, onConfirm]);
 
   const hasText = topText.trim().length > 0 || bottomText.trim().length > 0;

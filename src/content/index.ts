@@ -1140,13 +1140,24 @@ class YouTubeGifMaker {
     }
   }
 
+  private isProcessingGifCreation = false;
+
   private async handleCreateGif(
     selection?: TimelineSelection,
     textOverlays?: TextOverlay[],
     resolution?: string,
     frameRate?: number
   ) {
-    console.log('[handleCreateGif] Called with frameRate:', frameRate);
+    console.log('[handleCreateGif] Called with frameRate:', frameRate, 'isProcessingGifCreation:', this.isProcessingGifCreation);
+
+    // Prevent duplicate calls while already processing
+    if (this.isProcessingGifCreation) {
+      console.log('[handleCreateGif] Already processing, ignoring duplicate call');
+      return;
+    }
+
+    this.isProcessingGifCreation = true;
+
     this.log('debug', '[Content] handleCreateGif input', {
       resolution,
       frameRate,
@@ -1157,6 +1168,7 @@ class YouTubeGifMaker {
 
     if (!this.videoElement || !gifSelection) {
       this.log('warn', '[Content] Cannot create GIF - missing video or selection');
+      this.isProcessingGifCreation = false;
       window.dispatchEvent(new CustomEvent('ytgif-processing-cancelled'));
       return;
     }
@@ -1205,6 +1217,7 @@ class YouTubeGifMaker {
     } catch (error) {
       this.log('error', '[Content] Prebuffer failed before GIF creation', { error });
       this.isCreatingGif = false;
+      this.isProcessingGifCreation = false;
       window.dispatchEvent(
         new CustomEvent('ytgif-creating-state', {
           detail: { isCreating: false },
@@ -1441,6 +1454,7 @@ class YouTubeGifMaker {
 
       // Reset creating state
       this.isCreatingGif = false;
+      this.isProcessingGifCreation = false;
       window.dispatchEvent(
         new CustomEvent('ytgif-creating-state', {
           detail: { isCreating: false },
@@ -1481,6 +1495,7 @@ class YouTubeGifMaker {
 
       // Only reset creating state if there's an actual error
       this.isCreatingGif = false;
+      this.isProcessingGifCreation = false;
       window.dispatchEvent(
         new CustomEvent('ytgif-creating-state', {
           detail: { isCreating: false },

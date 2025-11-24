@@ -51,8 +51,22 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   gifData,
 }) => {
   const navigation = useOverlayNavigation('quick-capture');
-  const { currentScreen, data, goToScreen, goBack, setScreenData, previousScreen } = navigation;
+  const { currentScreen, data, goToScreen, goBack, setScreenData, previousScreen} = navigation;
 
+  // Use refs to track navigation state and functions for event listeners
+  // This prevents listener re-registration on every state/function change
+  const currentScreenRef = React.useRef(currentScreen);
+  const previousScreenRef = React.useRef(previousScreen);
+  const goToScreenRef = React.useRef(goToScreen);
+  const goBackRef = React.useRef(goBack);
+
+  // Keep refs synced with latest values
+  React.useEffect(() => {
+    currentScreenRef.current = currentScreen;
+    previousScreenRef.current = previousScreen;
+    goToScreenRef.current = goToScreen;
+    goBackRef.current = goBack;
+  }, [currentScreen, previousScreen, goToScreen, goBack]);
 
   // Initialize with video data
   useEffect(() => {
@@ -137,23 +151,34 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   // This prevents interference with normal back navigation which also sets isCreating to false
 
   // Listen for explicit cancel events from the content script
+  // Uses refs for all values to avoid re-registering listener on any state/function change
+  // This prevents race conditions when navigating between screens
   React.useEffect(() => {
     const handler = () => {
-      if (currentScreen === 'processing') {
-        if (previousScreen) {
-          goBack();
+      console.log('[OverlayWizard] ytgif-processing-cancelled event received, currentScreen:', currentScreenRef.current);
+      if (currentScreenRef.current === 'processing') {
+        console.log('[OverlayWizard] Processing screen detected, navigating back. previousScreen:', previousScreenRef.current);
+        if (previousScreenRef.current) {
+          goBackRef.current();
         } else {
-          goToScreen('quick-capture');
+          goToScreenRef.current('quick-capture');
         }
+      } else {
+        console.log('[OverlayWizard] Not on processing screen, ignoring cancel event');
       }
     };
 
+    console.log('[OverlayWizard] Registering ytgif-processing-cancelled listener');
     window.addEventListener('ytgif-processing-cancelled', handler);
-    return () => window.removeEventListener('ytgif-processing-cancelled', handler);
-  }, [currentScreen, goBack, goToScreen, previousScreen]);
+    return () => {
+      console.log('[OverlayWizard] Unregistering ytgif-processing-cancelled listener');
+      window.removeEventListener('ytgif-processing-cancelled', handler);
+    };
+  }, []); // Empty deps - register once on mount, access latest values via refs
 
   // Add handlers for text overlay screen
   const handleConfirmTextOverlay = (overlays: TextOverlay[]) => {
+    console.log('[OverlayWizard] handleConfirmTextOverlay called, currentScreen:', currentScreen);
     setScreenData({ textOverlays: overlays });
     const selection: TimelineSelection = {
       startTime: data.startTime || 0,
@@ -162,7 +187,9 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     };
 
     console.log('[OverlayWizard] handleCreateGif - frameRate:', data.frameRate);
+    console.log('[OverlayWizard] About to goToScreen(processing)');
     goToScreen('processing'); // Show processing screen immediately for better UX/resilience
+    console.log('[OverlayWizard] Called goToScreen(processing), new screen should be:', 'processing');
     try {
       onCreateGif(selection, overlays, data.resolution, data.frameRate);
     } catch (error) {

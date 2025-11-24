@@ -167,6 +167,83 @@ test.describe('Error Handling and Edge Cases', () => {
     expect(overlays[0]).toBe('Test Text');
   });
 
+  test('Back navigation from processing allows subsequent GIF creation', async ({ page }) => {
+    // Capture console logs from the page/extension
+    page.on('console', msg => {
+      const text = msg.text();
+      if (text.includes('[OverlayWizard]') || text.includes('[TextOverlayScreenV2]') || text.includes('ytgif-processing-cancelled') || text.includes('currentScreen changed') || text.includes('[handleCreateGif]') || text.includes('Already processing')) {
+        console.log('[PAGE CONSOLE]', text);
+      }
+    });
+
+    await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
+    await handleYouTubeCookieConsent(page);
+    await waitForExtensionReady(page);
+
+    await youtube.openGifWizard();
+    await quickCapture.waitForScreen();
+    await quickCapture.setTimeRange(0, 3);
+    await quickCapture.clickNext();
+
+    await textOverlay.waitForScreen();
+    await textOverlay.addTextOverlay('Round Trip Test', 'top', 'meme');
+    await textOverlay.clickNext();
+
+    // Now on processing screen
+    await processing.waitForScreen();
+    await page.waitForTimeout(1000);
+
+    // Click back button to return to text overlay
+    const backButton = page.locator('.ytgif-processing-screen .ytgif-back-button');
+    await backButton.click();
+    await page.waitForTimeout(500);
+
+    // Should be back on text overlay screen
+    await textOverlay.waitForScreen();
+
+    // Verify text is still there
+    const overlaysAfterBack = await textOverlay.getOverlayTexts();
+    expect(overlaysAfterBack.length).toBe(1);
+    expect(overlaysAfterBack[0]).toBe('Round Trip Test');
+
+    // CRITICAL TEST: Click to create GIF again - this should work without returning to text overlay
+    await textOverlay.clickNext();
+
+    // Wait a moment for navigation to occur
+    await page.waitForTimeout(1000);
+
+    // Debug: Check what screens are visible
+    const processingVisible = await page.locator('.ytgif-processing-screen').isVisible();
+    const textOverlayStillVisible = await page.locator('.ytgif-text-overlay-screen').isVisible();
+    const quickCaptureVisible = await page.locator('.ytgif-quick-capture-screen').isVisible();
+    const wizardVisible = await page.locator('.ytgif-overlay-wizard').isVisible();
+
+    console.log('After second navigation attempt:', {
+      wizardVisible,
+      processingVisible,
+      textOverlayStillVisible,
+      quickCaptureVisible
+    });
+
+    // Should go to processing screen and stay there
+    await processing.waitForScreen();
+    await page.waitForTimeout(1000);
+
+    // Verify we're still on processing screen (not back on text overlay)
+    const processingStillVisible = await page.locator('.ytgif-processing-screen').isVisible();
+    const textOverlayVisible = await page.locator('.ytgif-text-overlay-screen').isVisible();
+
+    expect(processingStillVisible).toBe(true);
+    expect(textOverlayVisible).toBe(false);
+
+    // Wait for GIF creation to complete
+    await success.waitForScreen();
+
+    // Verify success screen appears with valid GIF
+    const gifVisible = await success.isGifDisplayed();
+    expect(gifVisible).toBe(true);
+  });
+
   test('Handle video pause/play during capture', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);

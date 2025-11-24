@@ -30,9 +30,10 @@ export class TextOverlayPage {
     // TextOverlayScreenV2 has separate top and bottom text inputs
     this.textInput = page.locator('input.ytgif-text-input').first();
     // Primary button is "Apply Text & Continue" or "Create GIF Without Text"
-    this.addButton = page.locator('button.ytgif-button-primary');
-    this.skipButton = page.locator('button.ytgif-button-secondary');
-    this.nextButton = page.locator('button.ytgif-button-primary');
+    // Scope to container to avoid clicking buttons from other screens
+    this.addButton = this.container.locator('button.ytgif-button-primary');
+    this.skipButton = this.container.locator('button.ytgif-button-secondary');
+    this.nextButton = this.container.locator('button.ytgif-button-primary');
     this.backButton = page.locator('button.ytgif-back-button');
     this.preview = page.locator('.ytgif-frame-preview, .ytgif-preview-placeholder');
     this.overlayItems = page.locator('.ytgif-text-preview-overlay');
@@ -118,7 +119,7 @@ export class TextOverlayPage {
   }
 
   async clickNext() {
-    await this.nextButton.click();
+    await this.nextButton.click({ clickCount: 1, delay: 100 });
   }
 
   async clickBack() {
