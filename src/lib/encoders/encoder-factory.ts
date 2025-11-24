@@ -12,13 +12,13 @@ import { GifskiEncoder } from './gifski-encoder';
 export type EncoderType = 'gifenc' | 'gif.js' | 'gifski' | 'auto';
 export type FormatType = 'gif' | 'mp4';
 
-export interface EncoderPreference {
+interface EncoderPreference {
   primary: EncoderType;
   fallback?: EncoderType;
   format: FormatType;
 }
 
-export interface EncoderSelection {
+interface EncoderSelection {
   encoder: AbstractEncoder;
   reason: string;
   characteristics: {
@@ -408,57 +408,3 @@ export class EncoderFactory {
 // Convenience functions
 export const encoderFactory = EncoderFactory.getInstance();
 
-/**
- * Quick encoder selection with sensible defaults
- */
-export async function selectEncoder(
-  format: FormatType = 'gif',
-  preferredEncoder: EncoderType = 'auto'
-): Promise<EncoderSelection> {
-  return encoderFactory.getEncoder({
-    primary: preferredEncoder,
-    fallback: preferredEncoder === 'gifenc' ? 'gif.js' : undefined,
-    format
-  });
-}
-
-/**
- * Get performance recommendations based on available encoders
- */
-export async function getPerformanceRecommendations(): Promise<{
-  recommended: EncoderType;
-  reason: string;
-  alternatives: Array<{ encoder: EncoderType; reason: string }>;
-}> {
-  const available = await encoderFactory.getAvailableEncoders();
-  const gifEncoders = available.filter(e => e.supportedFormats.includes('gif'));
-  
-  // Find the fastest available encoder
-  const fastestEncoder = gifEncoders
-    .filter(e => e.available)
-    .sort((a, b) => {
-      const speedOrder = { fast: 3, medium: 2, slow: 1 };
-      return speedOrder[b.characteristics.speed] - speedOrder[a.characteristics.speed];
-    })[0];
-
-  if (!fastestEncoder) {
-    return {
-      recommended: 'gif.js',
-      reason: 'No encoders available for analysis',
-      alternatives: []
-    };
-  }
-
-  const alternatives = gifEncoders
-    .filter(e => e.available && e.type !== fastestEncoder.type)
-    .map(e => ({
-      encoder: e.type,
-      reason: `${e.characteristics.speed} speed, ${e.characteristics.quality} quality`
-    }));
-
-  return {
-    recommended: fastestEncoder.type,
-    reason: `Best performance: ${fastestEncoder.characteristics.speed} speed, ${fastestEncoder.characteristics.quality} quality`,
-    alternatives
-  };
-}

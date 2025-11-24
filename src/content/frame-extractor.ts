@@ -17,6 +17,7 @@ export interface ContentFrameExtractionRequest {
   };
 }
 
+/** @internal */
 export interface ContentFrameExtractionResponse {
   frames: ImageData[];
   metadata?: {
@@ -385,19 +386,9 @@ export class ContentScriptFrameExtractor {
   }
 }
 
-// Initialize the content script frame extractor
-export const contentScriptFrameExtractor = ContentScriptFrameExtractor.getInstance();
-
 // Export utility functions
 export function initializeContentScriptFrameExtraction(): void {
-  contentScriptFrameExtractor.getVideoState(); // Initialize
+  const extractor = ContentScriptFrameExtractor.getInstance();
+  extractor.getVideoState(); // Initialize
   logger.info('[ContentScriptFrameExtractor] Initialized');
-}
-
-export function getContentScriptVideoState() {
-  return contentScriptFrameExtractor.getVideoState();
-}
-
-export async function testContentScriptFrameExtraction(): Promise<boolean> {
-  return contentScriptFrameExtractor.testFrameExtraction();
 }

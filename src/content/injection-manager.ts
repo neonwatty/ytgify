@@ -2,6 +2,7 @@
 import { logger } from '@/lib/logger';
 import { youTubeDetector, YouTubeNavigationEvent, YouTubePageState } from './youtube-detector';
 
+/** @internal */
 export interface InjectionTarget {
   selector: string;
   requiredPageTypes: string[];
@@ -9,6 +10,7 @@ export interface InjectionTarget {
   persistent: boolean;
 }
 
+/** @internal */
 export interface InjectedElement {
   element: HTMLElement;
   target: InjectionTarget;
@@ -16,12 +18,14 @@ export interface InjectedElement {
   pageState: YouTubePageState;
 }
 
+/** @internal */
 export type InjectionCallback = (
-  target: InjectionTarget, 
+  target: InjectionTarget,
   container: HTMLElement,
   pageState: YouTubePageState
 ) => HTMLElement | null;
 
+/** @internal */
 export type CleanupCallback = (element: HTMLElement, pageState: YouTubePageState) => void;
 
 export class InjectionManager {

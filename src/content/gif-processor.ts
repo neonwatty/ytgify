@@ -86,6 +86,7 @@ export interface BufferingStatus {
   estimatedTimeRemaining: number;
 }
 
+/** @internal */
 export interface StageProgressInfo {
   stage: string;
   stageNumber: number;

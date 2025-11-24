@@ -35,6 +35,7 @@ type EventHandler<T extends EventMessage> = (
 ) => Promise<void> | void;
 
 // Message Bus Configuration
+/** @internal */
 export interface MessageBusOptions {
   enableLogging?: boolean;
   requestTimeout?: number;

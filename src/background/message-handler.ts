@@ -29,6 +29,7 @@ import { backgroundWorker, VideoProcessingJob } from './worker';
 import { logger } from '@/lib/logger';
 import { errorHandler, createError } from '@/lib/errors';
 
+/** @internal */
 export interface MessageHandlerOptions {
   enableProgressUpdates?: boolean;
   maxConcurrentJobs?: number;

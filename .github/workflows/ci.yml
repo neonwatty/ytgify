@@ -30,6 +30,9 @@ jobs:
       - name: Run type checking
         run: npm run typecheck
 
+      - name: Check unused exports/dependencies
+        run: npm run knip:production
+
       - name: Run tests with coverage
         run: npm run test:coverage
 
