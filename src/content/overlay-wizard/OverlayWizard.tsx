@@ -279,10 +279,6 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
                 // Could show error screen or message
               }}
               onBack={goBack}
-              onCancel={() => {
-                // Request the content script to cancel processing
-                window.dispatchEvent(new CustomEvent('ytgif-cancel-processing'));
-              }}
             />
           )}
 

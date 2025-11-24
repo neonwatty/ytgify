@@ -115,30 +115,6 @@ test.describe('Error Handling and Edge Cases', () => {
     await textOverlay.clickNext();
   });
 
-  test('Cancel during processing', async ({ page }) => {
-    await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
-    await handleYouTubeCookieConsent(page);
-    await waitForExtensionReady(page);
-
-    await youtube.openGifWizard();
-    await quickCapture.waitForScreen();
-    await quickCapture.setTimeRange(0, 5);
-    await quickCapture.clickNext();
-
-    await textOverlay.waitForScreen();
-    await textOverlay.clickSkip();
-
-    await processing.waitForScreen();
-
-    // Wait a bit then cancel
-    await page.waitForTimeout(2000);
-    await processing.cancel();
-
-    // Should return to previous screen or close
-    const processingVisible = await processing.isProcessing();
-    expect(processingVisible).toBe(false);
-  });
-
   test('Handle video pause/play during capture', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);

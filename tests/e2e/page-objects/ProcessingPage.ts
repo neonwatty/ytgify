@@ -10,7 +10,6 @@ export class ProcessingPage {
   readonly progressText: Locator;
   readonly stageIndicator: Locator;
   readonly statusMessage: Locator;
-  readonly cancelButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -19,7 +18,6 @@ export class ProcessingPage {
     this.progressText = page.locator('.ytgif-progress-text, .progress-percentage');
     this.stageIndicator = page.locator('.ytgif-stage, .stage-indicator');
     this.statusMessage = page.locator('.ytgif-status-message, .processing-message');
-    this.cancelButton = this.container.locator('button:has-text("Cancel")');
   }
 
   async waitForScreen() {
@@ -55,32 +53,6 @@ export class ProcessingPage {
 
   async isProcessing(): Promise<boolean> {
     return await this.container.isVisible();
-  }
-
-  async cancel() {
-    const buttonVisible = await this.cancelButton.isVisible().catch(() => false);
-    if (buttonVisible) {
-      await this.cancelButton.click();
-    }
-
-    // Force-hide/remove the processing screen to unblock navigation checks in tests
-    await this.page.evaluate(() => {
-      document.querySelectorAll('.ytgif-processing-screen').forEach((el) => {
-        const element = el as HTMLElement;
-        element.style.display = 'none';
-        element.remove();
-      });
-    });
-
-    // Wait for processing screen to disappear to ensure the app navigated back
-    await this.page
-      .waitForSelector('.ytgif-processing-screen', { state: 'detached', timeout: 5000 })
-      .catch(async () => {
-        await this.page.waitForSelector('.ytgif-processing-screen', {
-          state: 'hidden',
-          timeout: 5000,
-        });
-      });
   }
 
   async waitForStage(stageName: string, timeout: number = 30000) {

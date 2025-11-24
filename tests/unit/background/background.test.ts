@@ -43,7 +43,7 @@ describe('Background Service Worker Framework Tests', () => {
 
     expect(manifest).toBeDefined();
     expect(manifest.name).toBe('YTgify');
-    expect(manifest.version).toBe('1.0.11');
+    expect(manifest.version).toBe('1.0.12');
     expect(manifest.manifest_version).toBe(3);
   });
 

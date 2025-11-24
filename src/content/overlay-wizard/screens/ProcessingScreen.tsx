@@ -21,7 +21,6 @@ interface ProcessingScreenProps {
   onComplete?: () => void;
   onError?: (error: string) => void;
   onBack?: () => void;
-  onCancel?: () => void;
 }
 
 const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
@@ -29,7 +28,6 @@ const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
   onComplete,
   onError: _onError,
   onBack,
-  onCancel,
 }) => {
   const [_dots, _setDots] = useState('');
   const [lastBufferingStatus, setLastBufferingStatus] = useState<BufferingStatus | undefined>();
@@ -89,20 +87,7 @@ const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
   ];
 
   const handleBackClick = () => {
-    // Cancel processing if active
-    if (!isError && !isCompleted && onCancel) {
-      onCancel();
-    }
     // Navigate back
-    if (onBack) {
-      onBack();
-    }
-  };
-
-  const handleCancelClick = () => {
-    if (!isError && !isCompleted && onCancel) {
-      onCancel();
-    }
     if (onBack) {
       onBack();
     }
@@ -267,14 +252,6 @@ const ProcessingScreen: React.FC<ProcessingScreenProps> = ({
               </div>
             )}
           </div>
-
-          {!isError && !isCompleted && (
-            <div className="ytgif-processing-actions">
-              <button className="ytgif-cancel-button" onClick={handleCancelClick}>
-                Cancel
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>
