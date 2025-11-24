@@ -6,7 +6,6 @@
 import { BackgroundVideoWorker } from '@/background/worker';
 import { ExtractFramesRequest, EncodeGifRequest } from '@/types';
 import { extractVideoFramesInServiceWorker } from '@/lib/service-worker-video-processor';
-import { encodeGif, detectEncoderFeatures } from '@/lib/gif-encoder-v2';
 import { logger } from '@/lib/logger';
 import { errorHandler } from '@/lib/errors';
 
@@ -32,10 +31,8 @@ jest.mock('@/lib/service-worker-video-processor', () => ({
   createServiceWorkerProcessorOptions: jest.fn((data) => data)
 }));
 
-jest.mock('@/lib/gif-encoder-v2', () => ({
-  encodeGif: jest.fn(),
-  detectEncoderFeatures: jest.fn()
-}));
+const encodeGif = jest.fn();
+const detectEncoderFeatures = jest.fn();
 
 describe('BackgroundVideoWorker', () => {
   let worker: BackgroundVideoWorker;

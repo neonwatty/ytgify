@@ -32,6 +32,21 @@ export async function openExtensionPopup(context: BrowserContext): Promise<Page 
 }
 
 /**
+ * Enable button visibility for testing
+ * Button defaults to hidden - must be enabled before tests
+ */
+export async function enableButtonVisibility(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    // Set button visibility to true in chrome.storage.sync
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+      chrome.storage.sync.set({ buttonVisibility: true });
+    }
+  });
+  // Small delay to let extension react to storage change
+  await page.waitForTimeout(500);
+}
+
+/**
  * Wait for extension to be fully loaded on YouTube page
  */
 export async function waitForExtensionReady(page: Page, timeout: number = 30000): Promise<boolean> {

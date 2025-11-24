@@ -10,31 +10,27 @@ export class ProcessingPage {
   readonly progressText: Locator;
   readonly stageIndicator: Locator;
   readonly statusMessage: Locator;
-  readonly cancelButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
-    this.container = page.locator('.ytgif-processing, .processing-screen');
+    this.container = page.locator('.ytgif-processing-screen');
     this.progressBar = page.locator('.ytgif-progress-bar, .progress-bar');
     this.progressText = page.locator('.ytgif-progress-text, .progress-percentage');
     this.stageIndicator = page.locator('.ytgif-stage, .stage-indicator');
     this.statusMessage = page.locator('.ytgif-status-message, .processing-message');
-    this.cancelButton = page.locator('button:has-text("Cancel")');
   }
 
   async waitForScreen() {
-    await this.container.waitFor({ state: 'visible', timeout: 10000 });
+    await this.container.waitFor({ state: 'visible', timeout: 20000 });
   }
 
   async waitForCompletion(timeout: number = 60000) {
-    // Wait for processing to complete by checking for navigation away from processing screen
-    await this.page.waitForFunction(
-      () => {
-        const processingElement = document.querySelector('.ytgif-processing, .processing-screen');
-        return !processingElement || !processingElement.checkVisibility();
-      },
-      { timeout }
-    );
+    // Wait for SuccessScreen to appear instead of ProcessingScreen to disappear
+    // This is more reliable than checking visibility which can be affected by CSS transitions
+    await this.page.waitForSelector('.ytgif-success-screen', {
+      state: 'visible',
+      timeout
+    });
   }
 
   async getProgress(): Promise<number> {
@@ -57,13 +53,6 @@ export class ProcessingPage {
 
   async isProcessing(): Promise<boolean> {
     return await this.container.isVisible();
-  }
-
-  async cancel() {
-    if (await this.cancelButton.isVisible()) {
-      await this.cancelButton.click();
-      await this.page.waitForTimeout(500);
-    }
   }
 
   async waitForStage(stageName: string, timeout: number = 30000) {

@@ -1,38 +1,31 @@
 import { test, expect } from './fixtures';
-import { Page, BrowserContext } from '@playwright/test';
 import { YouTubePage } from './page-objects/YouTubePage';
 import { GifWizard } from './page-objects/GifWizard';
 import { QuickCapturePage } from './page-objects/QuickCapturePage';
 import { TextOverlayPage } from './page-objects/TextOverlayPage';
 import { ProcessingPage } from './page-objects/ProcessingPage';
+import { SuccessPage } from './page-objects/SuccessPage';
 import { TEST_VIDEOS } from './helpers/test-videos';
 import { waitForExtensionReady, handleYouTubeCookieConsent } from './helpers/extension-helpers';
 
 test.describe('Error Handling and Edge Cases', () => {
-  let page: Page;
-  let context: BrowserContext;
   let youtube: YouTubePage;
   let wizard: GifWizard;
   let quickCapture: QuickCapturePage;
   let textOverlay: TextOverlayPage;
   let processing: ProcessingPage;
+  let success: SuccessPage;
 
-  test.beforeEach(async ({ browser }) => {
-    context = await browser.newContext();
-    page = await context.newPage();
-
+  test.beforeEach(async ({ page }) => {
     youtube = new YouTubePage(page);
     wizard = new GifWizard(page);
     quickCapture = new QuickCapturePage(page);
     textOverlay = new TextOverlayPage(page);
     processing = new ProcessingPage(page);
+    success = new SuccessPage(page);
   });
 
-  test.afterEach(async () => {
-    await context.close();
-  });
-
-  test('Extension does not inject on non-YouTube pages', async () => {
+  test('Extension does not inject on non-YouTube pages', async ({ page }) => {
     // Navigate to a non-YouTube page
     await page.goto('https://www.google.com');
     await page.waitForTimeout(3000);
@@ -46,7 +39,7 @@ test.describe('Error Handling and Edge Cases', () => {
     expect(extensionElements.length).toBe(0);
   });
 
-  test('Handle very short selection (< 1 second)', async () => {
+  test('Handle very short selection (< 1 second)', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -62,7 +55,7 @@ test.describe('Error Handling and Edge Cases', () => {
     expect(duration).toBeGreaterThanOrEqual(1); // Minimum 1 second
   });
 
-  test('Handle maximum duration limit (10 seconds)', async () => {
+  test('Handle maximum duration limit (10 seconds)', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.rickRoll.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -78,7 +71,7 @@ test.describe('Error Handling and Edge Cases', () => {
     expect(duration).toBeLessThanOrEqual(10);
   });
 
-  test('Handle empty text overlay submission', async () => {
+  test('Handle empty text overlay submission', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -97,7 +90,7 @@ test.describe('Error Handling and Edge Cases', () => {
     expect(overlayCount).toBe(0);
   });
 
-  test('Handle very long text overlay', async () => {
+  test('Handle very long text overlay', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -117,33 +110,141 @@ test.describe('Error Handling and Edge Cases', () => {
     expect(overlays.length).toBeGreaterThan(0);
     // Text should be handled gracefully (truncated or wrapped)
     expect(overlays[0].length).toBeLessThanOrEqual(500);
+
+    // Proceed to processing
+    await textOverlay.clickNext();
   });
 
-  test('Cancel during processing', async () => {
+  test('Back button navigates from processing to text overlay', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
 
     await youtube.openGifWizard();
     await quickCapture.waitForScreen();
-    await quickCapture.setTimeRange(0, 5);
+    await quickCapture.setTimeRange(0, 3);
     await quickCapture.clickNext();
 
     await textOverlay.waitForScreen();
-    await textOverlay.clickSkip();
+    await textOverlay.addTextOverlay('Test Text', 'top', 'meme');
+    await textOverlay.clickNext();
 
+    // Now on processing screen
     await processing.waitForScreen();
 
-    // Wait a bit then cancel
-    await page.waitForTimeout(2000);
-    await processing.cancel();
+    // Wait a moment for processing to start
+    await page.waitForTimeout(1000);
 
-    // Should return to previous screen or close
-    const processingVisible = await processing.isProcessing();
-    expect(processingVisible).toBe(false);
+    // Click back button in the processing screen header
+    const backButton = page.locator('.ytgif-processing-screen .ytgif-back-button');
+    await backButton.click();
+
+    // Wait a moment for navigation
+    await page.waitForTimeout(500);
+
+    // Debug: Check what screens are visible
+    const processingVisible = await page.locator('.ytgif-processing-screen').isVisible();
+    const textOverlayVisible = await page.locator('.ytgif-text-overlay-screen').isVisible();
+    const quickCaptureVisible = await page.locator('.ytgif-quick-capture-screen').isVisible();
+    const wizardVisible = await page.locator('.ytgif-overlay-wizard').isVisible();
+
+    console.log('After back click:',  {
+      wizardVisible,
+      processingVisible,
+      textOverlayVisible,
+      quickCaptureVisible
+    });
+
+    // Should navigate back to text overlay screen (not close wizard)
+    await textOverlay.waitForScreen();
+
+    // Verify wizard is still open
+    expect(wizardVisible).toBe(true);
+
+    // Verify text overlay data is preserved
+    const overlays = await textOverlay.getOverlayTexts();
+    expect(overlays.length).toBe(1);
+    expect(overlays[0]).toBe('Test Text');
   });
 
-  test('Handle video pause/play during capture', async () => {
+  test('Back navigation from processing allows subsequent GIF creation', async ({ page }) => {
+    // Capture console logs from the page/extension
+    page.on('console', msg => {
+      const text = msg.text();
+      if (text.includes('[OverlayWizard]') || text.includes('[TextOverlayScreenV2]') || text.includes('ytgif-processing-cancelled') || text.includes('currentScreen changed') || text.includes('[handleCreateGif]') || text.includes('Already processing')) {
+        console.log('[PAGE CONSOLE]', text);
+      }
+    });
+
+    await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
+    await handleYouTubeCookieConsent(page);
+    await waitForExtensionReady(page);
+
+    await youtube.openGifWizard();
+    await quickCapture.waitForScreen();
+    await quickCapture.setTimeRange(0, 3);
+    await quickCapture.clickNext();
+
+    await textOverlay.waitForScreen();
+    await textOverlay.addTextOverlay('Round Trip Test', 'top', 'meme');
+    await textOverlay.clickNext();
+
+    // Now on processing screen
+    await processing.waitForScreen();
+    await page.waitForTimeout(1000);
+
+    // Click back button to return to text overlay
+    const backButton = page.locator('.ytgif-processing-screen .ytgif-back-button');
+    await backButton.click();
+    await page.waitForTimeout(500);
+
+    // Should be back on text overlay screen
+    await textOverlay.waitForScreen();
+
+    // Verify text is still there
+    const overlaysAfterBack = await textOverlay.getOverlayTexts();
+    expect(overlaysAfterBack.length).toBe(1);
+    expect(overlaysAfterBack[0]).toBe('Round Trip Test');
+
+    // CRITICAL TEST: Click to create GIF again - this should work without returning to text overlay
+    await textOverlay.clickNext();
+
+    // Wait a moment for navigation to occur
+    await page.waitForTimeout(1000);
+
+    // Debug: Check what screens are visible
+    const processingVisible = await page.locator('.ytgif-processing-screen').isVisible();
+    const textOverlayStillVisible = await page.locator('.ytgif-text-overlay-screen').isVisible();
+    const quickCaptureVisible = await page.locator('.ytgif-quick-capture-screen').isVisible();
+    const wizardVisible = await page.locator('.ytgif-overlay-wizard').isVisible();
+
+    console.log('After second navigation attempt:', {
+      wizardVisible,
+      processingVisible,
+      textOverlayStillVisible,
+      quickCaptureVisible
+    });
+
+    // Should go to processing screen and stay there
+    await processing.waitForScreen();
+    await page.waitForTimeout(1000);
+
+    // Verify we're still on processing screen (not back on text overlay)
+    const processingStillVisible = await page.locator('.ytgif-processing-screen').isVisible();
+    const textOverlayVisible = await page.locator('.ytgif-text-overlay-screen').isVisible();
+
+    expect(processingStillVisible).toBe(true);
+    expect(textOverlayVisible).toBe(false);
+
+    // Wait for GIF creation to complete
+    await success.waitForScreen();
+
+    // Verify success screen appears with valid GIF
+    const gifVisible = await success.isGifDisplayed();
+    expect(gifVisible).toBe(true);
+  });
+
+  test('Handle video pause/play during capture', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -164,7 +265,7 @@ test.describe('Error Handling and Edge Cases', () => {
     // Optionally check if video resumes (depends on implementation)
   });
 
-  test('Handle network interruption simulation', async () => {
+  test('Handle network interruption simulation', async ({ page, context }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -177,22 +278,26 @@ test.describe('Error Handling and Edge Cases', () => {
     await textOverlay.waitForScreen();
     await textOverlay.clickSkip();
 
-    // Simulate offline mode during processing
-    await context.setOffline(true);
-
     await processing.waitForScreen();
 
-    // Wait for error or timeout
-    await page.waitForTimeout(5000);
+    // Simulate offline mode during processing
+    // GIF processing is entirely local (no network required), so this should not affect it
+    await context.setOffline(true);
+
+    // Wait for processing to complete - should succeed despite offline mode
+    await processing.waitForCompletion(60000);
+
+    await success.waitForScreen();
 
     // Restore connection
     await context.setOffline(false);
 
-    // Check if error is handled gracefully
-    // (Implementation specific - might show error message or retry)
+    // Verify GIF was created successfully
+    const gifSrc = await success.getGifSrc();
+    expect(gifSrc).toBeTruthy();
   });
 
-  test('Rapid navigation stress test', async () => {
+  test('Rapid navigation stress test', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -214,7 +319,7 @@ test.describe('Error Handling and Edge Cases', () => {
     expect(nextEnabled).toBe(true);
   });
 
-  test('Multiple text overlays limit', async () => {
+  test('Multiple text overlays limit', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -225,18 +330,19 @@ test.describe('Error Handling and Edge Cases', () => {
 
     await textOverlay.waitForScreen();
 
-    // Try to add many overlays
-    for (let i = 0; i < 10; i++) {
-      await textOverlay.addTextOverlay(`Text ${i}`, 'middle', 'minimal');
-    }
+    // TextOverlayScreenV2 only supports 2 overlays (top + bottom)
+    // Test that both work correctly
+    await textOverlay.addTextOverlay('Top Text', 'top', 'meme');
+    await textOverlay.addTextOverlay('Bottom Text', 'bottom', 'meme');
 
-    // Should handle limit gracefully
-    const overlayCount = await textOverlay.getOverlayCount();
-    expect(overlayCount).toBeGreaterThan(0);
-    expect(overlayCount).toBeLessThanOrEqual(10); // Reasonable limit
+    // Should have exactly 2 overlays
+    const overlays = await textOverlay.getOverlayTexts();
+    expect(overlays.length).toBe(2);
+    expect(overlays[0]).toBe('Top Text');
+    expect(overlays[1]).toBe('Bottom Text');
   });
 
-  test('Handle video end boundary', async () => {
+  test('Handle video end boundary', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url); // 19 seconds
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -252,7 +358,7 @@ test.describe('Error Handling and Edge Cases', () => {
     expect(timeRange.end).toBeLessThanOrEqual(19);
   });
 
-  test('Concurrent wizard instances prevention', async () => {
+  test('Concurrent wizard instances prevention', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -269,7 +375,7 @@ test.describe('Error Handling and Edge Cases', () => {
     expect(wizardCount).toBe(1);
   });
 
-  test('Handle special characters in text overlay', async () => {
+  test('Handle special characters in text overlay', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -287,5 +393,62 @@ test.describe('Error Handling and Edge Cases', () => {
     const overlays = await textOverlay.getOverlayTexts();
     expect(overlays.length).toBe(1);
     // Should handle special characters
+  });
+
+  test('Text overlay preview updates when time range changes', async ({ page }) => {
+    await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
+    await handleYouTubeCookieConsent(page);
+    await waitForExtensionReady(page);
+
+    await youtube.openGifWizard();
+    await quickCapture.waitForScreen();
+
+    // Set initial time range (0-3s)
+    await quickCapture.setTimeRange(0, 3);
+    await quickCapture.clickNext();
+
+    await textOverlay.waitForScreen();
+
+    // Wait for first preview to load
+    await page.waitForTimeout(2000);
+
+    // Get first preview background image (should be from time 0)
+    const firstPreviewLocator = page.locator('.ytgif-frame-preview');
+    await firstPreviewLocator.waitFor({ state: 'visible', timeout: 10000 });
+    const firstPreview = await firstPreviewLocator.evaluate((el: HTMLElement) => {
+      return el.style.backgroundImage;
+    });
+
+    // Verify first preview exists
+    expect(firstPreview).toBeTruthy();
+    expect(firstPreview).toContain('url(');
+
+    // Go back to quick capture
+    await textOverlay.clickBack();
+    await quickCapture.waitForScreen();
+
+    // Change time range to different segment (5-8s)
+    await quickCapture.setTimeRange(5, 8);
+    await quickCapture.clickNext();
+
+    await textOverlay.waitForScreen();
+
+    // Wait for new preview to load
+    await page.waitForTimeout(2000);
+
+    // Get second preview background image (should be from time 5, different from first)
+    const secondPreviewLocator = page.locator('.ytgif-frame-preview');
+    await secondPreviewLocator.waitFor({ state: 'visible', timeout: 10000 });
+    const secondPreview = await secondPreviewLocator.evaluate((el: HTMLElement) => {
+      return el.style.backgroundImage;
+    });
+
+    // Verify second preview exists
+    expect(secondPreview).toBeTruthy();
+    expect(secondPreview).toContain('url(');
+
+    // Verify that previews are different (not showing stale frame)
+    // The background images should be different data URLs since they're from different time points
+    expect(secondPreview).not.toBe(firstPreview);
   });
 });

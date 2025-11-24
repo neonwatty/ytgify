@@ -295,11 +295,6 @@ interface ShowWizardDirectRequest extends BaseMessage {
   };
 }
 
-// Newsletter wizard activation from popup
-export interface ShowNewsletterWizardRequest extends BaseMessage {
-  type: 'SHOW_NEWSLETTER_WIZARD';
-}
-
 // Import from frame-extractor for content script messages
 import type { ContentFrameExtractionRequest } from '../content/frame-extractor';
 
@@ -314,7 +309,6 @@ export type ExtensionMessage =
   | ShowTimelineRequest
   | HideTimelineRequest
   | ShowWizardDirectRequest
-  | ShowNewsletterWizardRequest
   | TimelineSelectionUpdate
   | OpenEditorRequest
   | LogMessage

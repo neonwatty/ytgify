@@ -119,7 +119,8 @@ describe('GifencEncoder', () => {
 
   describe('Initialization', () => {
     it('should initialize successfully when available', async () => {
-      await expect(encoder.initialize()).resolves.toBeUndefined();
+      const result = await encoder.initialize();
+      expect(result).toBeUndefined();
     });
 
     it('should throw error when not available', async () => {
@@ -136,6 +137,9 @@ describe('GifencEncoder', () => {
       const onProgress = jest.fn();
 
       const result = await encoder.encode(mockFrames, mockOptions, onProgress);
+
+      // Ensure encoding state is cleaned up
+      await Promise.resolve();
 
       expect(result).toBeDefined();
       expect(result.blob).toBeInstanceOf(Blob);
@@ -162,6 +166,9 @@ describe('GifencEncoder', () => {
         const options = { ...mockOptions, quality };
         const result = await encoder.encode(mockFrames, options);
 
+        // Ensure encoding state is cleaned up between iterations
+        await Promise.resolve();
+
         // Quality is part of options, not metadata
         expect(result.metadata.frameCount).toBe(3);
       }
@@ -174,6 +181,9 @@ describe('GifencEncoder', () => {
         const options = { ...mockOptions, frameRate };
         const result = await encoder.encode(mockFrames, options);
 
+        // Ensure encoding state is cleaned up between iterations
+        await Promise.resolve();
+
         // Frame rate is part of options, not metadata
         expect(result.metadata.frameCount).toBe(3);
       }
@@ -185,6 +195,9 @@ describe('GifencEncoder', () => {
 
       await expect(promise2).rejects.toThrow('Encoding already in progress');
       await promise1; // Let first encoding complete
+
+      // Ensure encoding state is cleaned up
+      await Promise.resolve();
     });
 
     it('should handle abort signal', async () => {
@@ -199,6 +212,9 @@ describe('GifencEncoder', () => {
         abortController.signal
       );
 
+      // Ensure encoding state is cleaned up
+      await Promise.resolve();
+
       expect(result).toBeDefined();
     });
 
@@ -209,6 +225,9 @@ describe('GifencEncoder', () => {
       };
 
       await encoder.encode(mockFrames, mockOptions, onProgress);
+
+      // Ensure encoding state is cleaned up
+      await Promise.resolve();
 
       // Should have multiple progress updates
       expect(progressUpdates.length).toBeGreaterThan(0);
@@ -226,6 +245,10 @@ describe('GifencEncoder', () => {
     it('should handle empty frames array', async () => {
       // The encoder processes empty arrays without throwing
       const result = await encoder.encode([], mockOptions);
+
+      // Ensure encoding state is cleaned up
+      await Promise.resolve();
+
       expect(result.metadata.frameCount).toBe(0);
     });
 

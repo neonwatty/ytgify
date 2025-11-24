@@ -203,7 +203,7 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
               />
             </svg>
             <span className="ytgif-info-label">Duration:</span>
-            <span className="ytgif-info-value">{gifDuration.toFixed(1)}s</span>
+            <span className="ytgif-info-value ytgif-duration-display">{gifDuration.toFixed(1)}s</span>
           </div>
 
           <div className="ytgif-info-item">

@@ -2,6 +2,7 @@
 import { logger } from './logger';
 import { createError } from './errors';
 
+/** @internal */
 export interface SimpleFrameExtractionOptions {
   startTime: number;
   endTime: number;
@@ -11,6 +12,7 @@ export interface SimpleFrameExtractionOptions {
   maxHeight?: number;
 }
 
+/** @internal */
 export interface SimpleFrameExtractionResult {
   frames: ImageData[];
   metadata: {

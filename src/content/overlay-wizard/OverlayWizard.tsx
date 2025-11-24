@@ -51,7 +51,22 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   gifData,
 }) => {
   const navigation = useOverlayNavigation('quick-capture');
-  const { currentScreen, data, goToScreen, goBack, setScreenData } = navigation;
+  const { currentScreen, data, goToScreen, goBack, setScreenData, previousScreen} = navigation;
+
+  // Use refs to track navigation state and functions for event listeners
+  // This prevents listener re-registration on every state/function change
+  const currentScreenRef = React.useRef(currentScreen);
+  const previousScreenRef = React.useRef(previousScreen);
+  const goToScreenRef = React.useRef(goToScreen);
+  const goBackRef = React.useRef(goBack);
+
+  // Keep refs synced with latest values
+  React.useEffect(() => {
+    currentScreenRef.current = currentScreen;
+    previousScreenRef.current = previousScreen;
+    goToScreenRef.current = goToScreen;
+    goBackRef.current = goBack;
+  }, [currentScreen, previousScreen, goToScreen, goBack]);
 
   // Initialize with video data
   useEffect(() => {
@@ -125,8 +140,45 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     }
   }, [gifData, currentScreen, setScreenData, goToScreen]);
 
+  // Auto-navigate to success when GIF data is available
+  React.useEffect(() => {
+    if (currentScreen === 'processing' && gifData?.dataUrl) {
+      goToScreen('success');
+    }
+  }, [currentScreen, gifData, goToScreen]);
+
+  // Handle processing cancellation via explicit event (not via isCreating state)
+  // This prevents interference with normal back navigation which also sets isCreating to false
+
+  // Listen for explicit cancel events from the content script
+  // Uses refs for all values to avoid re-registering listener on any state/function change
+  // This prevents race conditions when navigating between screens
+  React.useEffect(() => {
+    const handler = () => {
+      console.log('[OverlayWizard] ytgif-processing-cancelled event received, currentScreen:', currentScreenRef.current);
+      if (currentScreenRef.current === 'processing') {
+        console.log('[OverlayWizard] Processing screen detected, navigating back. previousScreen:', previousScreenRef.current);
+        if (previousScreenRef.current) {
+          goBackRef.current();
+        } else {
+          goToScreenRef.current('quick-capture');
+        }
+      } else {
+        console.log('[OverlayWizard] Not on processing screen, ignoring cancel event');
+      }
+    };
+
+    console.log('[OverlayWizard] Registering ytgif-processing-cancelled listener');
+    window.addEventListener('ytgif-processing-cancelled', handler);
+    return () => {
+      console.log('[OverlayWizard] Unregistering ytgif-processing-cancelled listener');
+      window.removeEventListener('ytgif-processing-cancelled', handler);
+    };
+  }, []); // Empty deps - register once on mount, access latest values via refs
+
   // Add handlers for text overlay screen
   const handleConfirmTextOverlay = (overlays: TextOverlay[]) => {
+    console.log('[OverlayWizard] handleConfirmTextOverlay called, currentScreen:', currentScreen);
     setScreenData({ textOverlays: overlays });
     const selection: TimelineSelection = {
       startTime: data.startTime || 0,
@@ -135,8 +187,15 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
     };
 
     console.log('[OverlayWizard] handleCreateGif - frameRate:', data.frameRate);
-    onCreateGif(selection, overlays, data.resolution, data.frameRate);
-    goToScreen('processing');
+    console.log('[OverlayWizard] About to goToScreen(processing)');
+    goToScreen('processing'); // Show processing screen immediately for better UX/resilience
+    console.log('[OverlayWizard] Called goToScreen(processing), new screen should be:', 'processing');
+    try {
+      onCreateGif(selection, overlays, data.resolution, data.frameRate);
+    } catch (error) {
+      console.error('[OverlayWizard] onCreateGif failed:', error);
+      goToScreen('quick-capture');
+    }
   };
 
   const handleSkipTextOverlay = () => {
@@ -152,8 +211,13 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
       resolution: data.resolution,
       frameRate: data.frameRate,
     });
-    onCreateGif(selection, [], data.resolution, data.frameRate);
-    goToScreen('processing');
+    goToScreen('processing'); // Ensure processing screen mounts even if processing is slow
+    try {
+      onCreateGif(selection, [], data.resolution, data.frameRate);
+    } catch (error) {
+      console.error('[OverlayWizard] onCreateGif failed:', error);
+      goToScreen('quick-capture');
+    }
   };
 
   // Progress dots for navigation indicator
@@ -235,6 +299,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
                 console.error('GIF creation error:', error);
                 // Could show error screen or message
               }}
+              onBack={goBack}
             />
           )}
 

@@ -1,10 +1,12 @@
 // Re-export all storage types as the canonical definitions
 export {
-  GifData,
-  GifSettings,
   TextOverlay,
   TimelineSelection,
-  
+  /** @internal */
+  GifSettings,
+  /** @internal */
+  GifData,
+
 } from './storage';
 
 // Re-export all message types for Chrome extension communication

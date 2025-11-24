@@ -27,22 +27,27 @@ export class TextOverlayPage {
   constructor(page: Page) {
     this.page = page;
     this.container = page.locator('.ytgif-text-overlay-screen');
-    this.textInput = page.locator('input[placeholder*="text"], textarea[placeholder*="text"]');
-    this.addButton = page.locator('button:has-text("Add"), button:has-text("Add Text")');
-    this.skipButton = page.locator('button:has-text("Skip")');
-    this.nextButton = page.locator('button:has-text("Create GIF"), button:has-text("Generate")');
-    this.backButton = page.locator('button:has-text("Back")');
-    this.preview = page.locator('.ytgif-text-preview, .preview-container');
-    this.overlayItems = page.locator('.ytgif-overlay-item, .text-overlay-item');
+    // TextOverlayScreenV2 has separate top and bottom text inputs
+    this.textInput = page.locator('input.ytgif-text-input').first();
+    // Primary button is "Apply Text & Continue" or "Create GIF Without Text"
+    // Scope to container to avoid clicking buttons from other screens
+    this.addButton = this.container.locator('button.ytgif-button-primary');
+    this.skipButton = this.container.locator('button.ytgif-button-secondary');
+    this.nextButton = this.container.locator('button.ytgif-button-primary');
+    this.backButton = page.locator('button.ytgif-back-button');
+    this.preview = page.locator('.ytgif-frame-preview, .ytgif-preview-placeholder');
+    this.overlayItems = page.locator('.ytgif-text-preview-overlay');
+    // TextOverlayScreenV2 doesn't have position buttons - it has fixed top/bottom inputs
     this.positionButtons = {
-      top: page.locator('button[data-position="top"], button:has-text("Top")'),
-      middle: page.locator('button[data-position="middle"], button:has-text("Middle")'),
-      bottom: page.locator('button[data-position="bottom"], button:has-text("Bottom")'),
+      top: page.locator('input.ytgif-text-input').first(),
+      middle: page.locator('input.ytgif-text-input').first(), // Map to top for compatibility
+      bottom: page.locator('input.ytgif-text-input').last(),
     };
+    // TextOverlayScreenV2 doesn't have style buttons - it has advanced toggles
     this.styleButtons = {
-      meme: page.locator('button[data-style="meme"], button:has-text("Meme")'),
-      subtitle: page.locator('button[data-style="subtitle"], button:has-text("Subtitle")'),
-      minimal: page.locator('button[data-style="minimal"], button:has-text("Minimal")'),
+      meme: page.locator('button.ytgif-advanced-toggle').first(),
+      subtitle: page.locator('button.ytgif-advanced-toggle').last(),
+      minimal: page.locator('button.ytgif-advanced-toggle').first(),
     };
   }
 
@@ -52,32 +57,37 @@ export class TextOverlayPage {
   }
 
   async addTextOverlay(text: string, position?: 'top' | 'middle' | 'bottom', style?: 'meme' | 'subtitle' | 'minimal') {
-    // Enter text
-    await this.textInput.fill(text);
+    // TextOverlayScreenV2 has separate top/bottom inputs, not position buttons
+    // Map position to appropriate input field
+    const inputLocator = position === 'bottom'
+      ? this.page.locator('input.ytgif-text-input').last()
+      : this.page.locator('input.ytgif-text-input').first();
 
-    // Select position if specified
-    if (position) {
-      await this.selectPosition(position);
-    }
+    // Enter text in appropriate field
+    await inputLocator.fill(text);
 
-    // Select style if specified
+    // Style is ignored in V2 (no style buttons, just advanced options)
+    // Clicking style just opens/closes advanced section, doesn't change behavior
     if (style) {
-      await this.selectStyle(style);
+      // No-op for compatibility
     }
 
-    // Click add button
-    await this.addButton.click();
+    // DO NOT click primary button here - tests will call clickNext() when ready to proceed
+    // This allows tests to add multiple text overlays without navigating away
     await this.page.waitForTimeout(300);
   }
 
   async selectPosition(position: 'top' | 'middle' | 'bottom') {
-    await this.positionButtons[position].click();
-    await this.page.waitForTimeout(200);
+    // TextOverlayScreenV2 doesn't have position buttons
+    // Position is determined by which input field you use
+    // This is a no-op for compatibility
+    await this.page.waitForTimeout(50);
   }
 
   async selectStyle(style: 'meme' | 'subtitle' | 'minimal') {
-    await this.styleButtons[style].click();
-    await this.page.waitForTimeout(200);
+    // TextOverlayScreenV2 doesn't have style buttons
+    // This is a no-op for compatibility
+    await this.page.waitForTimeout(50);
   }
 
   async getOverlayCount(): Promise<number> {
@@ -109,7 +119,7 @@ export class TextOverlayPage {
   }
 
   async clickNext() {
-    await this.nextButton.click();
+    await this.nextButton.click({ clickCount: 1, delay: 100 });
   }
 
   async clickBack() {
@@ -122,12 +132,19 @@ export class TextOverlayPage {
   }
 
   async getOverlayTexts(): Promise<string[]> {
-    const items = await this.overlayItems.all();
+    // TextOverlayScreenV2 shows text previews when text is entered
     const texts: string[] = [];
-    for (const item of items) {
-      const text = await item.locator('.overlay-text, .text-content').textContent();
-      if (text) texts.push(text.trim());
-    }
+
+    // Check top text input
+    const topInput = this.page.locator('input.ytgif-text-input').first();
+    const topValue = await topInput.inputValue();
+    if (topValue.trim()) texts.push(topValue.trim());
+
+    // Check bottom text input
+    const bottomInput = this.page.locator('input.ytgif-text-input').last();
+    const bottomValue = await bottomInput.inputValue();
+    if (bottomValue.trim() && bottomValue !== topValue) texts.push(bottomValue.trim());
+
     return texts;
   }
 

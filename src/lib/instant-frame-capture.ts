@@ -2,6 +2,7 @@
 import { logger } from './logger';
 import { createError } from './errors';
 
+/** @internal */
 export interface InstantCaptureOptions {
   frameCount?: number;
   width?: number;

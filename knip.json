@@ -13,11 +13,18 @@
     "tests/**",
     "scripts/generate-*.js",
     "scripts/prepare-store-screenshots.js",
-    "scripts/remove-debug-logs.js"
+    "scripts/remove-debug-logs.js",
+    "scripts/build-production.sh",
+    "store-assets/generate-tiles.js",
+    "src/lib/service-worker-video-processor.ts",
+    "src/utils/keyboard-shortcuts.ts"
   ],
   "ignoreDependencies": [
     "archiver",
     "autoprefixer"
+  ],
+  "ignoreBinaries": [
+    "scripts/build-production.sh"
   ],
   "webpack": {
     "config": "webpack.config.cjs"

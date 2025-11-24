@@ -1510,6 +1510,20 @@
 }
 
 /* Screen 2: Text Overlay - #ff0066 theme */
+.ytgif-text-overlay-screen .ytgif-wizard-content {
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+.ytgif-text-overlay-screen .ytgif-text-controls {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.ytgif-text-overlay-screen .ytgif-text-input {
+  box-sizing: border-box;
+}
+
 .ytgif-text-overlay-screen .ytgif-button-primary {
   background: linear-gradient(135deg, #ff0066 0%, #dd0055 100%);
 }
@@ -1632,6 +1646,56 @@
   text-align: center;
   margin: 0;
   font-weight: 600;
+}
+
+/* Discord Help Section */
+.ytgif-discord-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(88, 101, 242, 0.1);
+  border: 1px solid rgba(88, 101, 242, 0.3);
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.ytgif-discord-message {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  text-align: center;
+  margin: 0;
+}
+
+.ytgif-discord-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(88, 101, 242, 0.2);
+  color: white;
+  border: 1px solid rgba(88, 101, 242, 0.4);
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ytgif-discord-button:hover {
+  background: rgba(88, 101, 242, 0.3);
+  border-color: rgba(88, 101, 242, 0.6);
+  transform: translateY(-1px);
+}
+
+.ytgif-discord-button:active {
+  transform: translateY(0);
+}
+
+.ytgif-discord-button svg {
+  flex-shrink: 0;
 }
 
 .ytgif-stage-list {

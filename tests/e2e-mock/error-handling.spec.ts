@@ -7,6 +7,76 @@ import { getMockVideoUrl } from './helpers/mock-videos';
  */
 test.describe('Mock E2E: Error Handling', () => {
 
+  test('Handle identical consecutive frames at high fps', async ({ page, mockServerUrl }) => {
+    test.setTimeout(60000);
+
+    const videoUrl = getMockVideoUrl('veryShort', mockServerUrl);
+    await page.goto(videoUrl);
+
+    await page.waitForSelector('video', { timeout: 10000 });
+    await page.waitForFunction(
+      () => {
+        const video = document.querySelector('video') as HTMLVideoElement;
+        return video && !isNaN(video.duration) && video.duration > 0;
+      },
+      { timeout: 10000 }
+    );
+    await page.waitForFunction(
+      () => document.querySelector('.ytgif-button') !== null,
+      { timeout: 15000 }
+    );
+
+    console.log('[Mock Test] Testing identical frames at high fps handling...');
+
+    // Open wizard
+    await page.click('.ytgif-button');
+    await page.waitForTimeout(1500);
+
+    // Select time range (any valid range)
+    const startInput = await page.$('input[type="number"][placeholder*="Start"]');
+    const endInput = await page.$('input[type="number"][placeholder*="End"]');
+
+    if (startInput && endInput) {
+      await startInput.fill('0');
+      await endInput.fill('5');
+    }
+
+    // Click next to go to settings
+    await page.click('.ytgif-button-primary');
+    await page.waitForTimeout(1000);
+
+    // Select 15 fps (high frame rate to expose palette issues)
+    const fpsSelect = await page.$('select[data-testid="fps-select"], select');
+    if (fpsSelect) {
+      await fpsSelect.selectOption({ label: '15 fps' });
+      await page.waitForTimeout(500);
+    }
+
+    // Skip text overlay
+    const skipButton = await page.$('button:has-text("Skip")');
+    if (skipButton) {
+      await skipButton.click();
+    } else {
+      await page.click('.ytgif-button-primary');
+    }
+    await page.waitForTimeout(1000);
+
+    // Wait for processing to complete
+    console.log('[Mock Test] Waiting for GIF processing with high fps...');
+
+    // Wait for either success screen or error
+    const result = await Promise.race([
+      page.waitForSelector('.ytgif-success-screen, [data-testid="success-screen"]', { timeout: 45000 }).then(() => 'success'),
+      page.waitForSelector('.ytgif-error, [data-testid="error-message"]', { timeout: 45000 }).then(() => 'error'),
+    ]);
+
+    // Processing should succeed even with identical frames
+    expect(result).toBe('success');
+
+    console.log('✅ [Mock Test] Successfully handled identical frames at high fps!');
+  });
+
+
   test('Extension does not inject on non-YouTube pages', async ({ page, context }) => {
     test.setTimeout(30000);
 

@@ -10,7 +10,7 @@ export const test = base.extend<{
   extensionId: string;
 }>({
   // Override context fixture to load extension
-  context: async ({ }, use) => {
+  context: async ({}, use) => {
     const pathToExtension = path.join(__dirname, '..', '..', 'dist');
     // Ensure unique user data dir for each worker to prevent profile lock conflicts
     const uniqueId = Date.now() + '-' + Math.random().toString(36).substring(2, 9);
@@ -48,6 +48,10 @@ export const test = base.extend<{
     }
 
     const context = await chromium.launchPersistentContext(userDataDir, launchOptions);
+
+    // Log service workers for debugging extension injection
+    const swUrls = context.serviceWorkers().map((sw) => sw.url());
+    console.log('[fixtures] Service workers at context start:', swUrls);
 
     await use(context);
     await context.close();

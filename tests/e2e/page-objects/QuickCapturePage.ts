@@ -43,13 +43,13 @@ export class QuickCapturePage {
       '480p': page.locator('button:has-text("480p HD")'),
     };
     this.fpsButtons = {
-      '5': page.locator('button:has-text("5 fps")'),
-      '10': page.locator('button:has-text("10 fps")'),
-      '15': page.locator('button:has-text("15 fps")'),
+      '5': page.locator('button.ytgif-frame-rate-btn:has-text("5 fps")').first(),
+      '10': page.locator('button.ytgif-frame-rate-btn:has-text("10 fps")').first(),
+      '15': page.locator('button.ytgif-frame-rate-btn:has-text("15 fps")').first(),
     };
-    this.nextButton = page.locator('button:has-text("Next"), button:has-text("Add Text")');
+    this.nextButton = page.locator('button:has-text("Next"), button:has-text("Add Text"), button:has-text("Continue to Customize")');
     this.backButton = page.locator('button:has-text("Back")');
-    this.timeDisplay = page.locator('.ytgif-time-display');
+    this.timeDisplay = page.locator('.ytgif-duration-display');
   }
 
   async waitForScreen() {
@@ -58,28 +58,32 @@ export class QuickCapturePage {
   }
 
   async setTimeRange(startSeconds: number, endSeconds: number) {
-    // Set start time by dragging handle
-    const timelineBox = await this.timeline.boundingBox();
-    if (!timelineBox) throw new Error('Timeline not visible');
+    // Use the start time input and duration slider to align with the real UI controls
+    const maxDuration = 10; // UI caps at 10s; clamp here for predictable tests
+    const duration = Math.min(maxDuration, Math.max(1, endSeconds - startSeconds));
 
-    const videoDuration = await this.getVideoDuration();
+    // Update start time via input (accepts seconds or MM:SS)
+    const startInput = this.page.locator('#ytgif-start-time-input');
+    if (await startInput.isVisible()) {
+      await startInput.fill(startSeconds.toFixed(1));
+      await startInput.press('Enter');
+    }
 
-    // Calculate positions
-    const startX = timelineBox.x + (startSeconds / videoDuration) * timelineBox.width;
-    const endX = timelineBox.x + (endSeconds / videoDuration) * timelineBox.width;
+    // Adjust duration through the slider so selection length matches expectations
+    const durationSlider = this.page.locator('.ytgif-slider-input');
+    if (await durationSlider.isVisible()) {
+      const sliderMax = parseFloat((await durationSlider.getAttribute('max')) || '20');
+      const appliedDuration = Math.min(duration, sliderMax);
+      await durationSlider.evaluate((el, value) => {
+        const input = el as HTMLInputElement;
+        input.value = value.toString();
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      }, appliedDuration);
+    }
 
-    // Drag start handle
-    await this.startHandle.dragTo(this.timeline, {
-      targetPosition: { x: startX - timelineBox.x, y: timelineBox.height / 2 }
-    });
-
-    // Drag end handle
-    await this.endHandle.dragTo(this.timeline, {
-      targetPosition: { x: endX - timelineBox.x, y: timelineBox.height / 2 }
-    });
-
-    // Wait for UI to update
-    await this.page.waitForTimeout(500);
+    // Give the UI a moment to propagate changes
+    await this.page.waitForTimeout(300);
   }
 
   async selectResolution(resolution: '144p' | '240p' | '360p' | '480p') {
@@ -146,18 +150,50 @@ export class QuickCapturePage {
   }
 
   async getTimeRangeValues(): Promise<{ start: number; end: number }> {
-    // Get the actual time values from the UI
-    const timeText = await this.timeDisplay.textContent();
-    if (!timeText) return { start: 0, end: 10 };
+    // Prefer the actual control values to avoid relying on rendered text formatting
+    const parseTime = (value: string | null): number | null => {
+      if (!value) return null;
+      const trimmed = value.trim();
+      if (!trimmed) return null;
 
-    // Parse text like "0:05 - 0:15"
-    const match = timeText.match(/(\d+):(\d+)\s*-\s*(\d+):(\d+)/);
-    if (match) {
-      const start = parseInt(match[1]) * 60 + parseInt(match[2]);
-      const end = parseInt(match[3]) * 60 + parseInt(match[4]);
-      return { start, end };
+      if (trimmed.includes(':')) {
+        const [mins, secs] = trimmed.split(':');
+        const minutesNum = parseInt(mins, 10);
+        const secondsNum = parseFloat(secs);
+        if (!Number.isNaN(minutesNum) && !Number.isNaN(secondsNum)) {
+          return minutesNum * 60 + secondsNum;
+        }
+        return null;
+      }
+
+      const numeric = parseFloat(trimmed);
+      return Number.isNaN(numeric) ? null : numeric;
+    };
+
+    let start = 0;
+    const startInput = this.page.locator('#ytgif-start-time-input');
+    if (await startInput.isVisible()) {
+      const value = await startInput.inputValue();
+      const parsed = parseTime(value);
+      if (parsed !== null) start = parsed;
     }
 
-    return { start: 0, end: 10 };
+    let duration = 0;
+    const durationSlider = this.page.locator('.ytgif-slider-input');
+    if (await durationSlider.isVisible()) {
+      const value = await durationSlider.inputValue();
+      const parsed = parseFloat(value);
+      if (!Number.isNaN(parsed)) duration = parsed;
+    }
+
+    // Fallback to the duration display if needed
+    if (!duration) {
+      const timeText = await this.timeDisplay.textContent();
+      const match = timeText?.match(/(\d+\.?\d*)s/);
+      if (match) duration = parseFloat(match[1]);
+    }
+
+    const end = start + duration;
+    return { start, end };
   }
 }

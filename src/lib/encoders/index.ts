@@ -3,31 +3,17 @@
  * Provides backward compatibility while enabling new encoder features
  */
 
-export { AbstractEncoder } from './abstract-encoder';
-export { GifencEncoder } from './gifenc-encoder';
-// GifJsEncoder is NOT exported directly to prevent service worker crashes
-// It requires DOM (document, window, HTMLCanvasElement) which service workers don't have
-// Use encoder-factory's lazy import instead
-export { GifskiEncoder } from './gifski-encoder';
-export { 
-  EncoderFactory, 
-  encoderFactory, 
-  selectEncoder, 
-  getPerformanceRecommendations 
-} from './encoder-factory';
-
-export type { 
-  EncodingProgress, 
-  EncodingResult, 
-  EncodingOptions, 
-  FrameData 
+/** @public */
+export type {
+  EncodingProgress,
+  EncodingResult,
+  EncodingOptions,
+  FrameData
 } from './abstract-encoder';
 
-export type { 
-  EncoderType, 
-  FormatType, 
-  EncoderPreference, 
-  EncoderSelection 
+/** @public */
+export type {
+  EncoderType
 } from './encoder-factory';
 
 // Convenience functions for common operations
@@ -70,31 +56,3 @@ export async function encodeFrames(
   );
 }
 
-/**
- * Get encoder recommendations for current environment
- */
-export async function getEncoderRecommendations(): Promise<{
-  available: Array<{
-    name: string;
-    type: EncoderType;
-    available: boolean;
-    characteristics: Record<string, unknown>;
-  }>;
-  recommended: {
-    encoder: EncoderType;
-    reason: string;
-  };
-}> {
-  const [available, recommendations] = await Promise.all([
-    encoderFactory.getAvailableEncoders(),
-    import('./encoder-factory').then(m => m.getPerformanceRecommendations())
-  ]);
-
-  return {
-    available,
-    recommended: {
-      encoder: recommendations.recommended,
-      reason: recommendations.reason
-    }
-  };
-}

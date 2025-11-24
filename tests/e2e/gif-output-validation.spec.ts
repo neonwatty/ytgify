@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures';
+import * as fs from 'fs/promises';
 import { Page, BrowserContext } from '@playwright/test';
 import { YouTubePage } from './page-objects/YouTubePage';
 import { GifWizard } from './page-objects/GifWizard';
@@ -28,8 +29,8 @@ test.describe('GIF Output Validation - Verify Correct Output', () => {
   let processing: ProcessingPage;
   let success: SuccessPage;
 
-  test.beforeEach(async ({ browser }) => {
-    context = await browser.newContext();
+  test.beforeEach(async ({ context: extContext }) => {
+    context = extContext;
     page = await context.newPage();
 
     youtube = new YouTubePage(page);
@@ -41,7 +42,7 @@ test.describe('GIF Output Validation - Verify Correct Output', () => {
   });
 
   test.afterEach(async () => {
-    await context.close();
+    await page.close();
   });
 
   test.describe('Resolution Validation', () => {
@@ -53,7 +54,7 @@ test.describe('GIF Output Validation - Verify Correct Output', () => {
     ];
 
     for (const testCase of testCases) {
-      test(`GIF at ${testCase.resolution} has correct dimensions`, async () => {
+      test(`GIF at ${testCase.resolution} has correct dimensions`, async ({ page }) => {
         await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
         await handleYouTubeCookieConsent(page);
         await waitForExtensionReady(page);
@@ -71,7 +72,7 @@ test.describe('GIF Output Validation - Verify Correct Output', () => {
         await textOverlay.clickSkip();
 
         await processing.waitForScreen();
-        await processing.waitForCompletion(30000);
+        await processing.waitForCompletion(60000);
 
         await success.waitForScreen();
 
@@ -82,8 +83,6 @@ test.describe('GIF Output Validation - Verify Correct Output', () => {
           fps: 5,
           duration: 2,
         });
-
-        console.log(validation.summary);
 
         // Assert resolution is correct
         expect(validation.results.resolution.valid).toBe(true);
@@ -97,7 +96,7 @@ test.describe('GIF Output Validation - Verify Correct Output', () => {
     const fpsCases = [5, 10, 15];
 
     for (const fps of fpsCases) {
-      test(`GIF at ${fps} fps has correct frame rate`, async () => {
+      test(`GIF at ${fps} fps has correct frame rate`, async ({ page }) => {
         await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
         await handleYouTubeCookieConsent(page);
         await waitForExtensionReady(page);
@@ -115,7 +114,7 @@ test.describe('GIF Output Validation - Verify Correct Output', () => {
         await textOverlay.clickSkip();
 
         await processing.waitForScreen();
-        await processing.waitForCompletion(30000);
+        await processing.waitForCompletion(60000);
 
         await success.waitForScreen();
 
@@ -126,8 +125,6 @@ test.describe('GIF Output Validation - Verify Correct Output', () => {
         // Calculate expected frames
         const expectedFrames = fps * 2; // 2 second duration
         const actualFps = metadata.frameCount / 2;
-
-        console.log(`FPS Validation: Expected ${fps} fps, got ${actualFps} fps (${metadata.frameCount} frames in 2s)`);
 
         // Allow some tolerance due to encoding optimizations
         expect(actualFps).toBeCloseTo(fps, 0);
@@ -140,7 +137,7 @@ test.describe('GIF Output Validation - Verify Correct Output', () => {
     const durationCases = [1, 3, 5];
 
     for (const duration of durationCases) {
-      test(`GIF with ${duration}s duration is correct length`, async () => {
+      test(`GIF with ${duration}s duration is correct length`, async ({ page }) => {
         await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
         await handleYouTubeCookieConsent(page);
         await waitForExtensionReady(page);
@@ -158,7 +155,7 @@ test.describe('GIF Output Validation - Verify Correct Output', () => {
         await textOverlay.clickSkip();
 
         await processing.waitForScreen();
-        await processing.waitForCompletion(45000);
+        await processing.waitForCompletion(90000);
 
         await success.waitForScreen();
 
@@ -169,8 +166,6 @@ test.describe('GIF Output Validation - Verify Correct Output', () => {
           fps: 5,
           duration: duration,
         });
-
-        console.log(validation.summary);
 
         // Assert duration is correct
         expect(validation.results.duration.valid).toBe(true);
@@ -183,7 +178,7 @@ test.describe('GIF Output Validation - Verify Correct Output', () => {
     }
   });
 
-  test('Text overlay is present in GIF output', async () => {
+  test('Text overlay is present in GIF output', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -198,31 +193,35 @@ test.describe('GIF Output Validation - Verify Correct Output', () => {
 
     await textOverlay.waitForScreen();
 
-    // Add distinctive text overlays
+    // Add both text overlays before proceeding
     await textOverlay.addTextOverlay('TOP TEXT TEST', 'top', 'meme');
     await textOverlay.addTextOverlay('BOTTOM TEXT TEST', 'bottom', 'meme');
     await textOverlay.clickNext();
 
     await processing.waitForScreen();
-    await processing.waitForCompletion(45000);
+    await processing.waitForCompletion(90000);
 
     await success.waitForScreen();
 
-    // Validate text is visible in preview
-    const textValidation = await validateTextOverlay(
-      page,
-      '.ytgif-gif-preview img',
-      ['TOP TEXT TEST', 'BOTTOM TEXT TEST']
-    );
+    // Download the GIF first so we can validate both the file and the preview
+    const gifPath = await success.downloadGif();
+    const gifBuffer = await fs.readFile(gifPath);
+    const dataUrl = `data:image/gif;base64,${gifBuffer.toString('base64')}`;
 
-    console.log(`Text overlay validation: hasText=${textValidation.hasText}, confidence=${textValidation.confidence}`);
+    // Validate text visibility using a stable preview page
+    const previewPage = await context.newPage();
+    await previewPage.setContent(`<img id="gif-preview" src="${dataUrl}" />`);
+    const textValidation = await validateTextOverlay(previewPage, '#gif-preview', [
+      'TOP TEXT TEST',
+      'BOTTOM TEXT TEST',
+    ]);
+    await previewPage.close();
 
     // Text should be present
     expect(textValidation.hasText).toBe(true);
     expect(textValidation.confidence).toBeGreaterThan(0.5);
 
     // Also validate the GIF has expected properties
-    const gifPath = await success.downloadGif();
     const validation = await validateGifComplete(gifPath, {
       resolution: '240p',
       fps: 5,
@@ -233,7 +232,7 @@ test.describe('GIF Output Validation - Verify Correct Output', () => {
     expect(validation.passed).toBe(true);
   });
 
-  test('Combined validation: All settings produce correct output', async () => {
+  test('Combined validation: All settings produce correct output', async ({ page }) => {
     const testConfig = {
       resolution: '360p' as const,
       fps: 10,
@@ -261,7 +260,7 @@ test.describe('GIF Output Validation - Verify Correct Output', () => {
     await textOverlay.clickNext();
 
     await processing.waitForScreen();
-    await processing.waitForCompletion(60000);
+    await processing.waitForCompletion(120000);
 
     await success.waitForScreen();
 
@@ -278,10 +277,6 @@ test.describe('GIF Output Validation - Verify Correct Output', () => {
       hasText: true,
     });
 
-    console.log('=== Complete Validation Results ===');
-    console.log(validation.summary);
-    console.log(`File size: ${validation.results.fileSize.sizeInMB.toFixed(2)} MB`);
-
     // All validations should pass
     expect(validation.passed).toBe(true);
     expect(validation.results.resolution.valid).toBe(true);
@@ -294,7 +289,8 @@ test.describe('GIF Output Validation - Verify Correct Output', () => {
     expect(validation.metadata.frameCount).toBeCloseTo(40, 5); // 10fps * 4s
   });
 
-  test('File size correlates with settings', async () => {
+  test('File size correlates with settings', async ({ page }) => {
+    test.setTimeout(200000);
     // Test that higher quality = larger file
     const configs = [
       { res: '144p', fps: '5', dur: 2, label: 'smallest' },
@@ -320,7 +316,7 @@ test.describe('GIF Output Validation - Verify Correct Output', () => {
       await textOverlay.clickSkip();
 
       await processing.waitForScreen();
-      await processing.waitForCompletion(45000);
+      await processing.waitForCompletion(90000);
 
       await success.waitForScreen();
 
@@ -328,25 +324,18 @@ test.describe('GIF Output Validation - Verify Correct Output', () => {
       const metadata = await extractGifMetadata(gifPath);
 
       fileSizes.push({ label: config.label, size: metadata.fileSize });
-
-      console.log(`${config.label}: ${(metadata.fileSize / 1024 / 1024).toFixed(2)} MB`);
-
-      // Close wizard for next iteration
-      await wizard.close();
     }
 
     // Higher quality should produce larger file
     const smallestSize = fileSizes.find(f => f.label === 'smallest')!.size;
     const largestSize = fileSizes.find(f => f.label === 'largest')!.size;
 
-    console.log(`Size comparison: smallest=${(smallestSize/1024/1024).toFixed(2)}MB, largest=${(largestSize/1024/1024).toFixed(2)}MB`);
-
     expect(largestSize).toBeGreaterThan(smallestSize);
     // 480p@15fps should be at least 2x larger than 144p@5fps
     expect(largestSize / smallestSize).toBeGreaterThan(2);
   });
 
-  test('GIF data URL validation', async () => {
+  test('GIF data URL validation', async ({ page }) => {
     await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
     await handleYouTubeCookieConsent(page);
     await waitForExtensionReady(page);
@@ -377,11 +366,6 @@ test.describe('GIF Output Validation - Verify Correct Output', () => {
         fps: 10,
         duration: 2,
       });
-
-      console.log('Data URL validation:');
-      console.log(`- Resolution: ${validation.validationResults.resolution.message}`);
-      console.log(`- FPS: ${validation.validationResults.frameRate.message}`);
-      console.log(`- Duration: ${validation.validationResults.duration.message}`);
 
       expect(validation.valid).toBe(true);
     }

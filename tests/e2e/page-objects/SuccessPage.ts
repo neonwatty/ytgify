@@ -18,9 +18,11 @@ export class SuccessPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.container = page.locator('.ytgif-success, .success-screen');
+    this.container = page.locator('.ytgif-success-screen');
     this.gifPreview = page.locator('.ytgif-gif-preview img, .gif-preview img');
-    this.downloadButton = page.locator('button:has-text("Download")');
+    this.downloadButton = this.container.locator(
+      'button.ytgif-button-primary:has-text("Download"), button:has-text("Download GIF")'
+    );
     this.createAnotherButton = page.locator('button:has-text("Create Another"), button:has-text("New GIF")');
     this.feedbackButton = page.locator('button:has-text("Feedback"), button:has-text("Rate")');
     this.closeButton = page.locator('button:has-text("Close"), button:has-text("Done")');
@@ -43,7 +45,7 @@ export class SuccessPage {
 
     // Save to test outputs directory
     const fileName = `test-gif-${Date.now()}.gif`;
-    const filePath = path.join(__dirname, '..', '..', 'downloads', fileName);
+    const filePath = path.join(process.cwd(), 'tests', 'downloads', fileName);
 
     // Ensure directory exists
     await fs.mkdir(path.dirname(filePath), { recursive: true });
@@ -67,13 +69,21 @@ export class SuccessPage {
   }
 
   async getFileSize(): Promise<string> {
-    const text = await this.sizeDisplay.textContent();
-    return text || '';
+    const locator = this.sizeDisplay.first();
+    const visible = await locator.isVisible().catch(() => false);
+    if (!visible) return '';
+
+    const text = await locator.textContent();
+    return (text || '').trim();
   }
 
   async getDimensions(): Promise<string> {
-    const text = await this.dimensionsDisplay.textContent();
-    return text || '';
+    const locator = this.dimensionsDisplay.first();
+    const visible = await locator.isVisible().catch(() => false);
+    if (!visible) return '';
+
+    const text = await locator.textContent();
+    return (text || '').trim();
   }
 
   async getParsedDimensions(): Promise<{ width: number; height: number } | null> {

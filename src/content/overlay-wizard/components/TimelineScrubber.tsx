@@ -306,12 +306,19 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({
             }}
           />
 
-          {/* Single handle at start position */}
+          {/* Start handle */}
           <div
-            className="ytgif-timeline-handle"
+            className="ytgif-timeline-handle ytgif-timeline-handle-start"
             style={{ left: `${startPercent}%` }}
             onMouseDown={handleMouseDown}
             title={formatTime(startTime)}
+          />
+
+          {/* End handle */}
+          <div
+            className="ytgif-timeline-handle ytgif-timeline-handle-end"
+            style={{ left: `${endPercent}%` }}
+            title={formatTime(endTime)}
           />
 
           {/* Preview playhead (when playing preview) */}
