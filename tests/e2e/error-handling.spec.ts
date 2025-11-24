@@ -394,4 +394,61 @@ test.describe('Error Handling and Edge Cases', () => {
     expect(overlays.length).toBe(1);
     // Should handle special characters
   });
+
+  test('Text overlay preview updates when time range changes', async ({ page }) => {
+    await youtube.navigateToVideo(TEST_VIDEOS.veryShort.url);
+    await handleYouTubeCookieConsent(page);
+    await waitForExtensionReady(page);
+
+    await youtube.openGifWizard();
+    await quickCapture.waitForScreen();
+
+    // Set initial time range (0-3s)
+    await quickCapture.setTimeRange(0, 3);
+    await quickCapture.clickNext();
+
+    await textOverlay.waitForScreen();
+
+    // Wait for first preview to load
+    await page.waitForTimeout(2000);
+
+    // Get first preview background image (should be from time 0)
+    const firstPreviewLocator = page.locator('.ytgif-frame-preview');
+    await firstPreviewLocator.waitFor({ state: 'visible', timeout: 10000 });
+    const firstPreview = await firstPreviewLocator.evaluate((el: HTMLElement) => {
+      return el.style.backgroundImage;
+    });
+
+    // Verify first preview exists
+    expect(firstPreview).toBeTruthy();
+    expect(firstPreview).toContain('url(');
+
+    // Go back to quick capture
+    await textOverlay.clickBack();
+    await quickCapture.waitForScreen();
+
+    // Change time range to different segment (5-8s)
+    await quickCapture.setTimeRange(5, 8);
+    await quickCapture.clickNext();
+
+    await textOverlay.waitForScreen();
+
+    // Wait for new preview to load
+    await page.waitForTimeout(2000);
+
+    // Get second preview background image (should be from time 5, different from first)
+    const secondPreviewLocator = page.locator('.ytgif-frame-preview');
+    await secondPreviewLocator.waitFor({ state: 'visible', timeout: 10000 });
+    const secondPreview = await secondPreviewLocator.evaluate((el: HTMLElement) => {
+      return el.style.backgroundImage;
+    });
+
+    // Verify second preview exists
+    expect(secondPreview).toBeTruthy();
+    expect(secondPreview).toContain('url(');
+
+    // Verify that previews are different (not showing stale frame)
+    // The background images should be different data URLs since they're from different time points
+    expect(secondPreview).not.toBe(firstPreview);
+  });
 });
