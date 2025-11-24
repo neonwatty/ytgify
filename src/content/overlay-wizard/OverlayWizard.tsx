@@ -46,7 +46,7 @@ const OverlayWizard: React.FC<OverlayWizardProps> = ({
   onClose,
   onCreateGif,
   onSeekTo,
-  isCreating = false,
+  isCreating: _isCreating = false,
   processingStatus,
   gifData,
 }) => {
