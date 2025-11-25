@@ -1,7 +1,6 @@
 import { test, expect } from './fixtures';
-import { openExtensionPopup, handleYouTubeCookieConsent } from './helpers/extension-helpers';
-import { TEST_VIDEOS } from './helpers/test-videos';
-import type { BrowserContext } from '@playwright/test';
+import { getMockVideoUrl } from './helpers/mock-videos';
+import type { BrowserContext, Page } from '@playwright/test';
 
 /**
  * E2E tests for popup footer CTA (primary prompt)
@@ -69,7 +68,7 @@ async function setEngagementData(context: BrowserContext, data: Partial<Engageme
     });
   }, mergedData);
 
-  // Wait longer for storage to settle and propagate
+  // Wait for storage to settle and propagate
   await new Promise(resolve => setTimeout(resolve, 1000));
 }
 
@@ -93,8 +92,30 @@ async function getEngagementData(context: BrowserContext): Promise<EngagementDat
   });
 }
 
-test.describe('Popup CTA - Primary Prompt', () => {
-  test('shows footer at 5+ GIFs (qualifying state)', async ({ context, extensionId }) => {
+/**
+ * Helper to open extension popup
+ */
+async function openExtensionPopup(context: BrowserContext): Promise<Page | null> {
+  const serviceWorkers = context.serviceWorkers();
+  if (serviceWorkers.length === 0) {
+    return null;
+  }
+
+  // Extract extension ID from service worker URL
+  const url = serviceWorkers[0].url();
+  const match = url.match(/chrome-extension:\/\/([^\/]+)/);
+  if (!match) {
+    return null;
+  }
+
+  const extensionId = match[1];
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${extensionId}/popup.html`);
+  return page;
+}
+
+test.describe('Popup CTA - Primary Prompt (Mock)', () => {
+  test('shows footer at 5+ GIFs (qualifying state)', async ({ context, extensionId, mockServerUrl }) => {
     expect(extensionId).toBeTruthy();
 
     // Set qualifying engagement data (5 GIFs, not shown, not dismissed)
@@ -107,11 +128,10 @@ test.describe('Popup CTA - Primary Prompt', () => {
       popupFooterDismissed: false,
     });
 
-    // Navigate to YouTube video (popup checks current tab)
+    // Navigate to mock YouTube video (popup checks current tab)
     const page = await context.newPage();
-    await page.goto(TEST_VIDEOS.veryShort.url);
-    await handleYouTubeCookieConsent(page);
-    await page.waitForSelector('video', { timeout: 30000 });
+    await page.goto(getMockVideoUrl('veryShort', mockServerUrl));
+    await page.waitForSelector('video', { timeout: 10000 });
 
     // Verify storage was set correctly before opening popup
     const verifyData = await getEngagementData(context);
@@ -125,7 +145,7 @@ test.describe('Popup CTA - Primary Prompt', () => {
     // Wait for popup to render
     await popup!.waitForSelector('.popup-modern', { timeout: 5000 });
 
-    // Wait a bit for footer to render (it checks engagement data on mount)
+    // Wait for footer to render (it checks engagement data on mount)
     await popup!.waitForTimeout(1000);
 
     // Footer should be visible
@@ -147,7 +167,7 @@ test.describe('Popup CTA - Primary Prompt', () => {
     await page.close();
   });
 
-  test('hides footer at <5 GIFs (non-qualifying)', async ({ context, extensionId }) => {
+  test('hides footer at <5 GIFs (non-qualifying)', async ({ context, extensionId, mockServerUrl }) => {
     expect(extensionId).toBeTruthy();
 
     // Set non-qualifying engagement data (4 GIFs)
@@ -160,11 +180,10 @@ test.describe('Popup CTA - Primary Prompt', () => {
       popupFooterDismissed: false,
     });
 
-    // Navigate to YouTube video
+    // Navigate to mock YouTube video
     const page = await context.newPage();
-    await page.goto(TEST_VIDEOS.veryShort.url);
-    await handleYouTubeCookieConsent(page);
-    await page.waitForSelector('video', { timeout: 30000 });
+    await page.goto(getMockVideoUrl('veryShort', mockServerUrl));
+    await page.waitForSelector('video', { timeout: 10000 });
 
     // Open popup
     const popup = await openExtensionPopup(context);
@@ -181,7 +200,7 @@ test.describe('Popup CTA - Primary Prompt', () => {
     await page.close();
   });
 
-  test('hides footer when dismissed', async ({ context, extensionId }) => {
+  test('hides footer when dismissed', async ({ context, extensionId, mockServerUrl }) => {
     expect(extensionId).toBeTruthy();
 
     // Set qualifying state BUT dismissed
@@ -194,11 +213,10 @@ test.describe('Popup CTA - Primary Prompt', () => {
       popupFooterDismissed: true,
     });
 
-    // Navigate to YouTube video
+    // Navigate to mock YouTube video
     const page = await context.newPage();
-    await page.goto(TEST_VIDEOS.veryShort.url);
-    await handleYouTubeCookieConsent(page);
-    await page.waitForSelector('video', { timeout: 30000 });
+    await page.goto(getMockVideoUrl('veryShort', mockServerUrl));
+    await page.waitForSelector('video', { timeout: 10000 });
 
     // Open popup
     const popup = await openExtensionPopup(context);
@@ -215,7 +233,7 @@ test.describe('Popup CTA - Primary Prompt', () => {
     await page.close();
   });
 
-  test('hides footer when primary already shown', async ({ context, extensionId }) => {
+  test('hides footer when primary already shown', async ({ context, extensionId, mockServerUrl }) => {
     expect(extensionId).toBeTruthy();
 
     // Set qualifying GIF count BUT primary.shown = true
@@ -228,11 +246,10 @@ test.describe('Popup CTA - Primary Prompt', () => {
       popupFooterDismissed: false,
     });
 
-    // Navigate to YouTube video
+    // Navigate to mock YouTube video
     const page = await context.newPage();
-    await page.goto(TEST_VIDEOS.veryShort.url);
-    await handleYouTubeCookieConsent(page);
-    await page.waitForSelector('video', { timeout: 30000 });
+    await page.goto(getMockVideoUrl('veryShort', mockServerUrl));
+    await page.waitForSelector('video', { timeout: 10000 });
 
     // Open popup
     const popup = await openExtensionPopup(context);
@@ -249,7 +266,7 @@ test.describe('Popup CTA - Primary Prompt', () => {
     await page.close();
   });
 
-  test('Review link triggers Chrome Web Store review page', async ({ context, extensionId }) => {
+  test('Dismiss button hides footer and persists to storage', async ({ context, extensionId, mockServerUrl }) => {
     expect(extensionId).toBeTruthy();
 
     // Set qualifying state
@@ -262,60 +279,10 @@ test.describe('Popup CTA - Primary Prompt', () => {
       popupFooterDismissed: false,
     });
 
-    // Navigate to YouTube video
+    // Navigate to mock YouTube video
     const page = await context.newPage();
-    await page.goto(TEST_VIDEOS.veryShort.url);
-    await handleYouTubeCookieConsent(page);
-    await page.waitForSelector('video', { timeout: 30000 });
-
-    // Open popup
-    const popup = await openExtensionPopup(context);
-    expect(popup).toBeTruthy();
-    await popup!.waitForSelector('.popup-modern', { timeout: 5000 });
-    await popup!.waitForTimeout(1000);
-
-    // Verify footer is visible
-    const footer = await popup!.$('.popup-footer');
-    expect(footer).toBeTruthy();
-
-    // Set up listener for new page/tab creation
-    const newPagePromise = context.waitForEvent('page');
-
-    // Click review link
-    const reviewLink = await popup!.$('a:has-text("Leave us a review!")');
-    expect(reviewLink).toBeTruthy();
-    await reviewLink!.click();
-
-    // Wait for new page to open
-    const newPage = await newPagePromise;
-    const newUrl = newPage.url();
-
-    // Verify URL is Chrome Web Store review page
-    expect(newUrl).toContain('chromewebstore.google.com');
-
-    await newPage.close();
-    await popup!.close();
-    await page.close();
-  });
-
-  test('Dismiss button hides footer and persists to storage', async ({ context, extensionId }) => {
-    expect(extensionId).toBeTruthy();
-
-    // Set qualifying state
-    await setEngagementData(context, {
-      totalGifsCreated: 5,
-      prompts: {
-        primary: { shown: false },
-        secondary: { shown: false },
-      },
-      popupFooterDismissed: false,
-    });
-
-    // Navigate to YouTube video
-    const page = await context.newPage();
-    await page.goto(TEST_VIDEOS.veryShort.url);
-    await handleYouTubeCookieConsent(page);
-    await page.waitForSelector('video', { timeout: 30000 });
+    await page.goto(getMockVideoUrl('veryShort', mockServerUrl));
+    await page.waitForSelector('video', { timeout: 10000 });
 
     // Open popup
     const popup = await openExtensionPopup(context);
@@ -344,6 +311,54 @@ test.describe('Popup CTA - Primary Prompt', () => {
     expect(updatedData).toBeTruthy();
     expect(updatedData!.popupFooterDismissed).toBe(true);
 
+    await popup!.close();
+    await page.close();
+  });
+
+  test('Review link triggers Chrome Web Store review page', async ({ context, extensionId, mockServerUrl }) => {
+    expect(extensionId).toBeTruthy();
+
+    // Set qualifying state
+    await setEngagementData(context, {
+      totalGifsCreated: 5,
+      prompts: {
+        primary: { shown: false },
+        secondary: { shown: false },
+      },
+      popupFooterDismissed: false,
+    });
+
+    // Navigate to mock YouTube video
+    const page = await context.newPage();
+    await page.goto(getMockVideoUrl('veryShort', mockServerUrl));
+    await page.waitForSelector('video', { timeout: 10000 });
+
+    // Open popup
+    const popup = await openExtensionPopup(context);
+    expect(popup).toBeTruthy();
+    await popup!.waitForSelector('.popup-modern', { timeout: 5000 });
+    await popup!.waitForTimeout(1000);
+
+    // Verify footer is visible
+    const footer = await popup!.$('.popup-footer');
+    expect(footer).toBeTruthy();
+
+    // Set up listener for new page/tab creation
+    const newPagePromise = context.waitForEvent('page');
+
+    // Click review link
+    const reviewLink = await popup!.$('a:has-text("Leave us a review!")');
+    expect(reviewLink).toBeTruthy();
+    await reviewLink!.click();
+
+    // Wait for new page to open
+    const newPage = await newPagePromise;
+    const newUrl = newPage.url();
+
+    // Verify URL is Chrome Web Store review page
+    expect(newUrl).toContain('chromewebstore.google.com');
+
+    await newPage.close();
     await popup!.close();
     await page.close();
   });

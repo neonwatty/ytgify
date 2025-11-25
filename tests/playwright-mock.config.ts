@@ -26,7 +26,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 1,
 
   // Workers - more than real YouTube tests since no rate limiting
-  workers: process.env.CI ? 3 : 2,
+  workers: process.env.CI ? 3 : 4,
 
   // Reporter configuration
   reporter: [

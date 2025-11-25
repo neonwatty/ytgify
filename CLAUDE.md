@@ -30,13 +30,12 @@ npm run lint:fix
 ### Testing
 ```bash
 npm run validate:pre-push  # Full local validation before PR
-npm run test:e2e          # Real E2E headless (REQUIRED locally before PR)
-npm test                  # Unit tests
-npm run test:e2e:mock     # Mock E2E headless (CI-safe)
-npm run test:layout       # Layout tests
+npm run test:e2e           # E2E tests (headless)
+npm run test:e2e:headed    # E2E tests (visible browser for debugging)
+npm test                   # Unit tests
 ```
 
-Real E2E tests cannot run in CI (YouTube blocks CI IPs). Run headless locally before submitting PRs. Use `:headed` suffix for visible browser debugging.
+E2E tests use a local mock YouTube server with generated test videos. Run `npm run generate:test-videos` if video files are missing.
 
 ### Loading Extension
 1. `npm run build`
@@ -95,11 +94,14 @@ Centralized in `src/lib/errors.ts`. All async operations wrapped in try-catch wi
 
 ## Testing
 
-### Mock E2E Videos
-Generate with `npm run generate:test-videos`. Use `getMockVideoUrl('veryShort', mockServerUrl)` helper.
+### E2E Test Videos
+Generate with `npm run generate:test-videos`. Use `getMockVideoUrl('veryShort', mockServerUrl)` helper in tests. Tests run against a local mock YouTube server that serves synthetic videos.
 
-### E2E Guidelines
-Real E2E: Use actual YouTube URLs, stable short videos, handle consent popups. Mock E2E: Use `getMockVideoUrl()` helper.
+### E2E Test Structure
+- `tests/e2e-mock/` - All E2E tests using mock YouTube server
+- `tests/e2e-mock/fixtures/mock-youtube/` - HTML templates for mock YouTube pages
+- `tests/e2e-mock/fixtures/videos/` - Generated test video files
+- `tests/e2e-mock/helpers/` - Mock server, video helpers, network profiles
 
 ## Common Development Tasks
 
