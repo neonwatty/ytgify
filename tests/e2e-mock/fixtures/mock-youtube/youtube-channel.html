@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-mock-youtube="true">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{CHANNEL_NAME}} - YouTube</title>
+  <link rel="stylesheet" href="/mock-youtube/styles.css">
+  <style>
+    /* Mock YouTube channel page styles */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0f0f0f;
+      color: #fff;
+      font-family: 'Roboto', Arial, sans-serif;
+    }
+
+    #masthead-container {
+      display: flex;
+      align-items: center;
+      background: #0f0f0f;
+      padding: 8px 16px;
+      border-bottom: 1px solid #303030;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+    }
+
+    #logo {
+      width: 90px;
+      height: 20px;
+      background: #ff0000;
+      border-radius: 2px;
+      margin-right: 24px;
+    }
+
+    #search {
+      flex: 1;
+      max-width: 600px;
+      padding: 10px 16px;
+      background: #121212;
+      border: 1px solid #303030;
+      border-radius: 40px;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    #search:focus {
+      outline: none;
+      border-color: #3ea6ff;
+    }
+
+    #contents {
+      padding-top: 80px;
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+
+    #channel-header {
+      padding: 24px 0;
+      border-bottom: 1px solid #303030;
+      margin-bottom: 24px;
+    }
+
+    #channel-name {
+      font-size: 24px;
+      font-weight: 500;
+      margin: 0;
+    }
+
+    ytd-rich-grid-renderer {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+      padding: 20px 0;
+    }
+
+    ytd-rich-item-renderer {
+      display: block;
+      width: 100%;
+      min-width: 200px;
+    }
+
+    ytd-thumbnail {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #272727;
+      border-radius: 12px;
+    }
+
+    h3.ytd-rich-item-renderer {
+      font-size: 14px;
+      font-weight: 500;
+      margin: 12px 0 4px 0;
+      line-height: 1.4;
+      color: #f1f1f1;
+    }
+
+    .video-meta {
+      font-size: 12px;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <div id="page-container">
+    <!-- Masthead / Header -->
+    <div id="masthead-container">
+      <div id="logo"></div>
+      <input type="text" id="search" placeholder="Search" />
+    </div>
+
+    <!-- Main content -->
+    <div id="contents">
+      <!-- Channel header -->
+      <div id="channel-header">
+        <h1 id="channel-name">{{CHANNEL_NAME}}</h1>
+      </div>
+
+      <!-- Video grid -->
+      <ytd-rich-grid-renderer>
+        <ytd-rich-item-renderer>
+          <ytd-thumbnail></ytd-thumbnail>
+          <h3 class="ytd-rich-item-renderer">Mock Video Title 1</h3>
+          <div class="video-meta">1.2M views - 2 weeks ago</div>
+        </ytd-rich-item-renderer>
+
+        <ytd-rich-item-renderer>
+          <ytd-thumbnail></ytd-thumbnail>
+          <h3 class="ytd-rich-item-renderer">Mock Video Title 2</h3>
+          <div class="video-meta">856K views - 1 month ago</div>
+        </ytd-rich-item-renderer>
+
+        <ytd-rich-item-renderer>
+          <ytd-thumbnail></ytd-thumbnail>
+          <h3 class="ytd-rich-item-renderer">Mock Video Title 3</h3>
+          <div class="video-meta">2.1M views - 3 months ago</div>
+        </ytd-rich-item-renderer>
+
+        <ytd-rich-item-renderer>
+          <ytd-thumbnail></ytd-thumbnail>
+          <h3 class="ytd-rich-item-renderer">Mock Video Title 4</h3>
+          <div class="video-meta">543K views - 6 months ago</div>
+        </ytd-rich-item-renderer>
+
+        <ytd-rich-item-renderer>
+          <ytd-thumbnail></ytd-thumbnail>
+          <h3 class="ytd-rich-item-renderer">Mock Video Title 5</h3>
+          <div class="video-meta">1.8M views - 1 year ago</div>
+        </ytd-rich-item-renderer>
+
+        <ytd-rich-item-renderer>
+          <ytd-thumbnail></ytd-thumbnail>
+          <h3 class="ytd-rich-item-renderer">Mock Video Title 6</h3>
+          <div class="video-meta">987K views - 2 years ago</div>
+        </ytd-rich-item-renderer>
+      </ytd-rich-grid-renderer>
+    </div>
+  </div>
+
+  <script>
+    // Mark this as a mock environment for extension detection
+    window.__MOCK_YOUTUBE__ = true;
+    console.log('[Mock YouTube] Channel page loaded for: {{CHANNEL_NAME}}');
+  </script>
+</body>
+</html>

@@ -88,6 +88,20 @@ export class MockYouTubeServer {
         return;
       }
 
+      // Route: /@CHANNEL/videos - Serve channel page
+      if (url.pathname.match(/^\/@[\w-]+\/videos$/)) {
+        const channelName = url.pathname.split('/')[1].substring(1);
+        this.serveChannelPage(channelName, res);
+        return;
+      }
+
+      // Route: /results?search_query=... - Serve search results page
+      if (url.pathname === '/results') {
+        const query = url.searchParams.get('search_query') || 'test';
+        this.serveSearchPage(query, res);
+        return;
+      }
+
       // Route: /videos/* - Serve video files
       if (url.pathname.startsWith('/videos/')) {
         this.serveVideo(url.pathname, req, res);
@@ -254,6 +268,62 @@ export class MockYouTubeServer {
       console.error('[Mock YouTube Server] Error serving asset:', error);
       res.writeHead(500, { 'Content-Type': 'text/plain' });
       res.end('Error serving asset');
+    }
+  }
+
+  private serveChannelPage(channelName: string, res: http.ServerResponse) {
+    const templatePath = path.join(this.fixturesPath, 'mock-youtube', 'youtube-channel.html');
+
+    if (!fs.existsSync(templatePath)) {
+      console.error(`[Mock YouTube Server] Channel template not found at ${templatePath}`);
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Channel template not found');
+      return;
+    }
+
+    try {
+      let html = fs.readFileSync(templatePath, 'utf-8');
+
+      // Replace placeholders with channel-specific data
+      html = html.replace(/\{\{CHANNEL_NAME\}\}/g, channelName);
+
+      res.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-cache'
+      });
+      res.end(html);
+    } catch (error) {
+      console.error('[Mock YouTube Server] Error reading channel template:', error);
+      res.writeHead(500, { 'Content-Type': 'text/plain' });
+      res.end('Error loading channel template');
+    }
+  }
+
+  private serveSearchPage(query: string, res: http.ServerResponse) {
+    const templatePath = path.join(this.fixturesPath, 'mock-youtube', 'youtube-search.html');
+
+    if (!fs.existsSync(templatePath)) {
+      console.error(`[Mock YouTube Server] Search template not found at ${templatePath}`);
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Search template not found');
+      return;
+    }
+
+    try {
+      let html = fs.readFileSync(templatePath, 'utf-8');
+
+      // Replace placeholders with search-specific data
+      html = html.replace(/\{\{SEARCH_QUERY\}\}/g, query);
+
+      res.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-cache'
+      });
+      res.end(html);
+    } catch (error) {
+      console.error('[Mock YouTube Server] Error reading search template:', error);
+      res.writeHead(500, { 'Content-Type': 'text/plain' });
+      res.end('Error loading search template');
     }
   }
 

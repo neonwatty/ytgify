@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en" data-mock-youtube="true">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{SEARCH_QUERY}} - YouTube</title>
+  <link rel="stylesheet" href="/mock-youtube/styles.css">
+  <style>
+    /* Mock YouTube search results page styles */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0f0f0f;
+      color: #fff;
+      font-family: 'Roboto', Arial, sans-serif;
+    }
+
+    #masthead-container {
+      display: flex;
+      align-items: center;
+      background: #0f0f0f;
+      padding: 8px 16px;
+      border-bottom: 1px solid #303030;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+    }
+
+    #logo {
+      width: 90px;
+      height: 20px;
+      background: #ff0000;
+      border-radius: 2px;
+      margin-right: 24px;
+    }
+
+    #search {
+      flex: 1;
+      max-width: 600px;
+      padding: 10px 16px;
+      background: #121212;
+      border: 1px solid #303030;
+      border-radius: 40px;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    #search:focus {
+      outline: none;
+      border-color: #3ea6ff;
+    }
+
+    #contents {
+      padding-top: 80px;
+      padding-left: 24px;
+      padding-right: 24px;
+      max-width: 1200px;
+    }
+
+    #search-header {
+      padding: 16px 0;
+      border-bottom: 1px solid #303030;
+      margin-bottom: 16px;
+    }
+
+    #search-title {
+      font-size: 16px;
+      color: #aaa;
+      margin: 0;
+    }
+
+    ytd-video-renderer {
+      display: flex;
+      padding: 16px 0;
+      border-bottom: 1px solid #272727;
+      min-height: 150px;
+    }
+
+    ytd-video-renderer ytd-thumbnail {
+      width: 360px;
+      min-width: 360px;
+      aspect-ratio: 16/9;
+      background: #272727;
+      border-radius: 12px;
+      flex-shrink: 0;
+    }
+
+    ytd-video-renderer .text-wrapper {
+      padding-left: 16px;
+      flex: 1;
+    }
+
+    ytd-video-renderer h3 {
+      font-size: 18px;
+      font-weight: 500;
+      color: #f1f1f1;
+      margin: 0 0 8px 0;
+      line-height: 1.4;
+    }
+
+    ytd-video-renderer .video-meta {
+      font-size: 12px;
+      color: #aaa;
+      margin-bottom: 8px;
+    }
+
+    ytd-video-renderer .video-description {
+      font-size: 12px;
+      color: #aaa;
+      line-height: 1.5;
+      max-height: 36px;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <div id="page-container">
+    <!-- Masthead / Header -->
+    <div id="masthead-container">
+      <div id="logo"></div>
+      <input type="text" id="search" value="{{SEARCH_QUERY}}" />
+    </div>
+
+    <!-- Main content -->
+    <div id="contents">
+      <!-- Search header -->
+      <div id="search-header">
+        <p id="search-title">Search results for "{{SEARCH_QUERY}}"</p>
+      </div>
+
+      <!-- Search results -->
+      <ytd-video-renderer>
+        <ytd-thumbnail></ytd-thumbnail>
+        <div class="text-wrapper">
+          <h3>Search Result 1 - {{SEARCH_QUERY}}</h3>
+          <div class="video-meta">1.2M views - 2 weeks ago</div>
+          <div class="video-description">This is a mock video description for the first search result. It contains relevant information about the video content.</div>
+        </div>
+      </ytd-video-renderer>
+
+      <ytd-video-renderer>
+        <ytd-thumbnail></ytd-thumbnail>
+        <div class="text-wrapper">
+          <h3>Search Result 2 - Related to {{SEARCH_QUERY}}</h3>
+          <div class="video-meta">856K views - 1 month ago</div>
+          <div class="video-description">Another mock video description for the search results. This video is related to the search query.</div>
+        </div>
+      </ytd-video-renderer>
+
+      <ytd-video-renderer>
+        <ytd-thumbnail></ytd-thumbnail>
+        <div class="text-wrapper">
+          <h3>Search Result 3 - More {{SEARCH_QUERY}} Content</h3>
+          <div class="video-meta">2.1M views - 3 months ago</div>
+          <div class="video-description">A third mock video in the search results. Contains additional information about the topic.</div>
+        </div>
+      </ytd-video-renderer>
+
+      <ytd-video-renderer>
+        <ytd-thumbnail></ytd-thumbnail>
+        <div class="text-wrapper">
+          <h3>Search Result 4 - {{SEARCH_QUERY}} Tutorial</h3>
+          <div class="video-meta">543K views - 6 months ago</div>
+          <div class="video-description">A tutorial video about the searched topic with step-by-step instructions.</div>
+        </div>
+      </ytd-video-renderer>
+
+      <ytd-video-renderer>
+        <ytd-thumbnail></ytd-thumbnail>
+        <div class="text-wrapper">
+          <h3>Search Result 5 - Best of {{SEARCH_QUERY}}</h3>
+          <div class="video-meta">1.8M views - 1 year ago</div>
+          <div class="video-description">A compilation video featuring the best content related to the search query.</div>
+        </div>
+      </ytd-video-renderer>
+    </div>
+  </div>
+
+  <script>
+    // Mark this as a mock environment for extension detection
+    window.__MOCK_YOUTUBE__ = true;
+    console.log('[Mock YouTube] Search page loaded for query: {{SEARCH_QUERY}}');
+  </script>
+</body>
+</html>
