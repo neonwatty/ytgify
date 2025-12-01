@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Github, BookOpen } from 'lucide-react';
 import { FIREFOX_ADDON_URL } from '@/lib/constants';
 
@@ -49,6 +50,12 @@ export default function SiteFooter() {
               <BookOpen size={20} />
             </a>
           </div>
+          <Link
+            href="/blog"
+            className="text-[#a0a0a0] hover:text-white transition-colors"
+          >
+            Blog
+          </Link>
           <a
             href="https://chromewebstore.google.com/detail/ytgify/jhjdimdoghooebpklbfhpggnaakiollk"
             target="_blank"
@@ -65,14 +72,12 @@ export default function SiteFooter() {
           >
             Install Firefox Add-on
           </a>
-          <a
-            href="https://github.com/neonwatty/ytgify/blob/main/docs/privacy-policy.md"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/privacy-policy"
             className="text-[#a0a0a0] hover:text-white transition-colors"
           >
             Privacy Policy
-          </a>
+          </Link>
         </div>
       </div>
     </footer>
