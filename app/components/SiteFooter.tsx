@@ -78,6 +78,12 @@ export default function SiteFooter() {
           >
             Privacy Policy
           </Link>
+          <Link
+            href="/terms-of-service"
+            className="text-[#a0a0a0] hover:text-white transition-colors"
+          >
+            Terms of Service
+          </Link>
         </div>
       </div>
     </footer>
