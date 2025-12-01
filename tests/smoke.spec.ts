@@ -65,12 +65,17 @@ test.describe('Landing Page Smoke Tests', () => {
     await expect(xLink).toHaveAttribute('target', '_blank');
   });
 
-  test('Blog social link is visible and correct', async ({ page }) => {
+  test('external Blog social link is visible and correct', async ({ page }) => {
     await page.goto('/');
-    const blogLink = page.getByRole('link', { name: /Blog/i });
+    const blogLink = page.locator('footer a[href="https://neonwatty.com/"]');
     await expect(blogLink).toBeVisible();
-    await expect(blogLink).toHaveAttribute('href', 'https://neonwatty.com/');
     await expect(blogLink).toHaveAttribute('target', '_blank');
+  });
+
+  test('internal Blog link is visible', async ({ page }) => {
+    await page.goto('/');
+    const blogLink = page.locator('footer a[href="/blog"]');
+    await expect(blogLink).toBeVisible();
   });
 
   test('all social links have security attributes', async ({ page }) => {

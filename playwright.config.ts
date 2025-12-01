@@ -21,5 +21,6 @@ export default defineConfig({
     command: 'npm run build && npx serve out -l 3000',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
+    timeout: 120000,
   },
 });
