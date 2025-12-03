@@ -1,4 +1,5 @@
 import { chromeMock } from '../__mocks__/chrome-mocks';
+import manifest from '../../../manifest.json';
 
 describe('Background Service Worker Framework Tests', () => {
   beforeEach(() => {
@@ -39,12 +40,12 @@ describe('Background Service Worker Framework Tests', () => {
   });
 
   it('should provide extension manifest data', () => {
-    const manifest = chrome.runtime.getManifest();
+    const chromeManifest = chrome.runtime.getManifest();
 
-    expect(manifest).toBeDefined();
-    expect(manifest.name).toBe('YTgify');
-    expect(manifest.version).toBe('1.0.13');
-    expect(manifest.manifest_version).toBe(3);
+    expect(chromeManifest).toBeDefined();
+    expect(chromeManifest.name).toBe('YTgify');
+    expect(chromeManifest.version).toBe(manifest.version);
+    expect(chromeManifest.manifest_version).toBe(3);
   });
 
   it('should generate extension URLs', () => {

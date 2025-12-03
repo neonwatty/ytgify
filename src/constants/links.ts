@@ -23,3 +23,8 @@ export function getReviewLink(): string {
 export function getDiscordLink(): string {
   return 'https://discord.gg/8EUxqR93';
 }
+
+// Helper to get feedback survey link
+export function getFeedbackSurveyLink(): string {
+  return 'https://forms.gle/evQ5EGdEhUxDhejU7';
+}
