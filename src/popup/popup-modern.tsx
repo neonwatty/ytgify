@@ -1,7 +1,9 @@
 import React from 'react';
 import { ShowTimelineRequest } from '@/types';
 import { engagementTracker } from '@/shared/engagement-tracker';
+import { feedbackTracker } from '@/shared/feedback-tracker';
 import { openExternalLink, getReviewLink } from '@/constants/links';
+import { EXTERNAL_SURVEY_URL } from '@/constants/features';
 
 const PopupApp: React.FC = () => {
   const [isYouTubePage, setIsYouTubePage] = React.useState(false);
@@ -11,6 +13,8 @@ const PopupApp: React.FC = () => {
   const [showButton, setShowButton] = React.useState(false);
   const [showFooter, setShowFooter] = React.useState(false);
   const [version, setVersion] = React.useState<string>('');
+  const [activeTab, setActiveTab] = React.useState<'main' | 'support'>('main');
+  const [showFeedbackPrompt, setShowFeedbackPrompt] = React.useState(false);
 
   // Load button visibility setting
   React.useEffect(() => {
@@ -74,6 +78,19 @@ const PopupApp: React.FC = () => {
     }
   }, []);
 
+  // Check time-based feedback prompt
+  React.useEffect(() => {
+    const checkTimeFeedback = async () => {
+      try {
+        const shouldShow = await feedbackTracker.shouldShowTimeFeedback();
+        setShowFeedbackPrompt(shouldShow);
+      } catch (error) {
+        console.error('Error checking time feedback:', error);
+      }
+    };
+    checkTimeFeedback();
+  }, []);
+
   // Handle toggle change
   const handleToggleChange = (checked: boolean) => {
     setShowButton(checked);
@@ -95,6 +112,16 @@ const PopupApp: React.FC = () => {
 
   const handleStayConnected = () => {
     openExternalLink('https://discord.gg/8EUxqR93');
+  };
+
+  const handleSurveyClick = async () => {
+    await feedbackTracker.recordSurveyClicked();
+    openExternalLink(EXTERNAL_SURVEY_URL);
+  };
+
+  const handleFeedbackDismiss = async () => {
+    await feedbackTracker.recordFeedbackShown('time');
+    setShowFeedbackPrompt(false);
   };
 
   const handleCreateGif = async () => {
@@ -155,173 +182,228 @@ const PopupApp: React.FC = () => {
         </div>
       </div>
 
-      {/* Settings Section */}
-      <div className="popup-settings">
-        <div className="settings-item">
-          <label className="settings-label">
-            <span className="settings-text">Pin YTGify button to YouTube player</span>
-            <div className="toggle-switch">
-              <input
-                type="checkbox"
-                checked={showButton}
-                onChange={(e) => handleToggleChange(e.target.checked)}
-                className="toggle-input"
-              />
-              <span className="toggle-slider"></span>
-            </div>
-          </label>
-        </div>
+      {/* Tab Navigation */}
+      <div className="popup-tabs">
+        <button
+          className={`popup-tab ${activeTab === 'main' ? 'popup-tab--active' : ''}`}
+          onClick={() => setActiveTab('main')}
+          type="button"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          Create
+        </button>
+        <button
+          className={`popup-tab ${activeTab === 'support' ? 'popup-tab--active' : ''}`}
+          onClick={() => setActiveTab('support')}
+          type="button"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Support
+        </button>
       </div>
 
-      {/* Main Content */}
-      <div className="popup-main">
-        {isShortsPage ? (
-          <div className="popup-shorts-state">
-            <div className="status-text">
-              <p className="status-title">YouTube Shorts Detected</p>
-              <p className="status-subtitle">We do not yet support YouTube Shorts</p>
-            </div>
-
-            {/* Info Icon */}
-            <div className="status-icon-container">
-              <div className="status-icon info-icon">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-
-            {/* Info message */}
-            <div className="info-message">
-              <p className="info-text">Try GIF creation on regular YouTube videos instead!</p>
-            </div>
-
-            {/* Open YouTube Button */}
-            <button
-              onClick={() => {
-                chrome.tabs.create({ url: 'https://www.youtube.com' });
-                window.close();
-              }}
-              className="youtube-button"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
-              </svg>
-              <span>Open YouTube</span>
-            </button>
-
-            {/* Stay Connected Button */}
-            <div className="popup-stay-connected-section">
-              <button className="popup-stay-connected-btn" onClick={handleStayConnected}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515a.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0a12.64 12.64 0 00-.617-1.25a.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057a19.9 19.9 0 005.993 3.03a.078.078 0 00.084-.028a14.09 14.09 0 001.226-1.994a.076.076 0 00-.041-.106a13.107 13.107 0 01-1.872-.892a.077.077 0 01-.008-.128a10.2 10.2 0 00.372-.292a.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127a12.299 12.299 0 01-1.873.892a.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028a19.839 19.839 0 006.002-3.03a.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
-                </svg>
-                <span>Join Discord</span>
-              </button>
-              <p className="popup-stay-connected-subtitle">Community Support & Updates</p>
+      {/* Tab Content */}
+      {activeTab === 'main' ? (
+        <>
+          {/* Settings Section */}
+          <div className="popup-settings">
+            <div className="settings-item">
+              <label className="settings-label">
+                <span className="settings-text">Pin YTGify button to YouTube player</span>
+                <div className="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={showButton}
+                    onChange={(e) => handleToggleChange(e.target.checked)}
+                    className="toggle-input"
+                  />
+                  <span className="toggle-slider"></span>
+                </div>
+              </label>
             </div>
           </div>
-        ) : isYouTubePage ? (
-          <div className="popup-ready-state">
-            <div className="status-text">
-              <p className="status-title">Capture GIF moments from:</p>
-              {videoTitle && (
-                <p className="video-title">
-                  {videoTitle}
-                </p>
-              )}
-            </div>
 
-            {/* Create GIF Button */}
-            <button
-              onClick={handleCreateGif}
-              disabled={isLoading}
-              className="create-button"
-            >
-              {isLoading ? (
-                <>
-                  <div className="button-spinner"></div>
-                  <span>Loading...</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                      d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          {/* Main Content */}
+          <div className="popup-main">
+            {isShortsPage ? (
+              <div className="popup-shorts-state">
+                <div className="status-text">
+                  <p className="status-title">YouTube Shorts Detected</p>
+                  <p className="status-subtitle">We do not yet support YouTube Shorts</p>
+                </div>
+
+                {/* Info Icon */}
+                <div className="status-icon-container">
+                  <div className="status-icon info-icon">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Info message */}
+                <div className="info-message">
+                  <p className="info-text">Try GIF creation on regular YouTube videos instead!</p>
+                </div>
+
+                {/* Open YouTube Button */}
+                <button
+                  onClick={() => {
+                    chrome.tabs.create({ url: 'https://www.youtube.com' });
+                    window.close();
+                  }}
+                  className="youtube-button"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
                   </svg>
-                  <span>Create GIF</span>
-                </>
-              )}
-            </button>
-
-            {/* Keyboard shortcut hint */}
-            <div className="quick-tip">
-              <span className="shortcut-key">Ctrl</span>
-              <span className="shortcut-plus">+</span>
-              <span className="shortcut-key">Shift</span>
-              <span className="shortcut-plus">+</span>
-              <span className="shortcut-key">G</span>
-              <span className="shortcut-text">Quick access</span>
-            </div>
-
-            {/* Stay Connected Button */}
-            <div className="popup-stay-connected-section">
-              <button className="popup-stay-connected-btn" onClick={handleStayConnected}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515a.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0a12.64 12.64 0 00-.617-1.25a.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057a19.9 19.9 0 005.993 3.03a.078.078 0 00.084-.028a14.09 14.09 0 001.226-1.994a.076.076 0 00-.041-.106a13.107 13.107 0 01-1.872-.892a.077.077 0 01-.008-.128a10.2 10.2 0 00.372-.292a.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127a12.299 12.299 0 01-1.873.892a.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028a19.839 19.839 0 006.002-3.03a.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
-                </svg>
-                <span>Join Discord</span>
-              </button>
-              <p className="popup-stay-connected-subtitle">Community Support & Updates</p>
-            </div>
-          </div>
-        ) : (
-          <div className="popup-empty-state">
-            {/* Empty State Icon */}
-            <div className="status-icon-container">
-              <div className="status-icon empty-icon">
-                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} 
-                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
+                  <span>Open YouTube</span>
+                </button>
               </div>
-            </div>
+            ) : isYouTubePage ? (
+              <div className="popup-ready-state">
+                <div className="status-text">
+                  <p className="status-title">Capture GIF moments from:</p>
+                  {videoTitle && (
+                    <p className="video-title">
+                      {videoTitle}
+                    </p>
+                  )}
+                </div>
 
-            <div className="status-text">
-              <p className="status-title">No Video Found</p>
-              <p className="status-subtitle">
-                Open a YouTube video to start creating GIFs
-              </p>
-            </div>
+                {/* Create GIF Button */}
+                <button
+                  onClick={handleCreateGif}
+                  disabled={isLoading}
+                  className="create-button"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="button-spinner"></div>
+                      <span>Loading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      <span>Create GIF</span>
+                    </>
+                  )}
+                </button>
 
-            {/* Open YouTube Button */}
-            <button
-              onClick={handleCreateGif}
-              className="youtube-button"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+                {/* Keyboard shortcut hint */}
+                <div className="quick-tip">
+                  <span className="shortcut-key">Ctrl</span>
+                  <span className="shortcut-plus">+</span>
+                  <span className="shortcut-key">Shift</span>
+                  <span className="shortcut-plus">+</span>
+                  <span className="shortcut-key">G</span>
+                  <span className="shortcut-text">Quick access</span>
+                </div>
+              </div>
+            ) : (
+              <div className="popup-empty-state">
+                {/* Empty State Icon */}
+                <div className="status-icon-container">
+                  <div className="status-icon empty-icon">
+                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="status-text">
+                  <p className="status-title">No Video Found</p>
+                  <p className="status-subtitle">
+                    Open a YouTube video to start creating GIFs
+                  </p>
+                </div>
+
+                {/* Open YouTube Button */}
+                <button
+                  onClick={handleCreateGif}
+                  className="youtube-button"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
+                  </svg>
+                  <span>Open YouTube</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        /* Support Tab Content */
+        <div className="popup-support-content">
+          <div className="popup-support-section">
+            <h3 className="popup-support-title">Community</h3>
+            <p className="popup-support-desc">Get help, share creations, and connect with other users</p>
+            <button className="popup-support-btn popup-discord-btn" onClick={handleStayConnected}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515a.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0a12.64 12.64 0 00-.617-1.25a.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057a19.9 19.9 0 005.993 3.03a.078.078 0 00.084-.028a14.09 14.09 0 001.226-1.994a.076.076 0 00-.041-.106a13.107 13.107 0 01-1.872-.892a.077.077 0 01-.008-.128a10.2 10.2 0 00.372-.292a.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127a12.299 12.299 0 01-1.873.892a.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028a19.839 19.839 0 006.002-3.03a.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.956-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419c0-1.333.955-2.419 2.157-2.419c1.21 0 2.176 1.096 2.157 2.42c0 1.333-.946 2.418-2.157 2.418z"/>
               </svg>
-              <span>Open YouTube</span>
+              Join Discord
             </button>
           </div>
-        )}
-      </div>
 
-          {/* Footer CTA */}
-          {showFooter && (
-            <div className="popup-footer">
-              <span>Enjoying YTGify? </span>
-              <a onClick={handleReview}>Leave us a review!</a>
-              <button className="dismiss-btn" onClick={handleDismissFooter}>×</button>
-            </div>
-          )}
-
-          {/* Version Footer */}
-          <div className="popup-version">
-            v{version}
+          <div className="popup-support-section">
+            <h3 className="popup-support-title">Feedback</h3>
+            <p className="popup-support-desc">Help shape the future of YTGify</p>
+            <button className="popup-support-btn popup-survey-btn" onClick={handleSurveyClick}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+              </svg>
+              Take Survey
+            </button>
+            {showFeedbackPrompt && (
+              <div className="popup-feedback-prompt">
+                <span>We&apos;d love to hear your thoughts!</span>
+                <button className="popup-feedback-dismiss" onClick={handleFeedbackDismiss} type="button">
+                  &times;
+                </button>
+              </div>
+            )}
           </div>
+
+          <div className="popup-support-section">
+            <h3 className="popup-support-title">Rate Us</h3>
+            <p className="popup-support-desc">Enjoying YTGify? Leave a review!</p>
+            <button className="popup-support-btn popup-review-btn" onClick={handleReview}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+              </svg>
+              Leave Review
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Footer CTA */}
+      {showFooter && activeTab === 'main' && (
+        <div className="popup-footer">
+          <span>Enjoying YTGify? </span>
+          <a onClick={handleReview}>Leave us a review!</a>
+          <button className="dismiss-btn" onClick={handleDismissFooter}>×</button>
+        </div>
+      )}
+
+      {/* Version Footer */}
+      <div className="popup-version">
+        v{version}
+      </div>
     </div>
   );
 };

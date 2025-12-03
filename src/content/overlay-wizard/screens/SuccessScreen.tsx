@@ -1,6 +1,8 @@
 import React from 'react';
 import { engagementTracker } from '@/shared/engagement-tracker';
+import { feedbackTracker } from '@/shared/feedback-tracker';
 import { openExternalLink, getReviewLink } from '@/constants/links';
+import FeedbackModal from '../components/FeedbackModal';
 
 interface SuccessScreenProps {
   onDownload?: () => void;
@@ -25,6 +27,11 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
   gifMetadata,
 }) => {
   const [showFooter, setShowFooter] = React.useState(false);
+  const [showFeedback, setShowFeedback] = React.useState(false);
+  const [feedbackTrigger, setFeedbackTrigger] = React.useState<{
+    type: 'milestone' | 'post-success';
+    milestoneCount?: 10 | 25 | 50;
+  } | null>(null);
 
   // Check footer qualification on mount
   React.useEffect(() => {
@@ -39,6 +46,26 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
       }
     };
     checkFooter();
+  }, []);
+
+  // Check post-success feedback trigger
+  React.useEffect(() => {
+    const checkFeedback = async () => {
+      try {
+        const shouldShow = await feedbackTracker.shouldShowPostSuccessFeedback();
+        if (shouldShow) {
+          // Delay showing feedback modal to not interrupt download flow
+          setTimeout(() => {
+            setFeedbackTrigger({ type: 'post-success' });
+            setShowFeedback(true);
+            feedbackTracker.recordFeedbackShown('post-success');
+          }, 2000);
+        }
+      } catch (error) {
+        console.error('Error checking feedback qualification:', error);
+      }
+    };
+    checkFeedback();
   }, []);
 
   // Handle footer actions
@@ -145,6 +172,16 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
           <a onClick={handleReview}>Leave us a review!</a>
           <button className="dismiss-btn" onClick={handleDismissFooter}>×</button>
         </div>
+      )}
+
+      {/* Feedback Modal */}
+      {showFeedback && feedbackTrigger && (
+        <FeedbackModal
+          trigger={feedbackTrigger.type}
+          milestoneCount={feedbackTrigger.milestoneCount}
+          onClose={() => setShowFeedback(false)}
+          onSubmit={() => setShowFeedback(false)}
+        />
       )}
     </div>
   );

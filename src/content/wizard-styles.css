@@ -2090,3 +2090,256 @@
 .ytgif-wizard-footer .dismiss-btn:hover {
   color: rgba(255, 255, 255, 0.8);
 }
+
+/* ========================================
+   Feedback Modal Styles
+   ======================================== */
+
+/* Feedback Modal Overlay */
+.ytgif-feedback-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  animation: fadeIn 0.3s ease;
+}
+
+.ytgif-feedback-modal {
+  position: relative;
+  width: 90%;
+  max-width: 480px;
+  max-height: 85vh;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  overflow-y: auto;
+  animation: slideUp 0.3s ease;
+}
+
+.ytgif-feedback-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ytgif-feedback-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.ytgif-feedback-header {
+  text-align: center;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ytgif-feedback-icon {
+  margin-bottom: 12px;
+  color: #9966cc;
+}
+
+.ytgif-feedback-header h2 {
+  color: white;
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.ytgif-feedback-subtitle {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  margin: 0;
+}
+
+.ytgif-feedback-content {
+  padding: 20px 24px;
+}
+
+.ytgif-feedback-section-title {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0 0 12px 0;
+}
+
+.ytgif-feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+/* Feature Vote Card */
+.ytgif-feature-vote-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.ytgif-feature-vote-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ytgif-feature-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ytgif-feature-name {
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0 0 2px 0;
+}
+
+.ytgif-feature-desc {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ytgif-vote-buttons {
+  display: flex;
+  gap: 8px;
+  margin-left: 12px;
+}
+
+.ytgif-vote-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.ytgif-vote-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.ytgif-vote-up.ytgif-vote-btn--active {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: #4caf50;
+  color: #4caf50;
+}
+
+.ytgif-vote-down.ytgif-vote-btn--active {
+  background: rgba(244, 67, 54, 0.2);
+  border-color: #f44336;
+  color: #f44336;
+}
+
+/* Suggestion Textarea */
+.ytgif-feedback-suggestion {
+  margin-bottom: 16px;
+}
+
+.ytgif-feedback-suggestion label {
+  display: block;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.ytgif-feedback-suggestion textarea {
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.ytgif-feedback-suggestion textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.ytgif-feedback-suggestion textarea:focus {
+  outline: none;
+  border-color: #9966cc;
+}
+
+/* Survey Link */
+.ytgif-feedback-survey-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  background: rgba(153, 102, 204, 0.1);
+  border: 1px solid rgba(153, 102, 204, 0.3);
+  border-radius: 8px;
+  color: #9966cc;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ytgif-feedback-survey-link:hover {
+  background: rgba(153, 102, 204, 0.2);
+  border-color: rgba(153, 102, 204, 0.5);
+}
+
+/* Feedback Actions */
+.ytgif-feedback-actions {
+  display: flex;
+  gap: 12px;
+  padding: 16px 24px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ytgif-feedback-actions .ytgif-button-secondary,
+.ytgif-feedback-actions .ytgif-button-primary {
+  flex: 1;
+  justify-content: center;
+}
+
+.ytgif-feedback-actions .ytgif-button-primary {
+  background: linear-gradient(135deg, #9966cc 0%, #7744aa 100%);
+}
+
+.ytgif-feedback-actions .ytgif-button-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 20px rgba(153, 102, 204, 0.3);
+}

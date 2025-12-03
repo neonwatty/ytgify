@@ -14,7 +14,26 @@ jest.mock('../../../src/constants/links', () => ({
   openExternalLink: jest.fn(),
   getReviewLink: jest.fn(() => 'https://chromewebstore.google.com/detail/ytgify/mock-id/reviews'),
   getGitHubStarLink: jest.fn(() => 'https://github.com/neonwatty/ytgify'),
+  getDiscordLink: jest.fn(() => 'https://discord.gg/8EUxqR93'),
 }));
+
+// Mock features module
+jest.mock('../../../src/constants/features', () => ({
+  EXTERNAL_SURVEY_URL: 'https://forms.gle/mock-survey-id',
+  PROPOSED_FEATURES: [],
+}));
+
+// Mock feedback tracker
+jest.mock('../../../src/shared/feedback-tracker', () => ({
+  feedbackTracker: {
+    shouldShowTimeFeedback: jest.fn(() => Promise.resolve(false)),
+    recordSurveyClicked: jest.fn(() => Promise.resolve()),
+    recordFeedbackShown: jest.fn(() => Promise.resolve()),
+  },
+}));
+
+// Get reference to mocked feedback tracker
+import { feedbackTracker as mockFeedbackTracker } from '../../../src/shared/feedback-tracker';
 
 describe('PopupApp Component', () => {
   beforeEach(() => {
@@ -844,7 +863,7 @@ describe('PopupApp Component', () => {
       render(<PopupApp />);
 
       await waitFor(() => {
-        expect(screen.getByText('v1.0.13')).toBeInTheDocument();
+        expect(screen.getByText(`v${manifest.version}`)).toBeInTheDocument();
       });
     });
 
@@ -856,7 +875,7 @@ describe('PopupApp Component', () => {
       await waitFor(() => {
         const versionElement = screen.getByText(/^v\d+\.\d+\.\d+$/);
         expect(versionElement).toBeInTheDocument();
-        expect(versionElement.textContent).toBe('v1.0.13');
+        expect(versionElement.textContent).toBe(`v${manifest.version}`);
       });
     });
 
@@ -933,47 +952,69 @@ describe('PopupApp Component', () => {
   });
 
   describe('Join Discord Button', () => {
-    test('Join Discord button renders on YouTube video page', async () => {
+    test('Join Discord button renders in Support tab', async () => {
       mockTabWithUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'Sample Video - YouTube');
       render(<PopupApp />);
 
+      // Switch to Support tab
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Support/i })).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByRole('button', { name: /Support/i }));
+
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Join Discord/i })).toBeInTheDocument();
       });
     });
 
-    test('Join Discord button renders on YouTube Shorts page', async () => {
+    test('Join Discord button available from YouTube Shorts page', async () => {
       mockTabWithUrl('https://www.youtube.com/shorts/ABC123', 'Short Video - YouTube');
       render(<PopupApp />);
 
+      // Switch to Support tab
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Support/i })).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByRole('button', { name: /Support/i }));
+
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Join Discord/i })).toBeInTheDocument();
       });
     });
 
-    test('Join Discord button does NOT render on non-YouTube pages', async () => {
+    test('Join Discord button available from non-YouTube pages via Support tab', async () => {
       mockTabWithUrl('https://www.example.com', 'Example Website');
       render(<PopupApp />);
 
+      // Switch to Support tab
       await waitFor(() => {
-        expect(screen.getByText('No Video Found')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Support/i })).toBeInTheDocument();
       });
+      fireEvent.click(screen.getByRole('button', { name: /Support/i }));
 
-      expect(screen.queryByRole('button', { name: /Join Discord/i })).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Join Discord/i })).toBeInTheDocument();
+      });
     });
 
-    test('Join Discord button shows subtitle text', async () => {
+    test('Support tab shows community section with description', async () => {
       mockTabWithUrl('https://www.youtube.com/watch?v=test', 'Test - YouTube');
       render(<PopupApp />);
 
+      // Switch to Support tab
+      fireEvent.click(screen.getByRole('button', { name: /Support/i }));
+
       await waitFor(() => {
-        expect(screen.getByText('Community Support & Updates')).toBeInTheDocument();
+        expect(screen.getByText('Get help, share creations, and connect with other users')).toBeInTheDocument();
       });
     });
 
     test('clicking Join Discord button opens Discord link', async () => {
       mockTabWithUrl('https://www.youtube.com/watch?v=test', 'Test - YouTube');
       render(<PopupApp />);
+
+      // Switch to Support tab
+      fireEvent.click(screen.getByRole('button', { name: /Support/i }));
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Join Discord/i })).toBeInTheDocument();
@@ -991,6 +1032,9 @@ describe('PopupApp Component', () => {
       mockTabWithUrl('https://www.youtube.com/watch?v=test', 'Test - YouTube');
       render(<PopupApp />);
 
+      // Switch to Support tab
+      fireEvent.click(screen.getByRole('button', { name: /Support/i }));
+
       await waitFor(() => {
         const button = screen.getByRole('button', { name: /Join Discord/i });
         const svg = button.querySelector('svg');
@@ -998,6 +1042,92 @@ describe('PopupApp Component', () => {
         expect(svg).toHaveAttribute('width', '20');
         expect(svg).toHaveAttribute('height', '20');
         expect(svg).toHaveAttribute('fill', 'currentColor');
+      });
+    });
+  });
+
+  describe('Take Survey Button', () => {
+    beforeEach(() => {
+      jest.mocked(mockFeedbackTracker.shouldShowTimeFeedback).mockClear();
+      jest.mocked(mockFeedbackTracker.recordSurveyClicked).mockClear();
+      jest.mocked(mockFeedbackTracker.recordFeedbackShown).mockClear();
+    });
+
+    test('Take Survey button renders in Support tab', async () => {
+      mockTabWithUrl('https://www.youtube.com/watch?v=test', 'Test - YouTube');
+      render(<PopupApp />);
+
+      // Switch to Support tab
+      fireEvent.click(screen.getByRole('button', { name: /Support/i }));
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Take Survey/i })).toBeInTheDocument();
+      });
+    });
+
+    test('clicking Take Survey button opens survey link', async () => {
+      mockTabWithUrl('https://www.youtube.com/watch?v=test', 'Test - YouTube');
+      render(<PopupApp />);
+
+      // Switch to Support tab
+      fireEvent.click(screen.getByRole('button', { name: /Support/i }));
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Take Survey/i })).toBeInTheDocument();
+      });
+
+      const surveyButton = screen.getByRole('button', { name: /Take Survey/i });
+      fireEvent.click(surveyButton);
+
+      await waitFor(() => {
+        expect(links.openExternalLink).toHaveBeenCalledWith('https://forms.gle/mock-survey-id');
+      });
+    });
+
+    test('clicking Take Survey records survey click', async () => {
+      mockTabWithUrl('https://www.youtube.com/watch?v=test', 'Test - YouTube');
+      render(<PopupApp />);
+
+      // Switch to Support tab
+      fireEvent.click(screen.getByRole('button', { name: /Support/i }));
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Take Survey/i })).toBeInTheDocument();
+      });
+
+      const surveyButton = screen.getByRole('button', { name: /Take Survey/i });
+      fireEvent.click(surveyButton);
+
+      await waitFor(() => {
+        expect(mockFeedbackTracker.recordSurveyClicked).toHaveBeenCalled();
+      });
+    });
+
+    test('Take Survey button has correct icon', async () => {
+      mockTabWithUrl('https://www.youtube.com/watch?v=test', 'Test - YouTube');
+      render(<PopupApp />);
+
+      // Switch to Support tab
+      fireEvent.click(screen.getByRole('button', { name: /Support/i }));
+
+      await waitFor(() => {
+        const button = screen.getByRole('button', { name: /Take Survey/i });
+        const svg = button.querySelector('svg');
+        expect(svg).toBeInTheDocument();
+        expect(svg).toHaveAttribute('width', '20');
+        expect(svg).toHaveAttribute('height', '20');
+      });
+    });
+
+    test('Feedback section shows description', async () => {
+      mockTabWithUrl('https://www.youtube.com/watch?v=test', 'Test - YouTube');
+      render(<PopupApp />);
+
+      // Switch to Support tab
+      fireEvent.click(screen.getByRole('button', { name: /Support/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Help shape the future of YTGify')).toBeInTheDocument();
       });
     });
   });

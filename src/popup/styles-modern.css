@@ -489,3 +489,157 @@ body {
   letter-spacing: 0.3px;
   z-index: 10;
 }
+
+/* ========================================
+   Tab Navigation
+   ======================================== */
+
+.popup-tabs {
+  display: flex;
+  gap: 0;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.popup-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  border-bottom: 2px solid transparent;
+}
+
+.popup-tab:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.popup-tab--active {
+  color: white;
+  border-bottom-color: #ff0000;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.popup-tab svg {
+  opacity: 0.7;
+}
+
+.popup-tab--active svg {
+  opacity: 1;
+}
+
+/* ========================================
+   Support Tab Content
+   ======================================== */
+
+.popup-support-content {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.popup-support-section {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.popup-support-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  margin: 0 0 4px 0;
+}
+
+.popup-support-desc {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 12px 0;
+}
+
+.popup-support-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.popup-discord-btn {
+  background: rgba(88, 101, 242, 0.15);
+  border: 1px solid rgba(88, 101, 242, 0.3);
+  color: #7289da;
+}
+
+.popup-discord-btn:hover {
+  background: rgba(88, 101, 242, 0.25);
+  border-color: rgba(88, 101, 242, 0.5);
+}
+
+.popup-survey-btn {
+  background: rgba(153, 102, 204, 0.15);
+  border: 1px solid rgba(153, 102, 204, 0.3);
+  color: #9966cc;
+}
+
+.popup-survey-btn:hover {
+  background: rgba(153, 102, 204, 0.25);
+  border-color: rgba(153, 102, 204, 0.5);
+}
+
+.popup-review-btn {
+  background: rgba(255, 193, 7, 0.15);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  color: #ffc107;
+}
+
+.popup-review-btn:hover {
+  background: rgba(255, 193, 7, 0.25);
+  border-color: rgba(255, 193, 7, 0.5);
+}
+
+/* Feedback Prompt in Support Tab */
+.popup-feedback-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(153, 102, 204, 0.1);
+  border-radius: 4px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.popup-feedback-dismiss {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+  line-height: 1;
+}
+
+.popup-feedback-dismiss:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
