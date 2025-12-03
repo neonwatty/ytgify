@@ -21,5 +21,5 @@ export function getReviewLink(): string {
 
 // Helper to get Discord invite link
 export function getDiscordLink(): string {
-  return 'https://discord.gg/8EUxqR93';
+  return 'https://discord.gg/BC2Kn9Ne';
 }
