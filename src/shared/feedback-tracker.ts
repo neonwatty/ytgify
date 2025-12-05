@@ -1,4 +1,4 @@
-import { FeedbackData, FeatureVote, FeedbackSubmission } from '@/types/storage';
+import { FeedbackData } from '@/types/storage';
 
 const FEEDBACK_STORAGE_KEY = 'feedback-data';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -47,7 +47,7 @@ class FeedbackTracker {
       lastFeedbackPromptAt: null,
       feedbackCompletedAt: null,
       surveyLinkClickedAt: null,
-      submissions: [],
+      permanentlyDismissed: false,
       milestoneFeedbackShown: {
         milestone10: false,
         milestone25: false,
@@ -64,6 +64,9 @@ class FeedbackTracker {
   async shouldShowMilestoneFeedback(count: 10 | 25 | 50): Promise<boolean> {
     const data = await this.getStorageData();
 
+    // Don't show if permanently dismissed
+    if (data.permanentlyDismissed) return false;
+
     // Don't show if already completed feedback
     if (data.feedbackCompletedAt) return false;
 
@@ -76,6 +79,9 @@ class FeedbackTracker {
    */
   async shouldShowTimeFeedback(): Promise<boolean> {
     const data = await this.getStorageData();
+
+    // Don't show if permanently dismissed
+    if (data.permanentlyDismissed) return false;
 
     // Don't show if already completed feedback
     if (data.feedbackCompletedAt) return false;
@@ -102,6 +108,9 @@ class FeedbackTracker {
    */
   async shouldShowPostSuccessFeedback(): Promise<boolean> {
     const data = await this.getStorageData();
+
+    // Don't show if permanently dismissed
+    if (data.permanentlyDismissed) return false;
 
     // Don't show if already completed feedback
     if (data.feedbackCompletedAt) return false;
@@ -144,26 +153,11 @@ class FeedbackTracker {
   }
 
   /**
-   * Record that user submitted feedback
+   * Record that user permanently dismissed feedback prompts
    */
-  async recordFeedbackSubmitted(
-    votes: FeatureVote[],
-    suggestion?: string,
-    surveyClicked = false
-  ): Promise<void> {
+  async recordPermanentDismiss(): Promise<void> {
     const data = await this.getStorageData();
-
-    const submission: FeedbackSubmission = {
-      id: `feedback-${Date.now()}`,
-      timestamp: Date.now(),
-      featureVotes: votes,
-      suggestion,
-      surveyClicked,
-    };
-
-    data.submissions.push(submission);
-    data.feedbackCompletedAt = Date.now();
-
+    data.permanentlyDismissed = true;
     await this.setStorageData(data);
   }
 

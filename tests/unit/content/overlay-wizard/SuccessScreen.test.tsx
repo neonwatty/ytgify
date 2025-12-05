@@ -5,6 +5,7 @@ import { jest } from '@jest/globals';
 import SuccessScreen from '../../../../src/content/overlay-wizard/screens/SuccessScreen';
 import * as links from '../../../../src/constants/links';
 import * as engagementTrackerModule from '../../../../src/shared/engagement-tracker';
+import * as feedbackTrackerModule from '../../../../src/shared/feedback-tracker';
 
 // Mock dependencies
 jest.mock('../../../../src/constants/links', () => ({
@@ -19,6 +20,19 @@ jest.mock('../../../../src/shared/engagement-tracker', () => ({
     shouldShowPrompt: jest.fn(),
     recordDismissal: jest.fn(),
   },
+}));
+
+jest.mock('../../../../src/shared/feedback-tracker', () => ({
+  feedbackTracker: {
+    shouldShowPostSuccessFeedback: jest.fn(),
+    recordFeedbackShown: jest.fn(),
+    recordSurveyClicked: jest.fn(),
+    recordPermanentDismiss: jest.fn(),
+  },
+}));
+
+jest.mock('../../../../src/constants/features', () => ({
+  EXTERNAL_SURVEY_URL: 'https://forms.gle/test-survey-id',
 }));
 
 describe('SuccessScreen', () => {
@@ -41,6 +55,7 @@ describe('SuccessScreen', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useFakeTimers();
 
     // Default mock implementation - footer hidden (not qualified)
     const mockEngagementTracker = engagementTrackerModule.engagementTracker as any;
@@ -50,6 +65,17 @@ describe('SuccessScreen', () => {
     });
     mockEngagementTracker.shouldShowPrompt.mockResolvedValue(false);
     mockEngagementTracker.recordDismissal.mockResolvedValue(undefined);
+
+    // Default mock implementation - feedback modal hidden
+    const mockFeedbackTracker = feedbackTrackerModule.feedbackTracker as any;
+    mockFeedbackTracker.shouldShowPostSuccessFeedback.mockResolvedValue(false);
+    mockFeedbackTracker.recordFeedbackShown.mockResolvedValue(undefined);
+    mockFeedbackTracker.recordSurveyClicked.mockResolvedValue(undefined);
+    mockFeedbackTracker.recordPermanentDismiss.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   describe('Basic Rendering & UI Elements', () => {
@@ -1153,6 +1179,118 @@ describe('SuccessScreen', () => {
       await waitFor(() => {
         expect(screen.queryByText('Leave us a review!')).not.toBeInTheDocument();
       });
+    });
+  });
+
+  describe('Feedback Modal', () => {
+    beforeEach(() => {
+      // Use real timers for feedback modal tests since they involve complex async behavior
+      jest.useRealTimers();
+    });
+
+    afterEach(() => {
+      jest.useFakeTimers();
+    });
+
+    it('should show feedback modal when shouldShowPostSuccessFeedback returns true', async () => {
+      const mockFeedbackTracker = feedbackTrackerModule.feedbackTracker as any;
+      mockFeedbackTracker.shouldShowPostSuccessFeedback.mockResolvedValue(true);
+
+      render(<SuccessScreen {...defaultProps} />);
+
+      // Wait for the 2 second delay + async operations
+      await waitFor(
+        () => {
+          expect(screen.getByText('Help us improve YTGify')).toBeInTheDocument();
+        },
+        { timeout: 3000 }
+      );
+
+      expect(mockFeedbackTracker.recordFeedbackShown).toHaveBeenCalledWith('post-success');
+    });
+
+    it('should not show feedback modal when shouldShowPostSuccessFeedback returns false', async () => {
+      const mockFeedbackTracker = feedbackTrackerModule.feedbackTracker as any;
+      mockFeedbackTracker.shouldShowPostSuccessFeedback.mockResolvedValue(false);
+
+      render(<SuccessScreen {...defaultProps} />);
+
+      // Wait a bit and verify modal never appears
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      expect(screen.queryByText('Help us improve YTGify')).not.toBeInTheDocument();
+      expect(mockFeedbackTracker.recordFeedbackShown).not.toHaveBeenCalled();
+    });
+
+    it('should close feedback modal when Take Survey is clicked', async () => {
+      const mockFeedbackTracker = feedbackTrackerModule.feedbackTracker as any;
+      mockFeedbackTracker.shouldShowPostSuccessFeedback.mockResolvedValue(true);
+
+      render(<SuccessScreen {...defaultProps} />);
+
+      await waitFor(
+        () => {
+          expect(screen.getByText('Help us improve YTGify')).toBeInTheDocument();
+        },
+        { timeout: 3000 }
+      );
+
+      const surveyButton = screen.getByText('Take Survey');
+      fireEvent.click(surveyButton);
+
+      await waitFor(() => {
+        expect(screen.queryByText('Help us improve YTGify')).not.toBeInTheDocument();
+      });
+
+      expect(mockFeedbackTracker.recordSurveyClicked).toHaveBeenCalled();
+      expect(links.openExternalLink).toHaveBeenCalledWith('https://forms.gle/test-survey-id');
+    });
+
+    it('should close feedback modal and record permanent dismiss when Dont show again is clicked', async () => {
+      const mockFeedbackTracker = feedbackTrackerModule.feedbackTracker as any;
+      mockFeedbackTracker.shouldShowPostSuccessFeedback.mockResolvedValue(true);
+
+      render(<SuccessScreen {...defaultProps} />);
+
+      await waitFor(
+        () => {
+          expect(screen.getByText('Help us improve YTGify')).toBeInTheDocument();
+        },
+        { timeout: 3000 }
+      );
+
+      const dismissButton = screen.getByText("Don't show again");
+      fireEvent.click(dismissButton);
+
+      await waitFor(() => {
+        expect(screen.queryByText('Help us improve YTGify')).not.toBeInTheDocument();
+      });
+
+      expect(mockFeedbackTracker.recordPermanentDismiss).toHaveBeenCalled();
+    });
+
+    it('should close feedback modal when X button is clicked (temporary dismiss)', async () => {
+      const mockFeedbackTracker = feedbackTrackerModule.feedbackTracker as any;
+      mockFeedbackTracker.shouldShowPostSuccessFeedback.mockResolvedValue(true);
+
+      render(<SuccessScreen {...defaultProps} />);
+
+      await waitFor(
+        () => {
+          expect(screen.getByText('Help us improve YTGify')).toBeInTheDocument();
+        },
+        { timeout: 3000 }
+      );
+
+      const closeButton = screen.getByLabelText('Close');
+      fireEvent.click(closeButton);
+
+      await waitFor(() => {
+        expect(screen.queryByText('Help us improve YTGify')).not.toBeInTheDocument();
+      });
+
+      // Permanent dismiss should NOT be called for X button
+      expect(mockFeedbackTracker.recordPermanentDismiss).not.toHaveBeenCalled();
     });
   });
 });

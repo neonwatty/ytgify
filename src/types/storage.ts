@@ -82,34 +82,12 @@ export interface EngagementData {
   popupFooterDismissed: boolean;
 }
 
-// Feature voting types for user feedback
-export interface ProposedFeature {
-  id: string;
-  name: string;
-  description: string;
-  category: 'sharing' | 'storage' | 'community' | 'other';
-}
-
-export interface FeatureVote {
-  featureId: string;
-  vote: 'up' | 'down' | null;
-  votedAt: number;
-}
-
-export interface FeedbackSubmission {
-  id: string;
-  timestamp: number;
-  featureVotes: FeatureVote[];
-  suggestion?: string;
-  surveyClicked: boolean;
-}
-
 export interface FeedbackData {
   firstGifCreatedAt: number | null;
   lastFeedbackPromptAt: number | null;
   feedbackCompletedAt: number | null;
   surveyLinkClickedAt: number | null;
-  submissions: FeedbackSubmission[];
+  permanentlyDismissed: boolean;
   milestoneFeedbackShown: {
     milestone10: boolean;
     milestone25: boolean;
