@@ -26,7 +26,7 @@ export default function Home() {
 
           {/* Large headline */}
           <h1 className="text-3xl sm:text-4xl font-bold mb-8 leading-tight text-white tracking-tight">
-            Animated GIF Maker for YouTube Videos
+            YouTube to GIF Converter - No Watermark
           </h1>
 
           {/* Description and Example GIFs - Two Column Layout */}

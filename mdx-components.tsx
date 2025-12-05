@@ -1,7 +1,11 @@
 import type { MDXComponents } from 'mdx/types';
+import ImageCarousel from '@/app/components/blog/ImageCarousel';
+import DemoVideo from '@/app/components/DemoVideo';
 
 export function useMDXComponents(components: MDXComponents): MDXComponents {
   return {
+    ImageCarousel,
+    DemoVideo,
     h1: ({ children }) => (
       <h1 className="text-3xl font-bold mb-6 text-white">{children}</h1>
     ),
