@@ -1,77 +1,34 @@
-import React, { useState } from 'react';
-import { FeatureVote } from '@/types/storage';
-import { PROPOSED_FEATURES, EXTERNAL_SURVEY_URL } from '@/constants/features';
+import React from 'react';
+import { EXTERNAL_SURVEY_URL } from '@/constants/features';
 import { openExternalLink } from '@/constants/links';
 import { feedbackTracker } from '@/shared/feedback-tracker';
-import FeatureVoteCard from './FeatureVoteCard';
 
 interface FeedbackModalProps {
-  trigger: 'milestone' | 'time' | 'post-success';
-  milestoneCount?: 10 | 25 | 50;
   onClose: () => void;
-  onSubmit: () => void;
+  onPermanentDismiss: () => void;
 }
 
 const FeedbackModal: React.FC<FeedbackModalProps> = ({
-  trigger,
-  milestoneCount,
   onClose,
-  onSubmit,
+  onPermanentDismiss,
 }) => {
-  const [votes, setVotes] = useState<Record<string, 'up' | 'down' | null>>({});
-  const [suggestion, setSuggestion] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const getHeaderText = () => {
-    if (trigger === 'milestone' && milestoneCount) {
-      return `You've created ${milestoneCount} GIFs!`;
-    }
-    if (trigger === 'time') {
-      return 'Thanks for using YTGify!';
-    }
-    return 'Nice GIF!';
-  };
-
-  const handleVote = (featureId: string, vote: 'up' | 'down' | null) => {
-    setVotes((prev) => ({ ...prev, [featureId]: vote }));
-  };
-
-  const handleSurveyClick = async () => {
+  const handleTakeSurvey = async () => {
     await feedbackTracker.recordSurveyClicked();
     openExternalLink(EXTERNAL_SURVEY_URL);
-  };
-
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-
-    const featureVotes: FeatureVote[] = Object.entries(votes)
-      .filter(([, vote]) => vote !== null)
-      .map(([featureId, vote]) => ({
-        featureId,
-        vote: vote!,
-        votedAt: Date.now(),
-      }));
-
-    await feedbackTracker.recordFeedbackSubmitted(
-      featureVotes,
-      suggestion || undefined,
-      false
-    );
-
-    setIsSubmitting(false);
-    onSubmit();
-  };
-
-  const handleDismiss = async () => {
     onClose();
+  };
+
+  const handleDontShowAgain = async () => {
+    await feedbackTracker.recordPermanentDismiss();
+    onPermanentDismiss();
   };
 
   return (
     <div className="ytgif-feedback-overlay">
-      <div className="ytgif-feedback-modal">
+      <div className="ytgif-feedback-modal ytgif-feedback-modal--simple">
         <button
           className="ytgif-feedback-close"
-          onClick={handleDismiss}
+          onClick={onClose}
           aria-label="Close"
           type="button"
         >
@@ -95,40 +52,16 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
               />
             </svg>
           </div>
-          <h2>{getHeaderText()}</h2>
-          <p className="ytgif-feedback-subtitle">Help us improve YTGify</p>
+          <h2>Help us improve YTGify</h2>
+          <p className="ytgif-feedback-subtitle">
+            Your feedback helps shape future features
+          </p>
         </div>
 
-        <div className="ytgif-feedback-content">
-          <h3 className="ytgif-feedback-section-title">
-            Vote for features you&apos;d like:
-          </h3>
-          <div className="ytgif-feature-list">
-            {PROPOSED_FEATURES.map((feature) => (
-              <FeatureVoteCard
-                key={feature.id}
-                feature={feature}
-                currentVote={votes[feature.id] || null}
-                onVote={(vote) => handleVote(feature.id, vote)}
-              />
-            ))}
-          </div>
-
-          <div className="ytgif-feedback-suggestion">
-            <label htmlFor="ytgif-suggestion">Have another idea?</label>
-            <textarea
-              id="ytgif-suggestion"
-              placeholder="Tell us what feature would make YTGify better..."
-              value={suggestion}
-              onChange={(e) => setSuggestion(e.target.value)}
-              rows={3}
-              maxLength={500}
-            />
-          </div>
-
+        <div className="ytgif-feedback-actions">
           <button
-            className="ytgif-feedback-survey-link"
-            onClick={handleSurveyClick}
+            className="ytgif-button-primary"
+            onClick={handleTakeSurvey}
             type="button"
           >
             <svg
@@ -145,25 +78,14 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
                 d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
               />
             </svg>
-            Take detailed survey
-          </button>
-        </div>
-
-        <div className="ytgif-feedback-actions">
-          <button
-            className="ytgif-button-secondary"
-            onClick={handleDismiss}
-            type="button"
-          >
-            Maybe Later
+            Take Survey
           </button>
           <button
-            className="ytgif-button-primary"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
+            className="ytgif-button-tertiary"
+            onClick={handleDontShowAgain}
             type="button"
           >
-            {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+            Don&apos;t show again
           </button>
         </div>
       </div>

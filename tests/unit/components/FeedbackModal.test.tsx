@@ -6,22 +6,9 @@ import FeedbackModal from '../../../src/content/overlay-wizard/components/Feedba
 // Mock CSS imports
 jest.mock('../../../src/content/wizard-styles.css', () => ({}));
 
-// Mock features module with test data
-const mockFeatures = [
-  { id: 'cloud-storage', name: 'Save to Cloud', description: 'Store your GIFs in cloud storage', category: 'storage' },
-  { id: 'community-gallery', name: 'Community Gallery', description: 'Browse and discover GIFs', category: 'community' },
-  { id: 'slack-integration', name: 'Slack Integration', description: 'Share GIFs to Slack', category: 'sharing' },
-  { id: 'discord-integration', name: 'Discord Integration', description: 'Share GIFs to Discord', category: 'sharing' },
-];
-
+// Mock features module
 jest.mock('../../../src/constants/features', () => ({
   EXTERNAL_SURVEY_URL: 'https://forms.gle/mock-survey-id',
-  PROPOSED_FEATURES: [
-    { id: 'cloud-storage', name: 'Save to Cloud', description: 'Store your GIFs in cloud storage', category: 'storage' },
-    { id: 'community-gallery', name: 'Community Gallery', description: 'Browse and discover GIFs', category: 'community' },
-    { id: 'slack-integration', name: 'Slack Integration', description: 'Share GIFs to Slack', category: 'sharing' },
-    { id: 'discord-integration', name: 'Discord Integration', description: 'Share GIFs to Discord', category: 'sharing' },
-  ],
 }));
 
 // Mock links module
@@ -32,81 +19,46 @@ jest.mock('../../../src/constants/links', () => ({
 
 // Mock feedback tracker
 const mockRecordSurveyClicked = jest.fn().mockResolvedValue(undefined);
-const mockRecordFeedbackSubmitted = jest.fn().mockResolvedValue(undefined);
+const mockRecordPermanentDismiss = jest.fn().mockResolvedValue(undefined);
 jest.mock('../../../src/shared/feedback-tracker', () => ({
   feedbackTracker: {
     recordSurveyClicked: () => mockRecordSurveyClicked(),
-    recordFeedbackSubmitted: (votes: unknown, suggestion: unknown, surveyClicked: unknown) =>
-      mockRecordFeedbackSubmitted(votes, suggestion, surveyClicked),
+    recordPermanentDismiss: () => mockRecordPermanentDismiss(),
   },
 }));
 
 describe('FeedbackModal Component', () => {
   const defaultProps = {
-    trigger: 'post-success' as const,
     onClose: jest.fn(),
-    onSubmit: jest.fn(),
+    onPermanentDismiss: jest.fn(),
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('Header Text', () => {
-    test('displays milestone header for milestone trigger', () => {
-      render(<FeedbackModal {...defaultProps} trigger="milestone" milestoneCount={10} />);
-      expect(screen.getByText("You've created 10 GIFs!")).toBeInTheDocument();
+  describe('Header and Content', () => {
+    test('displays header text', () => {
+      render(<FeedbackModal {...defaultProps} />);
+      expect(screen.getByText('Help us improve YTGify')).toBeInTheDocument();
     });
 
-    test('displays milestone header for 25 GIFs', () => {
-      render(<FeedbackModal {...defaultProps} trigger="milestone" milestoneCount={25} />);
-      expect(screen.getByText("You've created 25 GIFs!")).toBeInTheDocument();
-    });
-
-    test('displays milestone header for 50 GIFs', () => {
-      render(<FeedbackModal {...defaultProps} trigger="milestone" milestoneCount={50} />);
-      expect(screen.getByText("You've created 50 GIFs!")).toBeInTheDocument();
-    });
-
-    test('displays time-based header for time trigger', () => {
-      render(<FeedbackModal {...defaultProps} trigger="time" />);
-      expect(screen.getByText('Thanks for using YTGify!')).toBeInTheDocument();
-    });
-
-    test('displays post-success header for post-success trigger', () => {
-      render(<FeedbackModal {...defaultProps} trigger="post-success" />);
-      expect(screen.getByText('Nice GIF!')).toBeInTheDocument();
+    test('displays subtitle', () => {
+      render(<FeedbackModal {...defaultProps} />);
+      expect(screen.getByText('Your feedback helps shape future features')).toBeInTheDocument();
     });
   });
 
-  describe('Feature Vote Cards', () => {
-    test('renders all 4 proposed features', () => {
+  describe('Take Survey Button', () => {
+    test('renders Take Survey button', () => {
       render(<FeedbackModal {...defaultProps} />);
-
-      expect(screen.getByText('Save to Cloud')).toBeInTheDocument();
-      expect(screen.getByText('Community Gallery')).toBeInTheDocument();
-      expect(screen.getByText('Slack Integration')).toBeInTheDocument();
-      expect(screen.getByText('Discord Integration')).toBeInTheDocument();
+      expect(screen.getByText('Take Survey')).toBeInTheDocument();
     });
 
-    test('renders feature descriptions', () => {
+    test('clicking Take Survey opens external URL', async () => {
       render(<FeedbackModal {...defaultProps} />);
 
-      expect(screen.getByText('Store your GIFs in cloud storage')).toBeInTheDocument();
-      expect(screen.getByText('Browse and discover GIFs')).toBeInTheDocument();
-    });
-  });
-
-  describe('Survey Link', () => {
-    test('renders Take detailed survey button', () => {
-      render(<FeedbackModal {...defaultProps} />);
-      expect(screen.getByText('Take detailed survey')).toBeInTheDocument();
-    });
-
-    test('clicking survey link opens external URL', async () => {
-      render(<FeedbackModal {...defaultProps} />);
-
-      const surveyButton = screen.getByText('Take detailed survey');
+      const surveyButton = screen.getByText('Take Survey');
       fireEvent.click(surveyButton);
 
       await waitFor(() => {
@@ -114,57 +66,41 @@ describe('FeedbackModal Component', () => {
       });
     });
 
-    test('clicking survey link records click', async () => {
-      render(<FeedbackModal {...defaultProps} />);
+    test('clicking Take Survey records click and closes modal', async () => {
+      const onClose = jest.fn();
+      render(<FeedbackModal {...defaultProps} onClose={onClose} />);
 
-      const surveyButton = screen.getByText('Take detailed survey');
+      const surveyButton = screen.getByText('Take Survey');
       fireEvent.click(surveyButton);
 
       await waitFor(() => {
         expect(mockRecordSurveyClicked).toHaveBeenCalled();
+        expect(onClose).toHaveBeenCalled();
       });
     });
   });
 
-  describe('Suggestion Textarea', () => {
-    test('renders suggestion textarea with label', () => {
+  describe('Dont Show Again Button', () => {
+    test('renders Dont show again button', () => {
       render(<FeedbackModal {...defaultProps} />);
-
-      expect(screen.getByText('Have another idea?')).toBeInTheDocument();
-      expect(screen.getByPlaceholderText('Tell us what feature would make YTGify better...')).toBeInTheDocument();
+      expect(screen.getByText("Don't show again")).toBeInTheDocument();
     });
 
-    test('captures suggestion input', () => {
-      render(<FeedbackModal {...defaultProps} />);
+    test('clicking Dont show again records permanent dismiss', async () => {
+      const onPermanentDismiss = jest.fn();
+      render(<FeedbackModal {...defaultProps} onPermanentDismiss={onPermanentDismiss} />);
 
-      const textarea = screen.getByPlaceholderText('Tell us what feature would make YTGify better...');
-      fireEvent.change(textarea, { target: { value: 'Add GIF editing features' } });
+      const dismissButton = screen.getByText("Don't show again");
+      fireEvent.click(dismissButton);
 
-      expect(textarea).toHaveValue('Add GIF editing features');
+      await waitFor(() => {
+        expect(mockRecordPermanentDismiss).toHaveBeenCalled();
+        expect(onPermanentDismiss).toHaveBeenCalled();
+      });
     });
   });
 
-  describe('Action Buttons', () => {
-    test('renders Maybe Later button', () => {
-      render(<FeedbackModal {...defaultProps} />);
-      expect(screen.getByText('Maybe Later')).toBeInTheDocument();
-    });
-
-    test('renders Submit Feedback button', () => {
-      render(<FeedbackModal {...defaultProps} />);
-      expect(screen.getByText('Submit Feedback')).toBeInTheDocument();
-    });
-
-    test('clicking Maybe Later calls onClose', () => {
-      const onClose = jest.fn();
-      render(<FeedbackModal {...defaultProps} onClose={onClose} />);
-
-      const maybeLaterButton = screen.getByText('Maybe Later');
-      fireEvent.click(maybeLaterButton);
-
-      expect(onClose).toHaveBeenCalled();
-    });
-
+  describe('Close Button', () => {
     test('clicking close button calls onClose', () => {
       const onClose = jest.fn();
       render(<FeedbackModal {...defaultProps} onClose={onClose} />);
@@ -173,43 +109,6 @@ describe('FeedbackModal Component', () => {
       fireEvent.click(closeButton);
 
       expect(onClose).toHaveBeenCalled();
-    });
-
-    test('clicking Submit Feedback calls onSubmit after recording', async () => {
-      const onSubmit = jest.fn();
-      render(<FeedbackModal {...defaultProps} onSubmit={onSubmit} />);
-
-      const submitButton = screen.getByText('Submit Feedback');
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(mockRecordFeedbackSubmitted).toHaveBeenCalled();
-        expect(onSubmit).toHaveBeenCalled();
-      });
-    });
-
-    test('submit button shows loading state while submitting', async () => {
-      render(<FeedbackModal {...defaultProps} />);
-
-      const submitButton = screen.getByText('Submit Feedback');
-      fireEvent.click(submitButton);
-
-      // Button should be disabled during submission
-      await waitFor(() => {
-        expect(submitButton).toBeDisabled();
-      });
-    });
-  });
-
-  describe('Subtitle and Structure', () => {
-    test('renders help subtitle', () => {
-      render(<FeedbackModal {...defaultProps} />);
-      expect(screen.getByText('Help us improve YTGify')).toBeInTheDocument();
-    });
-
-    test('renders vote section title', () => {
-      render(<FeedbackModal {...defaultProps} />);
-      expect(screen.getByText("Vote for features you'd like:")).toBeInTheDocument();
     });
   });
 });

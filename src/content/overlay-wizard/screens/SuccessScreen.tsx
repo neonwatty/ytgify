@@ -28,10 +28,6 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
 }) => {
   const [showFooter, setShowFooter] = React.useState(false);
   const [showFeedback, setShowFeedback] = React.useState(false);
-  const [feedbackTrigger, setFeedbackTrigger] = React.useState<{
-    type: 'milestone' | 'post-success';
-    milestoneCount?: 10 | 25 | 50;
-  } | null>(null);
 
   // Check footer qualification on mount
   React.useEffect(() => {
@@ -56,7 +52,6 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
         if (shouldShow) {
           // Delay showing feedback modal to not interrupt download flow
           setTimeout(() => {
-            setFeedbackTrigger({ type: 'post-success' });
             setShowFeedback(true);
             feedbackTracker.recordFeedbackShown('post-success');
           }, 2000);
@@ -175,12 +170,10 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
       )}
 
       {/* Feedback Modal */}
-      {showFeedback && feedbackTrigger && (
+      {showFeedback && (
         <FeedbackModal
-          trigger={feedbackTrigger.type}
-          milestoneCount={feedbackTrigger.milestoneCount}
           onClose={() => setShowFeedback(false)}
-          onSubmit={() => setShowFeedback(false)}
+          onPermanentDismiss={() => setShowFeedback(false)}
         />
       )}
     </div>
