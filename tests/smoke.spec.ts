@@ -9,7 +9,7 @@ test.describe('Landing Page Smoke Tests', () => {
 
   test('headline is visible', async ({ page }) => {
     await page.goto('/');
-    const headline = page.getByRole('heading', { name: /Animated GIF Maker for YouTube Videos/i });
+    const headline = page.getByRole('heading', { name: /YouTube to GIF Converter/i });
     await expect(headline).toBeVisible();
   });
 
