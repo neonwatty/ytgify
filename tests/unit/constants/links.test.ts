@@ -36,7 +36,7 @@ describe('External Links', () => {
   describe('getDiscordLink', () => {
     it('should return the Discord invite URL', () => {
       const link = getDiscordLink();
-      expect(link).toBe('https://discord.gg/BC2Kn9Ne');
+      expect(link).toBe('https://discord.gg/ufrycqwb4R');
     });
 
     it('should return a valid Discord invite link format', () => {
