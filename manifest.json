@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "YTgify",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "description": "Turn your favorite YouTube moments into shareable GIFs.",
   "author": "Jeremy Watt",
   "homepage_url": "https://github.com/neonwatty/ytgify",
