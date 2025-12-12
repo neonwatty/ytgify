@@ -711,4 +711,54 @@ test.describe('Mock E2E: Basic Wizard Tests', () => {
 
     console.log('✅ [Mock Test] Slider value correctly synchronized with actual duration!');
   });
+
+  test('Wizard opens at current video time when user has seeked', async ({ page, mockServerUrl }) => {
+    test.setTimeout(60000);
+
+    const youtube = new YouTubePage(page);
+    const quickCapture = new QuickCapturePage(page);
+
+    // Use medium video (30s) to have room for seeking
+    await youtube.navigateToVideo(getMockVideoUrl('medium', mockServerUrl));
+    console.log('[Mock Test] Navigated to medium video (30s)');
+
+    // Seek video to 10 seconds
+    const seekTime = 10;
+    await youtube.seekToTime(seekTime);
+    await page.waitForTimeout(500);
+
+    // Verify seek worked
+    const currentTime = await youtube.getCurrentTime();
+    console.log(`[Mock Test] Video current time after seek: ${currentTime}s`);
+    expect(currentTime).toBeGreaterThanOrEqual(seekTime - 1);
+    expect(currentTime).toBeLessThanOrEqual(seekTime + 1);
+
+    // Open the wizard
+    console.log('[Mock Test] Opening wizard...');
+    await youtube.openGifWizard();
+    await quickCapture.waitForScreen();
+
+    // Get the timeline selection label which shows the start/end times
+    // Format: "0:10 - 0:15" (MM:SS - MM:SS)
+    const selectionLabel = await page.locator('.ytgif-label-selection').textContent();
+    console.log(`[Mock Test] Timeline selection label: ${selectionLabel}`);
+
+    expect(selectionLabel).toBeTruthy();
+
+    // Parse the time display to verify (format: "0:10 - 0:15")
+    const match = selectionLabel!.match(/(\d+):(\d+)\s*-\s*(\d+):(\d+)/);
+    expect(match).toBeTruthy();
+
+    const startMinutes = parseInt(match![1]);
+    const startSeconds = parseInt(match![2]);
+    const totalStartSeconds = startMinutes * 60 + startSeconds;
+
+    console.log(`[Mock Test] Wizard start time: ${totalStartSeconds}s (expected ~${seekTime}s)`);
+
+    // Verify start time is near the seek position (within 2 second tolerance)
+    expect(totalStartSeconds).toBeGreaterThanOrEqual(seekTime - 2);
+    expect(totalStartSeconds).toBeLessThanOrEqual(seekTime + 2);
+
+    console.log('✅ [Mock Test] Wizard opened at correct video seek position!');
+  });
 });
