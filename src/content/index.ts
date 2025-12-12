@@ -287,9 +287,19 @@ class YouTubeGifMaker {
         this.log('debug', `[Content] Received message: ${message.type}`, { message });
 
         switch (message.type) {
-          case 'SHOW_TIMELINE':
-            this.showTimelineOverlay(message as ShowTimelineRequest);
+          case 'SHOW_TIMELINE': {
+            // Get actual video state to override placeholder values from popup
+            const videoState = this.getCurrentVideoState();
+            const updatedMessage: ShowTimelineRequest = {
+              type: 'SHOW_TIMELINE',
+              data: {
+                videoDuration: videoState?.duration || (message as ShowTimelineRequest).data.videoDuration,
+                currentTime: videoState?.currentTime ?? (message as ShowTimelineRequest).data.currentTime,
+              },
+            };
+            this.showTimelineOverlay(updatedMessage);
             break;
+          }
           case 'SHOW_WIZARD_DIRECT':
             // Handle direct wizard activation from extension icon
 
@@ -1537,15 +1547,25 @@ class YouTubeGifMaker {
         const apiState = youTubeAPI.getPlayerState();
 
         if (apiDuration > 0 && !isNaN(apiCurrentTime) && !isNaN(apiDuration)) {
-          return {
-            isPlaying: apiState === YouTubeAPIIntegration.PlayerState.PLAYING,
-            currentTime: apiCurrentTime,
-            duration: apiDuration,
-            videoUrl: window.location.href,
-            title: document.title,
-            playerState: apiState,
-            source: 'youtube-api',
-          };
+          // Sanity check: if API returns 0 but video element has different time, prefer video element
+          const videoElementTime = this.videoElement?.currentTime;
+          if (apiCurrentTime === 0 && videoElementTime && videoElementTime > 0.5) {
+            this.log('debug', '[Content] API returned 0 but video element has time, using video element', {
+              apiCurrentTime,
+              videoElementTime,
+            });
+            // Fall through to video element fallback
+          } else {
+            return {
+              isPlaying: apiState === YouTubeAPIIntegration.PlayerState.PLAYING,
+              currentTime: apiCurrentTime,
+              duration: apiDuration,
+              videoUrl: window.location.href,
+              title: document.title,
+              playerState: apiState,
+              source: 'youtube-api',
+            };
+          }
         }
       } catch (error) {
         this.log('warn', '[Content] YouTube API error, falling back to video element', { error });

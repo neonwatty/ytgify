@@ -30,12 +30,25 @@ const QuickCaptureScreen: React.FC<QuickCaptureScreenProps> = ({
   const [startTime, setStartTime] = useState(initialStartTime);
   const [endTime, setEndTime] = useState(initialEndTime);
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
+  const [previewTime, setPreviewTime] = useState(initialStartTime);
+
+  // Sync state when initial props change (handles delayed initialization from parent useEffect)
+  const prevInitialStartRef = React.useRef(initialStartTime);
+  const prevInitialEndRef = React.useRef(initialEndTime);
+  React.useEffect(() => {
+    if (prevInitialStartRef.current !== initialStartTime || prevInitialEndRef.current !== initialEndTime) {
+      setStartTime(initialStartTime);
+      setEndTime(initialEndTime);
+      setPreviewTime(initialStartTime);
+      prevInitialStartRef.current = initialStartTime;
+      prevInitialEndRef.current = initialEndTime;
+    }
+  }, [initialStartTime, initialEndTime]);
 
   // Debug state changes
   React.useEffect(() => {
     console.log('[QuickCaptureScreen] Preview playing state changed:', isPreviewPlaying);
   }, [isPreviewPlaying]);
-  const [previewTime, setPreviewTime] = useState(startTime);
   const [selectedFrameRate, setSelectedFrameRate] = useState(initialFrameRate || 5); // Default to 5 fps
   const [selectedResolution, setSelectedResolution] = useState(initialResolution || '144p'); // Default to 144p for smallest file size
 

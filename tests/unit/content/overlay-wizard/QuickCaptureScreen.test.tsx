@@ -977,6 +977,116 @@ describe('QuickCaptureScreen', () => {
     });
   });
 
+  describe('Prop Synchronization', () => {
+    it('should sync state when initialStartTime and initialEndTime props change after mount', () => {
+      // This tests the fix for when the parent component initializes with 0
+      // then updates with the actual video time via useEffect
+      const { rerender } = render(
+        <QuickCaptureScreen
+          {...defaultProps}
+          startTime={0}
+          endTime={5}
+          videoElement={mockVideoElement}
+        />
+      );
+
+      // Initial render should have startTime=0
+      expect(VideoPreview).toHaveBeenCalledWith(
+        expect.objectContaining({
+          startTime: 0,
+          endTime: 5,
+        }),
+        {}
+      );
+
+      // Clear mock calls
+      MockVideoPreview.mockClear();
+
+      // Parent updates props with actual video time (simulating delayed initialization)
+      rerender(
+        <QuickCaptureScreen
+          {...defaultProps}
+          startTime={33}
+          endTime={38}
+          videoElement={mockVideoElement}
+        />
+      );
+
+      // State should sync to new prop values
+      expect(VideoPreview).toHaveBeenCalledWith(
+        expect.objectContaining({
+          startTime: 33,
+          endTime: 38,
+        }),
+        {}
+      );
+    });
+
+    it('should pass synced start time to onConfirm after props update', () => {
+      const { rerender } = render(
+        <QuickCaptureScreen
+          {...defaultProps}
+          startTime={0}
+          endTime={5}
+          videoElement={mockVideoElement}
+        />
+      );
+
+      // Update props to simulate delayed initialization
+      rerender(
+        <QuickCaptureScreen
+          {...defaultProps}
+          startTime={45}
+          endTime={50}
+          videoElement={mockVideoElement}
+        />
+      );
+
+      // Click confirm
+      const confirmButton = screen.getByText(/Continue to Customize/);
+      fireEvent.click(confirmButton);
+
+      // Should use the updated values, not the initial 0
+      expect(mockOnConfirm).toHaveBeenCalledWith(45, 50, 5, '144p');
+    });
+
+    it('should not re-sync if props have not changed', () => {
+      const { rerender } = render(
+        <QuickCaptureScreen
+          {...defaultProps}
+          startTime={10}
+          endTime={20}
+          videoElement={mockVideoElement}
+        />
+      );
+
+      // Change internal state via timeline interaction
+      const rangeBtn = screen.getByTestId('timeline-range-btn');
+      fireEvent.click(rangeBtn); // Sets to 5, 15
+
+      MockVideoPreview.mockClear();
+
+      // Re-render with same initial props
+      rerender(
+        <QuickCaptureScreen
+          {...defaultProps}
+          startTime={10}
+          endTime={20}
+          videoElement={mockVideoElement}
+        />
+      );
+
+      // Internal state should remain at user-modified values (5, 15), not reset to props
+      expect(VideoPreview).toHaveBeenCalledWith(
+        expect.objectContaining({
+          startTime: 5,
+          endTime: 15,
+        }),
+        {}
+      );
+    });
+  });
+
   describe('Start Time Input Integration', () => {
     it('should render start time input in TimelineScrubber', () => {
       render(<QuickCaptureScreen {...defaultProps} videoElement={mockVideoElement} />);
