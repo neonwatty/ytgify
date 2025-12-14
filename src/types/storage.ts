@@ -80,6 +80,7 @@ export interface EngagementData {
     milestone50: boolean;
   };
   popupFooterDismissed: boolean;
+  waitlistClicks?: number;
 }
 
 export interface FeedbackData {

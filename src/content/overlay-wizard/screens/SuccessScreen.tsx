@@ -1,7 +1,7 @@
 import React from 'react';
 import { engagementTracker } from '@/shared/engagement-tracker';
 import { feedbackTracker } from '@/shared/feedback-tracker';
-import { openExternalLink, getReviewLink } from '@/constants/links';
+import { openExternalLink, getReviewLink, getWaitlistLink } from '@/constants/links';
 import FeedbackModal from '../components/FeedbackModal';
 
 interface SuccessScreenProps {
@@ -77,6 +77,11 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
     openExternalLink('https://discord.gg/8EUxqR93');
   };
 
+  const handleWaitlist = () => {
+    engagementTracker.recordWaitlistClick();
+    openExternalLink(getWaitlistLink());
+  };
+
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -148,6 +153,17 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
 
         {/* Stay Connected Action */}
         <div className="ytgif-success-bottom-actions">
+          <div className="ytgif-connect-button-wrapper">
+            <button className="ytgif-button-secondary" onClick={handleWaitlist}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" />
+                <polyline points="16 6 12 2 8 6" />
+                <line x1="12" y1="2" x2="12" y2="15" />
+              </svg>
+              Share This GIF
+            </button>
+            <span className="ytgif-connect-subtext">Get a shareable link (coming soon)</span>
+          </div>
           <div className="ytgif-connect-button-wrapper">
             <button className="ytgif-button-secondary" onClick={handleDiscord}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
