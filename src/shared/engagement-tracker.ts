@@ -133,13 +133,6 @@ class EngagementTracker {
     await this.setStorageData(data);
   }
 
-  async recordWaitlistClick(): Promise<number> {
-    const data = await this.getStorageData();
-    data.waitlistClicks = (data.waitlistClicks || 0) + 1;
-    await this.setStorageData(data);
-    return data.waitlistClicks;
-  }
-
   async getEngagementStats(): Promise<EngagementData> {
     return this.getStorageData();
   }

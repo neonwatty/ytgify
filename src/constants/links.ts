@@ -23,8 +23,3 @@ export function getReviewLink(): string {
 export function getDiscordLink(): string {
   return 'https://discord.gg/ufrycqwb4R';
 }
-
-// Helper to get waitlist link with UTM tracking
-export function getWaitlistLink(): string {
-  return 'https://ytgify.com?utm_source=extension&utm_medium=success_screen&utm_campaign=waitlist';
-}
