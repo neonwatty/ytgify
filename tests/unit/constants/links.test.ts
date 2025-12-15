@@ -1,6 +1,6 @@
 import { describe, it, expect } from '@jest/globals';
 import https from 'https';
-import { getDiscordLink, getReviewLink } from '@/constants/links';
+import { getDiscordLink, getReviewLink, getWaitlistLink } from '@/constants/links';
 import { EXTERNAL_SURVEY_URL } from '@/constants/features';
 
 // Helper to make HTTPS GET request with redirect following (bypasses mocked fetch)
@@ -85,6 +85,35 @@ describe('External Links', () => {
     it('should return a reachable survey form', async () => {
       const { statusCode } = await httpsGet(EXTERNAL_SURVEY_URL);
       // Google Forms short URLs redirect to full form URL, then return 200
+      expect(statusCode).toBe(200);
+    }, 10000);
+  });
+
+  describe('getWaitlistLink', () => {
+    it('should return the waitlist URL with UTM parameters', () => {
+      const link = getWaitlistLink();
+      expect(link).toBe(
+        'https://ytgify.com/share?utm_source=extension&utm_medium=success_screen&utm_campaign=waitlist'
+      );
+    });
+
+    it('should return a valid ytgify.com URL format', () => {
+      const link = getWaitlistLink();
+      expect(link).toMatch(/^https:\/\/ytgify\.com\/share\?/);
+    });
+
+    it('should include all required UTM parameters', () => {
+      const link = getWaitlistLink();
+      const url = new URL(link);
+      expect(url.searchParams.get('utm_source')).toBe('extension');
+      expect(url.searchParams.get('utm_medium')).toBe('success_screen');
+      expect(url.searchParams.get('utm_campaign')).toBe('waitlist');
+    });
+
+    it('should return a reachable waitlist page', async () => {
+      const link = getWaitlistLink();
+      const { statusCode } = await httpsGet(link);
+      // ytgify.com should return 200 for the share page
       expect(statusCode).toBe(200);
     }, 10000);
   });
