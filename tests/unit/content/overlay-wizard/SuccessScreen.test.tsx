@@ -12,6 +12,7 @@ jest.mock('../../../../src/constants/links', () => ({
   openExternalLink: jest.fn(),
   getGitHubStarLink: jest.fn(() => 'https://github.com/neonwatty/ytgify'),
   getReviewLink: jest.fn(() => 'https://chromewebstore.google.com/detail/ytgify/mock-id/reviews'),
+  getWaitlistLink: jest.fn(() => 'https://ytgify.com/share?utm_source=extension&utm_medium=success_screen&utm_campaign=waitlist'),
 }));
 
 jest.mock('../../../../src/shared/engagement-tracker', () => ({
@@ -1058,16 +1059,38 @@ describe('SuccessScreen', () => {
   });
 
   describe('Bottom Action Buttons', () => {
+    it('should render Share This GIF button', () => {
+      render(<SuccessScreen {...defaultProps} />);
+      expect(screen.getByText('Share This GIF')).toBeInTheDocument();
+    });
+
     it('should render Join Discord button', () => {
       render(<SuccessScreen {...defaultProps} />);
       expect(screen.getByText('Join Discord')).toBeInTheDocument();
     });
 
-    it('should render only one bottom action button', () => {
+    it('should render two bottom action buttons', () => {
       const { container } = render(<SuccessScreen {...defaultProps} />);
       const buttons = container.querySelectorAll('.ytgif-success-bottom-actions button');
-      expect(buttons.length).toBe(1);
-      expect(buttons[0].textContent).toContain('Join Discord');
+      expect(buttons.length).toBe(2);
+      expect(buttons[0].textContent).toContain('Share This GIF');
+      expect(buttons[1].textContent).toContain('Join Discord');
+    });
+
+    it('should open waitlist page when Share This GIF button is clicked', () => {
+      render(<SuccessScreen {...defaultProps} />);
+
+      const shareButton = screen.getByText('Share This GIF');
+      fireEvent.click(shareButton);
+
+      expect(links.openExternalLink).toHaveBeenCalledWith(
+        'https://ytgify.com/share?utm_source=extension&utm_medium=success_screen&utm_campaign=waitlist'
+      );
+    });
+
+    it('should show subtext under Share This GIF button', () => {
+      render(<SuccessScreen {...defaultProps} />);
+      expect(screen.getByText('Get a shareable link (coming soon)')).toBeInTheDocument();
     });
   });
 
