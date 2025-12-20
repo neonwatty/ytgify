@@ -2343,3 +2343,163 @@
 .ytgif-feedback-actions .ytgif-button-primary:hover:not(:disabled) {
   box-shadow: 0 4px 20px rgba(153, 102, 204, 0.3);
 }
+
+/* ========================================
+   Discord Upload Styles (Success Screen)
+   ======================================== */
+
+/* Discord Upload Wrapper */
+.ytgif-discord-upload-wrapper {
+  min-width: 180px;
+}
+
+/* Discord Caption Form */
+.ytgif-discord-caption-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.ytgif-discord-caption-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(88, 101, 242, 0.4);
+  border-radius: 6px;
+  color: white;
+  font-size: 13px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.ytgif-discord-caption-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.ytgif-discord-caption-input:focus {
+  outline: none;
+  border-color: #5865f2;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Caption Actions */
+.ytgif-discord-caption-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.ytgif-button-text {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 6px 12px;
+  transition: color 0.2s ease;
+  font-family: inherit;
+}
+
+.ytgif-button-text:hover {
+  color: white;
+}
+
+.ytgif-button-discord-send {
+  background: #5865f2;
+  border: none;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.ytgif-button-discord-send:hover {
+  background: #4752c4;
+  transform: translateY(-1px);
+}
+
+.ytgif-button-discord-send:active {
+  transform: translateY(0);
+}
+
+/* Discord Upload Button States */
+.ytgif-discord-upload-btn {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.ytgif-discord-upload-btn.ytgif-discord-success {
+  background: rgba(87, 242, 135, 0.15);
+  border-color: #57f287;
+  color: #57f287;
+}
+
+.ytgif-discord-upload-btn.ytgif-discord-success:hover {
+  background: rgba(87, 242, 135, 0.2);
+}
+
+.ytgif-discord-upload-btn.ytgif-discord-error {
+  background: rgba(237, 66, 69, 0.15);
+  border-color: #ed4245;
+  color: #ed4245;
+}
+
+.ytgif-discord-upload-btn.ytgif-discord-error:hover {
+  background: rgba(237, 66, 69, 0.2);
+}
+
+/* Button Spinner */
+.ytgif-button-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Status Text */
+.ytgif-error-text {
+  color: #ed4245;
+}
+
+.ytgif-success-text {
+  color: #57f287;
+}
+
+/* Discord Hint for unconfigured users */
+.ytgif-discord-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
+
+.ytgif-discord-hint-text {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+.ytgif-discord-hint-dismiss {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.ytgif-discord-hint-dismiss:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
