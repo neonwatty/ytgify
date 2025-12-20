@@ -1,5 +1,5 @@
 // Enhanced message handler for background service worker
-import { 
+import {
   ExtensionMessage,
   ExtractFramesRequest,
   ExtractFramesResponse,
@@ -821,28 +821,28 @@ export class BackgroundMessageHandler {
     sendResponse: (response: ExtensionMessage) => void
   ): void {
     const { url, filename } = message.data;
-    
+
     logger.info('[MessageHandler] Processing GIF download request', { filename });
-    
+
     chrome.downloads.download({
       url,
       filename,
       saveAs: false
     }, (downloadId) => {
       if (chrome.runtime.lastError) {
-        logger.error('[MessageHandler] Download failed', { 
-          error: chrome.runtime.lastError.message 
+        logger.error('[MessageHandler] Download failed', {
+          error: chrome.runtime.lastError.message
         });
-        sendResponse({ 
+        sendResponse({
           type: 'ERROR_RESPONSE',
-          success: false, 
-          error: chrome.runtime.lastError.message 
+          success: false,
+          error: chrome.runtime.lastError.message
         } as ErrorResponse);
       } else {
         logger.info('[MessageHandler] Download started', { downloadId, filename });
-        sendResponse({ 
+        sendResponse({
           type: 'SUCCESS_RESPONSE',
-          success: true, 
+          success: true,
           data: { downloadId }
         } as SuccessResponse);
       }

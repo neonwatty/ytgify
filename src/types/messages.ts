@@ -295,6 +295,27 @@ interface ShowWizardDirectRequest extends BaseMessage {
   };
 }
 
+// Discord webhook upload request
+export interface DiscordUploadRequest extends BaseMessage {
+  type: 'DISCORD_UPLOAD';
+  data: {
+    gifDataUrl: string;       // Base64 data URL of the GIF
+    filename: string;         // Filename for Discord
+    webhookUrl: string;       // Discord webhook URL
+    message?: string;         // Optional message/caption
+  };
+}
+
+export interface DiscordUploadResponse extends BaseMessage {
+  type: 'DISCORD_UPLOAD_RESPONSE';
+  success: boolean;
+  data?: {
+    messageId: string;        // Discord message ID
+    channelId: string;        // Discord channel ID
+  };
+  error?: string;
+}
+
 // Import from frame-extractor for content script messages
 import type { ContentFrameExtractionRequest } from '../content/frame-extractor';
 
@@ -325,6 +346,8 @@ export type ExtensionMessage =
   | GifCreationComplete
   | SaveGifRequest
   | SaveGifResponse
+  | DiscordUploadRequest
+  | DiscordUploadResponse
   | ContentFrameExtractionRequest;
 
 // Type guards for message validation
@@ -366,6 +389,10 @@ export function isDownloadGifRequest(message: BaseMessage): message is DownloadG
 
 export function isGetJobStatusRequest(message: BaseMessage): message is GetJobStatusRequest {
   return message.type === 'GET_JOB_STATUS';
+}
+
+export function isDiscordUploadRequest(message: BaseMessage): message is DiscordUploadRequest {
+  return message.type === 'DISCORD_UPLOAD';
 }
 
 // Response helper function

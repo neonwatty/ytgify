@@ -11,7 +11,7 @@ export {
 
 // Re-export all message types for Chrome extension communication
 export {
-  
+
   ExtractFramesRequest,
   ExtractFramesResponse,
   EncodeGifRequest,
@@ -20,17 +20,17 @@ export {
   GetVideoStateResponse,
   ShowTimelineRequest,
   HideTimelineRequest,
-  
+
   TimelineSelectionUpdate,
-  
+
   LogMessage,
   ErrorResponse,
   SuccessResponse,
   DownloadGifRequest,
   GetJobStatusRequest,
-  
-  
-  
+
+
+
   JobProgressUpdate,
   RequestVideoDataForGif,
   VideoDataResponse,
@@ -41,12 +41,17 @@ export {
   isExtractFramesRequest,
   isEncodeGifRequest,
   isGetVideoStateRequest,
-  
-  
+
+
   isTimelineSelectionUpdate,
-  
+
   isLogMessage,
   isDownloadGifRequest,
   isGetJobStatusRequest,
-  
+
+  // Discord webhook types
+  DiscordUploadRequest,
+  DiscordUploadResponse,
+  isDiscordUploadRequest,
+
 } from './messages';
