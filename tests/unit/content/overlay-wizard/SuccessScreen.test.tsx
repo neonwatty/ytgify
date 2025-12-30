@@ -1110,7 +1110,9 @@ describe('SuccessScreen', () => {
       });
 
       expect(screen.getByText('Enjoying YTGify?')).toBeInTheDocument();
-      expect(screen.getByText('×')).toBeInTheDocument(); // Dismiss button
+      // Find the footer dismiss button specifically (not the Discord hint dismiss)
+      const dismissButtons = screen.getAllByText('×');
+      expect(dismissButtons.length).toBeGreaterThanOrEqual(1);
     });
 
     it('should hide footer when user does not qualify (<5 GIFs)', async () => {
@@ -1192,7 +1194,8 @@ describe('SuccessScreen', () => {
         expect(screen.getByText('Leave us a review!')).toBeInTheDocument();
       });
 
-      const dismissBtn = screen.getByText('×');
+      // Find footer dismiss button by its class (there are multiple × buttons)
+      const dismissBtn = document.querySelector('.dismiss-btn') as HTMLElement;
       fireEvent.click(dismissBtn);
 
       // Verify recordDismissal was called
