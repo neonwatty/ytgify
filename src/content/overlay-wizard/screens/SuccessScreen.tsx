@@ -161,7 +161,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
               </svg>
               Share This GIF
             </button>
-            <span className="ytgif-connect-subtext">Get a shareable link (coming soon)</span>
+            <span className="ytgif-connect-subtext">Be first to know when sharing launches</span>
           </div>
           <div className="ytgif-connect-button-wrapper">
             <button className="ytgif-button-secondary" onClick={handleDiscord}>
@@ -170,7 +170,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({
               </svg>
               Join Discord
             </button>
-            <span className="ytgif-connect-subtext">Community Support & Updates</span>
+            <span className="ytgif-connect-subtext">Bug reports & feedback</span>
           </div>
         </div>
       </div>
