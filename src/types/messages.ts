@@ -295,8 +295,8 @@ interface ShowWizardDirectRequest extends BaseMessage {
   };
 }
 
-// Discord webhook upload request
-export interface DiscordUploadRequest extends BaseMessage {
+// Discord webhook upload request (internal - upload bypasses message passing)
+interface DiscordUploadRequest extends BaseMessage {
   type: 'DISCORD_UPLOAD';
   data: {
     gifDataUrl: string;       // Base64 data URL of the GIF
@@ -306,7 +306,7 @@ export interface DiscordUploadRequest extends BaseMessage {
   };
 }
 
-export interface DiscordUploadResponse extends BaseMessage {
+interface DiscordUploadResponse extends BaseMessage {
   type: 'DISCORD_UPLOAD_RESPONSE';
   success: boolean;
   data?: {
@@ -391,7 +391,7 @@ export function isGetJobStatusRequest(message: BaseMessage): message is GetJobSt
   return message.type === 'GET_JOB_STATUS';
 }
 
-export function isDiscordUploadRequest(message: BaseMessage): message is DiscordUploadRequest {
+function _isDiscordUploadRequest(message: BaseMessage): message is DiscordUploadRequest {
   return message.type === 'DISCORD_UPLOAD';
 }
 
