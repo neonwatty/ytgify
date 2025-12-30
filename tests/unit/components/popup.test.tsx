@@ -1005,7 +1005,7 @@ describe('PopupApp Component', () => {
       fireEvent.click(screen.getByRole('button', { name: /Support/i }));
 
       await waitFor(() => {
-        expect(screen.getByText('Get help, share creations, and connect with other users')).toBeInTheDocument();
+        expect(screen.getByText('Report bugs and get help')).toBeInTheDocument();
       });
     });
 
