@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "YTgify",
+  "name": "YTgify - YouTube to GIF Maker",
   "version": "1.0.18",
-  "description": "Turn your favorite YouTube moments into shareable GIFs.",
+  "description": "Create GIFs from any YouTube video instantly. No watermark, no upload. Custom text, FPS & resolution controls.",
   "author": "Jeremy Watt",
   "homepage_url": "https://github.com/neonwatty/ytgify",
   "permissions": ["storage", "tabs", "activeTab", "downloads"],
