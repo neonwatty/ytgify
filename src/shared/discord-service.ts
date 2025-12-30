@@ -4,7 +4,7 @@ import { logger } from '../lib/logger';
 const DISCORD_FILE_SIZE_LIMIT = 8 * 1024 * 1024; // 8MB
 const DISCORD_WEBHOOK_PATTERN = /^https:\/\/discord\.com\/api\/webhooks\/\d+\/[\w-]+$/;
 
-export interface DiscordUploadResult {
+interface DiscordUploadResult {
   success: boolean;
   messageId?: string;
   channelId?: string;
@@ -157,30 +157,6 @@ export async function getDiscordWebhookUrl(): Promise<string | null> {
   } catch (error) {
     logger.error('[DiscordService] Failed to get webhook URL', { error });
     return null;
-  }
-}
-
-/**
- * Save a Discord webhook URL to storage
- */
-export async function setDiscordWebhookUrl(url: string | null): Promise<{ success: boolean; error?: string }> {
-  if (typeof chrome === 'undefined' || !chrome.storage?.sync) {
-    return { success: false, error: 'Storage not available' };
-  }
-
-  if (url) {
-    const validation = DiscordService.validateWebhookUrl(url);
-    if (!validation.valid) {
-      return { success: false, error: validation.error };
-    }
-  }
-
-  try {
-    await chrome.storage.sync.set({ discordWebhookUrl: url || null });
-    return { success: true };
-  } catch (error) {
-    logger.error('[DiscordService] Failed to save webhook URL', { error });
-    return { success: false, error: 'Failed to save webhook URL' };
   }
 }
 

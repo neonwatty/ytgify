@@ -49,9 +49,4 @@ export {
   isDownloadGifRequest,
   isGetJobStatusRequest,
 
-  // Discord webhook types
-  DiscordUploadRequest,
-  DiscordUploadResponse,
-  isDiscordUploadRequest,
-
 } from './messages';

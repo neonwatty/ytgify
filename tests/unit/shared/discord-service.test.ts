@@ -5,7 +5,6 @@
 import {
   DiscordService,
   getDiscordWebhookUrl,
-  setDiscordWebhookUrl,
   recordDiscordUpload
 } from '@/shared/discord-service';
 
@@ -167,42 +166,6 @@ describe('Storage helpers', () => {
 
       const url = await getDiscordWebhookUrl();
       expect(url).toBeNull();
-    });
-  });
-
-  describe('setDiscordWebhookUrl', () => {
-    it('should save valid webhook URL', async () => {
-      const url = 'https://discord.com/api/webhooks/123/abc';
-
-      const result = await setDiscordWebhookUrl(url);
-
-      expect(result.success).toBe(true);
-      expect(mockStorage.discordWebhookUrl).toBe(url);
-    });
-
-    it('should clear webhook URL when passed null', async () => {
-      mockStorage.discordWebhookUrl = 'https://discord.com/api/webhooks/123/abc';
-
-      const result = await setDiscordWebhookUrl(null);
-
-      expect(result.success).toBe(true);
-      expect(mockStorage.discordWebhookUrl).toBeNull();
-    });
-
-    it('should reject invalid webhook URL', async () => {
-      const result = await setDiscordWebhookUrl('https://invalid.com/webhook');
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Invalid Discord webhook URL format');
-    });
-
-    it('should fail when chrome is undefined', async () => {
-      (global as any).chrome = undefined;
-
-      const result = await setDiscordWebhookUrl('https://discord.com/api/webhooks/123/abc');
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Storage not available');
     });
   });
 
