@@ -2,11 +2,11 @@
 
 ## Extension Name
 
-YTgify
+YTgify - YouTube to GIF Maker
 
 ## Short Description (132 characters max)
 
-Create high-quality GIFs from YouTube videos instantly. Add text overlays, adjust speed, and build your personal GIF library.
+Create GIFs from any YouTube video instantly. No watermark, no upload. Custom text, FPS & resolution controls.
 
 ## Categories
 
@@ -17,11 +17,11 @@ Create high-quality GIFs from YouTube videos instantly. Add text overlays, adjus
 
 ### Headline
 
-Transform YouTube Videos into Perfect GIFs in Seconds! 🎬
+Create GIFs from Any YouTube Video in Seconds
 
 ### Main Description
 
-**YTgify** is the ultimate Chrome extension for creating high-quality GIFs directly from YouTube videos. No downloads, no complicated software – just click, select, and create!
+**YTgify** is a Chrome extension for creating GIFs directly from YouTube videos. No uploads, no watermarks, no accounts required. Everything processes locally in your browser.
 
 ### ✨ Key Features
 
@@ -45,12 +45,12 @@ Transform YouTube Videos into Perfect GIFs in Seconds! 🎬
 - Adjustable frame rates (5-30 FPS)
 - Smart compression for optimal file sizes
 
-**📚 Built-in GIF Library**
+**💾 Direct Download**
 
-- Save all your creations automatically
-- Search and organize your GIF collection
-- Quick access to recent creations
-- Re-edit or delete GIFs anytime
+- GIFs download straight to your computer
+- No cloud storage or accounts required
+- Your content stays on your device
+- Works completely offline
 
 **🚀 Advanced Features**
 
@@ -91,9 +91,9 @@ Transform YouTube Videos into Perfect GIFs in Seconds! 🎬
 - React-based UI for smooth interactions
 - Supports all YouTube video types
 
-### 📈 Why Choose YTgify?
+### Why Choose YTgify?
 
-Unlike online GIF makers that require video downloads and uploads, our extension works directly in your browser. No watermarks, no sign-ups, no limits – just pure GIF-making power at your fingertips.
+Unlike online GIF makers that require video uploads to remote servers, YTgify works entirely in your browser. No watermarks, no accounts, no data leaves your computer.
 
 ### 🆕 Recent Updates
 
@@ -111,10 +111,10 @@ Unlike online GIF makers that require video downloads and uploads, our extension
 
 ⭐⭐⭐⭐⭐ "The timeline scrubber is genius. Makes selecting the perfect moment so easy!"
 
-### 📞 Support
+### Support
 
 - GitHub Issues: https://github.com/neonwatty/ytgify/issues
-- Documentation: Available in extension
+- Discord: Bug reports and feedback
 - Updates: Regular feature additions and bug fixes
 
 ### 🏷️ Tags
@@ -155,7 +155,7 @@ Version 1.0.0
 - Initial release
 - Core GIF creation functionality
 - Text overlay support
-- GIF library management
+- Direct download to computer
 - Keyboard shortcuts
 - Multiple quality presets
 
