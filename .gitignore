@@ -19,7 +19,10 @@ scripts/temp-user-data-*/
 # Build outputs
 dist/
 dist-production/
+dist-firefox/
+dist-safari/
 dist-ssr/
+manifests/
 build/
 out/
 *.local
