@@ -420,7 +420,8 @@ describe('BackgroundMessageHandler', () => {
             type: 'GIF_CREATION_COMPLETE',
             success: false,
             error: expect.stringContaining('too short')
-          })
+          }),
+          expect.any(Function)
         );
       });
 
@@ -443,7 +444,8 @@ describe('BackgroundMessageHandler', () => {
             type: 'GIF_CREATION_COMPLETE',
             success: false,
             error: expect.stringContaining('too long')
-          })
+          }),
+          expect.any(Function)
         );
       });
     });
@@ -489,21 +491,25 @@ describe('BackgroundMessageHandler', () => {
       it('should handle download failure', async () => {
         const request = createDownloadRequest();
 
-        // Mock download failure
-        (chromeMock as any).downloads = {
-          download: jest.fn((options, callback) => {
-            (chromeMock.runtime as any).lastError = { message: 'Download failed' };
-            callback(undefined);
-          })
-        };
+        // Mock download failure using the global chromeMock
+        (chromeMock.downloads.download as jest.Mock).mockImplementation((options: unknown, callback: (id?: number) => void) => {
+          (chromeMock.runtime as any).lastError = { message: 'Download failed' };
+          callback(undefined);
+        });
 
-        await messageHandler.handleMessage(request, mockSender, mockSendResponse);
+        messageHandler.handleMessage(request, mockSender, mockSendResponse);
+
+        // Wait for async operations to complete (download is fire-and-forget)
+        await new Promise(resolve => setTimeout(resolve, 10));
 
         expect(mockSendResponse).toHaveBeenCalledWith({
           type: 'ERROR_RESPONSE',
           success: false,
           error: 'Download failed'
         });
+
+        // Clean up lastError
+        (chromeMock.runtime as any).lastError = undefined;
       });
     });
 

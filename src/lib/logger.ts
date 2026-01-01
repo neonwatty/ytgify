@@ -1,4 +1,6 @@
-// Centralized logging utility for Chrome Extension
+// Centralized logging utility for Browser Extension
+import { browserAPI } from '@/adapters';
+
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 export interface LogEntry {
@@ -93,25 +95,25 @@ export class Logger {
 
   private async storeError(entry: LogEntry): Promise<void> {
     try {
-      // Only store errors in Chrome storage for debugging
+      // Only store errors in storage for debugging
       const storageKey = `error_${Date.now()}`;
       const errorData = {
         ...entry,
         timestamp: entry.timestamp.toISOString()
       };
 
-      await chrome.storage.local.set({ [storageKey]: errorData });
+      await browserAPI.storage.local.set({ [storageKey]: errorData });
 
       // Clean up old errors (keep only last 20)
-      const result = await chrome.storage.local.get(null);
+      const result = await browserAPI.storage.local.get(null);
       const errorKeys = Object.keys(result).filter(key => key.startsWith('error_'));
-      
+
       if (errorKeys.length > 20) {
         const sortedKeys = errorKeys.sort();
         const keysToRemove = sortedKeys.slice(0, errorKeys.length - 20);
-        
+
         for (const key of keysToRemove) {
-          await chrome.storage.local.remove(key);
+          await browserAPI.storage.local.remove(key);
         }
       }
     } catch {

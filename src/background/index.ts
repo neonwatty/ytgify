@@ -6,9 +6,10 @@ import { initializeMessageBus } from '@/shared/message-bus';
 import { sharedLogger, sharedErrorHandler, extensionStateManager } from '@/shared';
 import { engagementTracker } from '@/shared/engagement-tracker';
 import { databaseCleanup } from '@/shared/database-cleanup';
+import { browserAPI, MessageSender } from '@/adapters';
 
 // Service Worker lifecycle events with enhanced logging and error handling
-chrome.runtime.onInstalled.addListener(
+browserAPI.runtime.onInstalled.addListener(
   sharedErrorHandler.wrapWithErrorBoundary(
     async (details) => {
       const endTimer = await sharedLogger.startPerformanceTimer('extension_installation');
@@ -18,20 +19,20 @@ chrome.runtime.onInstalled.addListener(
           '[Background] YTgify extension installed',
           {
             reason: details.reason,
-            version: chrome.runtime.getManifest().version,
+            version: browserAPI.runtime.getManifest().version,
           },
           'background'
         );
 
         sharedLogger.trackEvent('extension_installed', {
           reason: details.reason,
-          version: chrome.runtime.getManifest().version,
+          version: browserAPI.runtime.getManifest().version,
         });
 
         // Initialize default storage
         await initializeStorage();
 
-        if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
+        if (details.reason === 'install') {
           // First install - log the event without opening a tab
           sharedLogger.info('[Background] First install completed', {}, 'background');
           sharedLogger.trackUserAction('first_install');
@@ -42,14 +43,14 @@ chrome.runtime.onInstalled.addListener(
         }
 
         // Handle extension updates - clean up old IndexedDB data
-        if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
+        if (details.reason === 'update') {
           // Skip cleanup if this is a development reload (no previous version means fresh load)
           const previousVersion = details.previousVersion;
 
           if (!previousVersion) {
             sharedLogger.info(
               '[Background] Skipping IndexedDB cleanup - no previous version (development reload)',
-              { version: chrome.runtime.getManifest().version },
+              { version: browserAPI.runtime.getManifest().version },
               'background'
             );
           } else {
@@ -60,13 +61,13 @@ chrome.runtime.onInstalled.addListener(
               if (!dbExists) {
                 sharedLogger.info(
                   '[Background] No IndexedDB to cleanup - database does not exist',
-                  { version: chrome.runtime.getManifest().version, previousVersion },
+                  { version: browserAPI.runtime.getManifest().version, previousVersion },
                   'background'
                 );
               } else {
                 sharedLogger.info(
                   '[Background] Extension updated - cleaning up IndexedDB',
-                  { version: chrome.runtime.getManifest().version, previousVersion },
+                  { version: browserAPI.runtime.getManifest().version, previousVersion },
                   'background'
                 );
 
@@ -79,7 +80,7 @@ chrome.runtime.onInstalled.addListener(
                     'background'
                   );
                   sharedLogger.trackEvent('indexeddb_cleanup_completed', {
-                    version: chrome.runtime.getManifest().version,
+                    version: browserAPI.runtime.getManifest().version,
                     previousVersion,
                   });
                 } else {
@@ -103,7 +104,7 @@ chrome.runtime.onInstalled.addListener(
                   errorType: error instanceof Error ? error.name : typeof error,
                   errorMessage: error instanceof Error ? error.message : String(error),
                   errorStack: error instanceof Error ? error.stack : undefined,
-                  version: chrome.runtime.getManifest().version,
+                  version: browserAPI.runtime.getManifest().version,
                   previousVersion,
                 },
                 'background'
@@ -129,7 +130,7 @@ chrome.runtime.onInstalled.addListener(
   )
 );
 
-chrome.runtime.onStartup.addListener(
+browserAPI.runtime.onStartup.addListener(
   sharedErrorHandler.wrapWithErrorBoundary(
     async () => {
       sharedLogger.info('[Background] YTgify extension started', {}, 'background');
@@ -145,10 +146,10 @@ chrome.runtime.onStartup.addListener(
 );
 
 // Enhanced message routing with comprehensive error handling and performance tracking
-chrome.runtime.onMessage.addListener(
+browserAPI.runtime.onMessage.addListener(
   (
     message: ExtensionMessage,
-    sender: chrome.runtime.MessageSender,
+    sender: MessageSender,
     sendResponse: (response: ExtensionMessage) => void
   ) => {
     const messageStartTime = performance.now();
@@ -291,10 +292,10 @@ chrome.runtime.onMessage.addListener(
 );
 
 // Handle keyboard command
-chrome.commands.onCommand.addListener(async (command) => {
+browserAPI.commands.onCommand.addListener(async (command) => {
   if (command === '_execute_action') {
     // Get the active tab
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const [tab] = await browserAPI.tabs.query({ active: true, currentWindow: true });
 
     if (!tab || !tab.id || !tab.url) {
       return;
@@ -304,13 +305,13 @@ chrome.commands.onCommand.addListener(async (command) => {
       tab.url.includes('youtube.com/watch') || tab.url.includes('youtube.com/shorts');
 
     if (!isYouTubePage) {
-      await chrome.tabs.update(tab.id, { url: 'https://www.youtube.com' });
+      await browserAPI.tabs.update(tab.id, { url: 'https://www.youtube.com' });
       return;
     }
 
     // Send message to content script to show wizard
     try {
-      await chrome.tabs.sendMessage(tab.id, {
+      await browserAPI.tabs.sendMessage(tab.id, {
         type: 'SHOW_WIZARD_DIRECT',
         data: { triggeredBy: 'command' },
       });
@@ -325,10 +326,10 @@ chrome.commands.onCommand.addListener(async (command) => {
 // All video processing is managed by the BackgroundWorker
 
 // Initialize enhanced logging for service worker lifecycle
-chrome.runtime.onInstalled.addListener((details) => {
+browserAPI.runtime.onInstalled.addListener((details) => {
   logger.info('[Background] YTgify extension installed', {
     reason: details.reason,
-    version: chrome.runtime.getManifest().version,
+    version: browserAPI.runtime.getManifest().version,
   });
 });
 
@@ -338,7 +339,7 @@ async function initializeStorage(): Promise<void> {
 
   try {
     const result = await sharedErrorHandler.withRecovery(
-      () => chrome.storage.local.get(['userPreferences']),
+      () => browserAPI.storage.local.get(['userPreferences']),
       {
         maxRetries: 3,
         delayMs: 500,
@@ -372,7 +373,7 @@ async function initializeStorage(): Promise<void> {
       };
 
       await sharedErrorHandler.withRecovery(
-        () => chrome.storage.local.set({ userPreferences: defaultPreferences }),
+        () => browserAPI.storage.local.set({ userPreferences: defaultPreferences }),
         {
           maxRetries: 3,
           delayMs: 500,
@@ -387,7 +388,7 @@ async function initializeStorage(): Promise<void> {
       sharedLogger.trackEvent('preferences_loaded', { isFirstTime: false });
 
       // Migrate old preferences if needed
-      await migratePreferences(result.userPreferences);
+      await migratePreferences(result.userPreferences as Record<string, unknown>);
     }
 
     endTimer();
@@ -443,7 +444,7 @@ async function migratePreferences(preferences: Record<string, unknown>): Promise
     }
 
     if (needsUpdate) {
-      await chrome.storage.local.set({ userPreferences: updatedPreferences });
+      await browserAPI.storage.local.set({ userPreferences: updatedPreferences });
       sharedLogger.info(
         '[Background] Migrated user preferences',
         {
@@ -466,7 +467,7 @@ async function migratePreferences(preferences: Record<string, unknown>): Promise
 }
 
 // Enhanced cleanup and error recovery
-chrome.runtime.onSuspend.addListener(() => {
+browserAPI.runtime.onSuspend.addListener(() => {
   logger.info('[Background] Service worker suspending - performing cleanup');
 
   try {
@@ -485,7 +486,7 @@ chrome.runtime.onSuspend.addListener(() => {
 
 // Enhanced keep-alive mechanism with monitoring
 function keepAlive(): void {
-  chrome.runtime.onMessage.addListener(() => {
+  browserAPI.runtime.onMessage.addListener(() => {
     // This listener keeps the service worker active during processing
     return false;
   });

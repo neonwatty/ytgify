@@ -1,35 +1,28 @@
 import { feedbackTracker } from '../../../src/shared/feedback-tracker';
+import { chromeMock } from '../__mocks__/chrome-mocks';
 
-// Mock chrome.storage.local
-const mockStorage: Record<string, any> = {};
-const mockChromeStorage = {
-  local: {
-    get: jest.fn((key: string) => {
-      return Promise.resolve({ [key]: mockStorage[key] });
-    }),
-    set: jest.fn((data: Record<string, any>) => {
-      Object.assign(mockStorage, data);
-      return Promise.resolve();
-    }),
-  },
-};
-
-(global as any).chrome = {
-  storage: mockChromeStorage,
+// Helper to set up test data in the global chrome mock
+// The global chromeMock uses callback pattern internally
+const setFeedbackData = (data: Record<string, unknown>): Promise<void> => {
+  return new Promise((resolve) => {
+    chromeMock.storage.local.set({ 'feedback-data': data }, () => resolve());
+  });
 };
 
 describe('feedbackTracker', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
-    // Clear mock storage
-    Object.keys(mockStorage).forEach((key) => delete mockStorage[key]);
+    // Clear the global chromeMock storage
+    await new Promise<void>((resolve) => {
+      chromeMock.storage.local.clear(() => resolve());
+    });
     // Clear feedbackTracker cache
     feedbackTracker.clearCache();
   });
 
   describe('shouldShowPostSuccessFeedback', () => {
     it('should return false when permanentlyDismissed is true', async () => {
-      mockStorage['feedback-data'] = {
+      await setFeedbackData({
         firstGifCreatedAt: Date.now() - 30 * 24 * 60 * 60 * 1000,
         lastFeedbackPromptAt: null,
         feedbackCompletedAt: null,
@@ -42,14 +35,14 @@ describe('feedbackTracker', () => {
         },
         postSuccessFeedbackLastShown: null,
         postSuccessFeedbackCount: 0,
-      };
+      });
 
       const result = await feedbackTracker.shouldShowPostSuccessFeedback();
       expect(result).toBe(false);
     });
 
     it('should return false when feedbackCompletedAt is set', async () => {
-      mockStorage['feedback-data'] = {
+      await setFeedbackData({
         firstGifCreatedAt: Date.now() - 30 * 24 * 60 * 60 * 1000,
         lastFeedbackPromptAt: null,
         feedbackCompletedAt: Date.now(),
@@ -62,14 +55,14 @@ describe('feedbackTracker', () => {
         },
         postSuccessFeedbackLastShown: null,
         postSuccessFeedbackCount: 0,
-      };
+      });
 
       const result = await feedbackTracker.shouldShowPostSuccessFeedback();
       expect(result).toBe(false);
     });
 
     it('should return false when max prompts reached', async () => {
-      mockStorage['feedback-data'] = {
+      await setFeedbackData({
         firstGifCreatedAt: Date.now() - 30 * 24 * 60 * 60 * 1000,
         lastFeedbackPromptAt: null,
         feedbackCompletedAt: null,
@@ -82,7 +75,7 @@ describe('feedbackTracker', () => {
         },
         postSuccessFeedbackLastShown: null,
         postSuccessFeedbackCount: 3, // MAX_POST_SUCCESS_PROMPTS
-      };
+      });
 
       const result = await feedbackTracker.shouldShowPostSuccessFeedback();
       expect(result).toBe(false);
@@ -91,7 +84,7 @@ describe('feedbackTracker', () => {
 
   describe('shouldShowTimeFeedback', () => {
     it('should return false when permanentlyDismissed is true', async () => {
-      mockStorage['feedback-data'] = {
+      await setFeedbackData({
         firstGifCreatedAt: Date.now() - 30 * 24 * 60 * 60 * 1000, // 30 days ago
         lastFeedbackPromptAt: null,
         feedbackCompletedAt: null,
@@ -104,14 +97,14 @@ describe('feedbackTracker', () => {
         },
         postSuccessFeedbackLastShown: null,
         postSuccessFeedbackCount: 0,
-      };
+      });
 
       const result = await feedbackTracker.shouldShowTimeFeedback();
       expect(result).toBe(false);
     });
 
     it('should return true when eligible and not permanently dismissed', async () => {
-      mockStorage['feedback-data'] = {
+      await setFeedbackData({
         firstGifCreatedAt: Date.now() - 30 * 24 * 60 * 60 * 1000, // 30 days ago (> 14 days)
         lastFeedbackPromptAt: null,
         feedbackCompletedAt: null,
@@ -124,7 +117,7 @@ describe('feedbackTracker', () => {
         },
         postSuccessFeedbackLastShown: null,
         postSuccessFeedbackCount: 0,
-      };
+      });
 
       const result = await feedbackTracker.shouldShowTimeFeedback();
       expect(result).toBe(true);
@@ -133,7 +126,7 @@ describe('feedbackTracker', () => {
 
   describe('shouldShowMilestoneFeedback', () => {
     it('should return false when permanentlyDismissed is true', async () => {
-      mockStorage['feedback-data'] = {
+      await setFeedbackData({
         firstGifCreatedAt: Date.now(),
         lastFeedbackPromptAt: null,
         feedbackCompletedAt: null,
@@ -146,14 +139,14 @@ describe('feedbackTracker', () => {
         },
         postSuccessFeedbackLastShown: null,
         postSuccessFeedbackCount: 0,
-      };
+      });
 
       const result = await feedbackTracker.shouldShowMilestoneFeedback(10);
       expect(result).toBe(false);
     });
 
     it('should return true when eligible and not permanently dismissed', async () => {
-      mockStorage['feedback-data'] = {
+      await setFeedbackData({
         firstGifCreatedAt: Date.now(),
         lastFeedbackPromptAt: null,
         feedbackCompletedAt: null,
@@ -166,7 +159,7 @@ describe('feedbackTracker', () => {
         },
         postSuccessFeedbackLastShown: null,
         postSuccessFeedbackCount: 0,
-      };
+      });
 
       const result = await feedbackTracker.shouldShowMilestoneFeedback(10);
       expect(result).toBe(true);
@@ -175,7 +168,7 @@ describe('feedbackTracker', () => {
 
   describe('recordPermanentDismiss', () => {
     it('should set permanentlyDismissed to true', async () => {
-      mockStorage['feedback-data'] = {
+      await setFeedbackData({
         firstGifCreatedAt: Date.now(),
         lastFeedbackPromptAt: null,
         feedbackCompletedAt: null,
@@ -188,17 +181,17 @@ describe('feedbackTracker', () => {
         },
         postSuccessFeedbackLastShown: null,
         postSuccessFeedbackCount: 0,
-      };
+      });
 
       await feedbackTracker.recordPermanentDismiss();
 
-      expect(mockChromeStorage.local.set).toHaveBeenCalled();
-      const setCall = mockChromeStorage.local.set.mock.calls[0][0];
+      expect(chromeMock.storage.local.set).toHaveBeenCalled();
+      const setCall = chromeMock.storage.local.set.mock.calls[1][0]; // [1] because setFeedbackData is [0]
       expect(setCall['feedback-data'].permanentlyDismissed).toBe(true);
     });
 
     it('should prevent future feedback prompts after permanent dismiss', async () => {
-      mockStorage['feedback-data'] = {
+      await setFeedbackData({
         firstGifCreatedAt: Date.now() - 30 * 24 * 60 * 60 * 1000,
         lastFeedbackPromptAt: null,
         feedbackCompletedAt: null,
@@ -211,7 +204,7 @@ describe('feedbackTracker', () => {
         },
         postSuccessFeedbackLastShown: null,
         postSuccessFeedbackCount: 0,
-      };
+      });
 
       // Should be eligible before dismiss
       const beforeTimeFeedback = await feedbackTracker.shouldShowTimeFeedback();

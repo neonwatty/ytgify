@@ -1,4 +1,4 @@
-// Type-Safe Message Bus for Chrome Extension Communication
+// Type-Safe Message Bus for Browser Extension Communication
 
 import {
   BaseMessage,
@@ -17,21 +17,22 @@ import {
   createErrorResponse
 } from './messages';
 import { logger } from '@/lib/logger';
+import { browserAPI, MessageSender } from '@/adapters';
 
 // Message Handler Types
 type MessageHandler<T extends BaseMessage = BaseMessage> = (
   message: T,
-  sender?: chrome.runtime.MessageSender
+  sender?: MessageSender
 ) => Promise<BaseResponse | void> | BaseResponse | void;
 
 type RequestHandler<TReq extends BaseRequest, TRes extends BaseResponse> = (
   request: TReq,
-  sender?: chrome.runtime.MessageSender
+  sender?: MessageSender
 ) => Promise<TRes> | TRes;
 
 type EventHandler<T extends EventMessage> = (
   event: T,
-  sender?: chrome.runtime.MessageSender
+  sender?: MessageSender
 ) => Promise<void> | void;
 
 // Message Bus Configuration
@@ -70,7 +71,7 @@ export class MessageBus {
   private pendingRequests = new Map<string, PendingRequest>();
   private options: Required<MessageBusOptions>;
   private isInitialized = false;
-  private messageListener?: (message: unknown, sender: chrome.runtime.MessageSender, sendResponse: (response: unknown) => void) => boolean;
+  private messageListener?: (message: unknown, sender: MessageSender, sendResponse: (response: unknown) => void) => boolean | void;
 
   private constructor(options: MessageBusOptions = {}) {
     this.options = {
@@ -104,19 +105,19 @@ export class MessageBus {
       return;
     }
 
-    // Check if chrome runtime is available
-    if (typeof chrome === 'undefined' || !chrome?.runtime?.onMessage) {
-      this.log('warn', 'Chrome runtime not available, MessageBus running in limited mode');
+    // Check if browser runtime is available
+    if (!browserAPI.isExtensionContext()) {
+      this.log('warn', 'Browser runtime not available, MessageBus running in limited mode');
       this.isInitialized = true;
       return;
     }
 
-    // Set up Chrome message listener
-    this.messageListener = (message: unknown, sender: chrome.runtime.MessageSender, sendResponse: (response: unknown) => void) => {
+    // Set up browser message listener
+    this.messageListener = (message: unknown, sender: MessageSender, sendResponse: (response: unknown) => void) => {
       return this.handleIncomingMessage(message, sender, sendResponse);
     };
 
-    chrome.runtime.onMessage.addListener(this.messageListener);
+    browserAPI.runtime.onMessage.addListener(this.messageListener);
 
     this.isInitialized = true;
     this.log('info', 'MessageBus initialized');
@@ -131,15 +132,15 @@ export class MessageBus {
       throw new Error('MessageBus not initialized. Call initialize() first.');
     }
 
-    if (typeof chrome === 'undefined' || !chrome?.runtime) {
-      throw new Error('Chrome runtime not available');
+    if (!browserAPI.isExtensionContext()) {
+      throw new Error('Browser runtime not available');
     }
 
     if (this.options.validateMessages && !validateMessage(message)) {
       throw new Error('Invalid message format');
     }
 
-    const sanitizedMessage = this.options.validateMessages 
+    const sanitizedMessage = this.options.validateMessages
       ? sanitizeMessage(message) as TReq
       : message;
 
@@ -162,51 +163,44 @@ export class MessageBus {
         originalMessage: message
       });
 
-      try {
-        // Send message
-        if (target === 'background' || target === undefined) {
-          chrome.runtime.sendMessage(sanitizedMessage, (response) => {
-            if (chrome.runtime.lastError) {
-              // Handle error with retry logic
-              const pending = this.pendingRequests.get(message.requestId);
-              if (pending && pending.retryCount < this.options.maxRetries) {
-                pending.retryCount++;
-                this.log('debug', 'Retrying request', { type: message.type, retryCount: pending.retryCount });
-                // Retry after a short delay
-                setTimeout(() => {
-                  chrome.runtime.sendMessage(sanitizedMessage, (retryResponse) => {
-                    if (!chrome.runtime.lastError && retryResponse) {
-                      this.handleResponse(retryResponse as ResponseMessage);
-                    }
-                  });
-                }, 100 * pending.retryCount);
-              } else {
-                clearTimeout(timeout);
-                this.pendingRequests.delete(message.requestId);
-                reject(new Error(chrome.runtime.lastError.message));
-              }
-            } else if (response) {
-              this.handleResponse(response as ResponseMessage);
-            }
-          });
-        } else if (typeof target === 'number') {
-          chrome.tabs.sendMessage(target, sanitizedMessage, (response) => {
-            if (chrome.runtime.lastError) {
-              clearTimeout(timeout);
-              this.pendingRequests.delete(message.requestId);
-              reject(new Error(chrome.runtime.lastError.message));
-            } else if (response) {
-              this.handleResponse(response as ResponseMessage);
-            }
-          });
-        } else {
-          throw new Error('Invalid target for message sending');
+      // Send message using Promise-based API
+      const sendWithRetry = async (retryCount: number): Promise<void> => {
+        try {
+          let response: unknown;
+          if (target === 'background' || target === undefined) {
+            response = await browserAPI.runtime.sendMessage(sanitizedMessage);
+          } else if (typeof target === 'number') {
+            response = await browserAPI.tabs.sendMessage(target, sanitizedMessage);
+          } else {
+            throw new Error('Invalid target for message sending');
+          }
+
+          if (response) {
+            this.handleResponse(response as ResponseMessage);
+          }
+        } catch (error) {
+          const pending = this.pendingRequests.get(message.requestId);
+          if (pending && retryCount < this.options.maxRetries) {
+            this.log('debug', 'Retrying request', { type: message.type, retryCount: retryCount + 1 });
+            // Retry after a short delay
+            setTimeout(() => {
+              sendWithRetry(retryCount + 1).catch(() => {
+                // Error will be handled in the final rejection
+              });
+            }, 100 * (retryCount + 1));
+          } else {
+            clearTimeout(timeout);
+            this.pendingRequests.delete(message.requestId);
+            reject(error instanceof Error ? error : new Error(String(error)));
+          }
         }
-      } catch (error) {
+      };
+
+      sendWithRetry(0).catch((error) => {
         clearTimeout(timeout);
         this.pendingRequests.delete(message.requestId);
         reject(error);
-      }
+      });
     });
   }
 
@@ -219,12 +213,12 @@ export class MessageBus {
       throw new Error('MessageBus not initialized. Call initialize() first.');
     }
 
-    if (typeof chrome === 'undefined' || !chrome?.runtime) {
-      this.log('warn', 'Chrome runtime not available, cannot send event');
+    if (!browserAPI.isExtensionContext()) {
+      this.log('warn', 'Browser runtime not available, cannot send event');
       return;
     }
 
-    const sanitizedEvent = this.options.validateMessages 
+    const sanitizedEvent = this.options.validateMessages
       ? sanitizeMessage(event) as T
       : event;
 
@@ -232,19 +226,21 @@ export class MessageBus {
 
     try {
       if (target === 'background' || target === undefined) {
-        chrome.runtime.sendMessage(sanitizedEvent);
+        browserAPI.runtime.sendMessage(sanitizedEvent).catch(() => {
+          // Ignore errors for fire-and-forget events
+        });
       } else if (target === 'broadcast') {
         // Broadcast to all tabs and background
-        chrome.runtime.sendMessage(sanitizedEvent);
-        chrome.tabs.query({}, (tabs) => {
+        browserAPI.runtime.sendMessage(sanitizedEvent).catch(() => {});
+        browserAPI.tabs.query({}).then((tabs) => {
           tabs.forEach(tab => {
             if (tab.id) {
-              chrome.tabs.sendMessage(tab.id, sanitizedEvent);
+              browserAPI.tabs.sendMessage(tab.id, sanitizedEvent).catch(() => {});
             }
           });
         });
       } else if (typeof target === 'number') {
-        chrome.tabs.sendMessage(target, sanitizedEvent);
+        browserAPI.tabs.sendMessage(target, sanitizedEvent).catch(() => {});
       }
     } catch (error) {
       this.log('error', 'Failed to send event', { error, eventType: event.type });
@@ -362,8 +358,8 @@ export class MessageBus {
 
   // Broadcast method for sending events
   public broadcast(event: EventMessage): void {
-    if (typeof chrome === 'undefined' || !chrome?.runtime) {
-      this.log('warn', 'Chrome runtime not available, cannot broadcast');
+    if (!browserAPI.isExtensionContext()) {
+      this.log('warn', 'Browser runtime not available, cannot broadcast');
       return;
     }
     this.sendEvent(event, 'broadcast');
@@ -414,10 +410,10 @@ export class MessageBus {
     return true;
   }
 
-  // Handle incoming messages from Chrome runtime
+  // Handle incoming messages from browser runtime
   private handleIncomingMessage(
     message: unknown,
-    sender: chrome.runtime.MessageSender,
+    sender: MessageSender,
     sendResponse: (response: unknown) => void
   ): boolean {
     try {
@@ -476,7 +472,7 @@ export class MessageBus {
   // Handle request and event messages
   private handleRequestOrEvent(
     message: RequestMessage | EventMessage,
-    sender: chrome.runtime.MessageSender,
+    sender: MessageSender,
     sendResponse: (response: unknown) => void
   ): boolean {
     const listeners = this.handlers.get(message.type);
@@ -552,9 +548,9 @@ export class MessageBus {
 
   // Clean up resources
   public cleanup(): void {
-    // Remove Chrome message listener
-    if (this.messageListener && typeof chrome !== 'undefined' && chrome?.runtime?.onMessage) {
-      chrome.runtime.onMessage.removeListener(this.messageListener);
+    // Remove browser message listener
+    if (this.messageListener && browserAPI.isExtensionContext()) {
+      browserAPI.runtime.onMessage.removeListener(this.messageListener);
     }
 
     // Clear all timeouts for pending requests

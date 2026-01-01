@@ -610,13 +610,8 @@ describe('ServiceWorkerVideoProcessor', () => {
 });
 
 describe('extractVideoFramesInServiceWorker', () => {
-  beforeEach(() => {
-    jest.useFakeTimers();
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
-  });
+  // Use real timers for these tests because Promise.race with setTimeout
+  // doesn't work well with fake timers in async contexts
 
   it('should create processor and extract frames', async () => {
     const options: ServiceWorkerVideoProcessingOptions = {
@@ -628,13 +623,11 @@ describe('extractVideoFramesInServiceWorker', () => {
       videoHeight: 1080
     };
 
-    mockChrome.tabs.sendMessage.mockImplementation((tabId, request, callback) => {
+    mockChrome.tabs.sendMessage.mockImplementation((tabId: number, request: unknown, callback: (response: unknown) => void) => {
       callback({ frames: [new ImageData(100, 100)] });
     });
 
-    const promise = extractVideoFramesInServiceWorker(options, 123);
-    jest.runAllTimers();
-    const result = await promise;
+    const result = await extractVideoFramesInServiceWorker(options, 123);
 
     expect(result.frames.length).toBe(1);
     expect(result.metadata.extractionMethod).toBe('content-script-relay');
@@ -652,13 +645,11 @@ describe('extractVideoFramesInServiceWorker', () => {
 
     const onProgress = jest.fn();
 
-    mockChrome.tabs.sendMessage.mockImplementation((tabId, request, callback) => {
+    mockChrome.tabs.sendMessage.mockImplementation((tabId: number, request: unknown, callback: (response: unknown) => void) => {
       callback({ frames: [] });
     });
 
-    const promise = extractVideoFramesInServiceWorker(options, 123, onProgress);
-    jest.runAllTimers();
-    await promise;
+    await extractVideoFramesInServiceWorker(options, 123, onProgress);
 
     expect(onProgress).toHaveBeenCalled();
   });

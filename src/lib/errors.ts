@@ -1,4 +1,5 @@
 // Extension-specific error classes and handling utilities
+import { browserAPI } from '@/adapters';
 
 export class ExtensionError extends Error {
   public readonly code: string;
@@ -165,7 +166,7 @@ export class ErrorHandler {
   private async storeError(error: ExtensionError): Promise<void> {
     try {
       const storageKey = `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      await chrome.storage.local.set({
+      await browserAPI.storage.local.set({
         [storageKey]: {
           ...error.toJSON(),
           userAgent: navigator.userAgent,
@@ -181,8 +182,8 @@ export class ErrorHandler {
   private async reportError(error: ExtensionError): Promise<void> {
     try {
       // Send error to background script for centralized logging
-      if (typeof chrome !== 'undefined' && chrome.runtime) {
-        chrome.runtime.sendMessage({
+      if (browserAPI.isExtensionContext()) {
+        browserAPI.runtime.sendMessage({
           type: 'LOG',
           data: {
             level: 'error',
@@ -205,18 +206,24 @@ export class ErrorHandler {
     this.errorReportingEnabled = enabled;
   }
 
-  // Utility for handling Chrome API errors
-  public checkChromeError(operation: string): void {
-    if (chrome.runtime.lastError) {
+  // Utility for handling browser API errors (legacy callback pattern)
+  public checkBrowserError(operation: string): void {
+    const lastError = browserAPI.runtime.lastError;
+    if (lastError) {
       throw new ExtensionError(
-        `Chrome API error during ${operation}: ${chrome.runtime.lastError.message}`,
-        'CHROME_API_ERROR',
+        `Browser API error during ${operation}: ${lastError.message}`,
+        'BROWSER_API_ERROR',
         {
           operation,
-          chromeError: chrome.runtime.lastError.message
+          browserError: lastError.message
         }
       );
     }
+  }
+
+  /** @deprecated Use checkBrowserError instead */
+  public checkChromeError(operation: string): void {
+    this.checkBrowserError(operation);
   }
 
   // Recovery utilities

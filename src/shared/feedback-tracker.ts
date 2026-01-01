@@ -1,4 +1,5 @@
 import { FeedbackData } from '@/types/storage';
+import { browserAPI } from '@/adapters';
 
 const FEEDBACK_STORAGE_KEY = 'feedback-data';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -23,7 +24,7 @@ class FeedbackTracker {
       return this.cache!;
     }
 
-    const result = await chrome.storage.local.get(FEEDBACK_STORAGE_KEY);
+    const result = await browserAPI.storage.local.get(FEEDBACK_STORAGE_KEY);
     const data = result[FEEDBACK_STORAGE_KEY] as FeedbackData | undefined;
 
     if (!data) {
@@ -36,7 +37,7 @@ class FeedbackTracker {
   }
 
   private async setStorageData(data: FeedbackData): Promise<void> {
-    await chrome.storage.local.set({ [FEEDBACK_STORAGE_KEY]: data });
+    await browserAPI.storage.local.set({ [FEEDBACK_STORAGE_KEY]: data });
     this.cache = data;
     this.cacheTimestamp = Date.now();
   }

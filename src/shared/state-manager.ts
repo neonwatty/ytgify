@@ -1,4 +1,5 @@
 import { UserPreferences } from '@/types/storage';
+import { browserAPI } from '@/adapters';
 
 interface ExtensionRuntimeState {
   isYouTubePage: boolean;
@@ -50,8 +51,8 @@ class ExtensionStateManager {
   }
 
   private setupStorageListener(): void {
-    // Listen for chrome storage changes
-    chrome.storage.onChanged.addListener((changes, areaName) => {
+    // Listen for browser storage changes
+    browserAPI.storage.onChanged.addListener((changes, areaName) => {
       if (areaName === 'sync' && changes.preferences) {
         this.emit('preferences-changed', changes.preferences.newValue);
       }
@@ -61,10 +62,11 @@ class ExtensionStateManager {
   private async initializeFromStorage(): Promise<void> {
     try {
       // Only access storage in background/popup context, not content scripts
-      if (this.isStorageContext() && chrome.storage?.session) {
-        const result = await chrome.storage.session.get(this.STATE_KEY);
+      const sessionStorage = browserAPI.storage.session;
+      if (this.isStorageContext() && sessionStorage) {
+        const result = await sessionStorage.get(this.STATE_KEY);
         if (result[this.STATE_KEY]) {
-          this.runtimeState = { ...this.runtimeState, ...result[this.STATE_KEY] };
+          this.runtimeState = { ...this.runtimeState, ...result[this.STATE_KEY] as ExtensionRuntimeState };
         }
       }
     } catch (error) {
@@ -79,8 +81,9 @@ class ExtensionStateManager {
   private async persistState(): Promise<void> {
     try {
       // Only access storage in background/popup context, not content scripts
-      if (this.isStorageContext() && chrome.storage?.session) {
-        await chrome.storage.session.set({
+      const sessionStorage = browserAPI.storage.session;
+      if (this.isStorageContext() && sessionStorage) {
+        await sessionStorage.set({
           [this.STATE_KEY]: this.runtimeState
         });
       }
@@ -96,18 +99,9 @@ class ExtensionStateManager {
   private isStorageContext(): boolean {
     // Only allow storage access in background/popup context, never in content scripts
     try {
-      // Content scripts run in the page context, not extension context
-      if (typeof window !== 'undefined' && window.location && 
-          window.location.protocol !== 'chrome-extension:') {
-        return false;
-      }
-      
-      // Check if we have proper chrome extension context
-      return typeof chrome !== 'undefined' && 
-             chrome.runtime && 
-             !!chrome.runtime.id && 
-             (chrome.runtime.getURL('').includes('chrome-extension://') || 
-              (typeof window !== 'undefined' && window.location.protocol === 'chrome-extension:'));
+      const context = browserAPI.getContext();
+      // Only background and popup contexts should use session storage
+      return context === 'background' || context === 'popup';
     } catch {
       return false;
     }
@@ -212,8 +206,8 @@ class ExtensionStateManager {
 
   // User preferences delegation
   async getPreferences(): Promise<UserPreferences> {
-    const result = await chrome.storage.sync.get('preferences');
-    return result.preferences || this.getDefaultPreferences();
+    const result = await browserAPI.storage.sync.get('preferences');
+    return (result.preferences as UserPreferences) || this.getDefaultPreferences();
   }
 
   private getDefaultPreferences(): UserPreferences {
@@ -230,7 +224,7 @@ class ExtensionStateManager {
   async savePreferences(preferences: Partial<UserPreferences>): Promise<void> {
     const current = await this.getPreferences();
     const updated = { ...current, ...preferences };
-    await chrome.storage.sync.set({ preferences: updated });
+    await browserAPI.storage.sync.set({ preferences: updated });
     this.emit('preferences-changed', updated);
   }
 
@@ -240,13 +234,13 @@ class ExtensionStateManager {
   ): Promise<void> {
     const preferences = await this.getPreferences();
     preferences[key] = value;
-    await chrome.storage.sync.set({ preferences });
+    await browserAPI.storage.sync.set({ preferences });
     this.emit('preferences-changed', preferences);
   }
 
   async resetPreferences(): Promise<void> {
     const defaults = this.getDefaultPreferences();
-    await chrome.storage.sync.set({ preferences: defaults });
+    await browserAPI.storage.sync.set({ preferences: defaults });
     this.emit('preferences-changed', defaults);
   }
 
@@ -265,8 +259,13 @@ class ExtensionStateManager {
     maxDuration: number;
     autoSave: boolean;
   }> {
-    const result = await chrome.storage.sync.get('gifSettings');
-    return result.gifSettings || {
+    const result = await browserAPI.storage.sync.get('gifSettings');
+    return (result.gifSettings as {
+      frameRate: number;
+      quality: number;
+      maxDuration: number;
+      autoSave: boolean;
+    }) || {
       frameRate: 15,
       quality: 10,
       maxDuration: 30,

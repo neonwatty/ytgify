@@ -1,12 +1,14 @@
 // External Links Constants
 
+import { browserAPI } from '@/adapters';
+
 // Helper to open external link in new tab
 export function openExternalLink(url: string): void {
-  // Check if we're in a context that can use chrome.tabs (popup/background)
+  // Check if we're in a context that can use tabs API (popup/background)
   // or content script context (use window.open)
-  if (typeof chrome !== 'undefined' && chrome.tabs) {
-    chrome.tabs.create({ url }).catch(() => {
-      // Fallback to window.open if chrome.tabs.create fails (content script context)
+  if (browserAPI.isExtensionContext()) {
+    browserAPI.tabs.create({ url }).catch(() => {
+      // Fallback to window.open if tabs.create fails (content script context)
       window.open(url, '_blank', 'noopener,noreferrer');
     });
   } else if (typeof window !== 'undefined') {

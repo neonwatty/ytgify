@@ -325,7 +325,8 @@ describe('MessageBus', () => {
             message: 'test',
             component: 'test'
           }
-        })
+        }),
+        expect.any(Function)
       );
     });
 

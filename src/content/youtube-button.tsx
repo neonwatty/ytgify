@@ -91,6 +91,8 @@ class YouTubeButton extends React.Component<YouTubeButtonProps, YouTubeButtonSta
 }
 */
 
+import { browserAPI } from '@/adapters';
+
 // Utility function to create button element without React
 export function createNativeYouTubeButton(props: {
   isActive: boolean;
@@ -114,7 +116,7 @@ export function createNativeYouTubeButton(props: {
 
   // Create logo image icon
   const img = document.createElement('img');
-  img.src = chrome.runtime.getURL('icons/icon.svg');
+  img.src = browserAPI.runtime.getURL('icons/icon.svg');
   img.alt = 'YTGify';
   img.className = 'ytgif-button-icon';
   img.style.width = '100%';

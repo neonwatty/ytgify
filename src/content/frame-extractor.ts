@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 import { createError } from '@/lib/errors';
 import { extractFramesSimple } from '@/lib/simple-frame-extractor';
 import { captureInstantFrames } from '@/lib/instant-frame-capture';
+import { browserAPI } from '@/adapters';
 
 export interface ContentFrameExtractionRequest {
   type: 'CONTENT_SCRIPT_EXTRACT_FRAMES';
@@ -55,10 +56,10 @@ export class ContentScriptFrameExtractor {
 
   // Initialize message handling from background script
   private initializeMessageHandling(): void {
-    // Check if chrome.runtime is available
-    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
-      chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.type === 'CONTENT_SCRIPT_EXTRACT_FRAMES') {
+    // Check if browser runtime is available
+    if (browserAPI.isExtensionContext()) {
+      browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if ((message as { type?: string }).type === 'CONTENT_SCRIPT_EXTRACT_FRAMES') {
           this.handleFrameExtractionRequest(message as ContentFrameExtractionRequest, sendResponse);
           return true; // Indicate async response
         }
@@ -68,7 +69,7 @@ export class ContentScriptFrameExtractor {
       logger.info('[ContentScriptFrameExtractor] Message handling initialized');
     } else {
       logger.warn(
-        '[ContentScriptFrameExtractor] Chrome runtime not available for message handling'
+        '[ContentScriptFrameExtractor] Browser runtime not available for message handling'
       );
     }
   }

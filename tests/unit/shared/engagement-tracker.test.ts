@@ -101,7 +101,8 @@ describe('EngagementTracker', () => {
             },
             popupFooterDismissed: false,
           }),
-        })
+        }),
+        expect.any(Function)
       );
     });
 
@@ -152,7 +153,8 @@ describe('EngagementTracker', () => {
           [STORAGE_KEY]: expect.objectContaining({
             totalGifsCreated: 6,
           }),
-        })
+        }),
+        expect.any(Function)
       );
     });
 
@@ -312,7 +314,8 @@ describe('EngagementTracker', () => {
               milestone10: true,
             }),
           }),
-        })
+        }),
+        expect.any(Function)
       );
     });
 
@@ -356,7 +359,8 @@ describe('EngagementTracker', () => {
               }),
             }),
           }),
-        })
+        }),
+        expect.any(Function)
       );
     });
 
@@ -369,7 +373,8 @@ describe('EngagementTracker', () => {
           [STORAGE_KEY]: expect.objectContaining({
             popupFooterDismissed: true,
           }),
-        })
+        }),
+        expect.any(Function)
       );
     });
 
@@ -396,7 +401,8 @@ describe('EngagementTracker', () => {
               }),
             }),
           }),
-        })
+        }),
+        expect.any(Function)
       );
     });
 

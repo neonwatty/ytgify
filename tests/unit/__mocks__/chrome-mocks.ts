@@ -14,6 +14,7 @@ export interface MockChrome {
   storage: any;
   tabs: any;
   action?: any;
+  downloads?: any;
 }
 
 /**
@@ -40,6 +41,7 @@ export function createChromeMock(): MockChrome {
 
   const chromeMock: MockChrome = {
     runtime: {
+      lastError: undefined as chrome.runtime.LastError | undefined,
       onInstalled: {
         addListener: jest.fn((callback: any) => {
           setTimeout(() => callback({ reason: 'install' }), 0);
@@ -378,6 +380,16 @@ export function createChromeMock(): MockChrome {
         }
         return Promise.resolve();
       })
+    },
+
+    downloads: {
+      download: jest.fn((options: any, callback?: any) => {
+        const downloadId = Math.floor(Math.random() * 1000);
+        if (callback) {
+          setTimeout(() => callback(downloadId), 0);
+        }
+        return Promise.resolve(downloadId);
+      })
     }
   };
 
@@ -484,10 +496,13 @@ export function resetChromeMocks(chromeMock: MockChrome): void {
   };
   
   resetMocks(chromeMock);
-  
+
   // Clear stored data
   chromeMock.storage.sync.clear();
   chromeMock.storage.local.clear();
+
+  // Reset lastError
+  chromeMock.runtime.lastError = undefined;
 }
 
 /**

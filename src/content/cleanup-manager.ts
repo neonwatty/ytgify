@@ -1,5 +1,6 @@
 import { overlayStateManager } from './overlay-state';
 import { extensionStateManager } from '@/shared/state-manager';
+import { browserAPI } from '@/adapters';
 
 interface CleanupTask {
   id: string;
@@ -123,15 +124,16 @@ class CleanupManager {
 
         try {
           // Clear any temporary data from session storage
-          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.session) {
+          const sessionStorage = browserAPI.storage.session;
+          if (sessionStorage) {
             // Only clear temporary/session data, preserve user preferences and GIF library
-            const sessionData = await chrome.storage.session.get(null);
-            const keysToRemove = Object.keys(sessionData).filter(key => 
+            const sessionData = await sessionStorage.get(null);
+            const keysToRemove = Object.keys(sessionData).filter(key =>
               key.includes('temp') || key.includes('session') || key.includes('cache')
             );
-            
+
             if (keysToRemove.length > 0) {
-              await chrome.storage.session.remove(keysToRemove);
+              await sessionStorage.remove(keysToRemove);
             }
           }
         } catch (error) {

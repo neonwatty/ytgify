@@ -40,6 +40,7 @@ import { cleanupManager } from './cleanup-manager';
 import { initializeContentScriptFrameExtraction } from './frame-extractor';
 import { themeDetector, youtubeMatcher } from '@/themes';
 import { engagementTracker } from '@/shared/engagement-tracker';
+import { browserAPI, MessageSender } from '@/adapters';
 
 class YouTubeGifMaker {
   private gifButton: HTMLButtonElement | null = null;
@@ -107,7 +108,7 @@ class YouTubeGifMaker {
 
     this.cssLinkElement = document.createElement('link');
     this.cssLinkElement.rel = 'stylesheet';
-    this.cssLinkElement.href = chrome.runtime.getURL('content-styles.css');
+    this.cssLinkElement.href = browserAPI.runtime.getURL('content-styles.css');
     document.head.appendChild(this.cssLinkElement);
     this.cssInjected = true;
 
@@ -140,9 +141,9 @@ class YouTubeGifMaker {
 
   // Setup storage listener for button visibility changes
   private setupStorageListener() {
-    // Check if Chrome storage API is available
-    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
-      chrome.storage.onChanged.addListener((changes, areaName) => {
+    // Check if browser storage API is available
+    if (browserAPI.isExtensionContext()) {
+      browserAPI.storage.onChanged.addListener((changes, areaName) => {
         if (areaName === 'sync' && changes.buttonVisibility) {
           const newVisibility = changes.buttonVisibility.newValue === true;
 
@@ -150,7 +151,7 @@ class YouTubeGifMaker {
         }
       });
     } else {
-      this.log('warn', '[Content] Chrome storage API not available for listener setup');
+      this.log('warn', '[Content] Browser storage API not available for listener setup');
     }
   }
 
@@ -169,8 +170,8 @@ class YouTubeGifMaker {
           this.setupInjectionSystem();
         }
 
-        if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
-          chrome.storage.sync.set({ buttonVisibility: visible }).catch(() => {});
+        if (browserAPI.isExtensionContext()) {
+          browserAPI.storage.sync.set({ buttonVisibility: visible }).catch(() => {});
         }
       } else if (event.data.type === 'ytgif-open-wizard-direct') {
         this.log('debug', '[Content] Test hook opening wizard directly');
@@ -193,15 +194,15 @@ class YouTubeGifMaker {
 
   // Load initial button visibility setting
   private async loadButtonVisibility() {
-    // Check if Chrome storage API is available
-    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+    // Check if browser storage API is available
+    if (browserAPI.isExtensionContext()) {
       try {
-        const result = await chrome.storage.sync.get(['buttonVisibility']);
+        const result = await browserAPI.storage.sync.get(['buttonVisibility']);
         const isAutomation = typeof navigator !== 'undefined' && navigator.webdriver === true;
         // Default to hidden unless explicitly enabled, but force-visible in automation to unblock E2E
         if (isAutomation && result.buttonVisibility !== true) {
           this.buttonVisible = true;
-          chrome.storage.sync.set({ buttonVisibility: true }).catch(() => {});
+          browserAPI.storage.sync.set({ buttonVisibility: true }).catch(() => {});
         } else {
           this.buttonVisible = result.buttonVisibility === true;
         }
@@ -214,7 +215,7 @@ class YouTubeGifMaker {
     } else {
       this.log(
         'warn',
-        '[Content] Chrome storage API not available, using default button visibility'
+        '[Content] Browser storage API not available, using default button visibility'
       );
       const isAutomation = typeof navigator !== 'undefined' && navigator.webdriver === true;
       this.buttonVisible = isAutomation; // Force visible in automation, hidden otherwise
@@ -278,10 +279,10 @@ class YouTubeGifMaker {
 
   // Setup message listener for communication with background script
   private setupMessageListener() {
-    chrome.runtime.onMessage.addListener(
+    browserAPI.runtime.onMessage.addListener(
       (
         message: ExtensionMessage,
-        sender: chrome.runtime.MessageSender,
+        sender: MessageSender,
         sendResponse: (response: ExtensionMessage) => void
       ) => {
         this.log('debug', `[Content] Received message: ${message.type}`, { message });
@@ -1693,7 +1694,7 @@ class YouTubeGifMaker {
     );
 
     if (message.success && message.data) {
-      // Save the GIF using chrome.storage.local (accessible from all extension contexts)
+      // Save the GIF using browser storage.local (accessible from all extension contexts)
       try {
         const gifId = `gif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -1827,7 +1828,7 @@ class YouTubeGifMaker {
   // Open extension popup (library)
   private openExtensionPopup() {
     // Send message to background to open popup
-    chrome.runtime
+    browserAPI.runtime
       .sendMessage({
         type: 'OPEN_POPUP',
         data: { tab: 'library' },
@@ -1881,31 +1882,27 @@ class YouTubeGifMaker {
 
   // Helper method to send messages to background script
   private async sendMessageToBackground(message: ExtensionMessage): Promise<ExtensionMessage> {
-    return new Promise((resolve, reject) => {
-      // Check if chrome.runtime is available
-      if (typeof chrome === 'undefined' || !chrome.runtime) {
-        this.log(
-          'warn',
-          '[Content] Chrome runtime not available, skipping background communication',
-          { messageType: message.type }
-        );
-        // Resolve with an error response to allow the process to continue
-        resolve({
-          type: 'ERROR_RESPONSE',
-          success: false,
-          error: 'Chrome runtime not available',
-        });
-        return;
-      }
+    // Check if browser runtime is available
+    if (!browserAPI.isExtensionContext()) {
+      this.log(
+        'warn',
+        '[Content] Browser runtime not available, skipping background communication',
+        { messageType: message.type }
+      );
+      // Return error response to allow the process to continue
+      return {
+        type: 'ERROR_RESPONSE',
+        success: false,
+        error: 'Browser runtime not available',
+      };
+    }
 
-      chrome.runtime.sendMessage(message, (response: ExtensionMessage) => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-        } else {
-          resolve(response);
-        }
-      });
-    });
+    try {
+      const response = await browserAPI.runtime.sendMessage(message);
+      return response as ExtensionMessage;
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : String(error));
+    }
   }
 
   // Helper method to extract video ID from current URL

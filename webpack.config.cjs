@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
@@ -6,19 +7,37 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
 
+  // Browser target: chrome (default), firefox, safari
+  // Usage: webpack --env browser=firefox
+  const browserTarget = env?.browser || 'chrome';
+  const validTargets = ['chrome', 'firefox', 'safari'];
+  if (!validTargets.includes(browserTarget)) {
+    throw new Error(`Invalid browser target: ${browserTarget}. Valid targets: ${validTargets.join(', ')}`);
+  }
+
+  // Manifest path: defaults to manifests/{browser}.json, falls back to manifest.json
+  const manifestPath = env?.manifest ||
+    (browserTarget !== 'chrome' ? `manifests/${browserTarget}.json` : 'manifest.json');
+
+  // Output directory: dist-{browser} for non-chrome, dist for chrome
+  const outputDir = browserTarget === 'chrome' ? 'dist' : `dist-${browserTarget}`;
+
+  console.log(`Building for: ${browserTarget}`);
+  console.log(`Manifest: ${manifestPath}`);
+  console.log(`Output: ${outputDir}`);
+
   return {
     entry: {
       background: './src/background/index.ts',
       content: './src/content/index.ts',
-      'content-styles': './src/content/styles-entry.ts', // Generates content.css for dynamic loading
-      popup: './src/popup/index.tsx', // Re-enabled popup for better UX
+      'content-styles': './src/content/styles-entry.ts',
+      popup: './src/popup/index.tsx',
     },
     output: {
-      path: path.resolve(__dirname, 'dist'),
+      path: path.resolve(__dirname, outputDir),
       filename: '[name].js',
       chunkFilename: '[name].chunk.js',
       clean: true,
-      // Set publicPath to extension URL for proper chunk loading
       publicPath: '',
     },
     module: {
@@ -48,13 +67,19 @@ module.exports = (env, argv) => {
         '@/types': path.resolve(__dirname, 'src/types'),
         '@/utils': path.resolve(__dirname, 'src/utils'),
         '@/processing': path.resolve(__dirname, 'src/processing'),
+        // Browser adapter - resolved to target-specific implementation at build time
+        '@/adapters$': path.resolve(__dirname, `src/adapters/${browserTarget}.ts`),
+        '@/adapters': path.resolve(__dirname, 'src/adapters'),
       },
     },
     plugins: [
+      // Define browser target for runtime checks (if needed)
+      new webpack.DefinePlugin({
+        BROWSER_TARGET: JSON.stringify(browserTarget),
+      }),
       new MiniCssExtractPlugin({
         filename: '[name].css',
       }),
-      // Re-enabled HtmlWebpackPlugin for popup
       new HtmlWebpackPlugin({
         template: './popup.html',
         filename: 'popup.html',
@@ -62,11 +87,11 @@ module.exports = (env, argv) => {
       }),
       new CopyPlugin({
         patterns: [
-          { 
-            from: 'manifest.json',
+          {
+            from: manifestPath,
             to: 'manifest.json',
           },
-          { 
+          {
             from: 'icons',
             to: 'icons',
             noErrorOnMissing: true,

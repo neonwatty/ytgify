@@ -1,4 +1,5 @@
 import { logger as libLogger, LogLevel as LibLogLevel, LogEntry } from '../lib/logger';
+import { browserAPI } from '@/adapters';
 
 enum LogLevel {
   DEBUG = 0,
@@ -244,8 +245,8 @@ class SharedLogger {
 
   private async initializeAnalyticsSettings(): Promise<void> {
     try {
-      const result = await chrome.storage.sync.get(['analyticsEnabled']);
-      this.isAnalyticsEnabled = result.analyticsEnabled ?? false;
+      const result = await browserAPI.storage.sync.get(['analyticsEnabled']);
+      this.isAnalyticsEnabled = (result.analyticsEnabled as boolean) ?? false;
     } catch {
       this.isAnalyticsEnabled = false;
     }
@@ -361,7 +362,7 @@ class SharedLogger {
   public async setAnalyticsEnabled(enabled: boolean): Promise<void> {
     this.isAnalyticsEnabled = enabled;
     try {
-      await chrome.storage.sync.set({ analyticsEnabled: enabled });
+      await browserAPI.storage.sync.set({ analyticsEnabled: enabled });
       this.info(`Analytics ${enabled ? 'enabled' : 'disabled'}`);
     } catch (error) {
       this.error('Failed to save analytics setting', { error: error instanceof Error ? error.message : String(error) });
@@ -382,10 +383,8 @@ class SharedLogger {
         userAgent: navigator.userAgent,
         platform: navigator.platform,
         language: navigator.language,
-        chrome: {
-          runtime: !!chrome?.runtime,
-          storage: !!chrome?.storage
-        }
+        extensionContext: browserAPI.isExtensionContext(),
+        context: browserAPI.getContext()
       }
     };
 

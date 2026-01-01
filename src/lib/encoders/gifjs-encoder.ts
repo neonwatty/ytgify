@@ -10,6 +10,7 @@ import {
   EncodingProgress,
   FrameData,
 } from './abstract-encoder';
+import { browserAPI } from '@/adapters';
 
 // gif.js type definitions
 
@@ -82,7 +83,7 @@ export class GifJsEncoder extends AbstractEncoder {
     // Dynamically load gif.js if not available
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
-      script.src = chrome.runtime.getURL('vendor/gif.js');
+      script.src = browserAPI.runtime.getURL('vendor/gif.js');
       script.onload = () => resolve();
       script.onerror = () => reject(new Error('Failed to load gif.js library'));
       document.head.appendChild(script);
@@ -152,11 +153,10 @@ export class GifJsEncoder extends AbstractEncoder {
     // Convert quality setting to gif.js format
     const quality = this.mapQualityToGifJs(options.quality);
 
-    // Get worker script URL for Chrome extension context
-    const workerScript =
-      typeof chrome !== 'undefined' && chrome.runtime?.getURL
-        ? chrome.runtime.getURL('gif.worker.js')
-        : '/gif.worker.js';
+    // Get worker script URL for extension context
+    const workerScript = browserAPI.isExtensionContext()
+      ? browserAPI.runtime.getURL('gif.worker.js')
+      : '/gif.worker.js';
 
     // Initialize gif.js instance (cast to our interface)
     this.gifInstance = new (

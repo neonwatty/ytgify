@@ -1,4 +1,5 @@
 import { performanceTracker, PerformanceMetric, PerformanceSnapshot } from './performance-tracker';
+import { browserAPI } from '@/adapters';
 
 interface CollectedMetrics {
   sessionId: string;
@@ -403,8 +404,8 @@ export class MetricsCollector {
     // Send to analytics endpoint (if configured)
     try {
       // This would be replaced with actual analytics endpoint
-      if (chrome.runtime && chrome.runtime.sendMessage) {
-        chrome.runtime.sendMessage({
+      if (browserAPI.isExtensionContext()) {
+        browserAPI.runtime.sendMessage({
           type: 'ANALYTICS',
           data: payload
         });

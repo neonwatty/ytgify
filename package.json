@@ -7,6 +7,9 @@
   "scripts": {
     "dev": "webpack --config webpack.config.cjs --mode development --watch",
     "build": "webpack --config webpack.config.cjs --mode production",
+    "build:firefox": "webpack --config webpack.config.cjs --mode production --env browser=firefox",
+    "build:safari": "webpack --config webpack.config.cjs --mode production --env browser=safari",
+    "build:all": "npm run build && npm run build:firefox && npm run build:safari",
     "build:production": "scripts/build-production.sh",
     "clean": "rimraf dist",
     "format": "prettier --write 'src/**/*.{ts,tsx,js,jsx,css}'",

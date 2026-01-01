@@ -328,9 +328,10 @@ describe('PopupApp Component', () => {
 
       // Verify chrome.tabs.create was called to open YouTube
       await waitFor(() => {
-        expect((global as any).chrome.tabs.create).toHaveBeenCalledWith({
-          url: 'https://www.youtube.com'
-        });
+        expect((global as any).chrome.tabs.create).toHaveBeenCalledWith(
+          { url: 'https://www.youtube.com' },
+          expect.any(Function)
+        );
       });
 
       // Verify popup closes after opening YouTube
@@ -449,7 +450,8 @@ describe('PopupApp Component', () => {
               videoDuration: 0,
               currentTime: 0
             })
-          })
+          }),
+          expect.any(Function)
         );
       });
 
@@ -471,9 +473,10 @@ describe('PopupApp Component', () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect((global as any).chrome.tabs.create).toHaveBeenCalledWith({
-          url: 'https://www.youtube.com'
-        });
+        expect((global as any).chrome.tabs.create).toHaveBeenCalledWith(
+          { url: 'https://www.youtube.com' },
+          expect.any(Function)
+        );
       });
 
       expect((global as any).window.close).toHaveBeenCalled();
@@ -482,9 +485,16 @@ describe('PopupApp Component', () => {
     test('handles failed message sending gracefully', async () => {
       mockTabWithUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'Test Video - YouTube');
 
-      // Mock chrome.tabs.sendMessage to reject (simulating content script not available)
+      // Mock chrome.tabs.sendMessage to fail via lastError (simulating content script not available)
       (global as any).chrome.tabs.sendMessage.mockImplementation(
-        jest.fn(() => Promise.reject(new Error('Content script not found')))
+        (tabId: number, message: unknown, callback: (response?: unknown) => void) => {
+          (global as any).chrome.runtime.lastError = { message: 'Content script not found' };
+          if (callback) callback(undefined);
+          // Reset lastError after callback (async)
+          setTimeout(() => {
+            (global as any).chrome.runtime.lastError = undefined;
+          }, 0);
+        }
       );
 
       render(<PopupApp />);
@@ -520,9 +530,10 @@ describe('PopupApp Component', () => {
       fireEvent.click(openYoutubeButton);
 
       await waitFor(() => {
-        expect((global as any).chrome.tabs.create).toHaveBeenCalledWith({
-          url: 'https://www.youtube.com'
-        });
+        expect((global as any).chrome.tabs.create).toHaveBeenCalledWith(
+          { url: 'https://www.youtube.com' },
+          expect.any(Function)
+        );
       });
 
       expect((global as any).window.close).toHaveBeenCalled();
@@ -562,22 +573,16 @@ describe('PopupApp Component', () => {
 
   describe('Popup Footer CTA', () => {
     beforeEach(() => {
-      // Mock chrome.storage.local.get for engagement tracker
-      (global as any).chrome.storage.local = {
-        get: jest.fn((keys, callback) => {
-          const result = {};
-          if (callback) callback(result);
-          return Promise.resolve(result);
-        }),
-        set: jest.fn((data, callback) => {
-          if (callback) callback();
-          return Promise.resolve();
-        }),
-        clear: jest.fn((callback) => {
-          if (callback) callback();
-          return Promise.resolve();
-        })
-      };
+      // Mock chrome.storage.local methods (don't replace entire object - adapter has reference)
+      (global as any).chrome.storage.local.get.mockImplementation((keys: any, callback: any) => {
+        const result = {};
+        if (callback) callback(result);
+        return Promise.resolve(result);
+      });
+      (global as any).chrome.storage.local.set.mockImplementation((data: any, callback: any) => {
+        if (callback) callback();
+        return Promise.resolve();
+      });
 
       // Import and clear engagement tracker cache to avoid test pollution
       const { engagementTracker } = require('../../../src/shared/engagement-tracker');
@@ -778,7 +783,8 @@ describe('PopupApp Component', () => {
             'engagement-data': expect.objectContaining({
               popupFooterDismissed: true
             })
-          })
+          }),
+          expect.any(Function)
         );
       });
     });

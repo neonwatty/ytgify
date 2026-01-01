@@ -6,6 +6,8 @@
  * with YouTube's native shortcuts.
  */
 
+import { browserAPI } from '@/adapters';
+
 interface KeyboardShortcut {
   key: string;
   modifiers?: {
@@ -403,9 +405,9 @@ export class KeyboardShortcutManager {
    * Load shortcut configuration from storage
    */
   private async loadShortcutConfig(): Promise<Partial<ShortcutConfig> | null> {
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-      const result = await chrome.storage.sync.get(['keyboardShortcuts']);
-      return result.keyboardShortcuts || null;
+    if (browserAPI.isExtensionContext()) {
+      const result = await browserAPI.storage.sync.get(['keyboardShortcuts']);
+      return (result.keyboardShortcuts as Partial<ShortcutConfig>) || null;
     }
 
     // Fallback to localStorage for popup context
@@ -419,8 +421,8 @@ export class KeyboardShortcutManager {
   private async saveShortcutConfig(): Promise<void> {
     const config = this.currentConfig;
 
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-      await chrome.storage.sync.set({ keyboardShortcuts: config });
+    if (browserAPI.isExtensionContext()) {
+      await browserAPI.storage.sync.set({ keyboardShortcuts: config });
     } else {
       // Fallback to localStorage for popup context
       localStorage.setItem('gif-maker-shortcuts', JSON.stringify(config));

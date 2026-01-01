@@ -4,6 +4,7 @@ import { engagementTracker } from '@/shared/engagement-tracker';
 import { feedbackTracker } from '@/shared/feedback-tracker';
 import { openExternalLink, getReviewLink, getDiscordLink } from '@/constants/links';
 import { EXTERNAL_SURVEY_URL } from '@/constants/features';
+import { browserAPI } from '@/adapters';
 
 const PopupApp: React.FC = () => {
   const [isYouTubePage, setIsYouTubePage] = React.useState(false);
@@ -18,7 +19,7 @@ const PopupApp: React.FC = () => {
 
   // Load button visibility setting
   React.useEffect(() => {
-    chrome.storage.sync.get(['buttonVisibility'], (result) => {
+    browserAPI.storage.sync.get(['buttonVisibility']).then((result) => {
       // Default to false if not set
       setShowButton(result.buttonVisibility === true);
     });
@@ -28,7 +29,7 @@ const PopupApp: React.FC = () => {
   React.useEffect(() => {
     const checkCurrentTab = async () => {
       try {
-        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        const tabs = await browserAPI.tabs.query({ active: true, currentWindow: true });
         const currentTab = tabs[0];
 
         if (!currentTab || !currentTab.url) return;
@@ -71,7 +72,7 @@ const PopupApp: React.FC = () => {
   // Load extension version
   React.useEffect(() => {
     try {
-      const manifest = chrome.runtime.getManifest();
+      const manifest = browserAPI.runtime.getManifest();
       setVersion(manifest.version || '');
     } catch (error) {
       console.error('Error loading version:', error);
@@ -94,10 +95,8 @@ const PopupApp: React.FC = () => {
   // Handle toggle change
   const handleToggleChange = (checked: boolean) => {
     setShowButton(checked);
-    // Save to Chrome storage
-    chrome.storage.sync.set({ buttonVisibility: checked }, () => {
-
-    });
+    // Save to storage
+    browserAPI.storage.sync.set({ buttonVisibility: checked });
   };
 
   // Handle footer actions
@@ -127,7 +126,7 @@ const PopupApp: React.FC = () => {
   const handleCreateGif = async () => {
     if (!isYouTubePage) {
       // Open YouTube in new tab
-      chrome.tabs.create({ url: 'https://www.youtube.com' });
+      browserAPI.tabs.create({ url: 'https://www.youtube.com' });
       window.close();
       return;
     }
@@ -138,11 +137,11 @@ const PopupApp: React.FC = () => {
     }
 
     setIsLoading(true);
-    
+
     try {
-      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      const tabs = await browserAPI.tabs.query({ active: true, currentWindow: true });
       const currentTab = tabs[0];
-      
+
       if (currentTab?.id) {
         // Send message to content script to show the overlay wizard
         const message: ShowTimelineRequest = {
@@ -152,8 +151,8 @@ const PopupApp: React.FC = () => {
             currentTime: 0    // Will be filled by content script
           }
         };
-        
-        await chrome.tabs.sendMessage(currentTab.id, message);
+
+        await browserAPI.tabs.sendMessage(currentTab.id, message);
         // Close popup after triggering overlay
         window.close();
       }
@@ -256,7 +255,7 @@ const PopupApp: React.FC = () => {
                 {/* Open YouTube Button */}
                 <button
                   onClick={() => {
-                    chrome.tabs.create({ url: 'https://www.youtube.com' });
+                    browserAPI.tabs.create({ url: 'https://www.youtube.com' });
                     window.close();
                   }}
                   className="youtube-button"

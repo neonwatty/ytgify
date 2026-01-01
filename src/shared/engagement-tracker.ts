@@ -1,4 +1,5 @@
 import { EngagementData } from '@/types/storage';
+import { browserAPI } from '@/adapters';
 
 const STORAGE_KEY = 'engagement-data';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -26,7 +27,7 @@ class EngagementTracker {
       return this.cache!;
     }
 
-    const result = await chrome.storage.local.get(STORAGE_KEY);
+    const result = await browserAPI.storage.local.get(STORAGE_KEY);
     const data = result[STORAGE_KEY] as EngagementData | undefined;
 
     if (!data) {
@@ -40,7 +41,7 @@ class EngagementTracker {
   }
 
   private async setStorageData(data: EngagementData): Promise<void> {
-    await chrome.storage.local.set({ [STORAGE_KEY]: data });
+    await browserAPI.storage.local.set({ [STORAGE_KEY]: data });
     this.cache = data;
     this.cacheTimestamp = Date.now();
   }

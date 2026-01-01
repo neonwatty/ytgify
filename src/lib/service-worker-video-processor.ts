@@ -1,6 +1,7 @@
 // Service worker compatible video processor using message passing with content scripts
 import { logger } from './logger';
 import { createError } from './errors';
+import { browserAPI } from '@/adapters';
 
 export interface ServiceWorkerVideoProcessingOptions {
   startTime: number;
@@ -151,34 +152,30 @@ export class ServiceWorkerVideoProcessor {
         request: extractionRequest
       });
 
-      // Use Chrome tabs messaging API
-      const response = await new Promise<{ frames: ImageData[] }>((resolve, reject) => {
-        const timeout = setTimeout(() => {
+      // Use browser tabs messaging API with timeout
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
           logger.error('[ServiceWorkerVideoProcessor] Frame extraction timeout after 60s');
           reject(createError('video', 'Content script frame extraction timeout'));
         }, 60000); // 60 second timeout
+      });
 
-        chrome.tabs.sendMessage(this.tabId!, extractionRequest, (response) => {
-          clearTimeout(timeout);
+      const messagePromise = browserAPI.tabs.sendMessage(this.tabId!, extractionRequest)
+        .then((response) => {
           logger.info('[ServiceWorkerVideoProcessor] Received response from content script', {
             hasResponse: !!response,
-            hasFrames: !!(response?.frames),
-            frameCount: response?.frames?.length || 0
+            hasFrames: !!((response as { frames?: ImageData[] })?.frames),
+            frameCount: (response as { frames?: ImageData[] })?.frames?.length || 0
           });
-          
-          if (chrome.runtime.lastError) {
-            reject(createError('video', `Chrome messaging error: ${chrome.runtime.lastError.message}`));
-            return;
+
+          if (!response || !(response as { frames?: ImageData[] }).frames) {
+            throw createError('video', 'Invalid response from content script');
           }
 
-          if (!response || !response.frames) {
-            reject(createError('video', 'Invalid response from content script'));
-            return;
-          }
-
-          resolve(response);
+          return response as { frames: ImageData[] };
         });
-      });
+
+      const response = await Promise.race([messagePromise, timeoutPromise]);
 
       this.reportProgress('receiving', 60, `Received ${response.frames.length} frames from content script`);
 

@@ -1,5 +1,5 @@
 // Enhanced message handler for background service worker
-import { 
+import {
   ExtensionMessage,
   ExtractFramesRequest,
   ExtractFramesResponse,
@@ -28,6 +28,7 @@ import {
 import { backgroundWorker, VideoProcessingJob } from './worker';
 import { logger } from '@/lib/logger';
 import { errorHandler, createError } from '@/lib/errors';
+import { browserAPI, MessageSender } from '@/adapters';
 
 /** @internal */
 export interface MessageHandlerOptions {
@@ -39,7 +40,7 @@ export interface MessageHandlerOptions {
 export class BackgroundMessageHandler {
   private static instance: BackgroundMessageHandler;
   private options: MessageHandlerOptions;
-  private activeJobs: Map<string, { jobId: string; requestId?: string; sender: chrome.runtime.MessageSender }> = new Map();
+  private activeJobs: Map<string, { jobId: string; requestId?: string; sender: MessageSender }> = new Map();
   private progressUpdateInterval?: NodeJS.Timeout;
 
   private constructor(options: MessageHandlerOptions = {}) {
@@ -70,7 +71,7 @@ export class BackgroundMessageHandler {
   // Main message routing handler
   public async handleMessage(
     message: ExtensionMessage,
-    sender: chrome.runtime.MessageSender,
+    sender: MessageSender,
     sendResponse: (response: ExtensionMessage) => void
   ): Promise<boolean> {
     try {
@@ -176,7 +177,7 @@ export class BackgroundMessageHandler {
   // Handle frame extraction requests
   private async handleFrameExtraction(
     message: ExtractFramesRequest,
-    sender: chrome.runtime.MessageSender,
+    sender: MessageSender,
     sendResponse: (response: ExtractFramesResponse) => void
   ): Promise<void> {
     try {
@@ -213,7 +214,7 @@ export class BackgroundMessageHandler {
       
       // Send initial progress update immediately
       if (sender.tab?.id) {
-        chrome.tabs.sendMessage(sender.tab.id, {
+        browserAPI.tabs.sendMessage(sender.tab.id, {
           type: 'JOB_PROGRESS_UPDATE',
           data: {
             jobId,
@@ -279,7 +280,7 @@ export class BackgroundMessageHandler {
   // Handle GIF encoding requests
   private async handleGifEncoding(
     message: EncodeGifRequest,
-    sender: chrome.runtime.MessageSender,
+    sender: MessageSender,
     sendResponse: (response: EncodeGifResponse) => void
   ): Promise<void> {
     try {
@@ -303,7 +304,7 @@ export class BackgroundMessageHandler {
       
       // Send initial progress update immediately
       if (sender.tab?.id) {
-        chrome.tabs.sendMessage(sender.tab.id, {
+        browserAPI.tabs.sendMessage(sender.tab.id, {
           type: 'JOB_PROGRESS_UPDATE',
           data: {
             jobId,
@@ -375,7 +376,7 @@ export class BackgroundMessageHandler {
   // Handle video state queries
   private async handleVideoStateQuery(
     message: GetVideoStateRequest,
-    sender: chrome.runtime.MessageSender,
+    sender: MessageSender,
     sendResponse: (response: GetVideoStateResponse) => void
   ): Promise<void> {
     try {
@@ -426,7 +427,7 @@ export class BackgroundMessageHandler {
   // Handle GIF storage request
   private async handleSaveGifRequest(
     message: ExtensionMessage,
-    sender: chrome.runtime.MessageSender,
+    sender: MessageSender,
     sendResponse: (response: ExtensionMessage) => void
   ): Promise<void> {
     try {
@@ -473,7 +474,7 @@ export class BackgroundMessageHandler {
   // Handle timeline selection updates - initiate complete GIF creation process
   private handleTimelineSelectionUpdate(
     message: TimelineSelectionUpdate,
-    sender: chrome.runtime.MessageSender
+    sender: MessageSender
   ): void {
     // Wrap in async IIFE to handle async operations
     (async () => {
@@ -500,22 +501,16 @@ export class BackgroundMessageHandler {
 
       // Send request to content script to extract video data and start frame extraction
       try {
-        const videoDataResponse = await new Promise<VideoDataResponse['data']>((resolve, reject) => {
-          const request: RequestVideoDataForGif = {
-            type: 'REQUEST_VIDEO_DATA_FOR_GIF',
-            data: { startTime, endTime, duration }
-          };
-          
-          chrome.tabs.sendMessage(sender.tab!.id!, request, (response: VideoDataResponse) => {
-            if (chrome.runtime.lastError) {
-              reject(new Error(chrome.runtime.lastError.message));
-            } else if (response?.error) {
-              reject(new Error(response.error));
-            } else {
-              resolve(response.data);
-            }
-          });
-        });
+        const request: RequestVideoDataForGif = {
+          type: 'REQUEST_VIDEO_DATA_FOR_GIF',
+          data: { startTime, endTime, duration }
+        };
+
+        const response = await browserAPI.tabs.sendMessage(sender.tab!.id!, request) as VideoDataResponse;
+        if (response?.error) {
+          throw new Error(response.error);
+        }
+        const videoDataResponse = response.data;
 
         // Create frame extraction job
         if (!videoDataResponse) {
@@ -541,13 +536,13 @@ export class BackgroundMessageHandler {
         this.handleFrameExtractionForGif(frameExtractionRequest, sender, (completionResponse) => {
           // Send completion via tab message instead of response callback
           if (sender.tab?.id) {
-            chrome.tabs.sendMessage(sender.tab.id, completionResponse).catch(() => {});
+            browserAPI.tabs.sendMessage(sender.tab.id, completionResponse).catch(() => {});
           }
         }).catch(error => {
           logger.error('[MessageHandler] Frame extraction failed after acknowledgment', { error });
           // Send error notification to content script
           if (sender.tab?.id) {
-            chrome.tabs.sendMessage(sender.tab.id, {
+            browserAPI.tabs.sendMessage(sender.tab.id, {
               type: 'GIF_CREATION_COMPLETE',
               success: false,
               error: error instanceof Error ? error.message : 'GIF creation failed'
@@ -565,7 +560,7 @@ export class BackgroundMessageHandler {
       
       // Send error notification to content script
       if (sender.tab?.id) {
-        chrome.tabs.sendMessage(sender.tab.id, {
+        browserAPI.tabs.sendMessage(sender.tab.id, {
           type: 'GIF_CREATION_COMPLETE',
           success: false,
           error: error instanceof Error ? error.message : 'GIF creation failed'
@@ -578,7 +573,7 @@ export class BackgroundMessageHandler {
   // Handle frame extraction specifically for GIF creation (chains to encoding)
   private async handleFrameExtractionForGif(
     message: ExtractFramesRequest,
-    sender: chrome.runtime.MessageSender,
+    sender: MessageSender,
     originalSendResponse: (response: ExtensionMessage) => void
   ): Promise<void> {
     try {
@@ -671,7 +666,7 @@ export class BackgroundMessageHandler {
   // Handle GIF encoding specifically for timeline-initiated GIF creation
   private async handleGifEncodingForTimeline(
     message: EncodeGifRequest,
-    sender: chrome.runtime.MessageSender,
+    sender: MessageSender,
     originalSendResponse: (response: ExtensionMessage) => void
   ): Promise<void> {
     try {
@@ -745,7 +740,7 @@ export class BackgroundMessageHandler {
   // Handle job status queries
   private handleJobStatusQuery(
     message: GetJobStatusRequest,
-    _sender: chrome.runtime.MessageSender,
+    _sender: MessageSender,
     sendResponse: (response: ExtensionMessage) => void
   ): void {
     try {
@@ -787,7 +782,7 @@ export class BackgroundMessageHandler {
   // Handle job cancellation
   private handleJobCancellation(
     message: ExtensionMessage,
-    _sender: chrome.runtime.MessageSender,
+    _sender: MessageSender,
     sendResponse: (response: ExtensionMessage) => void
   ): void {
     try {
@@ -821,31 +816,28 @@ export class BackgroundMessageHandler {
     sendResponse: (response: ExtensionMessage) => void
   ): void {
     const { url, filename } = message.data;
-    
+
     logger.info('[MessageHandler] Processing GIF download request', { filename });
-    
-    chrome.downloads.download({
+
+    browserAPI.downloads.download({
       url,
       filename,
       saveAs: false
-    }, (downloadId) => {
-      if (chrome.runtime.lastError) {
-        logger.error('[MessageHandler] Download failed', { 
-          error: chrome.runtime.lastError.message 
-        });
-        sendResponse({ 
-          type: 'ERROR_RESPONSE',
-          success: false, 
-          error: chrome.runtime.lastError.message 
-        } as ErrorResponse);
-      } else {
-        logger.info('[MessageHandler] Download started', { downloadId, filename });
-        sendResponse({ 
-          type: 'SUCCESS_RESPONSE',
-          success: true, 
-          data: { downloadId }
-        } as SuccessResponse);
-      }
+    }).then((downloadId) => {
+      logger.info('[MessageHandler] Download started', { downloadId, filename });
+      sendResponse({
+        type: 'SUCCESS_RESPONSE',
+        success: true,
+        data: { downloadId }
+      } as SuccessResponse);
+    }).catch((error) => {
+      const errorMessage = error instanceof Error ? error.message : 'Download failed';
+      logger.error('[MessageHandler] Download failed', { error: errorMessage });
+      sendResponse({
+        type: 'ERROR_RESPONSE',
+        success: false,
+        error: errorMessage
+      } as ErrorResponse);
     });
   }
 
@@ -953,7 +945,7 @@ export class BackgroundMessageHandler {
             }
           }
 
-          chrome.tabs.sendMessage(jobInfo.sender.tab.id, {
+          browserAPI.tabs.sendMessage(jobInfo.sender.tab.id, {
             type: 'JOB_PROGRESS_UPDATE',
             data: {
               jobId,

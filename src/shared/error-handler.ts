@@ -1,5 +1,6 @@
 import { ExtensionError, createError } from '../lib/errors';
 import { sharedLogger } from './logger';
+import { browserAPI } from '@/adapters';
 
 interface ErrorRecoveryStrategy {
   maxRetries?: number;
@@ -57,10 +58,10 @@ class SharedErrorHandler {
       });
     }
 
-    if (typeof chrome !== 'undefined' && chrome.runtime) {
-      chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
-        if (message.type === 'ERROR_REPORT') {
-          this.handleRemoteError(message.data);
+    if (browserAPI.isExtensionContext()) {
+      browserAPI.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
+        if ((message as { type?: string }).type === 'ERROR_REPORT') {
+          this.handleRemoteError((message as { data?: unknown }).data);
         }
       });
     }
@@ -68,8 +69,8 @@ class SharedErrorHandler {
 
   private async loadSettings(): Promise<void> {
     try {
-      const result = await chrome.storage.sync.get(['errorReportingEnabled']);
-      this.errorReportingEnabled = result.errorReportingEnabled ?? true;
+      const result = await browserAPI.storage.sync.get(['errorReportingEnabled']);
+      this.errorReportingEnabled = (result.errorReportingEnabled as boolean) ?? true;
     } catch {
       this.errorReportingEnabled = true;
     }
@@ -270,8 +271,8 @@ class SharedErrorHandler {
   }
 
   private broadcastUserFeedback(feedback: UserFeedback): void {
-    if (typeof chrome !== 'undefined' && chrome.runtime) {
-      chrome.runtime
+    if (browserAPI.isExtensionContext()) {
+      browserAPI.runtime
         .sendMessage({
           type: 'USER_FEEDBACK',
           data: feedback,
@@ -322,7 +323,7 @@ class SharedErrorHandler {
         timestamp: new Date().toISOString(),
       };
 
-      await chrome.storage.local.set({
+      await browserAPI.storage.local.set({
         [`error_report_${Date.now()}`]: report,
       });
 
@@ -339,8 +340,8 @@ class SharedErrorHandler {
     const diagnostics = await sharedLogger.exportDiagnostics();
     const mailtoLink = this.createErrorReportEmail(error, diagnostics);
 
-    if (typeof chrome !== 'undefined' && chrome.tabs) {
-      chrome.tabs.create({ url: mailtoLink });
+    if (browserAPI.isExtensionContext()) {
+      browserAPI.tabs.create({ url: mailtoLink });
     } else if (typeof window !== 'undefined') {
       window.open(mailtoLink, '_blank');
     }
@@ -366,8 +367,8 @@ ${diagnostics}
 
   private async restartExtension(): Promise<void> {
     sharedLogger.info('Restarting extension...');
-    if (typeof chrome !== 'undefined' && chrome.runtime) {
-      chrome.runtime.reload();
+    if (browserAPI.isExtensionContext()) {
+      browserAPI.runtime.reload();
     }
   }
 
@@ -375,8 +376,8 @@ ${diagnostics}
     sharedLogger.info('Resetting extension data...');
 
     try {
-      await chrome.storage.local.clear();
-      await chrome.storage.sync.clear();
+      await browserAPI.storage.local.clear();
+      await browserAPI.storage.sync.clear();
       this.criticalErrorCount = 0;
       this.clearUserFeedback();
       sharedLogger.clearPerformanceMetrics();
@@ -391,10 +392,10 @@ ${diagnostics}
   private async disableExtension(): Promise<void> {
     sharedLogger.info('Disabling extension...');
 
-    if (typeof chrome !== 'undefined' && chrome.management) {
+    if (browserAPI.isExtensionContext()) {
       try {
-        const extensionInfo = await chrome.management.getSelf();
-        await chrome.management.setEnabled(extensionInfo.id, false);
+        const extensionInfo = await browserAPI.management.getSelf();
+        await browserAPI.management.setEnabled(extensionInfo.id, false);
       } catch (error) {
         sharedLogger.error('Failed to disable extension', {
           error: error instanceof Error ? error.message : String(error),
@@ -406,7 +407,7 @@ ${diagnostics}
   public async setErrorReporting(enabled: boolean): Promise<void> {
     this.errorReportingEnabled = enabled;
     try {
-      await chrome.storage.sync.set({ errorReportingEnabled: enabled });
+      await browserAPI.storage.sync.set({ errorReportingEnabled: enabled });
       sharedLogger.info(`Error reporting ${enabled ? 'enabled' : 'disabled'}`);
     } catch (error) {
       sharedLogger.error('Failed to save error reporting setting', {

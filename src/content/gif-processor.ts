@@ -4,6 +4,7 @@ import { createError } from '@/lib/errors';
 import { encodeFrames, FrameData as EncoderFrameData, EncodingOptions } from '@/lib/encoders';
 import { TextOverlay } from '@/types';
 import { metricsCollector } from '@/monitoring/metrics-collector';
+import { browserAPI } from '@/adapters';
 
 /**
  * Compare two canvas frames to detect if they are similar/duplicate
@@ -998,26 +999,29 @@ export class ContentScriptGifProcessor {
     const url = URL.createObjectURL(blob);
     const name = filename || `youtube-gif-${Date.now()}.gif`;
 
-    // Send download request to background script
-    chrome.runtime.sendMessage(
-      {
+    try {
+      // Send download request to background script
+      const response = await browserAPI.runtime.sendMessage({
         type: 'DOWNLOAD_GIF',
         data: {
           url,
           filename: name,
         },
-      },
-      (response) => {
-        // Clean up blob URL after download starts
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      });
 
-        if (response?.success) {
-          logger.info('[ContentScriptGifProcessor] Download initiated', { filename: name });
-        } else {
-          logger.error('[ContentScriptGifProcessor] Download failed', { error: response?.error });
-        }
+      // Clean up blob URL after download starts
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      if ((response as { success?: boolean })?.success) {
+        logger.info('[ContentScriptGifProcessor] Download initiated', { filename: name });
+      } else {
+        logger.error('[ContentScriptGifProcessor] Download failed', { error: (response as { error?: string })?.error });
       }
-    );
+    } catch (error) {
+      // Clean up blob URL on error
+      URL.revokeObjectURL(url);
+      logger.error('[ContentScriptGifProcessor] Download request failed', { error });
+    }
   }
 }
 
