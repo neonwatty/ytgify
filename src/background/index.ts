@@ -6,6 +6,9 @@ import { initializeMessageBus } from '@/shared/message-bus';
 import { sharedLogger, sharedErrorHandler, extensionStateManager } from '@/shared';
 import { engagementTracker } from '@/shared/engagement-tracker';
 import { databaseCleanup } from '@/shared/database-cleanup';
+import { TokenManager } from './token-manager';
+import { StorageAdapter } from '@/lib/storage/storage-adapter';
+import { apiClient } from '@/lib/api/api-client';
 
 // Service Worker lifecycle events with enhanced logging and error handling
 chrome.runtime.onInstalled.addListener(
@@ -39,6 +42,10 @@ chrome.runtime.onInstalled.addListener(
           // Initialize engagement tracking
           await engagementTracker.initializeEngagement();
           sharedLogger.info('[Background] Engagement tracking initialized', {}, 'background');
+
+          // Set up token refresh alarm
+          await TokenManager.setupTokenRefreshAlarm();
+          sharedLogger.info('[Background] Token refresh alarm initialized', {}, 'background');
         }
 
         // Handle extension updates - clean up old IndexedDB data
@@ -137,6 +144,9 @@ chrome.runtime.onStartup.addListener(
 
       // Initialize extension state on startup
       await extensionStateManager.clearRuntimeState();
+
+      // Check and refresh token if needed
+      await TokenManager.onServiceWorkerActivation();
     },
     {
       maxRetries: 0,
@@ -317,6 +327,105 @@ chrome.commands.onCommand.addListener(async (command) => {
     } catch (error) {
       console.error('[BACKGROUND] Failed to send message:', error);
     }
+  }
+});
+
+// ========================================
+// Auth Message Handlers (Phase 1)
+// ========================================
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'CHECK_AUTH') {
+    // Check if user is authenticated
+    (async () => {
+      const status = await TokenManager.checkAuthStatus();
+      const profile = status.authenticated ? await StorageAdapter.getUserProfile() : null;
+
+      sendResponse({
+        authenticated: status.authenticated,
+        userProfile: profile,
+        expiresIn: status.expiresIn,
+        needsRefresh: status.needsRefresh,
+      });
+    })();
+    return true;
+  }
+
+  if (message.type === 'REFRESH_TOKEN') {
+    // Manual token refresh requested
+    (async () => {
+      const success = await TokenManager.manualRefresh();
+      sendResponse({ success });
+    })();
+    return true;
+  }
+
+  if (message.type === 'LOGIN') {
+    // Handle login request from popup/content script
+    (async () => {
+      try {
+        const { email, password } = message.data;
+        const response = await apiClient.login(email, password);
+        sendResponse({ success: true, data: response });
+      } catch (error) {
+        sendResponse({
+          success: false,
+          error: error instanceof Error ? error.message : 'Login failed',
+        });
+      }
+    })();
+    return true;
+  }
+
+  if (message.type === 'LOGOUT') {
+    // Handle logout request
+    (async () => {
+      try {
+        await apiClient.logout();
+        await TokenManager.clearTokenRefreshAlarm();
+        sendResponse({ success: true });
+      } catch (error) {
+        sendResponse({
+          success: false,
+          error: error instanceof Error ? error.message : 'Logout failed',
+        });
+      }
+    })();
+    return true;
+  }
+
+  if (message.type === 'GET_USER_PROFILE') {
+    // Get cached or fetch user profile
+    (async () => {
+      try {
+        let profile = await StorageAdapter.getUserProfile();
+
+        if (!profile) {
+          // Fetch from API if not cached
+          profile = await apiClient.getCurrentUser();
+        }
+
+        sendResponse({ success: true, data: profile });
+      } catch (error) {
+        sendResponse({
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to get profile',
+        });
+      }
+    })();
+    return true;
+  }
+
+  return false;
+});
+
+// ========================================
+// Token Refresh Alarm Handler
+// ========================================
+
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === 'refreshToken') {
+    await TokenManager.onTokenRefreshAlarm();
   }
 });
 
