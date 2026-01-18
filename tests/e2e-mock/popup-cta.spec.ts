@@ -94,6 +94,7 @@ async function getEngagementData(context: BrowserContext): Promise<EngagementDat
 
 /**
  * Helper to open extension popup
+ * Waits for popup to be fully loaded before returning
  */
 async function openExtensionPopup(context: BrowserContext): Promise<Page | null> {
   const serviceWorkers = context.serviceWorkers();
@@ -110,7 +111,15 @@ async function openExtensionPopup(context: BrowserContext): Promise<Page | null>
 
   const extensionId = match[1];
   const page = await context.newPage();
-  await page.goto(`chrome-extension://${extensionId}/popup.html`);
+
+  // Navigate and wait for DOM to be ready
+  await page.goto(`chrome-extension://${extensionId}/popup.html`, {
+    waitUntil: 'domcontentloaded',
+  });
+
+  // Wait for the popup React app to mount and render
+  await page.waitForSelector('.popup-modern', { timeout: 15000 });
+
   return page;
 }
 
@@ -138,12 +147,9 @@ test.describe('Popup CTA - Primary Prompt (Mock)', () => {
     expect(verifyData).toBeTruthy();
     expect(verifyData!.totalGifsCreated).toBe(5);
 
-    // Open popup
+    // Open popup (helper waits for .popup-modern to be ready)
     const popup = await openExtensionPopup(context);
     expect(popup).toBeTruthy();
-
-    // Wait for popup to render
-    await popup!.waitForSelector('.popup-modern', { timeout: 5000 });
 
     // Wait for footer to render (it checks engagement data on mount)
     await popup!.waitForTimeout(1000);
@@ -185,12 +191,9 @@ test.describe('Popup CTA - Primary Prompt (Mock)', () => {
     await page.goto(getMockVideoUrl('veryShort', mockServerUrl));
     await page.waitForSelector('video', { timeout: 10000 });
 
-    // Open popup
+    // Open popup (helper waits for .popup-modern to be ready)
     const popup = await openExtensionPopup(context);
     expect(popup).toBeTruthy();
-
-    // Wait for popup to render
-    await popup!.waitForSelector('.popup-modern', { timeout: 5000 });
 
     // Footer should NOT be visible
     const footer = await popup!.$('.popup-footer');
@@ -218,12 +221,9 @@ test.describe('Popup CTA - Primary Prompt (Mock)', () => {
     await page.goto(getMockVideoUrl('veryShort', mockServerUrl));
     await page.waitForSelector('video', { timeout: 10000 });
 
-    // Open popup
+    // Open popup (helper waits for .popup-modern to be ready)
     const popup = await openExtensionPopup(context);
     expect(popup).toBeTruthy();
-
-    // Wait for popup to render
-    await popup!.waitForSelector('.popup-modern', { timeout: 5000 });
 
     // Footer should NOT be visible because it was dismissed
     const footer = await popup!.$('.popup-footer');
@@ -251,12 +251,9 @@ test.describe('Popup CTA - Primary Prompt (Mock)', () => {
     await page.goto(getMockVideoUrl('veryShort', mockServerUrl));
     await page.waitForSelector('video', { timeout: 10000 });
 
-    // Open popup
+    // Open popup (helper waits for .popup-modern to be ready)
     const popup = await openExtensionPopup(context);
     expect(popup).toBeTruthy();
-
-    // Wait for popup to render
-    await popup!.waitForSelector('.popup-modern', { timeout: 5000 });
 
     // Footer should NOT be visible because prompt was already shown
     const footer = await popup!.$('.popup-footer');
@@ -284,10 +281,9 @@ test.describe('Popup CTA - Primary Prompt (Mock)', () => {
     await page.goto(getMockVideoUrl('veryShort', mockServerUrl));
     await page.waitForSelector('video', { timeout: 10000 });
 
-    // Open popup
+    // Open popup (helper waits for .popup-modern to be ready)
     const popup = await openExtensionPopup(context);
     expect(popup).toBeTruthy();
-    await popup!.waitForSelector('.popup-modern', { timeout: 5000 });
     await popup!.waitForTimeout(1000);
 
     // Verify footer is initially visible
@@ -333,10 +329,9 @@ test.describe('Popup CTA - Primary Prompt (Mock)', () => {
     await page.goto(getMockVideoUrl('veryShort', mockServerUrl));
     await page.waitForSelector('video', { timeout: 10000 });
 
-    // Open popup
+    // Open popup (helper waits for .popup-modern to be ready)
     const popup = await openExtensionPopup(context);
     expect(popup).toBeTruthy();
-    await popup!.waitForSelector('.popup-modern', { timeout: 5000 });
     await popup!.waitForTimeout(1000);
 
     // Verify footer is visible
