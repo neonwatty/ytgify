@@ -11,7 +11,7 @@ import type { UploadedGif, LikeResponse } from '@/types/auth';
 
 interface GifCardProps {
   gif: UploadedGif;
-  onLikeUpdate?: (gifId: string, liked: boolean, likeCount: number) => void;
+  onLikeUpdate?: (gifId: string, likeResponse: LikeResponse) => void;
 }
 
 export const GifCard: React.FC<GifCardProps> = ({ gif, onLikeUpdate }) => {
@@ -27,13 +27,11 @@ export const GifCard: React.FC<GifCardProps> = ({ gif, onLikeUpdate }) => {
 
     try {
       setIsLiking(true);
-      const response: LikeResponse = isLiked
-        ? await apiClient.unlikeGif(gif.id)
-        : await apiClient.likeGif(gif.id);
+      const response: LikeResponse = await apiClient.toggleLike(gif.id);
 
       setIsLiked(response.liked);
       setLikeCount(response.like_count);
-      onLikeUpdate?.(gif.id, response.liked, response.like_count);
+      onLikeUpdate?.(gif.id, response);
     } catch (err) {
       console.error('[GifCard] Like/unlike failed:', err);
     } finally {
