@@ -1,0 +1,136 @@
+name: Integration Tests
+
+on:
+  # Triggered by backend repo when API changes
+  repository_dispatch:
+    types: [backend-api-changed]
+
+  # Manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      backend_ref:
+        description: 'Backend commit ref to test against'
+        default: 'main'
+        required: false
+
+jobs:
+  integration:
+    name: Backend Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ytgify_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/ytgify_test
+      REDIS_URL: redis://localhost:6379/1
+
+    steps:
+      - name: Checkout extension
+        uses: actions/checkout@v4
+
+      - name: Clone backend
+        run: |
+          git clone --depth 1 https://github.com/neonwatty/ytgify-share backend
+          cd backend
+
+          # Checkout specific ref if provided
+          BACKEND_REF="${{ github.event.client_payload.backend_ref || github.event.inputs.backend_ref || 'main' }}"
+          if [ "$BACKEND_REF" != "main" ]; then
+            git fetch origin $BACKEND_REF
+            git checkout FETCH_HEAD
+          fi
+
+          echo "Backend ref: $(git rev-parse HEAD)"
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+          working-directory: backend
+          bundler-cache: true
+
+      - name: Setup backend database
+        run: |
+          cd backend
+          bin/rails db:create db:migrate
+
+      - name: Start backend server
+        run: |
+          cd backend
+          bin/rails server -p 3001 &
+          echo "Waiting for backend to start..."
+          for i in {1..30}; do
+            if curl -s http://localhost:3001/api/v1/health > /dev/null 2>&1; then
+              echo "Backend is ready!"
+              break
+            fi
+            echo "Attempt $i: Backend not ready yet..."
+            sleep 2
+          done
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Install extension dependencies
+        run: npm ci
+
+      - name: Build extension
+        run: npm run build
+        env:
+          API_BASE_URL: http://localhost:3001
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Run integration tests
+        run: npm run test:e2e:upload
+        env:
+          API_BASE_URL: http://localhost:3001
+          HEADLESS: true
+
+      - name: Upload test artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: |
+            tests/test-results/
+            playwright-report/
+            backend/log/test.log
+          retention-days: 7
