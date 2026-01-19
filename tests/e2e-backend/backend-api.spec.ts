@@ -2,6 +2,7 @@ import { test, expect, APIRequestContext } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+import FormData from 'form-data';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -133,45 +134,50 @@ test.describe('Backend API Integration', () => {
     const gifPath = path.join(__dirname, 'fixtures', 'test.gif');
     const gifBuffer = fs.readFileSync(gifPath);
 
-    // Create form data for multipart upload
-    const response = await request.post(`${BACKEND_URL}/api/v1/gifs`, {
+    // Use form-data package for proper multipart construction with Rails
+    const form = new FormData();
+    form.append('gif[title]', 'Test GIF from Integration Test');
+    form.append('gif[description]', 'This GIF was uploaded by the integration test suite');
+    form.append('gif[youtube_video_url]', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+    form.append('gif[youtube_timestamp_start]', '0');
+    form.append('gif[youtube_timestamp_end]', '3');
+    form.append('gif[file]', gifBuffer, {
+      filename: 'test.gif',
+      contentType: 'image/gif',
+    });
+
+    // Use native fetch for proper multipart handling with form-data
+    const fetchResponse = await fetch(`${BACKEND_URL}/api/v1/gifs`, {
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${authToken}`,
+        ...form.getHeaders(),
       },
-      multipart: {
-        'gif[title]': 'Test GIF from Integration Test',
-        'gif[description]': 'This GIF was uploaded by the integration test suite',
-        'gif[youtube_url]': 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-        'gif[start_time]': '0',
-        'gif[end_time]': '3',
-        'gif[file]': {
-          name: 'test.gif',
-          mimeType: 'image/gif',
-          buffer: gifBuffer,
-        },
-      },
+      body: form.getBuffer(),
     });
 
     // Log response for debugging
-    const responseText = await response.text();
-    console.log('Upload response status:', response.status());
+    const responseText = await fetchResponse.text();
+    console.log('Upload response status:', fetchResponse.status);
 
-    if (response.ok()) {
+    if (fetchResponse.ok) {
       const data = JSON.parse(responseText);
-      expect(data).toHaveProperty('id');
-      expect(data).toHaveProperty('title', 'Test GIF from Integration Test');
+      // Rails returns { message: "...", gif: { id, title, ... } }
+      expect(data).toHaveProperty('gif');
+      expect(data.gif).toHaveProperty('id');
+      expect(data.gif).toHaveProperty('title', 'Test GIF from Integration Test');
 
       // Store the GIF ID for later tests and cleanup
-      createdGifId = data.id;
+      createdGifId = data.gif.id;
       console.log('✓ Created GIF with ID:', createdGifId);
     } else {
       console.error('Upload failed:', responseText);
       // Some backends might not have the GIF upload fully implemented yet
       // Mark this as a soft failure if it's a 422 (validation error) or 500
-      if (response.status() === 422 || response.status() === 500) {
+      if (fetchResponse.status === 422 || fetchResponse.status === 500) {
         test.skip(true, 'GIF upload endpoint not fully configured');
       }
-      throw new Error(`Upload failed with status ${response.status()}: ${responseText}`);
+      throw new Error(`Upload failed with status ${fetchResponse.status}: ${responseText}`);
     }
   });
 
@@ -190,8 +196,10 @@ test.describe('Backend API Integration', () => {
     expect(response.ok()).toBeTruthy();
 
     const data = await response.json();
-    expect(data).toHaveProperty('id', createdGifId);
-    expect(data).toHaveProperty('title', 'Test GIF from Integration Test');
+    // Rails returns { gif: { id, title, ... } }
+    expect(data).toHaveProperty('gif');
+    expect(data.gif).toHaveProperty('id', createdGifId);
+    expect(data.gif).toHaveProperty('title', 'Test GIF from Integration Test');
   });
 
   test('can list GIFs from feed', async ({ request }) => {
