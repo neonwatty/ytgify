@@ -78,7 +78,7 @@ export const PopupWithAuth: React.FC = () => {
   // Loading state while checking auth
   if (!authChecked) {
     return (
-      <div style={{ width: '360px', padding: '40px', textAlign: 'center' }}>
+      <div data-testid="popup-loading" style={{ width: '360px', padding: '40px', textAlign: 'center' }}>
         <div
           style={{
             width: '32px',

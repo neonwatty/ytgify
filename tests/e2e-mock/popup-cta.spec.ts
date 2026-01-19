@@ -112,13 +112,20 @@ async function openExtensionPopup(context: BrowserContext): Promise<Page | null>
   const extensionId = match[1];
   const page = await context.newPage();
 
-  // Navigate and wait for DOM to be ready
+  // Navigate and wait for network to settle
   await page.goto(`chrome-extension://${extensionId}/popup.html`, {
-    waitUntil: 'domcontentloaded',
+    waitUntil: 'load',
   });
 
-  // Wait for the popup React app to mount and render
-  await page.waitForSelector('.popup-modern', { timeout: 15000 });
+  // First wait for React to mount (either loading state or main UI)
+  await page.waitForSelector('[data-testid="popup-loading"], .popup-modern', {
+    timeout: 10000,
+  });
+
+  // Then wait specifically for auth check to complete and main UI to render
+  await page.waitForSelector('.popup-modern', {
+    timeout: 15000,
+  });
 
   return page;
 }
