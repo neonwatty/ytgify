@@ -36,8 +36,10 @@ test.describe('Backend API Integration', () => {
     // Authenticate and get JWT token for subsequent requests
     const loginResponse = await request.post(`${BACKEND_URL}/api/v1/auth/login`, {
       data: {
-        email: TEST_USER.email,
-        password: TEST_USER.password,
+        user: {
+          email: TEST_USER.email,
+          password: TEST_USER.password,
+        },
       },
     });
 
@@ -75,8 +77,10 @@ test.describe('Backend API Integration', () => {
   test('login with valid credentials returns JWT token', async ({ request }) => {
     const response = await request.post(`${BACKEND_URL}/api/v1/auth/login`, {
       data: {
-        email: TEST_USER.email,
-        password: TEST_USER.password,
+        user: {
+          email: TEST_USER.email,
+          password: TEST_USER.password,
+        },
       },
     });
 
@@ -91,8 +95,10 @@ test.describe('Backend API Integration', () => {
   test('login with invalid credentials returns 401', async ({ request }) => {
     const response = await request.post(`${BACKEND_URL}/api/v1/auth/login`, {
       data: {
-        email: TEST_USER.email,
-        password: 'wrongpassword',
+        user: {
+          email: TEST_USER.email,
+          password: 'wrongpassword',
+        },
       },
     });
 
@@ -223,8 +229,10 @@ test.describe('Backend API Error Handling', () => {
     // First authenticate
     const loginResponse = await request.post(`${BACKEND_URL}/api/v1/auth/login`, {
       data: {
-        email: TEST_USER.email,
-        password: TEST_USER.password,
+        user: {
+          email: TEST_USER.email,
+          password: TEST_USER.password,
+        },
       },
     });
 
