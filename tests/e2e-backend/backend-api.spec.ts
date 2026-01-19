@@ -147,13 +147,14 @@ test.describe('Backend API Integration', () => {
     });
 
     // Use native fetch for proper multipart handling with form-data
+    // Cast buffer to Uint8Array for Node.js fetch compatibility
     const fetchResponse = await fetch(`${BACKEND_URL}/api/v1/gifs`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${authToken}`,
         ...form.getHeaders(),
       },
-      body: form.getBuffer(),
+      body: new Uint8Array(form.getBuffer()),
     });
 
     // Log response for debugging
