@@ -180,8 +180,8 @@ jobs:
           Xvfb :99 -screen 0 1920x1080x24 &
           sleep 2
 
-          # Run tests in headed mode (required for content script injection)
-          npm run test:e2e:upload -- --headed
+          # Run e2e tests in headed mode (required for content script injection)
+          npm run test:e2e:headed
 
       - name: Upload test artifacts on failure
         if: failure()
