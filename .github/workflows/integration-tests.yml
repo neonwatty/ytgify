@@ -38,7 +38,7 @@ jobs:
   integration:
     name: Extension ↔ Backend Integration
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     services:
       postgres:
@@ -152,6 +152,19 @@ jobs:
 
       - name: Build extension
         run: npm run build
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Generate test videos
+        run: npm run generate:test-videos
+
+      - name: Install Xvfb
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
 
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
