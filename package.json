@@ -25,8 +25,11 @@
     "test:e2e:headed": "playwright test --config tests/playwright-mock.config.ts --headed",
     "test:e2e:debug": "playwright test --config tests/playwright-mock.config.ts --debug",
     "test:e2e:ui": "playwright test --config tests/playwright-mock.config.ts --ui",
+    "test:e2e:backend": "playwright test --config tests/playwright-backend.config.ts",
+    "test:e2e:backend:debug": "playwright test --config tests/playwright-backend.config.ts --debug",
     "generate:test-videos": "cd tests/e2e-mock/fixtures/videos && chmod +x generate-test-videos.sh && ./generate-test-videos.sh",
     "test:all": "npm run test && npm run test:e2e",
+    "test:integration": "npm run test:e2e:backend",
     "validate:pre-push": "npm run lint && npm run build && npm run typecheck && npm run knip:production && npm test && npm run test:e2e",
     "prepare": "husky"
   },
