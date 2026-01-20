@@ -17,7 +17,9 @@
     "scripts/build-production.sh",
     "store-assets/generate-tiles.js",
     "src/lib/service-worker-video-processor.ts",
-    "src/utils/keyboard-shortcuts.ts"
+    "src/utils/keyboard-shortcuts.ts",
+    "src/types/auth.ts",
+    "src/lib/api/api-client.ts"
   ],
   "ignoreDependencies": [
     "archiver",

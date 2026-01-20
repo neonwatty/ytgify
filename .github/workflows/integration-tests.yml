@@ -1,0 +1,198 @@
+name: Integration Tests
+
+on:
+  # Triggered by backend repo when API changes
+  repository_dispatch:
+    types: [backend-integration-test]
+
+  # Triggered on extension changes to integration-related files
+  push:
+    branches: [main, develop]
+    paths:
+      - 'src/**'
+      - 'tests/e2e-backend/**'
+      - 'tests/playwright-backend.config.ts'
+      - 'package.json'
+      - '.github/workflows/integration-tests.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'src/**'
+      - 'tests/e2e-backend/**'
+      - 'tests/playwright-backend.config.ts'
+      - 'package.json'
+      - '.github/workflows/integration-tests.yml'
+
+  # Manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      backend_branch:
+        description: 'Backend branch to test against'
+        default: 'main'
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    name: Extension ↔ Backend Integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ytgify_share_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/ytgify_share_test
+
+    steps:
+      - name: Checkout extension
+        uses: actions/checkout@v4
+
+      - name: Determine backend ref
+        id: backend-ref
+        run: |
+          if [[ "${{ github.event_name }}" == "repository_dispatch" ]]; then
+            echo "ref=${{ github.event.client_payload.backend_ref }}" >> $GITHUB_OUTPUT
+            echo "branch=${{ github.event.client_payload.backend_branch }}" >> $GITHUB_OUTPUT
+          elif [[ -n "${{ github.event.inputs.backend_branch }}" ]]; then
+            echo "ref=" >> $GITHUB_OUTPUT
+            echo "branch=${{ github.event.inputs.backend_branch }}" >> $GITHUB_OUTPUT
+          else
+            echo "ref=" >> $GITHUB_OUTPUT
+            echo "branch=main" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout backend
+        uses: actions/checkout@v4
+        with:
+          repository: mean-weasel/ytgify-fullstack
+          ref: ${{ steps.backend-ref.outputs.ref || steps.backend-ref.outputs.branch }}
+          path: backend
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version-file: backend/ytgify-share/.ruby-version
+          bundler-cache: true
+          working-directory: backend/ytgify-share
+
+      - name: Install extension dependencies
+        run: npm ci
+
+      - name: Setup test database
+        working-directory: backend/ytgify-share
+        run: |
+          bin/rails db:test:prepare
+          mkdir -p tmp/storage
+          chmod 755 tmp/storage
+          echo "✓ Database prepared"
+
+      - name: Seed test user
+        working-directory: backend/ytgify-share
+        run: |
+          bin/rails runner "
+            User.find_or_create_by!(email: 'test@example.com') do |u|
+              u.username = 'testuser'
+              u.password = 'password123'
+              u.password_confirmation = 'password123'
+            end
+            puts '✓ Test user seeded: test@example.com / password123'
+          "
+
+      - name: Start Rails server
+        working-directory: backend/ytgify-share
+        run: |
+          RAILS_LOG_TO_STDOUT=true bin/rails server -p 3000 &
+          RAILS_PID=$!
+          echo "Rails PID: $RAILS_PID"
+
+          echo "Waiting for Rails server..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000/api/v1/auth/me > /dev/null 2>&1 || [ $? -eq 22 ]; then
+              echo "✓ Rails server ready (attempt $i)"
+              break
+            fi
+            if ! kill -0 $RAILS_PID 2>/dev/null; then
+              echo "✗ Rails server died"
+              exit 1
+            fi
+            echo "  Waiting... ($i/30)"
+            sleep 2
+          done
+
+      - name: Verify Rails server
+        run: |
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/v1/auth/me)
+          echo "Auth endpoint: HTTP $HTTP_CODE (401 expected for unauthenticated)"
+          if [[ "$HTTP_CODE" != "401" ]]; then
+            echo "Warning: Unexpected status code"
+          fi
+          echo "✓ Rails server verified"
+
+      - name: Build extension
+        run: npm run build
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Generate test videos
+        run: npm run generate:test-videos
+
+      - name: Install Xvfb
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Run backend integration tests
+        env:
+          BACKEND_URL: http://localhost:3000
+        run: |
+          npm run test:integration
+
+      - name: Upload test artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results-${{ github.run_id }}
+          path: |
+            tests/test-results/
+            playwright-report/
+            backend/ytgify-share/log/test.log
+          retention-days: 14
+
+      - name: Report status
+        if: always()
+        run: |
+          if [[ "${{ github.event_name }}" == "repository_dispatch" ]]; then
+            echo "Triggered by backend change:"
+            echo "  Backend ref: ${{ github.event.client_payload.backend_ref }}"
+            echo "  Backend branch: ${{ github.event.client_payload.backend_branch }}"
+            echo "  PR: ${{ github.event.client_payload.pr_number }}"
+          fi
+          echo "Test status: ${{ job.status }}"

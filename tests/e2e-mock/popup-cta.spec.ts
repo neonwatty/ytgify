@@ -94,10 +94,21 @@ async function getEngagementData(context: BrowserContext): Promise<EngagementDat
 
 /**
  * Helper to open extension popup
+ * Waits for popup to be fully loaded before returning
+ * Uses retry logic to handle flaky popup loading in headless mode
  */
-async function openExtensionPopup(context: BrowserContext): Promise<Page | null> {
-  const serviceWorkers = context.serviceWorkers();
+async function openExtensionPopup(context: BrowserContext, maxRetries = 3): Promise<Page | null> {
+  // Wait for service workers to be ready
+  let serviceWorkers = context.serviceWorkers();
+  let swRetries = 0;
+  while (serviceWorkers.length === 0 && swRetries < 5) {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    serviceWorkers = context.serviceWorkers();
+    swRetries++;
+  }
+
   if (serviceWorkers.length === 0) {
+    console.error('[openExtensionPopup] No service workers found after retries');
     return null;
   }
 
@@ -105,13 +116,122 @@ async function openExtensionPopup(context: BrowserContext): Promise<Page | null>
   const url = serviceWorkers[0].url();
   const match = url.match(/chrome-extension:\/\/([^\/]+)/);
   if (!match) {
+    console.error('[openExtensionPopup] Could not extract extension ID from URL:', url);
     return null;
   }
 
   const extensionId = match[1];
-  const page = await context.newPage();
-  await page.goto(`chrome-extension://${extensionId}/popup.html`);
-  return page;
+
+  // Retry loop for flaky popup loading
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const page = await context.newPage();
+
+    try {
+      // Listen for ALL console messages and page errors
+      const consoleMessages: string[] = [];
+      const pageErrors: string[] = [];
+
+      page.on('console', msg => {
+        const text = `[${msg.type()}] ${msg.text()}`;
+        consoleMessages.push(text);
+        if (msg.type() === 'error') {
+          console.warn(`[openExtensionPopup] Console error: ${msg.text()}`);
+        }
+      });
+
+      page.on('pageerror', error => {
+        pageErrors.push(error.message);
+        console.error(`[openExtensionPopup] Page error: ${error.message}`);
+      });
+
+      page.on('requestfailed', request => {
+        console.warn(`[openExtensionPopup] Request failed: ${request.url()} - ${request.failure()?.errorText}`);
+      });
+
+      // Navigate and wait for network to settle
+      await page.goto(`chrome-extension://${extensionId}/popup.html`, {
+        waitUntil: 'networkidle',
+        timeout: 15000,
+      });
+
+      // Wait for scripts to load and execute
+      await page.waitForTimeout(2000);
+
+      // Debug: Log DOM state
+      const debugInfo = await page.evaluate(() => {
+        const root = document.getElementById('root');
+        return {
+          rootExists: !!root,
+          rootInnerHTML: root?.innerHTML?.substring(0, 300) || 'empty',
+          rootChildCount: root?.children?.length || 0,
+          hasLoadingSpinner: !!root?.querySelector('.loading'),
+          hasPopupModern: !!root?.querySelector('.popup-modern'),
+          hasPopupLoading: !!root?.querySelector('[data-testid="popup-loading"]'),
+        };
+      });
+      console.log(`[openExtensionPopup] Attempt ${attempt} - DOM:`, JSON.stringify(debugInfo));
+
+      // Log any page errors captured so far
+      if (pageErrors.length > 0) {
+        console.warn(`[openExtensionPopup] Attempt ${attempt} - Page errors:`, pageErrors);
+      }
+
+      // Check if the page has any content in #root beyond the static spinner
+      const hasReactContent = await page.evaluate(() => {
+        const root = document.getElementById('root');
+        if (!root) return false;
+        // Check if React has mounted (look for React-specific elements)
+        return root.querySelector('[data-testid="popup-loading"]') !== null ||
+               root.querySelector('.popup-modern') !== null ||
+               root.children.length > 1 ||
+               (root.children.length === 1 && !root.children[0].classList.contains('loading'));
+      });
+
+      if (!hasReactContent) {
+        // React hasn't mounted yet, wait longer
+        await page.waitForTimeout(1000);
+      }
+
+      // Try to wait for either loading state or main UI
+      try {
+        await page.waitForSelector('[data-testid="popup-loading"], .popup-modern', {
+          timeout: 8000,
+        });
+      } catch {
+        // If we still don't see React content, log errors and retry
+        if (pageErrors.length > 0) {
+          console.warn(`[openExtensionPopup] Attempt ${attempt} - Page errors on failure:`, pageErrors);
+        }
+        console.log(`[openExtensionPopup] Attempt ${attempt} - Console messages:`, consoleMessages.slice(-10));
+        if (attempt < maxRetries) {
+          console.warn(`[openExtensionPopup] Attempt ${attempt} failed, retrying...`);
+          await page.close();
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          continue;
+        }
+        throw new Error('React did not mount in popup');
+      }
+
+      // Wait for auth check to complete and main UI to render
+      await page.waitForSelector('.popup-modern', {
+        timeout: 15000,
+      });
+
+      return page;
+    } catch (error) {
+      if (attempt < maxRetries) {
+        console.warn(`[openExtensionPopup] Attempt ${attempt} failed:`, error);
+        await page.close();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } else {
+        console.error(`[openExtensionPopup] All ${maxRetries} attempts failed`);
+        await page.close();
+        throw error;
+      }
+    }
+  }
+
+  return null;
 }
 
 test.describe('Popup CTA - Primary Prompt (Mock)', () => {
@@ -138,12 +258,9 @@ test.describe('Popup CTA - Primary Prompt (Mock)', () => {
     expect(verifyData).toBeTruthy();
     expect(verifyData!.totalGifsCreated).toBe(5);
 
-    // Open popup
+    // Open popup (helper waits for .popup-modern to be ready)
     const popup = await openExtensionPopup(context);
     expect(popup).toBeTruthy();
-
-    // Wait for popup to render
-    await popup!.waitForSelector('.popup-modern', { timeout: 5000 });
 
     // Wait for footer to render (it checks engagement data on mount)
     await popup!.waitForTimeout(1000);
@@ -185,12 +302,9 @@ test.describe('Popup CTA - Primary Prompt (Mock)', () => {
     await page.goto(getMockVideoUrl('veryShort', mockServerUrl));
     await page.waitForSelector('video', { timeout: 10000 });
 
-    // Open popup
+    // Open popup (helper waits for .popup-modern to be ready)
     const popup = await openExtensionPopup(context);
     expect(popup).toBeTruthy();
-
-    // Wait for popup to render
-    await popup!.waitForSelector('.popup-modern', { timeout: 5000 });
 
     // Footer should NOT be visible
     const footer = await popup!.$('.popup-footer');
@@ -218,12 +332,9 @@ test.describe('Popup CTA - Primary Prompt (Mock)', () => {
     await page.goto(getMockVideoUrl('veryShort', mockServerUrl));
     await page.waitForSelector('video', { timeout: 10000 });
 
-    // Open popup
+    // Open popup (helper waits for .popup-modern to be ready)
     const popup = await openExtensionPopup(context);
     expect(popup).toBeTruthy();
-
-    // Wait for popup to render
-    await popup!.waitForSelector('.popup-modern', { timeout: 5000 });
 
     // Footer should NOT be visible because it was dismissed
     const footer = await popup!.$('.popup-footer');
@@ -251,12 +362,9 @@ test.describe('Popup CTA - Primary Prompt (Mock)', () => {
     await page.goto(getMockVideoUrl('veryShort', mockServerUrl));
     await page.waitForSelector('video', { timeout: 10000 });
 
-    // Open popup
+    // Open popup (helper waits for .popup-modern to be ready)
     const popup = await openExtensionPopup(context);
     expect(popup).toBeTruthy();
-
-    // Wait for popup to render
-    await popup!.waitForSelector('.popup-modern', { timeout: 5000 });
 
     // Footer should NOT be visible because prompt was already shown
     const footer = await popup!.$('.popup-footer');
@@ -284,10 +392,9 @@ test.describe('Popup CTA - Primary Prompt (Mock)', () => {
     await page.goto(getMockVideoUrl('veryShort', mockServerUrl));
     await page.waitForSelector('video', { timeout: 10000 });
 
-    // Open popup
+    // Open popup (helper waits for .popup-modern to be ready)
     const popup = await openExtensionPopup(context);
     expect(popup).toBeTruthy();
-    await popup!.waitForSelector('.popup-modern', { timeout: 5000 });
     await popup!.waitForTimeout(1000);
 
     // Verify footer is initially visible
@@ -333,10 +440,9 @@ test.describe('Popup CTA - Primary Prompt (Mock)', () => {
     await page.goto(getMockVideoUrl('veryShort', mockServerUrl));
     await page.waitForSelector('video', { timeout: 10000 });
 
-    // Open popup
+    // Open popup (helper waits for .popup-modern to be ready)
     const popup = await openExtensionPopup(context);
     expect(popup).toBeTruthy();
-    await popup!.waitForSelector('.popup-modern', { timeout: 5000 });
     await popup!.waitForTimeout(1000);
 
     // Verify footer is visible
