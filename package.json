@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "webpack --config webpack.config.cjs --mode development --watch",
+    "dev:local": "API_BASE_URL=http://localhost:3000/api/v1 webpack --config webpack.config.cjs --mode development --watch",
     "build": "webpack --config webpack.config.cjs --mode production",
+    "build:local": "API_BASE_URL=http://localhost:3000/api/v1 webpack --config webpack.config.cjs --mode production",
     "build:production": "scripts/build-production.sh",
     "clean": "rimraf dist",
     "format": "prettier --write 'src/**/*.{ts,tsx,js,jsx,css}'",
