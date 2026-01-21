@@ -40,7 +40,13 @@ export class YtgifyApiClient {
   constructor() {
     // Use environment-specific API base URL
     const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
-    this.baseURL = `${apiBaseUrl}/api/v1`;
+
+    // Avoid double /api/v1 if already in URL
+    if (apiBaseUrl.endsWith('/api/v1')) {
+      this.baseURL = apiBaseUrl;
+    } else {
+      this.baseURL = `${apiBaseUrl}/api/v1`;
+    }
 
     console.log(`[ApiClient] Initialized with base URL: ${this.baseURL}`);
   }
