@@ -13,20 +13,18 @@ test.describe('Landing Page Smoke Tests', () => {
     await expect(headline).toBeVisible();
   });
 
-  test('Chrome Store badge links correctly', async ({ page }) => {
+  test('discontinuation notice is visible', async ({ page }) => {
     await page.goto('/');
-    const badges = page.locator('a[href*="chromewebstore.google.com"]');
-    await expect(badges.first()).toBeVisible();
-    // Verify we have multiple Chrome Store CTAs (top, after video, footer)
-    await expect(badges).toHaveCount(3);
+    const notice = page.getByRole('heading', { name: /Removed from the Chrome Web Store/i });
+    await expect(notice).toBeVisible();
   });
 
-  test('Firefox Add-on badge links correctly', async ({ page }) => {
+  test('download links are present', async ({ page }) => {
     await page.goto('/');
-    const badges = page.locator('a[href*="addons.mozilla.org"]');
-    await expect(badges.first()).toBeVisible();
-    // Verify we have multiple Firefox Add-on CTAs (after video, footer)
-    await expect(badges).toHaveCount(2);
+    const downloadLinks = page.locator('a[href*="/downloads/ytgify"]');
+    await expect(downloadLinks.first()).toBeVisible();
+    // Download links in discontinuation notice, after video CTA, and footer
+    await expect(downloadLinks).toHaveCount(3);
   });
 
   test('demo video iframe is present', async ({ page }) => {

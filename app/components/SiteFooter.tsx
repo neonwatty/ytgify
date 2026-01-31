@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Github, BookOpen } from 'lucide-react';
-import { FIREFOX_ADDON_URL } from '@/lib/constants';
+// Extension is no longer in stores - using local download instead
 
 export default function SiteFooter() {
   const [currentYear, setCurrentYear] = useState(2025);
@@ -57,20 +57,11 @@ export default function SiteFooter() {
             Blog
           </Link>
           <a
-            href="https://chromewebstore.google.com/detail/ytgify/jhjdimdoghooebpklbfhpggnaakiollk"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/downloads/ytgify-v1.0.19-chrome.zip"
+            download
             className="text-[#a0a0a0] hover:text-white transition-colors"
           >
-            Install Chrome Extension
-          </a>
-          <a
-            href={FIREFOX_ADDON_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[#a0a0a0] hover:text-white transition-colors"
-          >
-            Install Firefox Add-on
+            Download Extension
           </a>
           <Link
             href="/privacy-policy"
