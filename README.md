@@ -1,5 +1,21 @@
 # YTgify Chrome Extension
 
+> **⚠️ Important Notice: Removed from Chrome Web Store**
+>
+> After 8 months in the Chrome Web Store and being a featured extension for 4 months, Google has removed YTgify for violating their terms of service regarding the transformation of YouTube video frames into GIFs.
+>
+> **You can still use YTgify** by installing it locally as an unpacked extension:
+>
+> 1. Download the latest release: [ytgify-v1.0.19-chrome.zip](https://ytgify.com/downloads/ytgify-v1.0.19-chrome.zip)
+> 2. Extract the ZIP to a folder on your computer
+> 3. Open Chrome and go to `chrome://extensions/`
+> 4. Enable "Developer mode" (top right toggle)
+> 5. Click "Load unpacked" and select the extracted folder
+>
+> The extension works exactly the same way - it just won't auto-update. Check back here or follow [@neonwatty](https://x.com/neonwatty) for updates.
+
+---
+
 A Chrome extension that enables users to create GIFs directly from YouTube videos with an intuitive visual interface integrated into the YouTube player.
 
 https://github.com/user-attachments/assets/6b9e72b6-032a-430d-9e4c-1d637f9aec20

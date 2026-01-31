@@ -65,7 +65,8 @@ describe('External Links', () => {
       );
     });
 
-    it('should return a reachable Chrome Web Store page', async () => {
+    // Skipped: Extension was removed from Chrome Web Store
+    it.skip('should return a reachable Chrome Web Store page', async () => {
       const link = getReviewLink();
       const { statusCode } = await httpsGet(link);
       // Chrome Web Store returns 200 for valid extension pages
@@ -110,7 +111,8 @@ describe('External Links', () => {
       expect(url.searchParams.get('utm_campaign')).toBe('waitlist');
     });
 
-    it('should return a reachable waitlist page', async () => {
+    // Skipped: Waitlist page no longer exists after discontinuation
+    it.skip('should return a reachable waitlist page', async () => {
       const link = getWaitlistLink();
       const { statusCode } = await httpsGet(link);
       // ytgify.com should return 200 for the share page
