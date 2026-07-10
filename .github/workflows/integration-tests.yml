@@ -23,6 +23,9 @@ on:
       - 'package.json'
       - '.github/workflows/integration-tests.yml'
 
+  merge_group:
+    branches: [main]
+
   # Manual trigger for testing
   workflow_dispatch:
     inputs:

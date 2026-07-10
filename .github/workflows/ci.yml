@@ -5,6 +5,8 @@ on:
     branches: [main, develop]
   push:
     branches: [main, develop]
+  merge_group:
+    branches: [main]
 
 jobs:
   secrets:
