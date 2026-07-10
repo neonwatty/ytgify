@@ -10,7 +10,7 @@ import * as feedbackTrackerModule from '../../../../src/shared/feedback-tracker'
 // Mock dependencies
 jest.mock('../../../../src/constants/links', () => ({
   openExternalLink: jest.fn(),
-  getGitHubStarLink: jest.fn(() => 'https://github.com/neonwatty/ytgify'),
+  getGitHubStarLink: jest.fn(() => 'https://github.com/ytgify/ytgify'),
   getReviewLink: jest.fn(() => 'https://chromewebstore.google.com/detail/ytgify/mock-id/reviews'),
   getWaitlistLink: jest.fn(() => 'https://ytgify.com/share?utm_source=extension&utm_medium=success_screen&utm_campaign=waitlist'),
 }));

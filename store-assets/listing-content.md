@@ -113,7 +113,7 @@ Unlike online GIF makers that require video uploads to remote servers, YTgify wo
 
 ### Support
 
-- GitHub Issues: https://github.com/neonwatty/ytgify/issues
+- GitHub Issues: https://github.com/ytgify/ytgify/issues
 - Discord: Bug reports and feedback
 - Updates: Regular feature additions and bug fixes
 
@@ -161,7 +161,7 @@ Version 1.0.0
 
 ### Website
 
-https://github.com/neonwatty/ytgify
+https://github.com/ytgify/ytgify
 
 ### Support Email
 
@@ -169,4 +169,4 @@ https://github.com/neonwatty/ytgify
 
 ### Support URL
 
-https://github.com/neonwatty/ytgify/issues
+https://github.com/ytgify/ytgify/issues

@@ -4,7 +4,7 @@
   "version": "1.0.19",
   "description": "Create GIFs from any YouTube video instantly. No watermark, no upload. Custom text, FPS & resolution controls.",
   "author": "Jeremy Watt",
-  "homepage_url": "https://github.com/neonwatty/ytgify",
+  "homepage_url": "https://github.com/ytgify/ytgify",
   "permissions": ["storage", "tabs", "activeTab", "downloads"],
   "host_permissions": ["https://*.youtube.com/*", "http://localhost:*/*", "http://127.0.0.1:*/*"],
   "content_security_policy": {

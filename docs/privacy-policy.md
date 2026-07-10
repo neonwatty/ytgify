@@ -106,13 +106,13 @@ You have complete control over your data:
 ## Open Source
 
 This Extension is open source. You can review our code at:
-https://github.com/neonwatty/ytgify
+https://github.com/ytgify/ytgify
 
 ## Contact Information
 
 For privacy-related questions or concerns, please:
 
-- Open an issue on our GitHub repository: https://github.com/neonwatty/ytgify/issues
+- Open an issue on our GitHub repository: https://github.com/ytgify/ytgify/issues
 - Email: neonwatty@gmail.com
 
 ## Compliance
