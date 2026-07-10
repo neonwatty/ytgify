@@ -24,7 +24,7 @@ on:
       - '.github/workflows/integration-tests.yml'
 
   merge_group:
-    branches: [main]
+    types: [checks_requested]
 
   # Manual trigger for testing
   workflow_dispatch:
