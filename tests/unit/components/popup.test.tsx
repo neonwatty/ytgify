@@ -13,7 +13,7 @@ jest.mock('../../../src/popup/styles-modern.css', () => ({}));
 jest.mock('../../../src/constants/links', () => ({
   openExternalLink: jest.fn(),
   getReviewLink: jest.fn(() => 'https://chromewebstore.google.com/detail/ytgify/mock-id/reviews'),
-  getGitHubStarLink: jest.fn(() => 'https://github.com/neonwatty/ytgify'),
+  getGitHubStarLink: jest.fn(() => 'https://github.com/ytgify/ytgify'),
   getDiscordLink: jest.fn(() => 'https://discord.gg/8EUxqR93'),
 }));
 

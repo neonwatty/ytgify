@@ -173,7 +173,7 @@ None required in initial release.
 
 ## Reporting Issues
 
-Please report bugs and request features on our [GitHub Issues](https://github.com/neonwatty/ytgify/issues) page.
+Please report bugs and request features on our [GitHub Issues](https://github.com/ytgify/ytgify/issues) page.
 
 ---
 
