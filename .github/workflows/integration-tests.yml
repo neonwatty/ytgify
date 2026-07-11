@@ -1,30 +1,29 @@
 name: Integration Tests
 
 on:
-  # Triggered by backend repo when API changes
-  repository_dispatch:
-    types: [backend-integration-test]
-
-  # Triggered on extension changes to integration-related files
-  push:
-    branches: [main, develop]
-    paths:
-      - 'src/**'
-      - 'tests/e2e-backend/**'
-      - 'tests/playwright-backend.config.ts'
-      - 'package.json'
-      - '.github/workflows/integration-tests.yml'
-  pull_request:
-    branches: [main, develop]
-    paths:
-      - 'src/**'
-      - 'tests/e2e-backend/**'
-      - 'tests/playwright-backend.config.ts'
-      - 'package.json'
-      - '.github/workflows/integration-tests.yml'
-
-  merge_group:
-    types: [checks_requested]
+  # Temporarily disabled until backend integration tests are ready.
+  # repository_dispatch:
+  #   types: [backend-integration-test]
+  #
+  # push:
+  #   branches: [main, develop]
+  #   paths:
+  #     - 'src/**'
+  #     - 'tests/e2e-backend/**'
+  #     - 'tests/playwright-backend.config.ts'
+  #     - 'package.json'
+  #     - '.github/workflows/integration-tests.yml'
+  # pull_request:
+  #   branches: [main, develop]
+  #   paths:
+  #     - 'src/**'
+  #     - 'tests/e2e-backend/**'
+  #     - 'tests/playwright-backend.config.ts'
+  #     - 'package.json'
+  #     - '.github/workflows/integration-tests.yml'
+  #
+  # merge_group:
+  #   types: [checks_requested]
 
   # Manual trigger for testing
   workflow_dispatch:
