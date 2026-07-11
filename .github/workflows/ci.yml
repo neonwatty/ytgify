@@ -5,6 +5,8 @@ on:
     branches: [main, develop]
   push:
     branches: [main, develop]
+  merge_group:
+    types: [checks_requested]
 
 jobs:
   test:
